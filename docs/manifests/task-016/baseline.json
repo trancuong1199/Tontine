@@ -1,0 +1,21 @@
+{
+  "taskId": "task-016",
+  "createdAt": "2026-10-11T14:07:41.765Z",
+  "files": {
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "d9c74c31a185e2da4c4a9863366339cd46dad97868e8848b999aebd575a6d9f1",
+      "snapshot": "docs/manifests/task-016/baseline/src_lib_i18n.ts"
+    },
+    "src/hooks/useSavingsClub.ts": {
+      "exists": true,
+      "sha256": "e80ee6d158a2c7ab27d173863108c8d0578197907d78ac83a4cb68df38fab223",
+      "snapshot": "docs/manifests/task-016/baseline/src_hooks_useSavingsClub.ts"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "94f2e151b0d09bd51b0d87dcecb067659170b30567b30b198c73fc42c729954c",
+      "snapshot": "docs/manifests/task-016/baseline/src_App.tsx"
+    }
+  }
+}

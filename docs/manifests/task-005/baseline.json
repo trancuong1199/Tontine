@@ -1,0 +1,71 @@
+{
+  "taskId": "task-005",
+  "createdAt": "2026-10-09T03:41:21.552Z",
+  "files": {
+    "index.html": {
+      "exists": true,
+      "sha256": "89f02d6ce7eba21ef12c5488ffb167997635c76c29abe89c54a6fdc037a1192e",
+      "snapshot": "docs/manifests/task-005/baseline/index.html"
+    },
+    "src/index.css": {
+      "exists": true,
+      "sha256": "74a042e6f3739c103927ca1ef86513c1abdead240854cf34a946223900b12e70",
+      "snapshot": "docs/manifests/task-005/baseline/src_index.css"
+    },
+    "tailwind.config.js": {
+      "exists": true,
+      "sha256": "96e72908328954920bc0840fa575f9114863576deb3cab9ec61951a3181650dd",
+      "snapshot": "docs/manifests/task-005/baseline/tailwind.config.js"
+    },
+    "src/components/savings/GroupSwitcher.tsx": {
+      "exists": true,
+      "sha256": "247da61526373c55c8a401681139b3ec67b56c9553ed3a09a3fd94dd6d2ee448",
+      "snapshot": "docs/manifests/task-005/baseline/src_components_savings_GroupSwitcher.tsx"
+    },
+    "src/components/savings/Header.tsx": {
+      "exists": true,
+      "sha256": "780ba8d95b169ae53e35b9644035db3e31d510f23589ab2754fac4f557f3cb44",
+      "snapshot": "docs/manifests/task-005/baseline/src_components_savings_Header.tsx"
+    },
+    "src/components/savings/CreateClubModal.tsx": {
+      "exists": true,
+      "sha256": "29eb24a3860c26dcd8dd697691d60865c36b7b501d7958c0d85471b92188feae",
+      "snapshot": "docs/manifests/task-005/baseline/src_components_savings_CreateClubModal.tsx"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "9cb3415c3710f616eae767a49f7f91f7a12bbcd62f724c3e7908d5872439944f",
+      "snapshot": "docs/manifests/task-005/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "455db44bd4114a1fa4f6d98c89c75714a7db803ebb3fcbf955a1c68f01318ad4",
+      "snapshot": "docs/manifests/task-005/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "exists": true,
+      "sha256": "e03e9b0e67296409107107207fd4e06aa5ad3252eae0be52c9af447545841c2f",
+      "snapshot": "docs/manifests/task-005/baseline/src_components_savings_ClubCard.tsx"
+    },
+    "src/components/savings/HowItWorksCard.tsx": {
+      "exists": true,
+      "sha256": "c3641e4b35094478f533aaa38404f1353537884f5778150b0af6ff03e891b35e",
+      "snapshot": "docs/manifests/task-005/baseline/src_components_savings_HowItWorksCard.tsx"
+    },
+    "src/components/savings/RoundHistory.tsx": {
+      "exists": true,
+      "sha256": "3605cde67734e1f9269d690b504d759d2249bde69fde27394f002203567bb7e1",
+      "snapshot": "docs/manifests/task-005/baseline/src_components_savings_RoundHistory.tsx"
+    },
+    "src/components/savings/MemberStatus.tsx": {
+      "exists": true,
+      "sha256": "7d6d16e6da161c22149d855f50a1357d213745e612d686efa471870a3b777d38",
+      "snapshot": "docs/manifests/task-005/baseline/src_components_savings_MemberStatus.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "4111fe707250c84aeacfd740b219d8e1bb2f7f683c6794e7f2b73bbfadee437c",
+      "snapshot": "docs/manifests/task-005/baseline/src_App.tsx"
+    }
+  }
+}

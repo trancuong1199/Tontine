@@ -1,0 +1,17 @@
+{
+  "taskId": "task-038",
+  "frozenAt": "2026-10-21T07:20:01.404Z",
+  "status": "FROZEN",
+  "files": {
+    "src/lib/i18n.ts": {
+      "sha256": "6e1872dc53115033fbe6199f5b5695e7e83142e148c953eedf08c28de7123c1e",
+      "baselineSha256": "17e37091af65175dd37641ac4bdc3c8dda133a320659cf625d04a5fcc14a33b8",
+      "isNew": false
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "sha256": "004e97e1d1d71aca414108909ecfcc5dbc9d42143c522d93031ecdac8200442e",
+      "baselineSha256": "799cd820aa2207d7db4d6750fc2adc8d71a628f01ca348fa3e0fee774fface6b",
+      "isNew": false
+    }
+  }
+}

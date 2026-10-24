@@ -1,0 +1,26 @@
+{
+  "taskId": "task-042",
+  "createdAt": "2026-10-22T04:25:56.814Z",
+  "files": {
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "4dbd1eda48564c9f137a574a0a54ea125c3efe741caa524d23318b0449c30321",
+      "snapshot": "docs/manifests/task-042/baseline/src_lib_i18n.ts"
+    },
+    "src/components/savings/Header.tsx": {
+      "exists": true,
+      "sha256": "de26156c02b451695dd59e89482eebb0601f150f18efd119e398e34c493af70c",
+      "snapshot": "docs/manifests/task-042/baseline/src_components_savings_Header.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "34bc5f1aca667ceaab5f77c88fb8a7ecea0d6eeb735b4dfcdf07fac1b512e4f6",
+      "snapshot": "docs/manifests/task-042/baseline/src_App.tsx"
+    },
+    "src/components/savings/GroupSwitcher.tsx": {
+      "exists": true,
+      "sha256": "5fe0269b86d5fedd1d77ec1342698a3011d5f9bab82f8031cf6bc28803ae6b61",
+      "snapshot": "docs/manifests/task-042/baseline/src_components_savings_GroupSwitcher.tsx"
+    }
+  }
+}

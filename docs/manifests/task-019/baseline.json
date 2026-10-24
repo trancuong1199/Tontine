@@ -1,0 +1,26 @@
+{
+  "taskId": "task-019",
+  "createdAt": "2026-10-12T02:51:59.420Z",
+  "files": {
+    "src/contract.ts": {
+      "exists": true,
+      "sha256": "c34c5aaf7204f077a9a75bf9a7deeb3d88a00f633824263339b6d692e7da3be6",
+      "snapshot": "docs/manifests/task-019/baseline/src_contract.ts"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "9998dffceb846f290ec87e3422aab707a65d81439c7c9f28a522aee538cdd620",
+      "snapshot": "docs/manifests/task-019/baseline/src_lib_i18n.ts"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "bfeec57161c9da3b4485fcd600e6af8498dced7a4de2ea3cef7c875b01b17ee9",
+      "snapshot": "docs/manifests/task-019/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "5f702e1b350f7e1b49d9ef4130b12e75506904be37ddc2ec244904c8ea8df0b2",
+      "snapshot": "docs/manifests/task-019/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    }
+  }
+}

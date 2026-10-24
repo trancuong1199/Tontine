@@ -1,0 +1,46 @@
+{
+  "taskId": "task-043",
+  "createdAt": "2026-10-22T15:13:53.410Z",
+  "files": {
+    "contracts/RotatingSavings.sol": {
+      "exists": true,
+      "sha256": "72361a48c4c4e4d568cb400725a52bb5459988d3731f275393df19dac8c62bc5",
+      "snapshot": "docs/manifests/task-043/baseline/contracts_RotatingSavings.sol"
+    },
+    "src/contract.ts": {
+      "exists": true,
+      "sha256": "0a0bbd868078630f9b4e8b40ff82665938ef3f2c21880f6963cbcdf96a1edebd",
+      "snapshot": "docs/manifests/task-043/baseline/src_contract.ts"
+    },
+    "src/config/arc-constants.ts": {
+      "exists": true,
+      "sha256": "31b4ed27227b407de149275c7ba876f37e6fdd1e7f3b4880612636c12913986d",
+      "snapshot": "docs/manifests/task-043/baseline/src_config_arc-constants.ts"
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "exists": true,
+      "sha256": "7178ec1b005dcaaf8934c151bf3d254bbb0900aef73a0ba16b03fe49c549e83b",
+      "snapshot": "docs/manifests/task-043/baseline/src_components_savings_ClubCard.tsx"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "9007077234b6061be724db3d7b54d47c8732e409f169d73b8cd8a052f8b84770",
+      "snapshot": "docs/manifests/task-043/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "ee83a6f9016238230366b54221b20c2dfdb2b64b3de6e1f82fdb35f961f6e480",
+      "snapshot": "docs/manifests/task-043/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    },
+    "src/components/savings/CreateClubModal.tsx": {
+      "exists": true,
+      "sha256": "02eedc21c11c2e61888d72750e1a55fac57161e6dc80ab2713892d5ed884bfc9",
+      "snapshot": "docs/manifests/task-043/baseline/src_components_savings_CreateClubModal.tsx"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "e25b1003f47ce5883e01244a89a12dd150652634c2ea0aff30ec79783bb1f873",
+      "snapshot": "docs/manifests/task-043/baseline/src_lib_i18n.ts"
+    }
+  }
+}

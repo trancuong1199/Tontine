@@ -1,0 +1,47 @@
+{
+  "taskId": "task-042",
+  "frozenAt": "2026-10-22T10:25:11.607Z",
+  "status": "FROZEN",
+  "files": {
+    "src/lib/i18n.ts": {
+      "sha256": "e25b1003f47ce5883e01244a89a12dd150652634c2ea0aff30ec79783bb1f873",
+      "baselineSha256": "4dbd1eda48564c9f137a574a0a54ea125c3efe741caa524d23318b0449c30321",
+      "isNew": false
+    },
+    "src/components/savings/Header.tsx": {
+      "sha256": "be64f1f797bb0329e0ac1a640096f434ba7d418d305fa102ea133b8aad86915a",
+      "baselineSha256": "de26156c02b451695dd59e89482eebb0601f150f18efd119e398e34c493af70c",
+      "isNew": false
+    },
+    "src/components/savings/GroupSwitcher.tsx": {
+      "sha256": "79a45d3221f78d8dfe5db69a90c94024dac959601e1b97ab5f06d7e638ddd9bf",
+      "baselineSha256": "5fe0269b86d5fedd1d77ec1342698a3011d5f9bab82f8031cf6bc28803ae6b61",
+      "isNew": false
+    },
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "sha256": "cdc13694a29258fe97e67ecda1801aa8b36e41f3e537b30f3ce620e4e2783142",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "8f008b5985a1984478aed35cb379c11deb692ee0587239896de72254b3804513",
+      "baselineSha256": "34bc5f1aca667ceaab5f77c88fb8a7ecea0d6eeb735b4dfcdf07fac1b512e4f6",
+      "isNew": false
+    },
+    "src/lib/arcSwap.ts": {
+      "sha256": "26a03a5c30a8fc68d5245f5614aa25726e6cee2e8572690dba9f9e67184e704d",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/utils/arcChain.ts": {
+      "sha256": "8872ae3faf355fa5820c628f7860d53543087b4da166b2a4c1cbc4ddb4d2bb0a",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/contract.ts": {
+      "sha256": "0a0bbd868078630f9b4e8b40ff82665938ef3f2c21880f6963cbcdf96a1edebd",
+      "baselineSha256": null,
+      "isNew": false
+    }
+  }
+}

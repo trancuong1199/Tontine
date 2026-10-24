@@ -1,0 +1,11 @@
+{
+  "taskId": "task-002",
+  "createdAt": "2026-10-09T01:22:43.086Z",
+  "files": {
+    "src/index.css": {
+      "exists": true,
+      "sha256": "ff6d86fba86d2b5dbb1d8cf0840afbdff2ac31bd6bc46d0a8c32d91de3c2509b",
+      "snapshot": "docs/manifests/task-002/baseline/src_index.css"
+    }
+  }
+}

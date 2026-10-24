@@ -1,0 +1,31 @@
+{
+  "taskId": "task-003",
+  "createdAt": "2026-10-09T02:58:27.686Z",
+  "files": {
+    "src/components/savings/MemberStatus.tsx": {
+      "exists": true,
+      "sha256": "7d6d16e6da161c22149d855f50a1357d213745e612d686efa471870a3b777d38",
+      "snapshot": "docs/manifests/task-003/baseline/src_components_savings_MemberStatus.tsx"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "8c619c856cea8d667e089743cba5faa187a7210d9468aeb57beb09efe5a7641f",
+      "snapshot": "docs/manifests/task-003/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "bcd3fda6704e9d645b04a47ee015563d25f5b6983b6f90b7608629794faef21c",
+      "snapshot": "docs/manifests/task-003/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "exists": true,
+      "sha256": "df028f1c94cdbccf197412fa881e2d0945dd2dc84a0534aa1e0c4e5ceecb69b5",
+      "snapshot": "docs/manifests/task-003/baseline/src_components_savings_ClubCard.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "2b1faca2461e0a9a8d5e5cc84917ce6f07df37c95ce36c2246aac120fbd523d8",
+      "snapshot": "docs/manifests/task-003/baseline/src_App.tsx"
+    }
+  }
+}

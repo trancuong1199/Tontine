@@ -1,0 +1,17 @@
+{
+  "taskId": "task-037",
+  "frozenAt": "2026-10-21T06:45:43.981Z",
+  "status": "FROZEN",
+  "files": {
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "9007077234b6061be724db3d7b54d47c8732e409f169d73b8cd8a052f8b84770",
+      "baselineSha256": "65a1c05ba341671a6e9839afe8c9c0f5a5b61a5d0b9908b71637cd490103d601",
+      "isNew": false
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "sha256": "ee83a6f9016238230366b54221b20c2dfdb2b64b3de6e1f82fdb35f961f6e480",
+      "baselineSha256": "a08378451881034994667f7d82fe6874c3f98cbbc90f0b9e25996abc4ba513d6",
+      "isNew": false
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "taskId": "task-009",
+  "frozenAt": "2026-10-09T08:46:45.122Z",
+  "status": "FROZEN",
+  "files": {
+    "src/lib/i18n.ts": {
+      "sha256": "574d5c5b8aec3a7967aa5b2d8d604bdfa8c37f16b0fc1434b10b99674116806b",
+      "baselineSha256": "ae96053f247a2a5d27e78332a0a452553d52b9e04e82c9b39f93a0ef102dd293",
+      "isNew": false
+    },
+    "src/components/savings/GuideModal.tsx": {
+      "sha256": "48f54f6f1097ba3e9d5cdfd1cf41be748e8b782d80d41fcc5983e50f07bed869",
+      "baselineSha256": null,
+      "isNew": true
+    },
+    "src/components/landing/LandingPage.tsx": {
+      "sha256": "79a0efe654f44f01a161f73224c14903d31cf2ffa1de791ea8b3108b20626405",
+      "baselineSha256": null,
+      "isNew": true
+    },
+    "src/components/savings/Header.tsx": {
+      "sha256": "a8ecb9f0b6ea882c98adcadc9eff16389192a04304a1fc2f40dc7ca9cdbbabc9",
+      "baselineSha256": "6f2721640606a3f4c4f69d1bfaf8786bb4e4ba03adf4b1d27048d87383a596b5",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "0a4852a09f9dae9b85c67ee4d6a720ca8cf245db63a085075da19d1137d6e0da",
+      "baselineSha256": "7874eda9b90f08f63fe50e207683d416bfd8267910e5d99212aec395f233912e",
+      "isNew": false
+    }
+  }
+}

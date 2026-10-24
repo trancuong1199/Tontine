@@ -1,0 +1,16 @@
+{
+  "taskId": "task-023",
+  "createdAt": "2026-10-12T15:55:40.258Z",
+  "files": {
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "49f746f711c3dccc4683f70dda5460a47c694acca9b3550a7ad9b01dc97aa495",
+      "snapshot": "docs/manifests/task-023/baseline/src_App.tsx"
+    },
+    "src/components/savings/Header.tsx": {
+      "exists": true,
+      "sha256": "558edd6dfc9f7fb3ada0848815d8a3c8dec835c684bce7490b3c276295470324",
+      "snapshot": "docs/manifests/task-023/baseline/src_components_savings_Header.tsx"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "taskId": "task-014",
+  "createdAt": "2026-10-09T16:35:22.139Z",
+  "files": {
+    "package.json": {
+      "exists": true,
+      "sha256": "7de011ffe162be3280fc1fe61002ec7c52b474c2853512c07013f2bb1f83d8ba",
+      "snapshot": "docs/manifests/task-014/baseline/package.json"
+    }
+  }
+}

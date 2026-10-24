@@ -1,0 +1,81 @@
+{
+  "taskId": "task-012",
+  "createdAt": "2026-10-09T13:01:28.348Z",
+  "files": {
+    "src/components/landing/LandingPage.tsx": {
+      "exists": true,
+      "sha256": "79a0efe654f44f01a161f73224c14903d31cf2ffa1de791ea8b3108b20626405",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_landing_LandingPage.tsx"
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "exists": true,
+      "sha256": "005635c325241c2261a944f1d16b7d234ce289c86ea95254b9be565a54dea0ae",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_savings_ClubCard.tsx"
+    },
+    "src/components/savings/GroupSwitcher.tsx": {
+      "exists": true,
+      "sha256": "adc46c1de5b1657021e57a49de835e0c068bae5435b4d55a7bb0aa41e620a195",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_savings_GroupSwitcher.tsx"
+    },
+    "src/components/savings/MemberStatus.tsx": {
+      "exists": true,
+      "sha256": "f3df9c4b2b1a3db9198367145aa470d756dfbfc9d8665180754f0b2eb9a17c8d",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_savings_MemberStatus.tsx"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "ed6fc9675e4d1348f484c49b65622c33dbd91640d2856441e2c4eb0bc939d434",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "872f4382a2cd58a96841526d0f912604801d029ca0b44726b1881a2c850aca65",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    },
+    "src/components/savings/RoundHistory.tsx": {
+      "exists": true,
+      "sha256": "e4431194e4499f14d996a0c813ce3f49056f943ce322204bd1c70e066a4fa1e1",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_savings_RoundHistory.tsx"
+    },
+    "src/components/savings/HowItWorksCard.tsx": {
+      "exists": true,
+      "sha256": "26fa3ad8f0e44e4744a39b2ccbdf231b7c12e038ccbb87c5d9416390d0c79f0b",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_savings_HowItWorksCard.tsx"
+    },
+    "src/components/savings/Header.tsx": {
+      "exists": true,
+      "sha256": "cd75463c99f25540f0ac1f3ced5fd94b3cc990367b408bbe5bf354566a4fa686",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_savings_Header.tsx"
+    },
+    "src/components/savings/CreateClubModal.tsx": {
+      "exists": true,
+      "sha256": "3eea82549447958a417d316891698a41b9063cb199b9e1e32674f68457babcb3",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_savings_CreateClubModal.tsx"
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "exists": true,
+      "sha256": "2ea41f21f8650e28b2c17d359900267e2b121b2fa1e7778983e86877c2943b53",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_savings_ClubDirectoryModal.tsx"
+    },
+    "src/components/savings/GuideModal.tsx": {
+      "exists": true,
+      "sha256": "48f54f6f1097ba3e9d5cdfd1cf41be748e8b782d80d41fcc5983e50f07bed869",
+      "snapshot": "docs/manifests/task-012/baseline/src_components_savings_GuideModal.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "f18e878364e8d879d89bfb6a79de50b5ec4554ee0aaab011443ac42ed8fb7c3c",
+      "snapshot": "docs/manifests/task-012/baseline/src_App.tsx"
+    },
+    "src/main.tsx": {
+      "exists": true,
+      "sha256": "c7b9ee5357c07a851df26dcf458ca1298a9c3cd897addd2872e3fc8bb30cf407",
+      "snapshot": "docs/manifests/task-012/baseline/src_main.tsx"
+    },
+    "src/index.css": {
+      "exists": true,
+      "sha256": "633e5f7ec7a1a3633baafecef4fdf559a3e7fbf9392b37c349e093d13ac0830e",
+      "snapshot": "docs/manifests/task-012/baseline/src_index.css"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "taskId": "task-034",
+  "createdAt": "2026-10-15T04:27:41.520Z",
+  "files": {
+    "src/lib/savingsClubDirectory.ts": {
+      "exists": true,
+      "sha256": "4e5d9b2189065ce89b516f10c70433d8322b97a782ac0d7183db1e0b0d2d3f9d",
+      "snapshot": "docs/manifests/task-034/baseline/src_lib_savingsClubDirectory.ts"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "5b8b435abc40bc6a7c9b39c398edc74a952cfa54b4ea9e6ff491032b1df27bf3",
+      "snapshot": "docs/manifests/task-034/baseline/src_lib_i18n.ts"
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "exists": true,
+      "sha256": "a0164cf8f30654bf52ac7f89e99609685722cb3fc875a789e356705361164654",
+      "snapshot": "docs/manifests/task-034/baseline/src_components_savings_ClubDirectoryModal.tsx"
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "exists": true,
+      "sha256": "4a8d1bc7be659f29a2f1d10cfd7e72ad936e71f3d8b00f969d9636893757fe51",
+      "snapshot": "docs/manifests/task-034/baseline/src_components_savings_ClubCard.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "0deb8c3244d53963ae871334dfdc1c36d776219df614b6619ac643b82b73ed57",
+      "snapshot": "docs/manifests/task-034/baseline/src_App.tsx"
+    }
+  }
+}

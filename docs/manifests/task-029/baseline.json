@@ -1,0 +1,11 @@
+{
+  "taskId": "task-029",
+  "createdAt": "2026-10-15T02:05:34.890Z",
+  "files": {
+    "src/components/landing/LandingPage.tsx": {
+      "exists": true,
+      "sha256": "0db8f5dd0fb67b857309efe8236ea405a8d8cb4ff633f0f3be693a44d161e0e9",
+      "snapshot": "docs/manifests/task-029/baseline/src_components_landing_LandingPage.tsx"
+    }
+  }
+}

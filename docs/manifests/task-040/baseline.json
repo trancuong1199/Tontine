@@ -1,0 +1,11 @@
+{
+  "taskId": "task-040",
+  "createdAt": "2026-10-21T09:00:17.705Z",
+  "files": {
+    "src/components/savings/ClubCard.tsx": {
+      "exists": true,
+      "sha256": "2472d0d6fb0a2d9cdca1c80bbd564d540c80679147b7f0699ddb14bb5d1c142c",
+      "snapshot": "docs/manifests/task-040/baseline/src_components_savings_ClubCard.tsx"
+    }
+  }
+}

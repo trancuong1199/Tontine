@@ -1,0 +1,21 @@
+{
+  "taskId": "task-036",
+  "createdAt": "2026-10-19T04:55:10.371Z",
+  "files": {
+    "tailwind.config.js": {
+      "exists": true,
+      "sha256": "027c900354b61bcb00da7760bb80461ce5e9873f7bef0b48a14a402f175ad8b4",
+      "snapshot": "docs/manifests/task-036/baseline/tailwind.config.js"
+    },
+    "src/components/savings/EditClubNameModal.tsx": {
+      "exists": true,
+      "sha256": "fe183bba852797280acf8f8d26b1c74c0fe91c0c8275683474387f7180e914b7",
+      "snapshot": "docs/manifests/task-036/baseline/src_components_savings_EditClubNameModal.tsx"
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "exists": true,
+      "sha256": "23b9b81144c0747bfc68298e60e77a86e8c12de14717c334d9c3ba95e4857fed",
+      "snapshot": "docs/manifests/task-036/baseline/src_components_savings_ClubDirectoryModal.tsx"
+    }
+  }
+}

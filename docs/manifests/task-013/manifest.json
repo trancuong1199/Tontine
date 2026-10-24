@@ -1,0 +1,52 @@
+{
+  "taskId": "task-013",
+  "frozenAt": "2026-10-09T14:00:20.751Z",
+  "status": "FROZEN",
+  "files": {
+    "index.html": {
+      "sha256": "b88cb4e6ea7402d99d0de56b7a57c4bad75279924cc8e0a6e71c7f1f4e0aaef6",
+      "baselineSha256": "8d2450edebc7149bf278d941ddfbfe91e10eb26d1024afd4387e5fe90c8d280e",
+      "isNew": false
+    },
+    "public/favicon.svg": {
+      "sha256": "7f31406fbcac4a14cbd85a3823a33ef2e885c9f91f1d5fdf3755cdea116abf20",
+      "baselineSha256": "61bc9a161de58248288e6905425d7180f0624c2865007b97d763fdac12043a66",
+      "isNew": false
+    },
+    "public/favicon.png": {
+      "sha256": "14362d1d06a26ab040f9e61a3825395ce8af3ea8b18ac2a891c9e43a8ab4dea5",
+      "baselineSha256": "1848df642194f4d610a6b50d177c0a84d52f3b8983a9dc51c464ffa0742215ab",
+      "isNew": false
+    },
+    "public/favicon.ico": {
+      "sha256": "8e0f11082bacfb81f9559d967dbef9fa2551d83126e5bb2e36ee872123a6153f",
+      "baselineSha256": "ba601742430e54aaa35a0bb58167f9d5ebac8666fec123b55bea1706892aabfd",
+      "isNew": false
+    },
+    "public/logo-badge.png": {
+      "sha256": "32b9e41b649bf271390ee1294717dd54792d98dd4e4391d3724d0199b8b9582f",
+      "baselineSha256": "1848df642194f4d610a6b50d177c0a84d52f3b8983a9dc51c464ffa0742215ab",
+      "isNew": false
+    },
+    "src/components/savings/Header.tsx": {
+      "sha256": "558edd6dfc9f7fb3ada0848815d8a3c8dec835c684bce7490b3c276295470324",
+      "baselineSha256": "47d4f861f8ad96f96f9d2a725cfd27cbc60845b5c30e68b9093bf01cb9b6f4aa",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "2ef891708904e110e53ac5eb8eaf3b7696ff62f17636952bfc5f5bfab1b25ec0",
+      "baselineSha256": "21d6556599242aa01bd8340bbc478104d6cf07b5ac1a33ed66479e4887208cf5",
+      "isNew": false
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "ef65399d8d58823c72ca057dab87761697f444ccd432c51abf5fbab59381bd60",
+      "baselineSha256": "32949d2b18d5ceb79f768d17067224b152d72e2e69b621161a333da07b5283d1",
+      "isNew": false
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "sha256": "57a3b5463e05a0837e859a92ae52a219fa75adea30ba7a12d1eea2b55d9a21a5",
+      "baselineSha256": "6a763fd92efdc0ae4c4b66fba0d42ca9bedf860b1009350101d8d62e207bc23f",
+      "isNew": false
+    }
+  }
+}

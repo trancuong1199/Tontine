@@ -1,0 +1,27 @@
+{
+  "taskId": "task-016",
+  "frozenAt": "2026-10-11T14:13:24.600Z",
+  "status": "FROZEN",
+  "files": {
+    "src/lib/i18n.ts": {
+      "sha256": "620b4a67326bf896002b520aed3ec3816e2e6d568202f51ff2fc71575465f624",
+      "baselineSha256": "d9c74c31a185e2da4c4a9863366339cd46dad97868e8848b999aebd575a6d9f1",
+      "isNew": false
+    },
+    "src/hooks/useSavingsClub.ts": {
+      "sha256": "31df4942479336bf2bdb32b3fc030892798dd650640b3e7329c5ed1e8511bb04",
+      "baselineSha256": "e80ee6d158a2c7ab27d173863108c8d0578197907d78ac83a4cb68df38fab223",
+      "isNew": false
+    },
+    "src/components/savings/ClubMembersRoster.tsx": {
+      "sha256": "6b09bfaa4f7f2349089a8fb6161c20c97990a6579b402c279661cf96175bff11",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "6770011fbe8964b94d9e47984fd921c5b06f96a964b5c85b3f6d903545d65f9c",
+      "baselineSha256": "94f2e151b0d09bd51b0d87dcecb067659170b30567b30b198c73fc42c729954c",
+      "isNew": false
+    }
+  }
+}

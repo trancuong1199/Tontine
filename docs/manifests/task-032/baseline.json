@@ -1,0 +1,21 @@
+{
+  "taskId": "task-032",
+  "createdAt": "2026-10-15T03:21:14.102Z",
+  "files": {
+    "src/lib/savingsClubDirectory.ts": {
+      "exists": true,
+      "sha256": "8f7837d94284744c3b733022b0332640f443f0049fe2007345db111d4950cbdf",
+      "snapshot": "docs/manifests/task-032/baseline/src_lib_savingsClubDirectory.ts"
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "exists": true,
+      "sha256": "cc2e6debfb34ccbe5c1ffb0d6aefac5c0483fa06f25e1c34c196c1b22ea53d01",
+      "snapshot": "docs/manifests/task-032/baseline/src_components_savings_ClubDirectoryModal.tsx"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "e643b8e893bfa6294a4b90fa39c4b3df8b7005faeb856f752410151d09a7af1b",
+      "snapshot": "docs/manifests/task-032/baseline/src_lib_i18n.ts"
+    }
+  }
+}

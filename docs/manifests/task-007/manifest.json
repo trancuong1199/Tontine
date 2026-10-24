@@ -1,0 +1,37 @@
+{
+  "taskId": "task-007",
+  "frozenAt": "2026-10-09T07:39:49.734Z",
+  "status": "FROZEN",
+  "files": {
+    "src/main.tsx": {
+      "sha256": "e380951cae70e9e12241e291d3a51bfee07258e7a70d6392c36a4ffe454920bb",
+      "baselineSha256": "fcea02c122111a31ad97b0ffa1e5ae45deea3c9e44fe02e1406f9014bee9cef8",
+      "isNew": false
+    },
+    "src/lib/i18n.ts": {
+      "sha256": "0cbfe9c2a32f16313610af1ef2e39cdff42b7d42c169636a4cbc5a2c4b85a5c5",
+      "baselineSha256": "2b0bb5318b5575838aa72182ef81ec2b869901c7b5d4ede5f897af7dcef30395",
+      "isNew": false
+    },
+    "src/components/savings/Header.tsx": {
+      "sha256": "6f2721640606a3f4c4f69d1bfaf8786bb4e4ba03adf4b1d27048d87383a596b5",
+      "baselineSha256": "86bb26b87c2ac832af0774ef25bddf951f051b8de64d3d1bcf9365b0747ab385",
+      "isNew": false
+    },
+    "src/components/savings/GroupSwitcher.tsx": {
+      "sha256": "adc46c1de5b1657021e57a49de835e0c068bae5435b4d55a7bb0aa41e620a195",
+      "baselineSha256": "4a64d04f568951fd18dda5d198d89a3c83442853173003b137ebd7c5dbc924e7",
+      "isNew": false
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "sha256": "2ea41f21f8650e28b2c17d359900267e2b121b2fa1e7778983e86877c2943b53",
+      "baselineSha256": "cbe2e61656623ae9d00775883259e146a6a7b2bb2051d0dc42c68216ee979925",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "7874eda9b90f08f63fe50e207683d416bfd8267910e5d99212aec395f233912e",
+      "baselineSha256": "b12fcf73d0808762eb29061f81a75585b2b9cb5ee34091764408eb8644871af9",
+      "isNew": false
+    }
+  }
+}

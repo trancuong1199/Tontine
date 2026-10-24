@@ -1,0 +1,11 @@
+{
+  "taskId": "task-031",
+  "createdAt": "2026-10-15T03:00:07.178Z",
+  "files": {
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "5733b62c59d925fd341d663a417fdb0cd75c0cc5fa437b513225f98dac175588",
+      "snapshot": "docs/manifests/task-031/baseline/src_App.tsx"
+    }
+  }
+}

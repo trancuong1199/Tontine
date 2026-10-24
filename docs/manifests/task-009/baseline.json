@@ -1,0 +1,31 @@
+{
+  "taskId": "task-009",
+  "createdAt": "2026-10-09T08:35:24.932Z",
+  "files": {
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "ae96053f247a2a5d27e78332a0a452553d52b9e04e82c9b39f93a0ef102dd293",
+      "snapshot": "docs/manifests/task-009/baseline/src_lib_i18n.ts"
+    },
+    "src/components/savings/GuideModal.tsx": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/components/landing/LandingPage.tsx": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/components/savings/Header.tsx": {
+      "exists": true,
+      "sha256": "6f2721640606a3f4c4f69d1bfaf8786bb4e4ba03adf4b1d27048d87383a596b5",
+      "snapshot": "docs/manifests/task-009/baseline/src_components_savings_Header.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "7874eda9b90f08f63fe50e207683d416bfd8267910e5d99212aec395f233912e",
+      "snapshot": "docs/manifests/task-009/baseline/src_App.tsx"
+    }
+  }
+}

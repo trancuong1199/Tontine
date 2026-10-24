@@ -1,0 +1,17 @@
+{
+  "taskId": "task-014",
+  "frozenAt": "2026-10-11T10:57:02.011Z",
+  "status": "FROZEN",
+  "files": {
+    "scripts/setup-10-members.mjs": {
+      "sha256": "966c7101e7f4fadff32dcb7b5e001734b1566b932831a3d4904cfef9a276416a",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "package.json": {
+      "sha256": "a9fec7b5b09be34006e0e9b89447d2c77f2cd96c6ea768ef240c5772fc4b23c4",
+      "baselineSha256": "7de011ffe162be3280fc1fe61002ec7c52b474c2853512c07013f2bb1f83d8ba",
+      "isNew": false
+    }
+  }
+}

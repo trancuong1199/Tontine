@@ -1,0 +1,37 @@
+{
+  "taskId": "task-034",
+  "frozenAt": "2026-10-15T04:39:10.981Z",
+  "status": "FROZEN",
+  "files": {
+    "src/lib/savingsClubDirectory.ts": {
+      "sha256": "81cae52a76b0833fbd2f60bc683bce45d1263b195b3f57a289b36f604d296525",
+      "baselineSha256": "4e5d9b2189065ce89b516f10c70433d8322b97a782ac0d7183db1e0b0d2d3f9d",
+      "isNew": false
+    },
+    "src/lib/i18n.ts": {
+      "sha256": "17e37091af65175dd37641ac4bdc3c8dda133a320659cf625d04a5fcc14a33b8",
+      "baselineSha256": "5b8b435abc40bc6a7c9b39c398edc74a952cfa54b4ea9e6ff491032b1df27bf3",
+      "isNew": false
+    },
+    "src/components/savings/EditClubNameModal.tsx": {
+      "sha256": "5aa353f112e92cca11882313db94540051e7e65cb4342baf34b641291d380f07",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "sha256": "23b9b81144c0747bfc68298e60e77a86e8c12de14717c334d9c3ba95e4857fed",
+      "baselineSha256": "a0164cf8f30654bf52ac7f89e99609685722cb3fc875a789e356705361164654",
+      "isNew": false
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "sha256": "799cd820aa2207d7db4d6750fc2adc8d71a628f01ca348fa3e0fee774fface6b",
+      "baselineSha256": "4a8d1bc7be659f29a2f1d10cfd7e72ad936e71f3d8b00f969d9636893757fe51",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "17901b4da96375331d69806434e5be21db729a1be3aa6a640d275a391334ae90",
+      "baselineSha256": "0deb8c3244d53963ae871334dfdc1c36d776219df614b6619ac643b82b73ed57",
+      "isNew": false
+    }
+  }
+}

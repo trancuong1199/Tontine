@@ -1,0 +1,27 @@
+{
+  "taskId": "task-008",
+  "frozenAt": "2026-10-09T08:00:04.630Z",
+  "status": "FROZEN",
+  "files": {
+    "src/lib/i18n.ts": {
+      "sha256": "02d08a3e1232edacd108a053a90d16d2eda89ccab5f229cbea3256c37c7ab0b5",
+      "baselineSha256": "0cbfe9c2a32f16313610af1ef2e39cdff42b7d42c169636a4cbc5a2c4b85a5c5",
+      "isNew": false
+    },
+    "src/components/savings/MemberStatus.tsx": {
+      "sha256": "f3df9c4b2b1a3db9198367145aa470d756dfbfc9d8665180754f0b2eb9a17c8d",
+      "baselineSha256": "4c4dc9b3f025a5b2f9fb4670057fcf66d05a2991027df6e7c0a5ee0bae753241",
+      "isNew": false
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "ed6fc9675e4d1348f484c49b65622c33dbd91640d2856441e2c4eb0bc939d434",
+      "baselineSha256": "fe1f82d268e19f3e79d0999529a67c0c1d67e46fc70bf42d739c5f26b15b62c1",
+      "isNew": false
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "sha256": "872f4382a2cd58a96841526d0f912604801d029ca0b44726b1881a2c850aca65",
+      "baselineSha256": "1cc0d410d43a71253db54ee7d142d3e616b44f320f284eb25fb6d53ced68c8fd",
+      "isNew": false
+    }
+  }
+}

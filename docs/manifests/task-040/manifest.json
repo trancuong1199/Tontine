@@ -1,0 +1,12 @@
+{
+  "taskId": "task-040",
+  "frozenAt": "2026-10-21T09:02:09.488Z",
+  "status": "FROZEN",
+  "files": {
+    "src/components/savings/ClubCard.tsx": {
+      "sha256": "7178ec1b005dcaaf8934c151bf3d254bbb0900aef73a0ba16b03fe49c549e83b",
+      "baselineSha256": "2472d0d6fb0a2d9cdca1c80bbd564d540c80679147b7f0699ddb14bb5d1c142c",
+      "isNew": false
+    }
+  }
+}

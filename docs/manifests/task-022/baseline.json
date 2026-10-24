@@ -1,0 +1,26 @@
+{
+  "taskId": "task-022",
+  "createdAt": "2026-10-12T07:40:06.684Z",
+  "files": {
+    "contracts/RotatingSavings.sol": {
+      "exists": true,
+      "sha256": "8f85a6598d6e719aeeea93fa284aef9980f470d977866442cba33f4dacce69fe",
+      "snapshot": "docs/manifests/task-022/baseline/contracts_RotatingSavings.sol"
+    },
+    "contracts/test/RotatingSavings.t.sol": {
+      "exists": true,
+      "sha256": "cc44597fdd3994755db99dfbea2bae8f1b8fc01dc434773b2e6e198f959f43f7",
+      "snapshot": "docs/manifests/task-022/baseline/contracts_test_RotatingSavings.t.sol"
+    },
+    "src/components/savings/RoundHistory.tsx": {
+      "exists": true,
+      "sha256": "d574a7f4911754b91e63718cfe413f974e451a610a65d2ba529f5edba535d08d",
+      "snapshot": "docs/manifests/task-022/baseline/src_components_savings_RoundHistory.tsx"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "141ca1ae2b2dc55bd168ba24b1771965e2401846fbf6a17213520357a0d212ed",
+      "snapshot": "docs/manifests/task-022/baseline/src_lib_i18n.ts"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "taskId": "task-011",
+  "createdAt": "2026-10-09T12:35:49.698Z",
+  "files": {
+    "src/index.css": {
+      "exists": true,
+      "sha256": "cdb35e93c334390d639c29c69911651fcbfe43c16d0d819ab6f0f5db071d2e2c",
+      "snapshot": "docs/manifests/task-011/baseline/src_index.css"
+    },
+    "src/main.tsx": {
+      "exists": true,
+      "sha256": "e380951cae70e9e12241e291d3a51bfee07258e7a70d6392c36a4ffe454920bb",
+      "snapshot": "docs/manifests/task-011/baseline/src_main.tsx"
+    },
+    "src/components/savings/Header.tsx": {
+      "exists": true,
+      "sha256": "a8ecb9f0b6ea882c98adcadc9eff16389192a04304a1fc2f40dc7ca9cdbbabc9",
+      "snapshot": "docs/manifests/task-011/baseline/src_components_savings_Header.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "5c30c2cb53320667e6c2a46a5ee4f0cea7845876e2f8ef7f29ddb8096bcd24e3",
+      "snapshot": "docs/manifests/task-011/baseline/src_App.tsx"
+    }
+  }
+}

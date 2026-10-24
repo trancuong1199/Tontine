@@ -1,0 +1,51 @@
+{
+  "taskId": "task-018",
+  "createdAt": "2026-10-11T16:33:58.180Z",
+  "files": {
+    "contracts/RotatingSavings.sol": {
+      "exists": true,
+      "sha256": "a274669b580a0ddd23ac54bd3c945c7a49ce382992dc9dd4016f0f313a405b84",
+      "snapshot": "docs/manifests/task-018/baseline/contracts_RotatingSavings.sol"
+    },
+    "contracts/out/RotatingSavings.sol/RotatingSavings.json": {
+      "exists": true,
+      "sha256": "c81921f3de2ddb6d43615d0b28876f2f31180e08148fca7b154a45675957fb06",
+      "snapshot": "docs/manifests/task-018/baseline/contracts_out_RotatingSavings.sol_RotatingSavings.json"
+    },
+    "src/contract.ts": {
+      "exists": true,
+      "sha256": "c34c5aaf7204f077a9a75bf9a7deeb3d88a00f633824263339b6d692e7da3be6",
+      "snapshot": "docs/manifests/task-018/baseline/src_contract.ts"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "5539ef0b65f4aa171adb11641134dd55e78e2955c621b022e48d2081a08c120e",
+      "snapshot": "docs/manifests/task-018/baseline/src_lib_i18n.ts"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "82120c0147f13935132c46489be947be09e1a693aa48274f6738c955b7a1e13a",
+      "snapshot": "docs/manifests/task-018/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "1e52666e566ea34b8497a171aea6e6a93a2bd3729e4b965fcf2981781cbcf9df",
+      "snapshot": "docs/manifests/task-018/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    },
+    "src/components/savings/MemberStatus.tsx": {
+      "exists": true,
+      "sha256": "092d80350c70368451faf6dca0931d11cb97d92ff5df05699e190205fe1b9112",
+      "snapshot": "docs/manifests/task-018/baseline/src_components_savings_MemberStatus.tsx"
+    },
+    "src/components/savings/ClubMembersRoster.tsx": {
+      "exists": true,
+      "sha256": "db6afe1ac70b7c51f4b83a42d398677445890cb8a16fe46405bbf63e47e4aff1",
+      "snapshot": "docs/manifests/task-018/baseline/src_components_savings_ClubMembersRoster.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "0987d8fed872ed2d21e41a7677d540385090de5c8e476f70bf15fca8af229da6",
+      "snapshot": "docs/manifests/task-018/baseline/src_App.tsx"
+    }
+  }
+}

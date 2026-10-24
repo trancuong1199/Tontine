@@ -1,0 +1,16 @@
+{
+  "taskId": "task-027",
+  "createdAt": "2026-10-14T08:25:58.767Z",
+  "files": {
+    "src/components/landing/LandingPage.tsx": {
+      "exists": true,
+      "sha256": "28a6638c45caceb11b97c1dc71039d267f14e0deada091d9868935d4facb8204",
+      "snapshot": "docs/manifests/task-027/baseline/src_components_landing_LandingPage.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "611755b6c273555751467a938caedf93ac18deb575a17e4c06280af5fdc7614d",
+      "snapshot": "docs/manifests/task-027/baseline/src_App.tsx"
+    }
+  }
+}

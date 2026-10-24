@@ -1,0 +1,36 @@
+{
+  "taskId": "task-007",
+  "createdAt": "2026-10-09T07:31:53.775Z",
+  "files": {
+    "src/main.tsx": {
+      "exists": true,
+      "sha256": "fcea02c122111a31ad97b0ffa1e5ae45deea3c9e44fe02e1406f9014bee9cef8",
+      "snapshot": "docs/manifests/task-007/baseline/src_main.tsx"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "2b0bb5318b5575838aa72182ef81ec2b869901c7b5d4ede5f897af7dcef30395",
+      "snapshot": "docs/manifests/task-007/baseline/src_lib_i18n.ts"
+    },
+    "src/components/savings/Header.tsx": {
+      "exists": true,
+      "sha256": "86bb26b87c2ac832af0774ef25bddf951f051b8de64d3d1bcf9365b0747ab385",
+      "snapshot": "docs/manifests/task-007/baseline/src_components_savings_Header.tsx"
+    },
+    "src/components/savings/GroupSwitcher.tsx": {
+      "exists": true,
+      "sha256": "4a64d04f568951fd18dda5d198d89a3c83442853173003b137ebd7c5dbc924e7",
+      "snapshot": "docs/manifests/task-007/baseline/src_components_savings_GroupSwitcher.tsx"
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "exists": true,
+      "sha256": "cbe2e61656623ae9d00775883259e146a6a7b2bb2051d0dc42c68216ee979925",
+      "snapshot": "docs/manifests/task-007/baseline/src_components_savings_ClubDirectoryModal.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "b12fcf73d0808762eb29061f81a75585b2b9cb5ee34091764408eb8644871af9",
+      "snapshot": "docs/manifests/task-007/baseline/src_App.tsx"
+    }
+  }
+}

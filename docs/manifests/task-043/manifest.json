@@ -1,0 +1,67 @@
+{
+  "taskId": "task-043",
+  "frozenAt": "2026-10-24T04:40:29.154Z",
+  "status": "FROZEN",
+  "files": {
+    "contracts/RotatingSavings.sol": {
+      "sha256": "92705e0c9dbd326e005fe181df718ca657853431edf1b0490c2f68393fc5d4d4",
+      "baselineSha256": "72361a48c4c4e4d568cb400725a52bb5459988d3731f275393df19dac8c62bc5",
+      "isNew": false
+    },
+    "src/contract.ts": {
+      "sha256": "c995a7ff4038d00976d0515d105cb742a2f4280d7d55a3ef3b8bd45986b16bbc",
+      "baselineSha256": "0a0bbd868078630f9b4e8b40ff82665938ef3f2c21880f6963cbcdf96a1edebd",
+      "isNew": false
+    },
+    "src/hooks/useSavingsClub.ts": {
+      "sha256": "194f905e1b302a91fbe81455eeeacb7ccea913ffc0a1d52a04f7415c4fd34f58",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/CreateClubModal.tsx": {
+      "sha256": "7c12975ff50ac572a723a65b0224bdd0f31300b3e1cf446063060714bd3b0541",
+      "baselineSha256": "02eedc21c11c2e61888d72750e1a55fac57161e6dc80ab2713892d5ed884bfc9",
+      "isNew": false
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "sha256": "24b27086467153955c15a8db62d247dee62475d48fa681bc8d9f7cb4f48eac5c",
+      "baselineSha256": "7178ec1b005dcaaf8934c151bf3d254bbb0900aef73a0ba16b03fe49c549e83b",
+      "isNew": false
+    },
+    "src/components/savings/ClubMembersRoster.tsx": {
+      "sha256": "d485588e502c44e6570826ae3542891ad5978f2011a9707be717ae6b6d795ca0",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "be98421b643163d44332f23c2e37e819108efa8c059ad253170091d09d2f1e26",
+      "baselineSha256": "9007077234b6061be724db3d7b54d47c8732e409f169d73b8cd8a052f8b84770",
+      "isNew": false
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "sha256": "a252c2018903eb632bc23f4c45d4afdff31f433462b07616742c4e6a51b5e428",
+      "baselineSha256": "ee83a6f9016238230366b54221b20c2dfdb2b64b3de6e1f82fdb35f961f6e480",
+      "isNew": false
+    },
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "sha256": "57aa2ddbc47b3ae7afca482dc5da2daf6dcc572c00dbc719dc5794d6c02b7a58",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/lib/arcSwap.ts": {
+      "sha256": "3d363ce7ee711712e98a80cace43878434595dfdc771b2ec749e6714e76ce3b9",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/lib/i18n.ts": {
+      "sha256": "8f834ca9b33e2d74c1ae8acbf9b2a3ae82581557f021f16f59bbcdfb4a9407f6",
+      "baselineSha256": "e25b1003f47ce5883e01244a89a12dd150652634c2ea0aff30ec79783bb1f873",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "048a8b1f2d9c999bcd1c224f558cdd743bcd4ca81fb057cd069654db40fbff98",
+      "baselineSha256": null,
+      "isNew": false
+    }
+  }
+}

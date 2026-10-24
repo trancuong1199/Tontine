@@ -1,0 +1,16 @@
+{
+  "taskId": "task-038",
+  "createdAt": "2026-10-21T07:16:46.531Z",
+  "files": {
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "17e37091af65175dd37641ac4bdc3c8dda133a320659cf625d04a5fcc14a33b8",
+      "snapshot": "docs/manifests/task-038/baseline/src_lib_i18n.ts"
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "exists": true,
+      "sha256": "799cd820aa2207d7db4d6750fc2adc8d71a628f01ca348fa3e0fee774fface6b",
+      "snapshot": "docs/manifests/task-038/baseline/src_components_savings_ClubCard.tsx"
+    }
+  }
+}

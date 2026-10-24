@@ -1,0 +1,51 @@
+{
+  "taskId": "task-013",
+  "createdAt": "2026-10-09T13:53:00.400Z",
+  "files": {
+    "index.html": {
+      "exists": true,
+      "sha256": "8d2450edebc7149bf278d941ddfbfe91e10eb26d1024afd4387e5fe90c8d280e",
+      "snapshot": "docs/manifests/task-013/baseline/index.html"
+    },
+    "public/favicon.svg": {
+      "exists": true,
+      "sha256": "61bc9a161de58248288e6905425d7180f0624c2865007b97d763fdac12043a66",
+      "snapshot": "docs/manifests/task-013/baseline/public_favicon.svg"
+    },
+    "public/favicon.png": {
+      "exists": true,
+      "sha256": "1848df642194f4d610a6b50d177c0a84d52f3b8983a9dc51c464ffa0742215ab",
+      "snapshot": "docs/manifests/task-013/baseline/public_favicon.png"
+    },
+    "public/favicon.ico": {
+      "exists": true,
+      "sha256": "ba601742430e54aaa35a0bb58167f9d5ebac8666fec123b55bea1706892aabfd",
+      "snapshot": "docs/manifests/task-013/baseline/public_favicon.ico"
+    },
+    "public/logo-badge.png": {
+      "exists": true,
+      "sha256": "1848df642194f4d610a6b50d177c0a84d52f3b8983a9dc51c464ffa0742215ab",
+      "snapshot": "docs/manifests/task-013/baseline/public_logo-badge.png"
+    },
+    "src/components/savings/Header.tsx": {
+      "exists": true,
+      "sha256": "47d4f861f8ad96f96f9d2a725cfd27cbc60845b5c30e68b9093bf01cb9b6f4aa",
+      "snapshot": "docs/manifests/task-013/baseline/src_components_savings_Header.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "21d6556599242aa01bd8340bbc478104d6cf07b5ac1a33ed66479e4887208cf5",
+      "snapshot": "docs/manifests/task-013/baseline/src_App.tsx"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "32949d2b18d5ceb79f768d17067224b152d72e2e69b621161a333da07b5283d1",
+      "snapshot": "docs/manifests/task-013/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "6a763fd92efdc0ae4c4b66fba0d42ca9bedf860b1009350101d8d62e207bc23f",
+      "snapshot": "docs/manifests/task-013/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    }
+  }
+}

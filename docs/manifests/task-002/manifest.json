@@ -1,0 +1,72 @@
+{
+  "taskId": "task-002",
+  "frozenAt": "2026-10-09T02:54:29.852Z",
+  "status": "FROZEN",
+  "files": {
+    "src/contract.ts": {
+      "sha256": "70fe09ccf4d1aaf4f62acd198d791b3ebc9af617e9232dd3180a0e7799d990bf",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/hooks/useSavingsClub.ts": {
+      "sha256": "837e5ed37bf9c920c0f7c0ce6ed45488eae3da04cad1366c432c5236ef78080c",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/OnboardingScreen.tsx": {
+      "sha256": "78c9a038eb23b467744fadb798437fefe9ff117d162c42bda8b10326c310579e",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "sha256": "bcd3fda6704e9d645b04a47ee015563d25f5b6983b6f90b7608629794faef21c",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/index.css": {
+      "sha256": "74a042e6f3739c103927ca1ef86513c1abdead240854cf34a946223900b12e70",
+      "baselineSha256": "ff6d86fba86d2b5dbb1d8cf0840afbdff2ac31bd6bc46d0a8c32d91de3c2509b",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "2b1faca2461e0a9a8d5e5cc84917ce6f07df37c95ce36c2246aac120fbd523d8",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/Header.tsx": {
+      "sha256": "f0fcd4ae9d1880138555a906b113047902dd876808f27051fe5279fa196e932e",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "sha256": "df028f1c94cdbccf197412fa881e2d0945dd2dc84a0534aa1e0c4e5ceecb69b5",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/GroupSwitcher.tsx": {
+      "sha256": "d42e23ccea54aba3d25e402d7d1ca9a7bc6e0e804d7f4bcb4fa4bb8e6da565e9",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "8c619c856cea8d667e089743cba5faa187a7210d9468aeb57beb09efe5a7641f",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/RoundHistory.tsx": {
+      "sha256": "3605cde67734e1f9269d690b504d759d2249bde69fde27394f002203567bb7e1",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/HowItWorksCard.tsx": {
+      "sha256": "c3641e4b35094478f533aaa38404f1353537884f5778150b0af6ff03e891b35e",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/MemberStatus.tsx": {
+      "sha256": "7d6d16e6da161c22149d855f50a1357d213745e612d686efa471870a3b777d38",
+      "baselineSha256": null,
+      "isNew": false
+    }
+  }
+}

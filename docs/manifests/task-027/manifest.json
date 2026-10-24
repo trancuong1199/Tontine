@@ -1,0 +1,17 @@
+{
+  "taskId": "task-027",
+  "frozenAt": "2026-10-14T08:45:20.101Z",
+  "status": "FROZEN",
+  "files": {
+    "src/components/landing/LandingPage.tsx": {
+      "sha256": "d7b7e103af77fcbc196fa5fcefea9d6c3daae3c0bae44daf9336da4f7f8eae43",
+      "baselineSha256": "28a6638c45caceb11b97c1dc71039d267f14e0deada091d9868935d4facb8204",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "4c2f8673a5def46780ad89b7520f9798b956fb1523bc27da7e80ead9b6033bb1",
+      "baselineSha256": "611755b6c273555751467a938caedf93ac18deb575a17e4c06280af5fdc7614d",
+      "isNew": false
+    }
+  }
+}

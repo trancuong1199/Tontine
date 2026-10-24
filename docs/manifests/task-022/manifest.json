@@ -1,0 +1,27 @@
+{
+  "taskId": "task-022",
+  "frozenAt": "2026-10-12T07:48:27.311Z",
+  "status": "FROZEN",
+  "files": {
+    "contracts/RotatingSavings.sol": {
+      "sha256": "72361a48c4c4e4d568cb400725a52bb5459988d3731f275393df19dac8c62bc5",
+      "baselineSha256": "8f85a6598d6e719aeeea93fa284aef9980f470d977866442cba33f4dacce69fe",
+      "isNew": false
+    },
+    "contracts/test/RotatingSavings.t.sol": {
+      "sha256": "d79c2a7327b6ccfcfe6831d0d97e3bf574663635db07bb231f6d93ea25b9801a",
+      "baselineSha256": "cc44597fdd3994755db99dfbea2bae8f1b8fc01dc434773b2e6e198f959f43f7",
+      "isNew": false
+    },
+    "src/components/savings/RoundHistory.tsx": {
+      "sha256": "eccaf32ff593b18f146fc14e37f87b53dc26f7c848325198ebfdf41a9a33590e",
+      "baselineSha256": "d574a7f4911754b91e63718cfe413f974e451a610a65d2ba529f5edba535d08d",
+      "isNew": false
+    },
+    "src/lib/i18n.ts": {
+      "sha256": "e643b8e893bfa6294a4b90fa39c4b3df8b7005faeb856f752410151d09a7af1b",
+      "baselineSha256": "141ca1ae2b2dc55bd168ba24b1771965e2401846fbf6a17213520357a0d212ed",
+      "isNew": false
+    }
+  }
+}

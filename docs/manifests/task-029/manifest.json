@@ -1,0 +1,12 @@
+{
+  "taskId": "task-029",
+  "frozenAt": "2026-10-15T02:31:35.651Z",
+  "status": "FROZEN",
+  "files": {
+    "src/components/landing/LandingPage.tsx": {
+      "sha256": "d9a322641f3b9a76d711bb31a3941e81b2a6bd79e7bb2087e43452b7057cea0f",
+      "baselineSha256": "0db8f5dd0fb67b857309efe8236ea405a8d8cb4ff633f0f3be693a44d161e0e9",
+      "isNew": false
+    }
+  }
+}

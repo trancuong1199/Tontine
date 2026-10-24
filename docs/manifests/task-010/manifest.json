@@ -1,0 +1,12 @@
+{
+  "taskId": "task-010",
+  "frozenAt": "2026-10-09T09:31:09.294Z",
+  "status": "FROZEN",
+  "files": {
+    "src/App.tsx": {
+      "sha256": "5c30c2cb53320667e6c2a46a5ee4f0cea7845876e2f8ef7f29ddb8096bcd24e3",
+      "baselineSha256": "0a4852a09f9dae9b85c67ee4d6a720ca8cf245db63a085075da19d1137d6e0da",
+      "isNew": false
+    }
+  }
+}

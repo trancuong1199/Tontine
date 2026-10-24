@@ -1,0 +1,82 @@
+{
+  "taskId": "task-005",
+  "frozenAt": "2026-10-09T03:54:28.417Z",
+  "status": "FROZEN",
+  "files": {
+    "index.html": {
+      "sha256": "8d2450edebc7149bf278d941ddfbfe91e10eb26d1024afd4387e5fe90c8d280e",
+      "baselineSha256": "89f02d6ce7eba21ef12c5488ffb167997635c76c29abe89c54a6fdc037a1192e",
+      "isNew": false
+    },
+    "src/index.css": {
+      "sha256": "cdb35e93c334390d639c29c69911651fcbfe43c16d0d819ab6f0f5db071d2e2c",
+      "baselineSha256": "74a042e6f3739c103927ca1ef86513c1abdead240854cf34a946223900b12e70",
+      "isNew": false
+    },
+    "tailwind.config.js": {
+      "sha256": "027c900354b61bcb00da7760bb80461ce5e9873f7bef0b48a14a402f175ad8b4",
+      "baselineSha256": "96e72908328954920bc0840fa575f9114863576deb3cab9ec61951a3181650dd",
+      "isNew": false
+    },
+    "src/lib/savingsClubDirectory.ts": {
+      "sha256": "764a72bbb5172cdb373aa3db9b17901dc42b237853842d2c285f0a9dc9ae5438",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "sha256": "877e1968a6879a93e92a59192b4666e2971cb409dddc669b3a8ea6109d78476a",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/GroupSwitcher.tsx": {
+      "sha256": "58a16e16e461222fb3d1f778d87eb254f6c4e4d506af4a4ea7b79a75dfef28e7",
+      "baselineSha256": "247da61526373c55c8a401681139b3ec67b56c9553ed3a09a3fd94dd6d2ee448",
+      "isNew": false
+    },
+    "src/components/savings/Header.tsx": {
+      "sha256": "4f9a058be23517afb9924e8edfb4a793f097acd1bb054131e94f445896f8b37d",
+      "baselineSha256": "780ba8d95b169ae53e35b9644035db3e31d510f23589ab2754fac4f557f3cb44",
+      "isNew": false
+    },
+    "src/components/savings/CreateClubModal.tsx": {
+      "sha256": "be707bafb3b658e6070bc38f70ec897d0920b8856ff1c29f5eafb024dd428b0b",
+      "baselineSha256": "29eb24a3860c26dcd8dd697691d60865c36b7b501d7958c0d85471b92188feae",
+      "isNew": false
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "5a70c57de748d04571c76cacef521a8b2a0c152379390e6f30bcf4b5c00ba65b",
+      "baselineSha256": "9cb3415c3710f616eae767a49f7f91f7a12bbcd62f724c3e7908d5872439944f",
+      "isNew": false
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "sha256": "5ccff71dff71293b0dc18eca91647d727f91c91c3f0fba436f1d05ba836c7a1a",
+      "baselineSha256": "455db44bd4114a1fa4f6d98c89c75714a7db803ebb3fcbf955a1c68f01318ad4",
+      "isNew": false
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "sha256": "31722562ffeddd7d7bab4e1a66c7dd130b8eaa199c30b50570db2dd7974de1c8",
+      "baselineSha256": "e03e9b0e67296409107107207fd4e06aa5ad3252eae0be52c9af447545841c2f",
+      "isNew": false
+    },
+    "src/components/savings/HowItWorksCard.tsx": {
+      "sha256": "268a8e6d00be36179588c5bbec286bac0c41ac6ddb24fbbdd470108976b4dc5c",
+      "baselineSha256": "c3641e4b35094478f533aaa38404f1353537884f5778150b0af6ff03e891b35e",
+      "isNew": false
+    },
+    "src/components/savings/RoundHistory.tsx": {
+      "sha256": "8363bd0e4ae323759c0601b0645a4dc4ab7695195ca3f33a02e8810800e1fdd1",
+      "baselineSha256": "3605cde67734e1f9269d690b504d759d2249bde69fde27394f002203567bb7e1",
+      "isNew": false
+    },
+    "src/components/savings/MemberStatus.tsx": {
+      "sha256": "c8b0fd97b28e9e6d1a1ffc4b45e838b38cbd462153e21aa8a0dc5fc86a53f65e",
+      "baselineSha256": "7d6d16e6da161c22149d855f50a1357d213745e612d686efa471870a3b777d38",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "869c6dc652ecee09ca46cd4fe3690f0c50eff5c2edbeb40546c993345cfd38c0",
+      "baselineSha256": "4111fe707250c84aeacfd740b219d8e1bb2f7f683c6794e7f2b73bbfadee437c",
+      "isNew": false
+    }
+  }
+}
