@@ -1,0 +1,92 @@
+TAP version 13
+# Subtest: TC-CLAIM-01 (AC-01.1): Khi claimable > 0n, ActionPanel và PasskeyActionPanel hiển thị Thẻ Rút Tiền Thưởng Nổi Bật với số tiền formatUsdc và nút CTA lớn
+ok 1 - TC-CLAIM-01 (AC-01.1): Khi claimable > 0n, ActionPanel và PasskeyActionPanel hiển thị Thẻ Rút Tiền Thưởng Nổi Bật với số tiền formatUsdc và nút CTA lớn
+  ---
+  duration_ms: 3.392219
+  type: 'test'
+  ...
+# Subtest: TC-CLAIM-02 (AC-01.2): Nút rút tiền trong ActionPanel gọi trực tiếp hàm rút tiền và kích hoạt trạng thái loading
+ok 2 - TC-CLAIM-02 (AC-01.2): Nút rút tiền trong ActionPanel gọi trực tiếp hàm rút tiền và kích hoạt trạng thái loading
+  ---
+  duration_ms: 2.343349
+  type: 'test'
+  ...
+# Subtest: TC-CLAIM-03 (AC-01.3, AC-01.4): Không render Thẻ Rút tiền khi claimable === 0n hoặc claimable === undefined
+ok 3 - TC-CLAIM-03 (AC-01.3, AC-01.4): Không render Thẻ Rút tiền khi claimable === 0n hoặc claimable === undefined
+  ---
+  duration_ms: 2.280107
+  type: 'test'
+  ...
+# Subtest: TC-BID-01 (AC-02.1): Khi userBid > 0n, ẩn form nhập trống mặc định, render Thẻ Đã Đặt Bid hiển thị mức giá và huy hiệu xác nhận
+ok 4 - TC-BID-01 (AC-02.1): Khi userBid > 0n, ẩn form nhập trống mặc định, render Thẻ Đã Đặt Bid hiển thị mức giá và huy hiệu xác nhận
+  ---
+  duration_ms: 2.428037
+  type: 'test'
+  ...
+# Subtest: TC-BID-02 (AC-02.2): Khi userBid >= highestBid && highestBid > 0n, hiển thị huy hiệu cúp vàng 🏆 Đang dẫn đầu Pot!
+ok 5 - TC-BID-02 (AC-02.2): Khi userBid >= highestBid && highestBid > 0n, hiển thị huy hiệu cúp vàng 🏆 Đang dẫn đầu Pot!
+  ---
+  duration_ms: 1.607794
+  type: 'test'
+  ...
+# Subtest: TC-BID-03 (AC-02.3): Khi userBid < highestBid, hiển thị huy hiệu cảnh báo bị vượt giá với mức cao nhất hiện tại
+ok 6 - TC-BID-03 (AC-02.3): Khi userBid < highestBid, hiển thị huy hiệu cảnh báo bị vượt giá với mức cao nhất hiện tại
+  ---
+  duration_ms: 1.141885
+  type: 'test'
+  ...
+# Subtest: TC-RAISE-01 (AC-03.1): Mặc định gập khung nâng bid, hiển thị nút toggle + Nâng mức giá (Nâng bid)
+ok 7 - TC-RAISE-01 (AC-03.1): Mặc định gập khung nâng bid, hiển thị nút toggle + Nâng mức giá (Nâng bid)
+  ---
+  duration_ms: 1.808837
+  type: 'test'
+  ...
+# Subtest: TC-RAISE-02 (AC-03.2): Mở rộng form nâng bid, kiểm tra ràng buộc newBid > userBid, vô hiệu hóa submit khi <= userBid
+ok 8 - TC-RAISE-02 (AC-03.2): Mở rộng form nâng bid, kiểm tra ràng buộc newBid > userBid, vô hiệu hóa submit khi <= userBid
+  ---
+  duration_ms: 1.200964
+  type: 'test'
+  ...
+# Subtest: TC-RAISE-03 (AC-03.3): App.tsx đồng bộ đầy đủ các props claimable, onClaimPayout, isClaiming, userBid, highestBid vào ActionPanel và PasskeyActionPanel
+not ok 9 - TC-RAISE-03 (AC-03.3): App.tsx đồng bộ đầy đủ các props claimable, onClaimPayout, isClaiming, userBid, highestBid vào ActionPanel và PasskeyActionPanel
+  ---
+  duration_ms: 1.418117
+  type: 'test'
+  location: '/home/avada/tontine/tests/prominent-claim-and-confirmed-bid.test.ts:257:1'
+  failureType: 'testCodeFailure'
+  error: 'App.tsx must pass isClaiming state to ActionPanels'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///home/avada/tontine/tests/prominent-claim-and-confirmed-bid.test.ts:269:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: TC-I18N-01: Bộ từ điển song ngữ i18n cung cấp đầy đủ 13 khóa mới cho tính năng nhận thưởng và trạng thái bid
+ok 10 - TC-I18N-01: Bộ từ điển song ngữ i18n cung cấp đầy đủ 13 khóa mới cho tính năng nhận thưởng và trạng thái bid
+  ---
+  duration_ms: 1.903986
+  type: 'test'
+  ...
+# Subtest: TC-REGRESSION-01 (AC-03.4): Toàn bộ cấu trúc hệ thống và các hàm cốt lõi được bảo toàn (Zero Regression)
+ok 11 - TC-REGRESSION-01 (AC-03.4): Toàn bộ cấu trúc hệ thống và các hàm cốt lõi được bảo toàn (Zero Regression)
+  ---
+  duration_ms: 0.934428
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 10
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 43.842338

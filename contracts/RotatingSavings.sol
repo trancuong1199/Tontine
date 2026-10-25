@@ -50,9 +50,11 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
     error CollateralNotRequired();
     error AlreadyVotedCancel();
     error InsufficientCancelVotes();
+    error RoundEnded();
 
     event MemberJoined(address indexed member, uint256 memberIndex);
     event RoundsStarted(uint256 totalRounds, uint256 firstRoundEnd);
+    event NewCycleStarted(uint256 indexed cycleStartRound, uint256 indexed firstRoundId, uint256 endTime);
     event Contributed(uint256 indexed roundId, address indexed member, uint256 amount);
     event BidPlaced(uint256 indexed roundId, address indexed member, uint256 totalBid);
     event RoundSettled(uint256 indexed roundId, address indexed winner, uint256 pot, uint256 winnerBid);
@@ -112,9 +114,10 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         uint256 contributionAmount_,
         uint256 maxMembers_,
         uint256 roundDuration_,
-        string memory groupName_
+        string memory groupName_,
+        address cirBtcToken_
     ) Ownable(msg.sender) {
-        if (usdcToken_ == address(0)) revert InvalidAddress();
+        if (usdcToken_ == address(0) || cirBtcToken_ == address(0)) revert InvalidAddress();
         if (contributionAmount_ == 0 || roundDuration_ == 0 || maxMembers_ < 2 || maxMembers_ > 20) {
             revert InvalidConfiguration();
         }
@@ -127,8 +130,8 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         groupName = groupName_;
         state = GroupState.OPEN;
 
-        // TASK-043: Default CirBTC configuration (Arc Testnet)
-        cirBtcToken = 0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF;
+        // Collateral token is fixed per deployment.
+        cirBtcToken = cirBtcToken_;
         cirBtc = IERC20(cirBtcToken);
         cirBtcCollateralAmount = 0; // default 0 for backwards compatibility
     }
@@ -154,11 +157,12 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
 
     function _handleCollateralDeposit(address member) internal {
         if (cirBtcCollateralAmount > 0) {
-            uint256 allowed = cirBtc.allowance(member, address(this));
-            uint256 bal = cirBtc.balanceOf(member);
+            IERC20 token = cirBtc;
+            uint256 allowed = token.allowance(member, address(this));
+            uint256 bal = token.balanceOf(member);
             if (allowed >= cirBtcCollateralAmount && bal >= cirBtcCollateralAmount) {
                 cirBtcCollateral[member] += cirBtcCollateralAmount;
-                cirBtc.safeTransferFrom(member, address(this), cirBtcCollateralAmount);
+                token.safeTransferFrom(member, address(this), cirBtcCollateralAmount);
                 emit CollateralDeposited(member, cirBtcCollateralAmount);
             }
         }
@@ -224,7 +228,10 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         emit RoundsStarted(members.length, round.endTime);
     }
 
-    /// @notice Start a new Tontine cycle on the same club after COMPLETED so members can continue contributing
+    /// @notice Start a new Tontine cycle on the same club after COMPLETED so members can continue contributing.
+    /// @dev Resets `hasWon`, `isKicked`, and cancel votes for all members. Note that any CirBTC collateral
+    /// slashed in a prior cycle is not restored; previously kicked members re-enter with 0 collateral unless
+    /// they call `depositCollateral()` again.
     function startNewCycle() external {
         if (state != GroupState.COMPLETED) revert GroupNotOpen();
         if (!isMember[msg.sender] && msg.sender != owner()) revert NotMember();
@@ -235,7 +242,10 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
             address m = members[i];
             hasWon[m] = false;
             isKicked[m] = false;
+            hasVotedCancel[m] = false;
         }
+        hasVotedCancel[owner()] = false;
+        cancelVoteCount = 0;
 
         cycleStartRound = currentRound;
         currentRound += 1;
@@ -247,6 +257,7 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         nextRound.endTime = block.timestamp + roundDuration;
 
         emit RoundsStarted(len, nextRound.endTime);
+        emit NewCycleStarted(cycleStartRound, currentRound, nextRound.endTime);
     }
 
     function contribute(uint256 roundId) external nonReentrant {
@@ -256,7 +267,7 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         if (isKicked[msg.sender]) revert NotMember();
 
         Round storage round = rounds[roundId];
-        if (block.timestamp > round.endTime) revert RoundStillOpen();
+        if (block.timestamp > round.endTime) revert RoundEnded();
         if (round.contributions[msg.sender] != 0) revert AlreadyContributed();
 
         round.contributions[msg.sender] = contributionAmount;
@@ -275,7 +286,7 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         if (hasWon[msg.sender]) revert AlreadyWon();
 
         Round storage round = rounds[roundId];
-        if (block.timestamp > round.endTime) revert RoundStillOpen();
+        if (block.timestamp > round.endTime) revert RoundEnded();
         if (round.contributions[msg.sender] != contributionAmount) revert AlreadyContributed();
         if (bidAmount == 0) revert InsufficientBid();
 
@@ -290,6 +301,10 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         emit BidPlaced(roundId, msg.sender, bidAmount);
     }
 
+    /// @notice Settle the current round, awarding the pot to the highest bidder (or refunding if no bids).
+    /// @dev Permissionless: anyone may settle after the deadline or when early settlement conditions hold.
+    /// Cycle completion check `(currentRound - cycleStartRound) >= members.length` tracks the number of
+    /// rounds elapsed within the current cycle (since `cycleStartRound` is set to the previous cycle's last round).
     function settleRound(uint256 roundId) external nonReentrant {
         if (state != GroupState.ACTIVE) revert GroupNotActive();
         if (roundId != currentRound) revert RoundNotCurrent();
@@ -373,17 +388,8 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
             claimable[winner] += winnerPayout;
             emit RoundSettled(roundId, winner, totalPot, winnerBid);
         } else {
-            // TASK-022: Auto-refund all contributions and bids for this no-winner round
-            for (uint256 i = 0; i < memberCount; i++) {
-                address member = members[i];
-                uint256 contrib = round.contributions[member];
-                uint256 bid = round.bids[member];
-                uint256 refundAmount = contrib + bid;
-                if (refundAmount > 0) {
-                    claimable[member] += refundAmount;
-                    emit ContributionRefunded(roundId, member, refundAmount);
-                }
-            }
+            // Credit no-winner refunds without growing the settlement stack.
+            _refundRound(roundId, false);
             emit RoundSettled(roundId, address(0), 0, 0);
         }
     }
@@ -487,8 +493,29 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         return (count / 2) + 1;
     }
 
+    /// @dev Refunds current contributions/bids exactly once on ACTIVE cancellation.
+    function _refundCurrentRoundIfActive() internal {
+        if (state != GroupState.ACTIVE || rounds[currentRound].settled) return;
+        _refundRound(currentRound, true);
+    }
+
+    function _refundRound(uint256 roundId, bool clearBalances) internal {
+        Round storage round = rounds[roundId];
+        for (uint256 i = 0; i < members.length; i++) {
+            address member = members[i];
+            uint256 refundAmount = round.contributions[member] + round.bids[member];
+            if (refundAmount == 0) continue;
+            if (clearBalances) {
+                round.contributions[member] = 0;
+                round.bids[member] = 0;
+            }
+            claimable[member] += refundAmount;
+            emit ContributionRefunded(roundId, member, refundAmount);
+        }
+    }
+
     function voteCancelGroup() external {
-        if (state != GroupState.OPEN) revert GroupNotOpen();
+        if (state != GroupState.OPEN && state != GroupState.ACTIVE) revert GroupNotOpen();
         if (!isMember[msg.sender] && msg.sender != owner()) revert NotMember();
         if (hasVotedCancel[msg.sender]) revert AlreadyVotedCancel();
 
@@ -498,13 +525,14 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         emit CancelVoteCast(msg.sender, cancelVoteCount, req);
 
         if (cancelVoteCount >= req) {
+            _refundCurrentRoundIfActive();
             state = GroupState.CANCELLED;
             emit GroupCancelled();
         }
     }
 
     function cancelGroup() external onlyGroupOwner {
-        if (state != GroupState.OPEN) revert GroupNotOpen();
+        if (state != GroupState.OPEN && state != GroupState.ACTIVE) revert GroupNotOpen();
         if (!hasVotedCancel[msg.sender]) {
             hasVotedCancel[msg.sender] = true;
             cancelVoteCount += 1;
@@ -513,6 +541,7 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         emit CancelVoteCast(msg.sender, cancelVoteCount, req);
 
         if (members.length <= 1 || cancelVoteCount >= req) {
+            _refundCurrentRoundIfActive();
             state = GroupState.CANCELLED;
             emit GroupCancelled();
         }

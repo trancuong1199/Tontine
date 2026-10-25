@@ -1,9 +1,9 @@
+import { useArcWriteContract } from "../../hooks/useArcWriteContract";
 import { useEffect, useState } from "react";
 import { erc20Abi } from "viem";
 import {
   useAccount,
   useSwitchChain,
-  useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { toast } from "sonner";
@@ -13,7 +13,6 @@ import {
   ROTATING_SAVINGS_ADDRESS,
   ROTATING_SAVINGS_ABI,
   USDC_ADDRESS,
-  CIRBTC_ADDRESS,
   ARC_TESTNET_CHAIN_ID,
   GROUP_STATE,
   parseUsdc,
@@ -50,6 +49,7 @@ interface ActionPanelProps {
   isClaiming?: boolean;
   userBid?: bigint;
   highestBid?: bigint;
+  collateralToken?: `0x${string}`;
   collateralAmount?: bigint;
   lockedCollateral?: bigint;
   claimableCirBtc?: bigint;
@@ -61,6 +61,7 @@ interface ActionPanelProps {
   hasVotedCancel?: boolean;
   totalJoined?: number;
   members?: ClubMemberInfo[];
+  isHistoryLimited?: boolean;
   settledRounds?: {
     roundId: bigint;
     startTime: bigint;
@@ -124,6 +125,7 @@ export function ActionPanel({
   isClaiming,
   userBid,
   highestBid,
+  collateralToken,
   collateralAmount,
   lockedCollateral,
   claimableCirBtc,
@@ -136,6 +138,7 @@ export function ActionPanel({
   totalJoined,
   members = [],
   settledRounds = [],
+  isHistoryLimited = false,
 }: ActionPanelProps) {
   const targetContract = contractAddress ?? ROTATING_SAVINGS_ADDRESS;
   const { address, chainId } = useAccount();
@@ -169,9 +172,12 @@ export function ActionPanel({
     data: hash,
     isPending,
     reset,
-  } = useWriteContract();
+    error: writeError,
+  } = useArcWriteContract();
 
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+  useEffect(() => { if (writeError) setPendingFollowUp(null); }, [writeError]);
+
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID,
     hash,
   });
 
@@ -273,14 +279,6 @@ export function ActionPanel({
     }
   }, [isSuccess]);
 
-  const switchIfNeeded = () => {
-    if (isWrongChain) {
-      switchChain({ chainId: ARC_TESTNET_CHAIN_ID });
-      return false;
-    }
-    return true;
-  };
-
   const bidRaw = parseUsdc(bidAmount);
   const needsApproval = allowance < contributionAmount;
   const needsApprovalForBid = bidRaw > 0n && allowance < contributionAmount + bidRaw;
@@ -307,7 +305,7 @@ export function ActionPanel({
   // --- Actions ---
 
   const handleApproveAndJoin = async () => {
-    if (!switchIfNeeded() || !address) return;
+    if (!address) return;
     try {
       writeContract({
         address: targetContract,
@@ -321,7 +319,7 @@ export function ActionPanel({
   };
 
   const handleApproveForContribute = () => {
-    if (!switchIfNeeded() || !address) return;
+    if (!address) return;
     try {
       setPendingFollowUp("contribute");
       writeContract({
@@ -339,7 +337,7 @@ export function ActionPanel({
   };
 
   const handleContribute = () => {
-    if (!switchIfNeeded() || !address) return;
+    if (!address) return;
     if (isTimeEnded) {
       toast.error(isEn ? "Round contribution period has ended." : "Thời gian đóng tiền của vòng này đã kết thúc.");
       return;
@@ -366,7 +364,7 @@ export function ActionPanel({
   };
 
   const handleApproveForBid = () => {
-    if (!switchIfNeeded() || !address) return;
+    if (!address) return;
     if (bidRaw <= 0n) {
       toast.error(isEn ? "Enter valid bid amount (greater than 0)." : "Nhập số tiền bid hợp lệ (lớn hơn 0).");
       return;
@@ -384,7 +382,7 @@ export function ActionPanel({
   };
 
   const handlePlaceBid = () => {
-    if (!switchIfNeeded() || !address) return;
+    if (!address) return;
     if (bidRaw <= 0n) {
       toast.error(isEn ? "Enter valid bid amount (greater than 0)." : "Nhập số tiền bid hợp lệ (lớn hơn 0).");
       return;
@@ -411,7 +409,7 @@ export function ActionPanel({
   };
 
   const handleSettle = () => {
-    if (!switchIfNeeded() || !address) return;
+    if (!address) return;
     try {
       writeContract({
         address: targetContract,
@@ -430,7 +428,7 @@ export function ActionPanel({
       onClaimCollateral();
       return;
     }
-    if (!switchIfNeeded() || !address) return;
+    if (!address) return;
     try {
       writeContract({
         address: targetContract,
@@ -444,12 +442,13 @@ export function ActionPanel({
   };
 
   const handleDepositCollateral = () => {
-    if (!switchIfNeeded() || !address) return;
+    if (!collateralToken) { toast.error(isEn ? "Collateral token is unavailable." : "Chưa đọc được token ký quỹ của nhóm."); return; }
+    if (!address) return;
     if (needsCirBtcApproval) {
       try {
         setPendingFollowUp("collateral");
         writeContract({
-          address: CIRBTC_ADDRESS,
+          address: collateralToken!,
           abi: erc20Abi,
           functionName: "approve",
           args: [targetContract, targetCollateralAmt * 100n],
@@ -489,7 +488,7 @@ export function ActionPanel({
   const currentCancelVotes = Number(cancelVoteCount ?? 0n);
 
   const handleVoteCancelGroup = () => {
-    if (!switchIfNeeded() || !address) return;
+    if (!address) return;
     try {
       writeContract({
         address: targetContract,
@@ -503,7 +502,7 @@ export function ActionPanel({
   };
 
   const handleStartNewCycle = () => {
-    if (!switchIfNeeded() || !address) return;
+    if (!address) return;
     try {
       writeContract({
         address: targetContract,
@@ -713,6 +712,15 @@ export function ActionPanel({
       )}
 
       {/* --- OPEN state: Join --- */}
+      {state === GROUP_STATE.ACTIVE && isMember && (
+        <div className="p-5 border-b border-red-500/20 space-y-3">
+          <p className="text-xs text-slate-300">{isEn ? "Cancellation refunds only contributions and bids from the unsettled round. Earlier payouts remain final and future rounds end; eligible collateral is claimed separately." : "Huỷ nhóm chỉ hoàn tiền góp và bid của vòng chưa quyết toán. Tiền đã trả ở vòng trước giữ nguyên, các vòng tương lai chấm dứt; ký quỹ đủ điều kiện được rút riêng."}</p>
+          <button onClick={handleVoteCancelGroup} disabled={isLoading || hasVotedCancel} className="w-full py-2 border border-red-500/30 rounded-xl text-red-300 disabled:opacity-50">
+            {hasVotedCancel ? (isEn ? "Voted to cancel" : "Đã bỏ phiếu huỷ") : (isEn ? "Vote to cancel club" : "Biểu quyết huỷ nhóm")} ({currentCancelVotes}/{effectiveRequiredVotes})
+          </button>
+        </div>
+      )}
+
       {state === GROUP_STATE.OPEN && (
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
@@ -839,7 +847,7 @@ export function ActionPanel({
                     </div>
                     <p className="text-xs text-slate-400 leading-relaxed">
                       {isEn
-                        ? `When ${joinedCount} members have joined, the club owner cannot cancel unilaterally. At least ${effectiveRequiredVotes}/${joinedCount} members must vote to cancel (100% collateral is refunded).`
+                        ? `When ${joinedCount} members have joined, the club owner cannot cancel unilaterally. At least ${effectiveRequiredVotes}/${joinedCount} members must vote to cancel (eligible collateral can be claimed separately).`
                         : `Khi đã có ${joinedCount} thành viên tham gia, trưởng nhóm không thể tự ý huỷ một mình. Cần tối thiểu ${effectiveRequiredVotes}/${joinedCount} phiếu biểu quyết đồng thuận từ các thành viên để huỷ nhóm (hoàn trả 100% cọc CirBTC).`}
                     </p>
                     <button
@@ -929,7 +937,7 @@ export function ActionPanel({
                 </div>
                 <div className="space-y-1.5">
                   <h4 className="font-bold text-base sm:text-lg text-amber-200">
-                    {t("actionPanel.winnerHonoredTitle", language).replace("{round}", (wonRoundId ?? 1).toString())}
+                    {t("actionPanel.winnerHonoredTitle", language).replace("{round}", (wonRoundId?.toString() ?? (isEn ? "unknown" : "chưa xác định")))}
                   </h4>
                   <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
                     {t("actionPanel.winnerOfficialNotice", language).replace("{totalRounds}", (totalRounds ?? 10).toString())}
@@ -1386,6 +1394,7 @@ export function ActionPanel({
             </span>
           </div>
 
+          {isHistoryLimited && <p className="text-xs text-amber-300">{isEn ? "Amounts and round details below cover only the latest 50 rounds, not the lifetime total." : "Số tiền và chi tiết dưới đây chỉ bao gồm 50 vòng gần nhất, không phải tổng toàn bộ lịch sử."}</p>}
           {/* Summary KPI Row */}
           {(() => {
             const totalPotDistributed = settledRounds.reduce((acc, r) => acc + (r.totalPot ?? 0n), 0n);
@@ -1432,7 +1441,7 @@ export function ActionPanel({
               <div className="space-y-2">
                 {members.map((m) => {
                   const isMe = address && m.address.toLowerCase() === address.toLowerCase();
-                  const wonR = settledRounds.find(
+                  const wonR = [...settledRounds].reverse().find(
                     (r) => r.winner && r.winner.toLowerCase() === m.address.toLowerCase()
                   );
                   const hasClaimable = m.claimable !== undefined && m.claimable > 0n;
@@ -1460,8 +1469,8 @@ export function ActionPanel({
                         <p className="text-slate-400">
                           {m.hasWon
                             ? isEn
-                              ? `🏆 Won Pot in Round ${wonR ? wonR.roundId.toString() : "1"} (Pot + Bid refund)`
-                              : `🏆 Thắng Pot Vòng ${wonR ? wonR.roundId.toString() : "1"} (Nhận Pot + hoàn bid)`
+                              ? `🏆 Won Pot in Round ${wonR ? wonR.roundId.toString() : (isEn ? "outside this history window" : "ngoài phạm vi lịch sử")} (Pot + Bid refund)`
+                              : `🏆 Thắng Pot Vòng ${wonR ? wonR.roundId.toString() : (isEn ? "outside this history window" : "ngoài phạm vi lịch sử")} (Nhận Pot + hoàn bid)`
                             : !m.isKicked
                             ? isEn
                               ? "🔄 100% Principal Refund + Shared Bid Bonus"
@@ -1612,7 +1621,7 @@ export function ActionPanel({
             <p className="text-slate-600 text-sm mt-2 leading-relaxed max-w-md mx-auto">
               {isEn
                 ? t("actionPanel.cancelledDesc", language)
-                : "Nhóm hụi đã được huỷ bởi Chủ nhóm trong giai đoạn đăng ký. Toàn bộ người dùng đã rời nhóm an toàn, không có tài sản nào bị giam giữ và hợp đồng đã đóng vĩnh viễn."}
+                : "Nhóm đã huỷ theo biểu quyết. Tiền góp và bid của vòng chưa quyết toán được cộng vào khoản có thể nhận. Hãy rút tiền và ký quỹ đủ điều kiện; các khoản đã trả trước đó giữ nguyên."}
             </p>
           </div>
           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">

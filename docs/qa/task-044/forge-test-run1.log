@@ -1,0 +1,180 @@
+Compiling 39 files with Solc 0.8.28
+Solc 0.8.28 finished in 5.36s
+Compiler run successful!
+
+Ran 69 tests for contracts/test/RotatingSavings.t.sol:RotatingSavingsTest
+[PASS] testFuzz_BidDeltaChargedCorrectly(uint96,uint96) (runs: 256, μ: 495561, ~: 495621)
+[PASS] testFuzz_ContractBalanceAfterAllContribute(uint8) (runs: 256, μ: 680857, ~: 654972)
+[PASS] testFuzz_WinnerPayoutAtLeastTotalPot(uint96,uint96) (runs: 256, μ: 862398, ~: 863695)
+[PASS] test_CancelGroup_ActiveOwnerVoteRequiresMajority() (gas: 417033)
+[PASS] test_CancelGroup_HappyPath() (gas: 87248)
+[PASS] test_CancelGroup_RevertsIfNotOwner() (gas: 13165)
+[PASS] test_ClaimPayout_CanOnlyClaimOnce() (gas: 691259)
+[PASS] test_ClaimPayout_HappyPath() (gas: 695132)
+[PASS] test_ClaimPayout_RevertsIfNoPayout() (gas: 375432)
+[PASS] test_ClaimPayout_RevertsIfNotMember() (gas: 18269)
+[PASS] test_Constructor_RevertsOnZeroContribution() (gas: 92472)
+[PASS] test_Constructor_RevertsOnZeroRoundDuration() (gas: 92521)
+[PASS] test_Constructor_RevertsOnZeroUsdcAddress() (gas: 90243)
+[PASS] test_Constructor_RevertsWhenMaxMembersExceeds20() (gas: 92457)
+[PASS] test_Constructor_RevertsWhenMaxMembersLessThan2() (gas: 92467)
+[PASS] test_Constructor_SetsImmutableParams() (gas: 33596)
+[PASS] test_Contribute_HappyPath() (gas: 446323)
+[PASS] test_Contribute_RevertsAfterDeadline() (gas: 387327)
+[PASS] test_Contribute_RevertsIfAlreadyContributed() (gas: 441444)
+[FAIL: next call did not revert as expected] test_Contribute_RevertsIfAlreadyWon() (gas: 765608)
+[PASS] test_Contribute_RevertsIfKicked() (gas: 724751)
+[PASS] test_Contribute_RevertsIfNotActive() (gas: 112436)
+[PASS] test_Contribute_RevertsIfNotMember() (gas: 377500)
+[PASS] test_Contribute_RevertsIfWrongRound() (gas: 373331)
+[FAIL: assertion failed: 2 != 3] test_FullRun_ThreeRoundsThreeWinners() (gas: 1037356)
+[PASS] test_JoinGroup_HappyPath() (gas: 110562)
+[PASS] test_JoinGroup_MultipleMembers_IndexesCorrect() (gas: 254610)
+[PASS] test_JoinGroup_RevertsAfterCancelled() (gas: 88623)
+[PASS] test_JoinGroup_RevertsIfAlreadyMember() (gas: 107644)
+[PASS] test_JoinGroup_RevertsIfMaxMembersReached() (gas: 401002)
+[PASS] test_JoinGroup_RevertsIfNotOpen() (gas: 370138)
+[PASS] test_KickDefaulter_HappyPath() (gas: 549819)
+[PASS] test_KickDefaulter_RevertsBeforeDeadline() (gas: 370629)
+[PASS] test_KickDefaulter_RevertsIfAlreadyContributed() (gas: 451600)
+[PASS] test_KickDefaulter_RevertsIfAlreadyKicked() (gas: 433416)
+[PASS] test_KickDefaulter_RevertsIfAlreadyWon() (gas: 731191)
+[PASS] test_KickDefaulter_RevertsIfGroupNotActive() (gas: 251896)
+[PASS] test_KickDefaulter_RevertsIfNotMember() (gas: 383636)
+[PASS] test_KickDefaulter_RevertsIfWrongRound() (gas: 379404)
+[PASS] test_PlaceBid_CanIncreaseBid() (gas: 485208)
+[PASS] test_PlaceBid_HappyPath() (gas: 479135)
+[PASS] test_PlaceBid_RevertsAfterDeadline() (gas: 454808)
+[PASS] test_PlaceBid_RevertsIfAlreadyWon() (gas: 755494)
+[PASS] test_PlaceBid_RevertsIfBidNotHigherThanCurrent() (gas: 475673)
+[PASS] test_PlaceBid_RevertsIfGroupNotActive() (gas: 257123)
+[PASS] test_PlaceBid_RevertsIfNotContributed() (gas: 380302)
+[PASS] test_PlaceBid_RevertsIfNotMember() (gas: 377476)
+[PASS] test_PlaceBid_RevertsIfZeroBid() (gas: 443638)
+[PASS] test_RenounceOwnership_AlwaysReverts() (gas: 13272)
+[PASS] test_RenounceOwnership_RevertsForNonOwner() (gas: 13813)
+[PASS] test_SettleRound_ActiveMembersDecrements() (gas: 720243)
+[PASS] test_SettleRound_AllKickedYieldsNoWinner() (gas: 564312)
+[PASS] test_SettleRound_BidBonusDistributedCorrectly() (gas: 879693)
+[PASS] test_SettleRound_CompletesAfterAllRounds() (gas: 3439758)
+[PASS] test_SettleRound_EarlySettleWhenAllContributedAndBidExists() (gas: 766072)
+[PASS] test_SettleRound_HighestBidderWins() (gas: 852013)
+[PASS] test_SettleRound_NoBids_WinnerIsEarliestMember() (gas: 725063)
+[PASS] test_SettleRound_NoWinner_RefundsAllContributors() (gas: 881625)
+[PASS] test_SettleRound_NonContributorsAutoKicked() (gas: 726057)
+[PASS] test_SettleRound_RevertsBeforeDeadlineWithNoBid() (gas: 553515)
+[PASS] test_SettleRound_RevertsIfAlreadySettled() (gas: 3048750)
+[PASS] test_SettleRound_RevertsIfNotActive() (gas: 256625)
+[PASS] test_SettleRound_RevertsIfWrongRound() (gas: 384189)
+[PASS] test_SettleRound_TieBidBrokenByJoinOrder() (gas: 847337)
+[PASS] test_StartRounds_HappyPath() (gas: 381394)
+[PASS] test_StartRounds_RevertsIfLessThan2Members() (gas: 111696)
+[PASS] test_StartRounds_RevertsIfNotOpen() (gas: 368340)
+[PASS] test_StartRounds_RevertsIfNotOwner() (gas: 254171)
+[PASS] test_TransferOwnership_TwoStep() (gas: 33781)
+Suite result: FAILED. 67 passed; 2 failed; 0 skipped; finished in 321.85ms (349.09ms CPU time)
+{"timestamp":1792929987,"event":"failure","invariant":"invariant_WonAndKickedMutuallyExclusive","target":"contracts/test/RotatingSavings.t.sol:RotatingSavingsInvariantTest","reason":"Member both won and kicked - impossible state"}
+
+Ran 14 tests for contracts/test/ArcReviewFixes.t.sol:ArcReviewFixesTest
+[PASS] testFuzz_CancelRefundConservesDeposits(uint96,uint96) (runs: 256, μ: 604363, ~: 604393)
+[PASS] test_Cancel_ActiveOwnerFinalVoteRefunds() (gas: 531220)
+[PASS] test_Cancel_ActiveRefundBidDeltaOnlyOnce() (gas: 566229)
+[PASS] test_Cancel_DoesNotReclaimAlreadyWithdrawnPayout() (gas: 881652)
+[PASS] test_Cancel_EligibleCollateralRewardsRemainClaimable() (gas: 1018648)
+[PASS] test_Cancel_OpenMajorityOwnerCannotUnilaterallyCancel() (gas: 355316)
+[PASS] test_Cancel_PreservesPreviousPayoutAndCreditsCurrentRound() (gas: 875034)
+[PASS] test_Cancel_TerminalStateGuardsPreventDuplicateRefund() (gas: 548668)
+[PASS] test_Cancel_VoterGuards() (gas: 421750)
+[PASS] test_Collateral_CustomConstructorTokenDepositAndClaim() (gas: 711410)
+[PASS] test_Collateral_SecondConfiguredTokenIsUsed() (gas: 3373762)
+[PASS] test_Collateral_ZeroConstructorTokenRejected() (gas: 89779)
+[PASS] test_Cycle_ResetsOwnerNonmemberVoteAndKicksWithoutRestoringSlash() (gas: 799071)
+[PASS] test_Time_ExactEndAcceptedThenExpiredErrors() (gas: 730341)
+Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 18.49s (145.95ms CPU time)
+
+Ran 4 tests for contracts/test/RotatingSavings.t.sol:RotatingSavingsInvariantTest
+[PASS] invariant_ActiveMembersNeverExceedsTotal() (runs: 256, calls: 128000, reverts: 0)
+
+╭----------------+-------------+-------+---------+----------╮
+| Contract       | Selector    | Calls | Reverts | Discards |
++===========================================================+
+| SavingsHandler | claimPayout | 31816 | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | contribute  | 32141 | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | placeBid    | 32204 | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | settleRound | 31839 | 0       | 0        |
+╰----------------+-------------+-------+---------+----------╯
+
+[PASS] invariant_ContractBalanceCoversTotalClaimable() (runs: 256, calls: 128000, reverts: 0)
+
+╭----------------+-------------+-------+---------+----------╮
+| Contract       | Selector    | Calls | Reverts | Discards |
++===========================================================+
+| SavingsHandler | claimPayout | 31816 | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | contribute  | 32141 | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | placeBid    | 32204 | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | settleRound | 31839 | 0       | 0        |
+╰----------------+-------------+-------+---------+----------╯
+
+[PASS] invariant_CurrentRoundNeverExceedsMemberCount() (runs: 256, calls: 128000, reverts: 0)
+
+╭----------------+-------------+-------+---------+----------╮
+| Contract       | Selector    | Calls | Reverts | Discards |
++===========================================================+
+| SavingsHandler | claimPayout | 31816 | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | contribute  | 32141 | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | placeBid    | 32204 | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | settleRound | 31839 | 0       | 0        |
+╰----------------+-------------+-------+---------+----------╯
+
+[FAIL: Member both won and kicked - impossible state]
+	[Sequence] (original: 11, shrunk: 4)
+		sender=0x0649Eca3Ed1eE0e4591bA3F6E341cE0611675a08 addr=[contracts/test/RotatingSavings.t.sol:SavingsHandler]0x2e234DAe75C793f67A35089C9d99245E1C58470b calldata=contribute(uint256) args=[1013041221091180966060479653 [1.013e27]]
+		sender=0xC1169E0A0c5b99eB01208649Ccfdf236edC0B3e6 addr=[contracts/test/RotatingSavings.t.sol:SavingsHandler]0x2e234DAe75C793f67A35089C9d99245E1C58470b calldata=contribute(uint256) args=[3000000 [3e6]]
+		sender=0x00000000000000000000000000000000000000fc addr=[contracts/test/RotatingSavings.t.sol:SavingsHandler]0x2e234DAe75C793f67A35089C9d99245E1C58470b calldata=settleRound(uint256) args=[998998507301627063128420092602321829441926 [9.989e41]]
+		sender=0xAcA251056641a23aC36165b47B7cCdEf63eED8e1 addr=[contracts/test/RotatingSavings.t.sol:SavingsHandler]0x2e234DAe75C793f67A35089C9d99245E1C58470b calldata=settleRound(uint256) args=[5763]
+ invariant_WonAndKickedMutuallyExclusive() (runs: 4, calls: 2000, reverts: 0)
+
+╭----------------+-------------+-------+---------+----------╮
+| Contract       | Selector    | Calls | Reverts | Discards |
++===========================================================+
+| SavingsHandler | claimPayout | 544   | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | contribute  | 466   | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | placeBid    | 507   | 0       | 0        |
+|----------------+-------------+-------+---------+----------|
+| SavingsHandler | settleRound | 494   | 0       | 0        |
+╰----------------+-------------+-------+---------+----------╯
+
+Suite result: FAILED. 3 passed; 1 failed; 0 skipped; finished in 18.49s (45.30s CPU time)
+
+Ran 3 test suites in 18.49s (37.29s CPU time): 84 tests passed, 3 failed, 0 skipped (87 total tests)
+
+Failing tests:
+Encountered 1 failing test in contracts/test/RotatingSavings.t.sol:RotatingSavingsInvariantTest
+[FAIL: Member both won and kicked - impossible state]
+	[Sequence] (original: 11, shrunk: 4)
+		sender=0x0649Eca3Ed1eE0e4591bA3F6E341cE0611675a08 addr=[contracts/test/RotatingSavings.t.sol:SavingsHandler]0x2e234DAe75C793f67A35089C9d99245E1C58470b calldata=contribute(uint256) args=[1013041221091180966060479653 [1.013e27]]
+		sender=0xC1169E0A0c5b99eB01208649Ccfdf236edC0B3e6 addr=[contracts/test/RotatingSavings.t.sol:SavingsHandler]0x2e234DAe75C793f67A35089C9d99245E1C58470b calldata=contribute(uint256) args=[3000000 [3e6]]
+		sender=0x00000000000000000000000000000000000000fc addr=[contracts/test/RotatingSavings.t.sol:SavingsHandler]0x2e234DAe75C793f67A35089C9d99245E1C58470b calldata=settleRound(uint256) args=[998998507301627063128420092602321829441926 [9.989e41]]
+		sender=0xAcA251056641a23aC36165b47B7cCdEf63eED8e1 addr=[contracts/test/RotatingSavings.t.sol:SavingsHandler]0x2e234DAe75C793f67A35089C9d99245E1C58470b calldata=settleRound(uint256) args=[5763]
+ invariant_WonAndKickedMutuallyExclusive() (runs: 4, calls: 2000, reverts: 0)
+
+Encountered 2 failing tests in contracts/test/RotatingSavings.t.sol:RotatingSavingsTest
+[FAIL: next call did not revert as expected] test_Contribute_RevertsIfAlreadyWon() (gas: 765608)
+[FAIL: assertion failed: 2 != 3] test_FullRun_ThreeRoundsThreeWinners() (gas: 1037356)
+
+Encountered a total of 3 failing tests, 84 tests succeeded
+
+Tip: Run `forge test --rerun` to retry only the 3 failed tests
+
+Fuzz seed: 0xb75c0f7f11e533318ac0770e1832110a550424561b040df0d0eb5efd86b384af (use `--fuzz-seed` to reproduce)

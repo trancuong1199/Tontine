@@ -1,0 +1,1205 @@
+--- baseline/contracts/RotatingSavings.sol
++++ contracts/RotatingSavings.sol
+@@ -62,7 +62,6 @@
+     event PayoutClaimed(address indexed recipient, uint256 amount);
+     event ContributionRefunded(uint256 indexed roundId, address indexed member, uint256 amount);
+     event CollateralConfigured(uint256 collateralAmount);
+-    event CirBtcTokenConfigured(address indexed token);
+     event CollateralDeposited(address indexed member, uint256 amount);
+     event CollateralSlashed(uint256 indexed roundId, address indexed member, uint256 amount);
+     event CollateralClaimed(address indexed member, uint256 amount);
+@@ -79,7 +78,6 @@
+     // TASK-043: CirBTC Collateral Vault (Circle Wrapped Bitcoin, 8 decimals)
+     IERC20 public immutable cirBtc;
+     address public immutable cirBtcToken;
+-    address public customCirBtcToken;
+     uint256 public cirBtcCollateralAmount; // Required collateral per member in satoshis (8 decimals). 0 if none.
+     mapping(address => uint256) public cirBtcCollateral; // Locked collateral per member
+     mapping(address => uint256) public claimableCirBtc;   // Slashed collateral dividend share claimable by honest members
+@@ -116,9 +114,10 @@
+         uint256 contributionAmount_,
+         uint256 maxMembers_,
+         uint256 roundDuration_,
+-        string memory groupName_
++        string memory groupName_,
++        address cirBtcToken_
+     ) Ownable(msg.sender) {
+-        if (usdcToken_ == address(0)) revert InvalidAddress();
++        if (usdcToken_ == address(0) || cirBtcToken_ == address(0)) revert InvalidAddress();
+         if (contributionAmount_ == 0 || roundDuration_ == 0 || maxMembers_ < 2 || maxMembers_ > 20) {
+             revert InvalidConfiguration();
+         }
+@@ -131,8 +130,8 @@
+         groupName = groupName_;
+         state = GroupState.OPEN;
+ 
+-        // TASK-043: Default CirBTC configuration (Arc Testnet)
+-        cirBtcToken = 0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF;
++        // Collateral token is fixed per deployment.
++        cirBtcToken = cirBtcToken_;
+         cirBtc = IERC20(cirBtcToken);
+         cirBtcCollateralAmount = 0; // default 0 for backwards compatibility
+     }
+@@ -143,19 +142,6 @@
+         if (members.length > 0) revert InvalidConfiguration();
+         cirBtcCollateralAmount = collateralAmount_;
+         emit CollateralConfigured(collateralAmount_);
+-    }
+-
+-    /// @notice Override the CirBTC collateral token address before members join (for multi-network deployments)
+-    function setCirBtcToken(address cirBtcToken_) external onlyGroupOwner {
+-        if (state != GroupState.OPEN) revert GroupNotOpen();
+-        if (members.length > 0) revert InvalidConfiguration();
+-        if (cirBtcToken_ == address(0)) revert InvalidAddress();
+-        customCirBtcToken = cirBtcToken_;
+-        emit CirBtcTokenConfigured(cirBtcToken_);
+-    }
+-
+-    function _activeCirBtc() internal view returns (IERC20) {
+-        return customCirBtcToken != address(0) ? IERC20(customCirBtcToken) : cirBtc;
+     }
+ 
+     /// @notice Deposit CirBTC security collateral explicitly for this savings club
+@@ -165,13 +151,13 @@
+         if (isKicked[msg.sender]) revert MemberWasKicked();
+         uint256 depositAmt = amount_ > 0 ? amount_ : (cirBtcCollateralAmount > 0 ? cirBtcCollateralAmount : 100_000);
+         cirBtcCollateral[msg.sender] += depositAmt;
+-        _activeCirBtc().safeTransferFrom(msg.sender, address(this), depositAmt);
++        cirBtc.safeTransferFrom(msg.sender, address(this), depositAmt);
+         emit CollateralDeposited(msg.sender, depositAmt);
+     }
+ 
+     function _handleCollateralDeposit(address member) internal {
+         if (cirBtcCollateralAmount > 0) {
+-            IERC20 token = _activeCirBtc();
++            IERC20 token = cirBtc;
+             uint256 allowed = token.allowance(member, address(this));
+             uint256 bal = token.balanceOf(member);
+             if (allowed >= cirBtcCollateralAmount && bal >= cirBtcCollateralAmount) {
+@@ -258,6 +244,7 @@
+             isKicked[m] = false;
+             hasVotedCancel[m] = false;
+         }
++        hasVotedCancel[owner()] = false;
+         cancelVoteCount = 0;
+ 
+         cycleStartRound = currentRound;
+@@ -315,7 +302,8 @@
+     }
+ 
+     /// @notice Settle the current round, awarding the pot to the highest bidder (or refunding if no bids).
+-    /// @dev Cycle completion check `(currentRound - cycleStartRound) >= members.length` tracks the number of
++    /// @dev Permissionless: anyone may settle after the deadline or when early settlement conditions hold.
++    /// Cycle completion check `(currentRound - cycleStartRound) >= members.length` tracks the number of
+     /// rounds elapsed within the current cycle (since `cycleStartRound` is set to the previous cycle's last round).
+     function settleRound(uint256 roundId) external nonReentrant {
+         if (state != GroupState.ACTIVE) revert GroupNotActive();
+@@ -400,17 +388,8 @@
+             claimable[winner] += winnerPayout;
+             emit RoundSettled(roundId, winner, totalPot, winnerBid);
+         } else {
+-            // TASK-022: Auto-refund all contributions and bids for this no-winner round
+-            for (uint256 i = 0; i < memberCount; i++) {
+-                address member = members[i];
+-                uint256 contrib = round.contributions[member];
+-                uint256 bid = round.bids[member];
+-                uint256 refundAmount = contrib + bid;
+-                if (refundAmount > 0) {
+-                    claimable[member] += refundAmount;
+-                    emit ContributionRefunded(roundId, member, refundAmount);
+-                }
+-            }
++            // Credit no-winner refunds without growing the settlement stack.
++            _refundRound(roundId, false);
+             emit RoundSettled(roundId, address(0), 0, 0);
+         }
+     }
+@@ -493,7 +472,7 @@
+         cirBtcCollateral[msg.sender] = 0;
+         claimableCirBtc[msg.sender] = 0;
+ 
+-        _activeCirBtc().safeTransfer(msg.sender, totalClaim);
++        cirBtc.safeTransfer(msg.sender, totalClaim);
+         emit CollateralClaimed(msg.sender, totalClaim);
+     }
+ 
+@@ -514,24 +493,24 @@
+         return (count / 2) + 1;
+     }
+ 
+-    /// @dev Refunds any contributions and bids from the current unsettled round when a group is cancelled while ACTIVE.
++    /// @dev Refunds current contributions/bids exactly once on ACTIVE cancellation.
+     function _refundCurrentRoundIfActive() internal {
+-        if (state != GroupState.ACTIVE) return;
+-        Round storage round = rounds[currentRound];
+-        if (round.settled) return;
+-
+-        uint256 len = members.length;
+-        for (uint256 i = 0; i < len; i++) {
+-            address m = members[i];
+-            uint256 contrib = round.contributions[m];
+-            uint256 bid = round.bids[m];
+-            uint256 total = contrib + bid;
+-            if (total > 0) {
+-                round.contributions[m] = 0;
+-                round.bids[m] = 0;
+-                claimable[m] += total;
+-                emit ContributionRefunded(currentRound, m, total);
+-            }
++        if (state != GroupState.ACTIVE || rounds[currentRound].settled) return;
++        _refundRound(currentRound, true);
++    }
++
++    function _refundRound(uint256 roundId, bool clearBalances) internal {
++        Round storage round = rounds[roundId];
++        for (uint256 i = 0; i < members.length; i++) {
++            address member = members[i];
++            uint256 refundAmount = round.contributions[member] + round.bids[member];
++            if (refundAmount == 0) continue;
++            if (clearBalances) {
++                round.contributions[member] = 0;
++                round.bids[member] = 0;
++            }
++            claimable[member] += refundAmount;
++            emit ContributionRefunded(roundId, member, refundAmount);
+         }
+     }
+ 
+--- baseline/src/contract.ts
++++ src/contract.ts
+@@ -111,20 +111,23 @@
+ 
+ const arcTestnetFact = requireChain(5042002);
+ const arcUsdcFact = getUsdc(5042002);
++if (!arcUsdcFact) throw new Error("USDC is not configured for Arc Testnet");
+ 
+ export const ARC_TESTNET_CHAIN_ID = arcTestnetFact.chainId as 5042002;
+-export const USDC_ADDRESS = arcUsdcFact.address;
++export const USDC_ADDRESS = arcUsdcFact.address as `0x${string}`;
+ export const USDC_DECIMALS = arcUsdcFact.decimals;
+ 
+ // TASK-043: Circle Wrapped Bitcoin on Arc Testnet (configurable via VITE_CIRBTC_ADDRESS_TESTNET)
+ const envCirBtcAddress =
+-  typeof import.meta !== "undefined" &&
+   (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_CIRBTC_ADDRESS_TESTNET;
+-export const CIRBTC_ADDRESS = (
+-  envCirBtcAddress && /^0x[0-9a-fA-F]{40}$/.test(envCirBtcAddress)
+-    ? envCirBtcAddress
+-    : "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF"
+-) as `0x${string}`;
++export function getCirBtcDeploymentAddress(override = envCirBtcAddress): `0x${string}` {
++  if (override !== undefined && (!/^0x[0-9a-fA-F]{40}$/.test(override) || /^0x0{40}$/.test(override))) {
++    throw new Error("VITE_CIRBTC_ADDRESS_TESTNET must be a nonzero token address");
++  }
++  return (override ?? "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF") as `0x${string}`;
++}
++// Default only for new deployments; existing clubs read their own cirBtcToken getter.
++export const CIRBTC_ADDRESS = "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF" as const;
+ export const CIRBTC_DECIMALS = 8;
+ 
+ export function formatCirBtc(raw: bigint): string {
+@@ -161,7 +164,7 @@
+ export type GroupStateKey = keyof typeof GROUP_STATE;
+ 
+ export function formatUsdc(raw: bigint): string {
+-  const fixed = formatUnitsFixed(raw, USDC_DECIMALS, 2);
++  const fixed = formatUnitsFixed(raw, USDC_DECIMALS, 2, "half-up");
+   const [intPart, fracPart] = fixed.split(".");
+   const groupedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+   return fracPart !== undefined ? `${groupedInt}.${fracPart}` : groupedInt;
+@@ -236,7 +239,8 @@
+   if (msg.includes("groupnotopen")) return "Nhóm không còn mở để tham gia.";
+   if (msg.includes("groupnotactive")) return "Nhóm chưa bắt đầu.";
+   if (msg.includes("alreadycontributed")) return "Bạn đã đóng góp rồi.";
+-  if (msg.includes("roundended") || msg.includes("roundstillopen")) return "Thời gian đóng tiền của vòng này đã kết thúc. Vui lòng bấm Kết thúc vòng để chuyển sang vòng tiếp theo.";
++  if (msg.includes("roundstillopen")) return "Vòng hụi chưa kết thúc, chưa thể quyết toán.";
++  if (msg.includes("roundended")) return "Thời gian đóng tiền của vòng này đã kết thúc. Vui lòng bấm Kết thúc vòng để chuyển sang vòng tiếp theo.";
+   if (msg.includes("alreadywon")) return "Phòng hụi này được tạo trên phiên bản hợp đồng cũ trước Task-018 không hỗ trợ đóng hụi chết. Vui lòng tạo hoặc tham gia phòng mới.";
+   if (msg.includes("insufficientbid")) return "Bid phải cao hơn bid hiện tại.";
+   if (msg.includes("nopayout")) return "Không có tiền để nhận.";
+--- baseline/src/onchain-money.ts
++++ src/onchain-money.ts
+@@ -132,10 +132,15 @@
+   return fraction === '' ? `${sign}${whole}` : `${sign}${whole}.${fraction}`;
+ }
+ 
+-export function formatUnitsFixed(raw: bigint, decimals: number, fractionDigits: number): string {
++export function formatUnitsFixed(raw: bigint, decimals: number, fractionDigits: number, rounding: "trunc" | "half-up" = "trunc"): string {
+   assertValidDecimals(decimals);
+   assertValidDecimals(fractionDigits);
+ 
++  if (rounding === "half-up" && decimals > fractionDigits) {
++    const unit = 10n ** BigInt(decimals - fractionDigits);
++    const magnitude = ((absBigInt(raw) + unit / 2n) / unit) * unit;
++    raw = raw < 0n ? -magnitude : magnitude;
++  }
+   const sign = raw < 0n ? '-' : '';
+   const digits = absBigInt(raw)
+     .toString()
+--- baseline/src/config.ts
++++ src/config.ts
+@@ -8,19 +8,23 @@
+ import { arcTestnet } from 'viem/chains'
+ import { injected } from 'wagmi/connectors'
+ import { registerChain } from './tracing'
++import { requireChain } from './onchain-facts'
++
++const arcRpcUrl = requireChain(arcTestnet.id).rpcUrls[0]
++if (!arcRpcUrl) throw new Error('Arc Testnet RPC is not configured')
+ 
+ // Pre-register chain RPC URLs so trace events show correct chain names immediately
+-registerChain(arcTestnet.id, 'https://rpc.testnet.arc.io')
++registerChain(arcTestnet.id, arcRpcUrl)
+ 
+ export const arcTestnetWithRpc = {
+   ...arcTestnet,
+   rpcUrls: {
+     ...arcTestnet.rpcUrls,
+     default: {
+-      http: ['https://rpc.testnet.arc.io'],
++      http: [arcRpcUrl],
+     },
+     public: {
+-      http: ['https://rpc.testnet.arc.io'],
++      http: [arcRpcUrl],
+     },
+   },
+ } as const
+@@ -29,7 +33,7 @@
+   chains: [arcTestnetWithRpc, mainnet], // mainnet needed for ENS resolution
+   connectors: [injected()],
+   transports: {
+-    [arcTestnet.id]: http('https://rpc.testnet.arc.io'),
++    [arcTestnet.id]: http(arcRpcUrl),
+     [mainnet.id]: http(), // ENS resolution uses mainnet
+   },
+ })
+--- baseline/src/hooks/usePasskeyWallet.ts
++++ src/hooks/usePasskeyWallet.ts
+@@ -9,7 +9,6 @@
+ import {
+   createBundlerClient,
+   toWebAuthnAccount,
+-  type P256Credential,
+   type SmartAccount,
+ } from "viem/account-abstraction";
+ import {
+@@ -20,6 +19,8 @@
+   toWebAuthnCredential,
+ } from "@circle-fin/modular-wallets-core";
+ 
++import { loadStoredCredential, saveCredential, clearCredential, type StoredCredential } from "../lib/passkeySession";
++
+ const clientKey = import.meta.env.VITE_CLIENT_KEY as string;
+ const clientUrl = import.meta.env.VITE_CLIENT_URL as string;
+ 
+@@ -28,25 +29,6 @@
+   | { status: "loading"; message: string }
+   | { status: "ready"; account: SmartAccount; address: `0x${string}` }
+   | { status: "error"; message: string };
+-
+-const CREDENTIAL_KEY = "huichain_passkey_credential";
+-
+-function loadStoredCredential(): P256Credential | null {
+-  try {
+-    const raw = localStorage.getItem(CREDENTIAL_KEY);
+-    return raw ? (JSON.parse(raw) as P256Credential) : null;
+-  } catch {
+-    return null;
+-  }
+-}
+-
+-function saveCredential(cred: P256Credential) {
+-  localStorage.setItem(CREDENTIAL_KEY, JSON.stringify(cred));
+-}
+-
+-function clearCredential() {
+-  localStorage.removeItem(CREDENTIAL_KEY);
+-}
+ 
+ function buildTransports() {
+   if (!clientKey || !clientUrl) return null;
+@@ -70,7 +52,7 @@
+     restoreSession(stored);
+   }, [isConfigured]);
+ 
+-  const restoreSession = useCallback(async (credential: P256Credential) => {
++  const restoreSession = useCallback(async (credential: StoredCredential) => {
+     const transports = buildTransports();
+     if (!transports) return;
+     try {
+--- baseline/src/hooks/useSavingsClub.ts
++++ src/hooks/useSavingsClub.ts
+@@ -1,10 +1,10 @@
++import { historyRoundIds } from "../lib/roundHistory";
+ import { useReadContract, useReadContracts } from "wagmi";
+ import { erc20Abi, type Abi } from "viem";
+ import {
+   ROTATING_SAVINGS_ADDRESS,
+   ROTATING_SAVINGS_ABI,
+   USDC_ADDRESS,
+-  CIRBTC_ADDRESS,
+   ARC_TESTNET_CHAIN_ID,
+ } from "../contract";
+ 
+@@ -82,6 +82,14 @@
+   address: string | undefined,
+   contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS
+ ) {
++  const tokenRead = useReadContract({
++    address: contractAddress,
++    abi: ROTATING_SAVINGS_ABI,
++    functionName: "cirBtcToken",
++    chainId: ARC_TESTNET_CHAIN_ID,
++  });
++  const collateralToken = typeof tokenRead.data === "string" && /^0x[0-9a-fA-F]{40}$/.test(tokenRead.data) && !/^0x0{40}$/.test(tokenRead.data)
++    ? tokenRead.data as `0x${string}` : undefined;
+   const enabled = !!address;
+   const { data, isLoading, refetch } = useReadContracts({
+     contracts: [
+@@ -128,14 +136,14 @@
+         chainId: ARC_TESTNET_CHAIN_ID,
+       },
+       {
+-        address: CIRBTC_ADDRESS,
++        address: collateralToken ?? "0x0000000000000000000000000000000000000000",
+         abi: erc20Abi,
+         functionName: "balanceOf",
+         args: enabled ? [address as `0x${string}`] : ["0x0000000000000000000000000000000000000000"],
+         chainId: ARC_TESTNET_CHAIN_ID,
+       },
+       {
+-        address: CIRBTC_ADDRESS,
++        address: collateralToken ?? "0x0000000000000000000000000000000000000000",
+         abi: erc20Abi,
+         functionName: "allowance",
+         args: [
+@@ -162,8 +170,9 @@
+     claimable: data?.[3]?.result as bigint | undefined,
+     lockedCollateral: data?.[4]?.result as bigint | undefined,
+     claimableCirBtc: data?.[5]?.result as bigint | undefined,
+-    cirBtcBalance: data?.[6]?.result as bigint | undefined,
+-    cirBtcAllowance: data?.[7]?.result as bigint | undefined,
++    collateralToken,
++    cirBtcBalance: collateralToken ? data?.[6]?.result as bigint | undefined : undefined,
++    cirBtcAllowance: collateralToken ? data?.[7]?.result as bigint | undefined : undefined,
+     hasVotedCancel: data?.[8]?.result as boolean | undefined,
+     isLoading,
+     refetch,
+@@ -253,17 +262,14 @@
+   currentRound: bigint | undefined,
+   contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS
+ ) {
+-  const roundCount = currentRound ? Number(currentRound) : 0;
+-  const contracts = [];
+-  for (let i = 1; i <= roundCount; i++) {
+-    contracts.push({
+-      address: contractAddress,
+-      abi: ROTATING_SAVINGS_ABI as Abi,
+-      functionName: "getRoundSummary",
+-      args: [BigInt(i)],
+-      chainId: ARC_TESTNET_CHAIN_ID,
+-    });
+-  }
++  const roundIds = historyRoundIds(currentRound);
++  const contracts = roundIds.map((roundId) => ({
++    address: contractAddress,
++    abi: ROTATING_SAVINGS_ABI as Abi,
++    functionName: "getRoundSummary",
++    args: [roundId],
++    chainId: ARC_TESTNET_CHAIN_ID,
++  }));
+ 
+   const { data, isLoading, refetch } = useReadContracts({
+     contracts,
+@@ -276,7 +282,7 @@
+       const result = item.result as [bigint, bigint, string, bigint, bigint, boolean] | undefined;
+       if (result && result[5] === true) {
+         settledRounds.push({
+-          roundId: BigInt(index + 1),
++          roundId: roundIds[index],
+           startTime: result[0],
+           endTime: result[1],
+           winner: result[2],
+@@ -290,6 +296,8 @@
+ 
+   return {
+     settledRounds,
++    historyStartRound: roundIds[0],
++    isHistoryLimited: (roundIds[0] ?? 1n) > 1n,
+     isLoading,
+     refetch,
+   };
+--- baseline/src/App.tsx
++++ src/App.tsx
+@@ -1,5 +1,6 @@
++import { useArcWriteContract } from "./hooks/useArcWriteContract";
+ import { useEffect, useState, useMemo } from "react";
+-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
++import { useAccount, useWaitForTransactionReceipt } from "wagmi";
+ import { encodeFunctionData } from "viem";
+ import { toast } from "sonner";
+ import { useModal } from "connectkit";
+@@ -313,12 +314,12 @@
+   );
+   const { allowance, refetch: refetchAllowance } = useUsdcAllowance(address, contractAddress);
+   const { balance, refetch: refetchBalance } = useUsdcBalance(address);
+-  const { settledRounds } = useRoundHistory(clubInfo.currentRound, contractAddress);
++  const { settledRounds, isHistoryLimited } = useRoundHistory(clubInfo.currentRound, contractAddress);
+   const settledWinners = settledRounds.map((r) => ({
+     address: r.winner,
+     roundId: r.roundId,
+   }));
+-  const userWonRound = settledRounds.find(
++  const userWonRound = [...settledRounds].reverse().find(
+     (r) => address && r.winner.toLowerCase() === address.toLowerCase()
+   );
+   const wonRoundId = userWonRound ? Number(userWonRound.roundId) : undefined;
+@@ -329,10 +330,10 @@
+     data: claimHash,
+     isPending: isClaiming,
+     reset: resetClaim,
+-  } = useWriteContract();
++  } = useArcWriteContract();
+ 
+   const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } =
+-    useWaitForTransactionReceipt({ hash: claimHash });
++    useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID, hash: claimHash });
+ 
+   useEffect(() => {
+     if (isClaimSuccess) {
+@@ -371,10 +372,10 @@
+     data: ownerHash,
+     isPending: isOwnerPending,
+     reset: resetOwnerWrite,
+-  } = useWriteContract();
++  } = useArcWriteContract();
+ 
+   const { isLoading: isOwnerConfirming, isSuccess: isOwnerSuccess } =
+-    useWaitForTransactionReceipt({ hash: ownerHash });
++    useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID, hash: ownerHash });
+ 
+   useEffect(() => {
+     if (isOwnerSuccess) {
+@@ -463,7 +464,7 @@
+           paymaster: true,
+         });
+         const { receipt } = await bundler.waitForUserOperationReceipt({ hash });
+-        toast.success(isEn ? "Club cancelled successfully!" : "Đã huỷ nhóm thành công!", {
++        toast.success(isEn ? "Cancellation vote recorded." : "Đã ghi nhận phiếu huỷ nhóm.", {
+           description: (
+             <a
+               href={buildTxExplorerUrl(ARC_TESTNET_CHAIN_ID, receipt.transactionHash)}
+@@ -495,7 +496,28 @@
+     }
+   };
+ 
++  const sendPasskeyClubAction = async (functionName: string, args: readonly unknown[] = []) => {
++    if (!passkeyAccount || !bundler) return;
++    setIsOwnerOpLoading(true);
++    try {
++      const hash = await bundler.sendUserOperation({
++        account: passkeyAccount,
++        calls: [{ to: contractAddress, data: encodeFunctionData({ abi: ROTATING_SAVINGS_ABI, functionName, args }) }],
++        paymaster: true,
++      });
++      await bundler.waitForUserOperationReceipt({ hash });
++      toast.success(isEn ? "Transaction confirmed." : "Giao dịch đã xác nhận.");
++      refetchAll();
++    } catch (error) {
++      toast.error(parseContractError(error));
++    } finally { setIsOwnerOpLoading(false); }
++  };
++
+   const handleAcceptOwnership = async () => {
++    if (passkeyAddress && passkeyAccount && bundler) {
++      await sendPasskeyClubAction("acceptOwnership");
++      return;
++    }
+     try {
+       ownerWrite({
+         address: contractAddress,
+@@ -545,6 +567,10 @@
+   }
+ 
+   const handleClaimPayout = () => {
++    if (passkeyAddress && passkeyAccount && bundler) {
++      void sendPasskeyClubAction("claimPayout");
++      return;
++    }
+     claimWrite({
+       address: contractAddress,
+       abi: ROTATING_SAVINGS_ABI,
+@@ -1093,6 +1119,15 @@
+                 </div>
+               )}
+ 
++              {isOwner && clubInfo.state === GROUP_STATE.ACTIVE && (
++                <div className="p-5 rounded-2xl border border-red-500/30 space-y-3">
++                  <p className="text-xs text-slate-300">{isEn ? "A majority vote ends future rounds and refunds only contributions and bids from the unsettled round. Earlier payouts remain final; eligible collateral is claimed separately." : "Biểu quyết đủ đa số sẽ chấm dứt các vòng tương lai, chỉ hoàn tiền góp và bid của vòng chưa quyết toán. Tiền đã trả giữ nguyên; ký quỹ đủ điều kiện được rút riêng."}</p>
++                  <button onClick={handleCancelGroup} disabled={isOwnerPending || isOwnerConfirming || isOwnerOpLoading || memberStatus.hasVotedCancel} className="w-full py-2 rounded-xl border border-red-500/30 text-red-300 disabled:opacity-50">
++                    {memberStatus.hasVotedCancel ? (isEn ? "Voted to cancel" : "Đã bỏ phiếu huỷ") : (isEn ? "Vote to cancel club" : "Biểu quyết huỷ nhóm")} ({String(clubInfo.cancelVoteCount ?? 0n)}/{String(clubInfo.requiredCancelVotes ?? 1n)})
++                  </button>
++                </div>
++              )}
++
+               {/* Owner Controls (only visible to owner when group state is OPEN) */}
+               {isOwner && clubInfo.state === GROUP_STATE.OPEN && (
+                 <div className="bg-slate-900/90 rounded-3xl p-5 border border-amber-500/20 shadow-lg space-y-3.5">
+@@ -1139,7 +1174,9 @@
+                               setNameUpdateTrigger((prev) => prev + 1);
+                               if (clubInfo.memberCount === 0) {
+                                 try {
+-                                  ownerWrite({
++                                  if (passkeyAddress && passkeyAccount && bundler) {
++                                    void sendPasskeyClubAction("setCollateralAmount", [opt.sats]);
++                                  } else ownerWrite({
+                                     address: contractAddress,
+                                     abi: ROTATING_SAVINGS_ABI,
+                                     functionName: "setCollateralAmount",
+@@ -1152,8 +1189,8 @@
+                               }
+                               toast.success(
+                                 isEn
+-                                  ? `Updated collateral to ${opt.label}`
+-                                  : `Đã cập nhật mức ký quỹ: ${opt.label}`
++                                  ? `Collateral preference: ${opt.label}. Confirm the transaction if prompted.`
++                                  : `Mức ký quỹ đã chọn: ${opt.label}. Hãy xác nhận giao dịch nếu ví yêu cầu.`
+                               );
+                             }}
+                             className={`py-1.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+@@ -1275,12 +1312,15 @@
+                   onOpenCreateModal={() => setShowCreateModal(true)}
+                   claimable={memberStatus.claimable ?? 0n}
+                   onClaimPayout={handleClaimPayout}
+-                  isClaiming={isClaiming || isClaimConfirming}
++                  isClaiming={isClaiming || isClaimConfirming || isOwnerOpLoading}
+                   userBid={roundMemberStatus.bid ?? 0n}
+                   highestBid={clubMembers.highestBid ?? 0n}
+                   collateralAmount={activeCollateralAmount}
+                   lockedCollateral={memberStatus.lockedCollateral}
+                   claimableCirBtc={memberStatus.claimableCirBtc}
++                  cancelVoteCount={clubInfo.cancelVoteCount}
++                  requiredCancelVotes={clubInfo.requiredCancelVotes}
++                  hasVotedCancel={memberStatus.hasVotedCancel}
+                 />
+               ) : (
+                 <ActionPanel
+@@ -1304,12 +1344,13 @@
+                   onOpenCreateModal={() => setShowCreateModal(true)}
+                   claimable={memberStatus.claimable ?? 0n}
+                   onClaimPayout={handleClaimPayout}
+-                  isClaiming={isClaiming || isClaimConfirming}
++                  isClaiming={isClaiming || isClaimConfirming || isOwnerOpLoading}
+                   userBid={roundMemberStatus.bid ?? 0n}
+                   highestBid={clubMembers.highestBid ?? 0n}
+                   collateralAmount={activeCollateralAmount}
+                   lockedCollateral={memberStatus.lockedCollateral}
+                   claimableCirBtc={memberStatus.claimableCirBtc}
++                  collateralToken={memberStatus.collateralToken}
+                   cirBtcBalance={memberStatus.cirBtcBalance}
+                   cirBtcAllowance={memberStatus.cirBtcAllowance}
+                   cancelVoteCount={clubInfo.cancelVoteCount}
+@@ -1318,6 +1359,7 @@
+                   totalJoined={clubMembers.totalJoined}
+                   members={clubMembers.members}
+                   settledRounds={settledRounds}
++                  isHistoryLimited={isHistoryLimited}
+                 />
+               )}
+ 
+@@ -1334,7 +1376,7 @@
+                     bid={roundMemberStatus.bid}
+                     contributionAmount={clubInfo.contributionAmount ?? 0n}
+                     onClaimPayout={handleClaimPayout}
+-                    isClaiming={isClaiming || isClaimConfirming}
++                    isClaiming={isClaiming || isClaimConfirming || isOwnerOpLoading}
+                     language={language}
+                     wonRoundId={wonRoundId}
+                   />
+--- baseline/src/components/savings/ActionPanel.tsx
++++ src/components/savings/ActionPanel.tsx
+@@ -1,9 +1,9 @@
++import { useArcWriteContract } from "../../hooks/useArcWriteContract";
+ import { useEffect, useState } from "react";
+ import { erc20Abi } from "viem";
+ import {
+   useAccount,
+   useSwitchChain,
+-  useWriteContract,
+   useWaitForTransactionReceipt,
+ } from "wagmi";
+ import { toast } from "sonner";
+@@ -13,7 +13,6 @@
+   ROTATING_SAVINGS_ADDRESS,
+   ROTATING_SAVINGS_ABI,
+   USDC_ADDRESS,
+-  CIRBTC_ADDRESS,
+   ARC_TESTNET_CHAIN_ID,
+   GROUP_STATE,
+   parseUsdc,
+@@ -50,6 +49,7 @@
+   isClaiming?: boolean;
+   userBid?: bigint;
+   highestBid?: bigint;
++  collateralToken?: `0x${string}`;
+   collateralAmount?: bigint;
+   lockedCollateral?: bigint;
+   claimableCirBtc?: bigint;
+@@ -61,6 +61,7 @@
+   hasVotedCancel?: boolean;
+   totalJoined?: number;
+   members?: ClubMemberInfo[];
++  isHistoryLimited?: boolean;
+   settledRounds?: {
+     roundId: bigint;
+     startTime: bigint;
+@@ -124,6 +125,7 @@
+   isClaiming,
+   userBid,
+   highestBid,
++  collateralToken,
+   collateralAmount,
+   lockedCollateral,
+   claimableCirBtc,
+@@ -136,6 +138,7 @@
+   totalJoined,
+   members = [],
+   settledRounds = [],
++  isHistoryLimited = false,
+ }: ActionPanelProps) {
+   const targetContract = contractAddress ?? ROTATING_SAVINGS_ADDRESS;
+   const { address, chainId } = useAccount();
+@@ -169,9 +172,12 @@
+     data: hash,
+     isPending,
+     reset,
+-  } = useWriteContract();
+-
+-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
++    error: writeError,
++  } = useArcWriteContract();
++
++  useEffect(() => { if (writeError) setPendingFollowUp(null); }, [writeError]);
++
++  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID,
+     hash,
+   });
+ 
+@@ -273,14 +279,6 @@
+     }
+   }, [isSuccess]);
+ 
+-  const switchIfNeeded = () => {
+-    if (isWrongChain) {
+-      switchChain({ chainId: ARC_TESTNET_CHAIN_ID });
+-      return false;
+-    }
+-    return true;
+-  };
+-
+   const bidRaw = parseUsdc(bidAmount);
+   const needsApproval = allowance < contributionAmount;
+   const needsApprovalForBid = bidRaw > 0n && allowance < contributionAmount + bidRaw;
+@@ -307,7 +305,7 @@
+   // --- Actions ---
+ 
+   const handleApproveAndJoin = async () => {
+-    if (!switchIfNeeded() || !address) return;
++    if (!address) return;
+     try {
+       writeContract({
+         address: targetContract,
+@@ -321,7 +319,7 @@
+   };
+ 
+   const handleApproveForContribute = () => {
+-    if (!switchIfNeeded() || !address) return;
++    if (!address) return;
+     try {
+       setPendingFollowUp("contribute");
+       writeContract({
+@@ -339,7 +337,7 @@
+   };
+ 
+   const handleContribute = () => {
+-    if (!switchIfNeeded() || !address) return;
++    if (!address) return;
+     if (isTimeEnded) {
+       toast.error(isEn ? "Round contribution period has ended." : "Thời gian đóng tiền của vòng này đã kết thúc.");
+       return;
+@@ -366,7 +364,7 @@
+   };
+ 
+   const handleApproveForBid = () => {
+-    if (!switchIfNeeded() || !address) return;
++    if (!address) return;
+     if (bidRaw <= 0n) {
+       toast.error(isEn ? "Enter valid bid amount (greater than 0)." : "Nhập số tiền bid hợp lệ (lớn hơn 0).");
+       return;
+@@ -384,7 +382,7 @@
+   };
+ 
+   const handlePlaceBid = () => {
+-    if (!switchIfNeeded() || !address) return;
++    if (!address) return;
+     if (bidRaw <= 0n) {
+       toast.error(isEn ? "Enter valid bid amount (greater than 0)." : "Nhập số tiền bid hợp lệ (lớn hơn 0).");
+       return;
+@@ -411,7 +409,7 @@
+   };
+ 
+   const handleSettle = () => {
+-    if (!switchIfNeeded() || !address) return;
++    if (!address) return;
+     try {
+       writeContract({
+         address: targetContract,
+@@ -430,7 +428,7 @@
+       onClaimCollateral();
+       return;
+     }
+-    if (!switchIfNeeded() || !address) return;
++    if (!address) return;
+     try {
+       writeContract({
+         address: targetContract,
+@@ -444,12 +442,13 @@
+   };
+ 
+   const handleDepositCollateral = () => {
+-    if (!switchIfNeeded() || !address) return;
++    if (!collateralToken) { toast.error(isEn ? "Collateral token is unavailable." : "Chưa đọc được token ký quỹ của nhóm."); return; }
++    if (!address) return;
+     if (needsCirBtcApproval) {
+       try {
+         setPendingFollowUp("collateral");
+         writeContract({
+-          address: CIRBTC_ADDRESS,
++          address: collateralToken!,
+           abi: erc20Abi,
+           functionName: "approve",
+           args: [targetContract, targetCollateralAmt * 100n],
+@@ -489,7 +488,7 @@
+   const currentCancelVotes = Number(cancelVoteCount ?? 0n);
+ 
+   const handleVoteCancelGroup = () => {
+-    if (!switchIfNeeded() || !address) return;
++    if (!address) return;
+     try {
+       writeContract({
+         address: targetContract,
+@@ -503,7 +502,7 @@
+   };
+ 
+   const handleStartNewCycle = () => {
+-    if (!switchIfNeeded() || !address) return;
++    if (!address) return;
+     try {
+       writeContract({
+         address: targetContract,
+@@ -713,6 +712,15 @@
+       )}
+ 
+       {/* --- OPEN state: Join --- */}
++      {state === GROUP_STATE.ACTIVE && isMember && (
++        <div className="p-5 border-b border-red-500/20 space-y-3">
++          <p className="text-xs text-slate-300">{isEn ? "Cancellation refunds only contributions and bids from the unsettled round. Earlier payouts remain final and future rounds end; eligible collateral is claimed separately." : "Huỷ nhóm chỉ hoàn tiền góp và bid của vòng chưa quyết toán. Tiền đã trả ở vòng trước giữ nguyên, các vòng tương lai chấm dứt; ký quỹ đủ điều kiện được rút riêng."}</p>
++          <button onClick={handleVoteCancelGroup} disabled={isLoading || hasVotedCancel} className="w-full py-2 border border-red-500/30 rounded-xl text-red-300 disabled:opacity-50">
++            {hasVotedCancel ? (isEn ? "Voted to cancel" : "Đã bỏ phiếu huỷ") : (isEn ? "Vote to cancel club" : "Biểu quyết huỷ nhóm")} ({currentCancelVotes}/{effectiveRequiredVotes})
++          </button>
++        </div>
++      )}
++
+       {state === GROUP_STATE.OPEN && (
+         <div className="p-6 space-y-4">
+           <div className="flex items-center justify-between">
+@@ -839,7 +847,7 @@
+                     </div>
+                     <p className="text-xs text-slate-400 leading-relaxed">
+                       {isEn
+-                        ? `When ${joinedCount} members have joined, the club owner cannot cancel unilaterally. At least ${effectiveRequiredVotes}/${joinedCount} members must vote to cancel (100% collateral is refunded).`
++                        ? `When ${joinedCount} members have joined, the club owner cannot cancel unilaterally. At least ${effectiveRequiredVotes}/${joinedCount} members must vote to cancel (eligible collateral can be claimed separately).`
+                         : `Khi đã có ${joinedCount} thành viên tham gia, trưởng nhóm không thể tự ý huỷ một mình. Cần tối thiểu ${effectiveRequiredVotes}/${joinedCount} phiếu biểu quyết đồng thuận từ các thành viên để huỷ nhóm (hoàn trả 100% cọc CirBTC).`}
+                     </p>
+                     <button
+@@ -929,7 +937,7 @@
+                 </div>
+                 <div className="space-y-1.5">
+                   <h4 className="font-bold text-base sm:text-lg text-amber-200">
+-                    {t("actionPanel.winnerHonoredTitle", language).replace("{round}", (wonRoundId ?? 1).toString())}
++                    {t("actionPanel.winnerHonoredTitle", language).replace("{round}", (wonRoundId?.toString() ?? (isEn ? "unknown" : "chưa xác định")))}
+                   </h4>
+                   <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
+                     {t("actionPanel.winnerOfficialNotice", language).replace("{totalRounds}", (totalRounds ?? 10).toString())}
+@@ -1386,6 +1394,7 @@
+             </span>
+           </div>
+ 
++          {isHistoryLimited && <p className="text-xs text-amber-300">{isEn ? "Amounts and round details below cover only the latest 50 rounds, not the lifetime total." : "Số tiền và chi tiết dưới đây chỉ bao gồm 50 vòng gần nhất, không phải tổng toàn bộ lịch sử."}</p>}
+           {/* Summary KPI Row */}
+           {(() => {
+             const totalPotDistributed = settledRounds.reduce((acc, r) => acc + (r.totalPot ?? 0n), 0n);
+@@ -1432,7 +1441,7 @@
+               <div className="space-y-2">
+                 {members.map((m) => {
+                   const isMe = address && m.address.toLowerCase() === address.toLowerCase();
+-                  const wonR = settledRounds.find(
++                  const wonR = [...settledRounds].reverse().find(
+                     (r) => r.winner && r.winner.toLowerCase() === m.address.toLowerCase()
+                   );
+                   const hasClaimable = m.claimable !== undefined && m.claimable > 0n;
+@@ -1460,8 +1469,8 @@
+                         <p className="text-slate-400">
+                           {m.hasWon
+                             ? isEn
+-                              ? `🏆 Won Pot in Round ${wonR ? wonR.roundId.toString() : "1"} (Pot + Bid refund)`
+-                              : `🏆 Thắng Pot Vòng ${wonR ? wonR.roundId.toString() : "1"} (Nhận Pot + hoàn bid)`
++                              ? `🏆 Won Pot in Round ${wonR ? wonR.roundId.toString() : (isEn ? "outside this history window" : "ngoài phạm vi lịch sử")} (Pot + Bid refund)`
++                              : `🏆 Thắng Pot Vòng ${wonR ? wonR.roundId.toString() : (isEn ? "outside this history window" : "ngoài phạm vi lịch sử")} (Nhận Pot + hoàn bid)`
+                             : !m.isKicked
+                             ? isEn
+                               ? "🔄 100% Principal Refund + Shared Bid Bonus"
+@@ -1612,7 +1621,7 @@
+             <p className="text-slate-600 text-sm mt-2 leading-relaxed max-w-md mx-auto">
+               {isEn
+                 ? t("actionPanel.cancelledDesc", language)
+-                : "Nhóm hụi đã được huỷ bởi Chủ nhóm trong giai đoạn đăng ký. Toàn bộ người dùng đã rời nhóm an toàn, không có tài sản nào bị giam giữ và hợp đồng đã đóng vĩnh viễn."}
++                : "Nhóm đã huỷ theo biểu quyết. Tiền góp và bid của vòng chưa quyết toán được cộng vào khoản có thể nhận. Hãy rút tiền và ký quỹ đủ điều kiện; các khoản đã trả trước đó giữ nguyên."}
+             </p>
+           </div>
+           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+--- baseline/src/components/savings/PasskeyActionPanel.tsx
++++ src/components/savings/PasskeyActionPanel.tsx
+@@ -53,6 +53,9 @@
+   lockedCollateral?: bigint;
+   claimableCirBtc?: bigint;
+   onClaimCollateral?: () => void;
++  cancelVoteCount?: bigint;
++  requiredCancelVotes?: bigint;
++  hasVotedCancel?: boolean;
+ }
+ 
+ /**
+@@ -114,6 +117,9 @@
+   lockedCollateral,
+   claimableCirBtc,
+   onClaimCollateral,
++  cancelVoteCount,
++  requiredCancelVotes,
++  hasVotedCancel,
+ }: PasskeyActionPanelProps) {
+   const targetContract = contractAddress ?? ROTATING_SAVINGS_ADDRESS;
+   const isEn = language === "en";
+@@ -157,6 +163,11 @@
+     }
+     setTimeout(() => setCopiedInvite(false), 2000);
+   };
++
++  const handleVoteCancelGroup = () => sendOp([{
++    to: targetContract,
++    data: encodeFunctionData({ abi: ROTATING_SAVINGS_ABI, functionName: "voteCancelGroup" }),
++  }], isEn ? "Cancellation vote recorded." : "Đã ghi nhận phiếu huỷ nhóm.");
+ 
+   const needsApproval = allowance < contributionAmount;
+   const bidRaw = parseUsdc(bidAmount);
+@@ -447,6 +458,15 @@
+         </div>
+       )}
+ 
++      {(state === GROUP_STATE.OPEN || state === GROUP_STATE.ACTIVE) && isMember && (
++        <div className="p-5 border-b border-red-500/20 space-y-3">
++          <p className="text-xs text-slate-300">{isEn ? "Cancellation refunds only contributions and bids from the unsettled round. Earlier payouts remain final and future rounds end; eligible collateral is claimed separately." : "Huỷ nhóm chỉ hoàn tiền góp và bid của vòng chưa quyết toán. Tiền đã trả ở vòng trước giữ nguyên, các vòng tương lai chấm dứt; ký quỹ đủ điều kiện được rút riêng."}</p>
++          <button onClick={handleVoteCancelGroup} disabled={isLoading || hasVotedCancel} className="w-full py-2 border border-red-500/30 rounded-xl text-red-300 disabled:opacity-50">
++            {hasVotedCancel ? (isEn ? "Voted to cancel" : "Đã bỏ phiếu huỷ") : (isEn ? "Vote to cancel club" : "Biểu quyết huỷ nhóm")} ({String(cancelVoteCount ?? 0n)}/{String(requiredCancelVotes ?? 1n)})
++          </button>
++        </div>
++      )}
++
+       {/* OPEN: Join */}
+       {state === GROUP_STATE.OPEN && (
+         <div className="p-6 space-y-4">
+@@ -614,7 +634,7 @@
+                 </div>
+                 <div className="space-y-1.5">
+                   <h4 className="font-bold text-base sm:text-lg text-amber-200">
+-                    {t("actionPanel.winnerHonoredTitle", language).replace("{round}", (wonRoundId ?? 1).toString())}
++                    {t("actionPanel.winnerHonoredTitle", language).replace("{round}", (wonRoundId?.toString() ?? (isEn ? "unknown" : "chưa xác định")))}
+                   </h4>
+                   <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
+                     {t("actionPanel.winnerOfficialNotice", language).replace("{totalRounds}", (totalRounds ?? 10).toString())}
+@@ -1055,7 +1075,7 @@
+             <p className="text-slate-600 text-sm mt-2 leading-relaxed max-w-md mx-auto">
+               {isEn
+                 ? t("actionPanel.cancelledDesc", language)
+-                : "Nhóm hụi đã được huỷ bởi Chủ nhóm trong giai đoạn đăng ký. Toàn bộ người dùng đã rời nhóm an toàn, không có tài sản nào bị giam giữ và hợp đồng đã đóng vĩnh viễn."}
++                : "Nhóm đã huỷ theo biểu quyết. Tiền góp và bid của vòng chưa quyết toán được cộng vào khoản có thể nhận. Hãy rút tiền và ký quỹ đủ điều kiện; các khoản đã trả trước đó giữ nguyên."}
+             </p>
+           </div>
+           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+--- baseline/src/components/savings/CreateClubModal.tsx
++++ src/components/savings/CreateClubModal.tsx
+@@ -18,6 +18,7 @@
+   ROTATING_SAVINGS_ABI,
+   ROTATING_SAVINGS_BYTECODE,
+   USDC_ADDRESS,
++  getCirBtcDeploymentAddress,
+   ARC_TESTNET_CHAIN_ID,
+   parseUsdc,
+   formatUsdc,
+@@ -53,7 +54,7 @@
+ }: CreateClubModalProps) {
+   const { isConnected, chainId } = useAccount();
+   const { setOpen: openConnectModal } = useModal();
+-  const { switchChain } = useSwitchChain();
++  const { switchChainAsync } = useSwitchChain();
+   const isEn = language === "en";
+ 
+   const [groupName, setGroupName] = useState("Nhóm Hụi Mới");
+@@ -118,7 +119,7 @@
+     data: receipt,
+     isLoading: isConfirming,
+     isSuccess,
+-  } = useWaitForTransactionReceipt({ hash: deployHash });
++  } = useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID, hash: deployHash });
+ 
+   // Handle deploy success
+   useEffect(() => {
+@@ -182,7 +183,7 @@
+     }
+   }
+ 
+-  const handleDeploy = (e?: React.FormEvent) => {
++  const handleDeploy = async (e?: React.FormEvent) => {
+     if (e) e.preventDefault();
+     if (!isFormValid || isDeployPending || isConfirming) return;
+ 
+@@ -191,12 +192,11 @@
+       return;
+     }
+ 
+-    if (chainId !== ARC_TESTNET_CHAIN_ID) {
+-      switchChain({ chainId: ARC_TESTNET_CHAIN_ID });
+-      return;
+-    }
+-
+     try {
++      const collateralToken = getCirBtcDeploymentAddress();
++      if (chainId !== ARC_TESTNET_CHAIN_ID) {
++        await switchChainAsync({ chainId: ARC_TESTNET_CHAIN_ID });
++      }
+       deployContract({
+         abi: ROTATING_SAVINGS_ABI,
+         bytecode: ROTATING_SAVINGS_BYTECODE,
+@@ -206,6 +206,7 @@
+           BigInt(maxMembers),
+           BigInt(roundDuration),
+           groupName.trim(),
++          collateralToken,
+         ],
+         chainId: ARC_TESTNET_CHAIN_ID,
+       });
+--- baseline/src/components/savings/RoundHistory.tsx
++++ src/components/savings/RoundHistory.tsx
+@@ -16,7 +16,7 @@
+   userAddress,
+   language = "vi",
+ }: RoundHistoryProps) {
+-  const { settledRounds, isLoading } = useRoundHistory(currentRound, contractAddress);
++  const { settledRounds, isLoading, isHistoryLimited, historyStartRound } = useRoundHistory(currentRound, contractAddress);
+   const isEn = language === "en";
+ 
+   return (
+@@ -42,6 +42,11 @@
+         </span>
+       </div>
+ 
++      {isHistoryLimited && (
++        <p className="text-xs text-amber-300">
++          {isEn ? `Showing the latest 50 rounds (${historyStartRound}–${currentRound}); counts cover this window only.` : `Hiển thị 50 vòng gần nhất (${historyStartRound}–${currentRound}); số liệu chỉ trong phạm vi này.`}
++        </p>
++      )}
+       {isLoading ? (
+         <div className="py-8 text-center text-slate-400 text-sm">
+           <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+--- baseline/src/components/savings/MemberStatus.tsx
++++ src/components/savings/MemberStatus.tsx
+@@ -41,7 +41,7 @@
+           {isEn ? t("memberStatus.cancelledTitle", language) : "Nhóm hụi đã bị huỷ"}
+         </p>
+         <p className="text-slate-400 text-xs sm:text-sm">
+-          {isEn ? t("memberStatus.cancelledHint", language) : "Hợp đồng đã giải tán an toàn, không còn thành viên hoạt động."}
++          {isEn ? t("memberStatus.cancelledHint", language) : "Nhóm đã huỷ. Hãy nhận khoản hoàn tiền và rút ký quỹ đủ điều kiện trong bảng thao tác."}
+         </p>
+       </div>
+     );
+--- baseline/src/components/savings/ClubMembersRoster.tsx
++++ src/components/savings/ClubMembersRoster.tsx
+@@ -105,7 +105,7 @@
+             const isUser = userAddrLower && member.address.toLowerCase() === userAddrLower;
+             const isOwner = ownerAddrLower && member.address.toLowerCase() === ownerAddrLower;
+             const isHighest = highestBidder && member.address.toLowerCase() === highestBidder.toLowerCase() && member.bid > 0n;
+-            const wonRound = settledWinners?.find((w) => w.address.toLowerCase() === member.address.toLowerCase())?.roundId;
++            const wonRound = settledWinners?.slice().reverse().find((w) => w.address.toLowerCase() === member.address.toLowerCase())?.roundId;
+ 
+             return (
+               <div
+@@ -207,8 +207,8 @@
+                           <Trophy size={13} className="text-amber-400 shrink-0" />
+                           <span>
+                             {isEn
+-                              ? `Pot Paid (Round ${wonRound?.toString() ?? "1"})`
+-                              : `Đã nhận Pot (Vòng ${wonRound?.toString() ?? "1"})`}
++                              ? `Pot Paid (Round ${wonRound?.toString() ?? (isEn ? "unknown" : "chưa xác định")})`
++                              : `Đã nhận Pot (Vòng ${wonRound?.toString() ?? (isEn ? "unknown" : "chưa xác định")})`}
+                           </span>
+                         </span>
+                       ) : !member.isKicked ? (
+--- baseline/src/lib/i18n.ts
++++ src/lib/i18n.ts
+@@ -526,7 +526,7 @@
+       claimPayoutBtn: "Nhận tiền",
+       claimingBtn: "Đang nhận...",
+       cancelledTitle: "Nhóm hụi đã bị huỷ",
+-      cancelledHint: "Hợp đồng đã giải tán an toàn, không còn thành viên hoạt động.",
++      cancelledHint: "Nhóm đã huỷ. Hãy nhận khoản hoàn tiền và rút ký quỹ đủ điều kiện trong bảng thao tác.",
+     },
+     actionPanel: {
+       title: "Tham gia nhóm",
+@@ -591,7 +591,7 @@
+       loadingSign: "Xác nhận trong ví...",
+       loadingProcess: "Đang xử lý...",
+       cancelledTitle: "Nhóm hụi đã bị huỷ",
+-      cancelledDesc: "Nhóm hụi đã được huỷ bởi Chủ nhóm trong giai đoạn đăng ký. Toàn bộ người dùng đã rời nhóm an toàn, không có tài sản nào bị giam giữ và hợp đồng đã đóng vĩnh viễn.",
++      cancelledDesc: "Nhóm đã huỷ theo biểu quyết. Tiền góp và bid của vòng chưa quyết toán được cộng vào khoản có thể nhận. Hãy rút tiền và ký quỹ đủ điều kiện; các khoản đã trả trước đó giữ nguyên.",
+       cancelledNavHint: "Bạn có thể sử dụng các nút điều hướng phía trên (Danh sách nhóm hoặc Tạo nhóm mới) để khám phá hoặc khởi tạo nhóm hụi khác.",
+       approveToContributeBtn: "Approve USDC để đóng tiền",
+       approveToContributeDeadHuiBtn: "Approve USDC để đóng hụi chết",
+@@ -952,7 +952,7 @@
+       claimPayoutBtn: "Claim Payout",
+       claimingBtn: "Claiming...",
+       cancelledTitle: "Savings Club Cancelled",
+-      cancelledHint: "Contract dissolved safely with no active members.",
++      cancelledHint: "The club is cancelled. Claim your refund and eligible collateral in the action panel.",
+     },
+     actionPanel: {
+       title: "Join Club",
+@@ -1017,7 +1017,7 @@
+       loadingSign: "Sign in wallet...",
+       loadingProcess: "Processing on-chain...",
+       cancelledTitle: "Savings Club Cancelled",
+-      cancelledDesc: "The savings club was cancelled by the club owner during the registration phase. All members have exited safely, no assets are locked, and the contract is permanently closed.",
++      cancelledDesc: "The club was cancelled by vote. Contributions and bids from the unsettled round were credited for withdrawal. Claim your payout and eligible collateral; earlier payouts remain final.",
+       cancelledNavHint: "You can use the navigation buttons above (Club Directory or Create Club) to explore or create another savings club.",
+       approveToContributeBtn: "Approve USDC to Contribute",
+       approveToContributeDeadHuiBtn: "Approve USDC to Contribute Dead Hui",
+--- baseline/src/lib/arcWallet.ts
++++ src/lib/arcWallet.ts
+@@ -0,0 +1,10 @@
++/** Resolve the switch before any transaction, including approval follow-ups. */
++export async function ensureArcChain({ getChainId, switchChain, chainId }: {
++  getChainId: () => number | undefined;
++  switchChain: (chainId: number) => Promise<{ id: number }>;
++  chainId: number;
++}): Promise<void> {
++  if (getChainId() === chainId) return;
++  const chain = await switchChain(chainId);
++  if (chain.id !== chainId) throw new Error("Wallet did not switch to Arc Testnet");
++}
+--- baseline/src/lib/passkeySession.ts
++++ src/lib/passkeySession.ts
+@@ -0,0 +1,34 @@
++/** Only public WebAuthn metadata is cached; signing still needs the authenticator. */
++export type StoredCredential = { id: string; publicKey: `0x${string}` };
++export const CREDENTIAL_KEY = "huichain_passkey_credential";
++let memory: StoredCredential | null = null;
++function removeLegacy() {
++  try { localStorage.removeItem(CREDENTIAL_KEY); } catch { /* Storage may be unavailable. */ }
++}
++function valid(value: unknown): value is StoredCredential {
++  if (!value || typeof value !== "object") return false;
++  const cred = value as Partial<StoredCredential>;
++  return typeof cred.id === "string" && cred.id.length > 0 &&
++    typeof cred.publicKey === "string" && /^0x[0-9a-fA-F]{128}$/.test(cred.publicKey);
++}
++export function loadStoredCredential(): StoredCredential | null {
++  removeLegacy();
++  try {
++    const raw = sessionStorage.getItem(CREDENTIAL_KEY);
++    if (!raw) return memory;
++    const value: unknown = JSON.parse(raw);
++    if (valid(value)) return { id: value.id, publicKey: value.publicKey };
++    sessionStorage.removeItem(CREDENTIAL_KEY);
++  } catch { /* A blocked or corrupt cache must never block login. */ }
++  return memory;
++}
++export function saveCredential(credential: StoredCredential) {
++  removeLegacy();
++  memory = { id: credential.id, publicKey: credential.publicKey };
++  try { sessionStorage.setItem(CREDENTIAL_KEY, JSON.stringify(memory)); } catch { /* Keep only in memory. */ }
++}
++export function clearCredential() {
++  memory = null;
++  removeLegacy();
++  try { sessionStorage.removeItem(CREDENTIAL_KEY); } catch { /* Logout still clears account state. */ }
++}
+--- baseline/src/lib/roundHistory.ts
++++ src/lib/roundHistory.ts
+@@ -0,0 +1,8 @@
++export const MAX_HISTORY_ROUNDS = 50n;
++export function historyRoundIds(currentRound: bigint | undefined): bigint[] {
++  if (!currentRound || currentRound < 1n) return [];
++  const first = currentRound > MAX_HISTORY_ROUNDS ? currentRound - MAX_HISTORY_ROUNDS + 1n : 1n;
++  const ids: bigint[] = [];
++  for (let round = first; round <= currentRound; round++) ids.push(round);
++  return ids;
++}
+--- baseline/src/hooks/useArcWriteContract.ts
++++ src/hooks/useArcWriteContract.ts
+@@ -0,0 +1,46 @@
++import { useEffect, useRef, useState } from "react";
++import { useConfig, useWriteContract } from "wagmi";
++import { getAccount, switchChain } from "@wagmi/core";
++import { toast } from "sonner";
++import { ARC_TESTNET_CHAIN_ID, parseContractError } from "../contract";
++import { ensureArcChain } from "../lib/arcWallet";
++
++/** One guarded entry point for every injected savings write. */
++export function useArcWriteContract() {
++  const config = useConfig();
++  const mutation = useWriteContract();
++  useEffect(() => { if (mutation.error) toast.error(parseContractError(mutation.error)); }, [mutation.error]);
++  const inFlight = useRef(false);
++  const [isSwitching, setIsSwitching] = useState(false);
++  const [guardError, setGuardError] = useState<Error | null>(null);
++  const writeContract = ((parameters: Parameters<typeof mutation.writeContract>[0], options?: Parameters<typeof mutation.writeContract>[1]) => {
++    if (inFlight.current) return;
++    inFlight.current = true;
++    setIsSwitching(true);
++    setGuardError(null);
++    void (async () => {
++      try {
++        await ensureArcChain({
++          getChainId: () => getAccount(config).chainId,
++          switchChain: (chainId) => switchChain(config, { chainId }),
++          chainId: ARC_TESTNET_CHAIN_ID,
++        });
++        if (parameters.chainId !== ARC_TESTNET_CHAIN_ID) throw new Error("Savings transactions require Arc Testnet");
++        mutation.writeContract(parameters, options);
++      } catch (error) {
++        setGuardError(error instanceof Error ? error : new Error(String(error)));
++        toast.error(parseContractError(error));
++      } finally {
++        inFlight.current = false;
++        setIsSwitching(false);
++      }
++    })();
++  }) as typeof mutation.writeContract;
++  return {
++    ...mutation,
++    writeContract,
++    isPending: isSwitching || mutation.isPending,
++    error: guardError ?? mutation.error,
++    reset: () => { setGuardError(null); mutation.reset(); },
++  };
++}

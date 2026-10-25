@@ -1,0 +1,106 @@
+{
+  "taskId": "task-044",
+  "createdAt": "2026-10-25T12:02:23.661Z",
+  "files": {
+    "contracts/RotatingSavings.sol": {
+      "exists": true,
+      "sha256": "3ec72dc68e63b4ee0697aded3e31cb39931d1c25a3a75c7f4214e00018647d01",
+      "snapshot": "docs/manifests/task-044/baseline/contracts_RotatingSavings.sol"
+    },
+    "contracts/out/RotatingSavings.sol/RotatingSavings.json": {
+      "exists": true,
+      "sha256": "8dd13a2b4e88b04e6e3564e210106089daa04c38ef8960c728426cda173a4842",
+      "snapshot": "docs/manifests/task-044/baseline/contracts_out_RotatingSavings.sol_RotatingSavings.json"
+    },
+    "src/contract.ts": {
+      "exists": true,
+      "sha256": "b761048922683eb258aa3793179f56b47c3e5e47ee0b315fabecf2fdc1dba538",
+      "snapshot": "docs/manifests/task-044/baseline/src_contract.ts"
+    },
+    "src/onchain-money.ts": {
+      "exists": true,
+      "sha256": "27eb439a52f5d8405805944c6430895022be21101b6547eab3afd8614c9ada56",
+      "snapshot": "docs/manifests/task-044/baseline/src_onchain-money.ts"
+    },
+    "src/config.ts": {
+      "exists": true,
+      "sha256": "2f71b1d50f37aacc300b841e49ac35b4f824c70f2b56dc8bb330ce4b19940f56",
+      "snapshot": "docs/manifests/task-044/baseline/src_config.ts"
+    },
+    "src/hooks/usePasskeyWallet.ts": {
+      "exists": true,
+      "sha256": "725192c7405716ec7784853713cd1c282080cce61faacee78e0ff4bc944df947",
+      "snapshot": "docs/manifests/task-044/baseline/src_hooks_usePasskeyWallet.ts"
+    },
+    "src/hooks/useSavingsClub.ts": {
+      "exists": true,
+      "sha256": "194f905e1b302a91fbe81455eeeacb7ccea913ffc0a1d52a04f7415c4fd34f58",
+      "snapshot": "docs/manifests/task-044/baseline/src_hooks_useSavingsClub.ts"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "048a8b1f2d9c999bcd1c224f558cdd743bcd4ca81fb057cd069654db40fbff98",
+      "snapshot": "docs/manifests/task-044/baseline/src_App.tsx"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "be98421b643163d44332f23c2e37e819108efa8c059ad253170091d09d2f1e26",
+      "snapshot": "docs/manifests/task-044/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "a252c2018903eb632bc23f4c45d4afdff31f433462b07616742c4e6a51b5e428",
+      "snapshot": "docs/manifests/task-044/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    },
+    "src/components/savings/CreateClubModal.tsx": {
+      "exists": true,
+      "sha256": "7c12975ff50ac572a723a65b0224bdd0f31300b3e1cf446063060714bd3b0541",
+      "snapshot": "docs/manifests/task-044/baseline/src_components_savings_CreateClubModal.tsx"
+    },
+    "src/components/savings/RoundHistory.tsx": {
+      "exists": true,
+      "sha256": "eccaf32ff593b18f146fc14e37f87b53dc26f7c848325198ebfdf41a9a33590e",
+      "snapshot": "docs/manifests/task-044/baseline/src_components_savings_RoundHistory.tsx"
+    },
+    "src/components/savings/MemberStatus.tsx": {
+      "exists": true,
+      "sha256": "092d80350c70368451faf6dca0931d11cb97d92ff5df05699e190205fe1b9112",
+      "snapshot": "docs/manifests/task-044/baseline/src_components_savings_MemberStatus.tsx"
+    },
+    "src/components/savings/ClubMembersRoster.tsx": {
+      "exists": true,
+      "sha256": "d485588e502c44e6570826ae3542891ad5978f2011a9707be717ae6b6d795ca0",
+      "snapshot": "docs/manifests/task-044/baseline/src_components_savings_ClubMembersRoster.tsx"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "8f834ca9b33e2d74c1ae8acbf9b2a3ae82581557f021f16f59bbcdfb4a9407f6",
+      "snapshot": "docs/manifests/task-044/baseline/src_lib_i18n.ts"
+    },
+    "src/lib/arcWallet.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/lib/passkeySession.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/lib/roundHistory.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/lib/collateralToken.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/hooks/useArcWriteContract.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    }
+  }
+}

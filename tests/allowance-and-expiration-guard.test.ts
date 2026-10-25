@@ -206,7 +206,8 @@ test("TC-GUARD-07 (AC-03.1): Hàm parseContractError trong src/contract.ts ánh 
 
   // 2. roundstillopen
   const roundStillOpenErr = parseContractError({ message: "reverted with custom error 'RoundStillOpen()'" });
-  assert.equal(roundStillOpenErr, "Thời gian đóng tiền của vòng này đã kết thúc. Vui lòng bấm Kết thúc vòng để chuyển sang vòng tiếp theo.");
+  assert.equal(roundStillOpenErr, "Vòng hụi chưa kết thúc, chưa thể quyết toán.");
+  assert.match(parseContractError({ message: "RoundEnded()" }), /đã kết thúc/);
 
   // 3. alreadywon
   const alreadyWonErr = parseContractError({ message: "Contract revert: AlreadyWon()" });

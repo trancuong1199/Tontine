@@ -29,7 +29,7 @@
  * `toDecimals` is the only way to change one.
  */
 
-import { getUsdc, requireChain, USDC_DECIMALS } from '@/onchain-facts';
+import { getUsdc, requireChain, USDC_DECIMALS } from './onchain-facts.ts';
 
 export type AmountErrorCode =
   | 'INVALID_DECIMALS'
@@ -132,10 +132,15 @@ export function formatUnitsExact(raw: bigint, decimals: number): string {
   return fraction === '' ? `${sign}${whole}` : `${sign}${whole}.${fraction}`;
 }
 
-export function formatUnitsFixed(raw: bigint, decimals: number, fractionDigits: number): string {
+export function formatUnitsFixed(raw: bigint, decimals: number, fractionDigits: number, rounding: "trunc" | "half-up" = "trunc"): string {
   assertValidDecimals(decimals);
   assertValidDecimals(fractionDigits);
 
+  if (rounding === "half-up" && decimals > fractionDigits) {
+    const unit = 10n ** BigInt(decimals - fractionDigits);
+    const magnitude = ((absBigInt(raw) + unit / 2n) / unit) * unit;
+    raw = raw < 0n ? -magnitude : magnitude;
+  }
   const sign = raw < 0n ? '-' : '';
   const digits = absBigInt(raw)
     .toString()

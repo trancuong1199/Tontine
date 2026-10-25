@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: T044-MONEY: actual bigint parsing and half-up formatting preserve large values
+ok 1 - T044-MONEY: actual bigint parsing and half-up formatting preserve large values
+  ---
+  duration_ms: 3.398533
+  type: 'test'
+  ...
+# Subtest: T044-ERROR-FACTS: error semantics and registry constants
+ok 2 - T044-ERROR-FACTS: error semantics and registry constants
+  ---
+  duration_ms: 1.111015
+  type: 'test'
+  ...
+# Subtest: T044-DEPLOY: six-argument artifact encodes configured collateral token and rejects invalid override
+ok 3 - T044-DEPLOY: six-argument artifact encodes configured collateral token and rejects invalid override
+  ---
+  duration_ms: 5.451474
+  type: 'test'
+  ...
+# Subtest: T044-CHAIN: switching must resolve before continuation; reject and wrong result block continuation
+ok 4 - T044-CHAIN: switching must resolve before continuation; reject and wrong result block continuation
+  ---
+  duration_ms: 0.716582
+  type: 'test'
+  ...
+# Subtest: T044-HISTORY: real hook caps calls and maps sparse results to original round IDs
+ok 5 - T044-HISTORY: real hook caps calls and maps sparse results to original round IDs
+  ---
+  duration_ms: 257.055917
+  type: 'test'
+  ...
+# Subtest: T044-SESSION: fresh restore reads valid public metadata, purges legacy, tolerates storage failures
+ok 6 - T044-SESSION: fresh restore reads valid public metadata, purges legacy, tolerates storage failures
+  ---
+  duration_ms: 9.86461
+  type: 'test'
+  ...
+# Subtest: T044-GUARDED-HOOK: production wrapper waits, reports rejected switch and rechecks approval follow-up
+ok 7 - T044-GUARDED-HOOK: production wrapper waits, reports rejected switch and rechecks approval follow-up
+  ---
+  duration_ms: 17.690188
+  type: 'test'
+  ...
+# Subtest: T044-INTEGRATION: guarded write hook and registry transport are wired into savings entry points
+ok 8 - T044-INTEGRATION: guarded write hook and registry transport are wired into savings entry points
+  ---
+  duration_ms: 1.473195
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 305.222669

@@ -1,10 +1,10 @@
+import { historyRoundIds } from "../lib/roundHistory";
 import { useReadContract, useReadContracts } from "wagmi";
 import { erc20Abi, type Abi } from "viem";
 import {
   ROTATING_SAVINGS_ADDRESS,
   ROTATING_SAVINGS_ABI,
   USDC_ADDRESS,
-  CIRBTC_ADDRESS,
   ARC_TESTNET_CHAIN_ID,
 } from "../contract";
 
@@ -82,6 +82,14 @@ export function useMemberStatus(
   address: string | undefined,
   contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS
 ) {
+  const tokenRead = useReadContract({
+    address: contractAddress,
+    abi: ROTATING_SAVINGS_ABI,
+    functionName: "cirBtcToken",
+    chainId: ARC_TESTNET_CHAIN_ID,
+  });
+  const collateralToken = typeof tokenRead.data === "string" && /^0x[0-9a-fA-F]{40}$/.test(tokenRead.data) && !/^0x0{40}$/.test(tokenRead.data)
+    ? tokenRead.data as `0x${string}` : undefined;
   const enabled = !!address;
   const { data, isLoading, refetch } = useReadContracts({
     contracts: [
@@ -128,14 +136,14 @@ export function useMemberStatus(
         chainId: ARC_TESTNET_CHAIN_ID,
       },
       {
-        address: CIRBTC_ADDRESS,
+        address: collateralToken ?? "0x0000000000000000000000000000000000000000",
         abi: erc20Abi,
         functionName: "balanceOf",
         args: enabled ? [address as `0x${string}`] : ["0x0000000000000000000000000000000000000000"],
         chainId: ARC_TESTNET_CHAIN_ID,
       },
       {
-        address: CIRBTC_ADDRESS,
+        address: collateralToken ?? "0x0000000000000000000000000000000000000000",
         abi: erc20Abi,
         functionName: "allowance",
         args: [
@@ -162,8 +170,9 @@ export function useMemberStatus(
     claimable: data?.[3]?.result as bigint | undefined,
     lockedCollateral: data?.[4]?.result as bigint | undefined,
     claimableCirBtc: data?.[5]?.result as bigint | undefined,
-    cirBtcBalance: data?.[6]?.result as bigint | undefined,
-    cirBtcAllowance: data?.[7]?.result as bigint | undefined,
+    collateralToken,
+    cirBtcBalance: collateralToken ? data?.[6]?.result as bigint | undefined : undefined,
+    cirBtcAllowance: collateralToken ? data?.[7]?.result as bigint | undefined : undefined,
     hasVotedCancel: data?.[8]?.result as boolean | undefined,
     isLoading,
     refetch,
@@ -253,17 +262,14 @@ export function useRoundHistory(
   currentRound: bigint | undefined,
   contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS
 ) {
-  const roundCount = currentRound ? Number(currentRound) : 0;
-  const contracts = [];
-  for (let i = 1; i <= roundCount; i++) {
-    contracts.push({
-      address: contractAddress,
-      abi: ROTATING_SAVINGS_ABI as Abi,
-      functionName: "getRoundSummary",
-      args: [BigInt(i)],
-      chainId: ARC_TESTNET_CHAIN_ID,
-    });
-  }
+  const roundIds = historyRoundIds(currentRound);
+  const contracts = roundIds.map((roundId) => ({
+    address: contractAddress,
+    abi: ROTATING_SAVINGS_ABI as Abi,
+    functionName: "getRoundSummary",
+    args: [roundId],
+    chainId: ARC_TESTNET_CHAIN_ID,
+  }));
 
   const { data, isLoading, refetch } = useReadContracts({
     contracts,
@@ -276,7 +282,7 @@ export function useRoundHistory(
       const result = item.result as [bigint, bigint, string, bigint, bigint, boolean] | undefined;
       if (result && result[5] === true) {
         settledRounds.push({
-          roundId: BigInt(index + 1),
+          roundId: roundIds[index],
           startTime: result[0],
           endTime: result[1],
           winner: result[2],
@@ -290,6 +296,8 @@ export function useRoundHistory(
 
   return {
     settledRounds,
+    historyStartRound: roundIds[0],
+    isHistoryLimited: (roundIds[0] ?? 1n) > 1n,
     isLoading,
     refetch,
   };

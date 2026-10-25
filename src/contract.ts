@@ -1,4 +1,6 @@
 import artifact from "../contracts/out/RotatingSavings.sol/RotatingSavings.json" with { type: "json" };
+import { getUsdc, requireChain } from "./onchain-facts.ts";
+import { formatUnitsFixed, parseAmount } from "./onchain-money.ts";
 
 export const ROTATING_SAVINGS_ADDRESS =
   "0x6afaa0825d2e05ef00d571d4a043ab5dcc03534b" as const;
@@ -107,19 +109,33 @@ export const ROTATING_SAVINGS_ABI = [
 ];
 export const ROTATING_SAVINGS_BYTECODE = artifact.bytecode.object as `0x${string}`;
 
-export const ARC_TESTNET_CHAIN_ID = 5042002 as const;
-export const USDC_ADDRESS =
-  "0x3600000000000000000000000000000000000000" as const;
-export const USDC_DECIMALS = 6;
+const arcTestnetFact = requireChain(5042002);
+const arcUsdcFact = getUsdc(5042002);
+if (!arcUsdcFact) throw new Error("USDC is not configured for Arc Testnet");
 
-// TASK-043: Circle Wrapped Bitcoin on Arc Testnet
-export const CIRBTC_ADDRESS =
-  "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF" as const;
+export const ARC_TESTNET_CHAIN_ID = arcTestnetFact.chainId as 5042002;
+export const USDC_ADDRESS = arcUsdcFact.address as `0x${string}`;
+export const USDC_DECIMALS = arcUsdcFact.decimals;
+
+// TASK-043: Circle Wrapped Bitcoin on Arc Testnet (configurable via VITE_CIRBTC_ADDRESS_TESTNET)
+const envCirBtcAddress =
+  (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_CIRBTC_ADDRESS_TESTNET;
+export function getCirBtcDeploymentAddress(override = envCirBtcAddress): `0x${string}` {
+  if (override !== undefined && (!/^0x[0-9a-fA-F]{40}$/.test(override) || /^0x0{40}$/.test(override))) {
+    throw new Error("VITE_CIRBTC_ADDRESS_TESTNET must be a nonzero token address");
+  }
+  return (override ?? "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF") as `0x${string}`;
+}
+// Default only for new deployments; existing clubs read their own cirBtcToken getter.
+export const CIRBTC_ADDRESS = "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF" as const;
 export const CIRBTC_DECIMALS = 8;
 
 export function formatCirBtc(raw: bigint): string {
-  const n = Number(raw) / 10 ** CIRBTC_DECIMALS;
-  return n.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 6 });
+  const fixed6 = formatUnitsFixed(raw, CIRBTC_DECIMALS, 6);
+  const [intPart, fracPart = "000000"] = fixed6.split(".");
+  const trimmedFrac = fracPart.replace(/0+$/, "").padEnd(4, "0");
+  const groupedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${groupedInt}.${trimmedFrac}`;
 }
 
 export function parseCirBtc(amount: string): bigint {
@@ -148,8 +164,10 @@ export const GROUP_STATE = {
 export type GroupStateKey = keyof typeof GROUP_STATE;
 
 export function formatUsdc(raw: bigint): string {
-  const n = Number(raw) / 10 ** USDC_DECIMALS;
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fixed = formatUnitsFixed(raw, USDC_DECIMALS, 2, "half-up");
+  const [intPart, fracPart] = fixed.split(".");
+  const groupedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return fracPart !== undefined ? `${groupedInt}.${fracPart}` : groupedInt;
 }
 
 export function parseUsdc(amount: string): bigint {
@@ -159,12 +177,17 @@ export function parseUsdc(amount: string): bigint {
   if (!/^\d+(\.\d+)?$/.test(trimmed) && !/^\.\d+$/.test(trimmed)) {
     return 0n;
   }
-  const [wholePart = "0", fracPart = ""] = trimmed.includes(".")
-    ? trimmed.startsWith(".") ? ["0", trimmed.slice(1)] : trimmed.split(".")
-    : [trimmed, ""];
-  const paddedFrac = fracPart.slice(0, USDC_DECIMALS).padEnd(USDC_DECIMALS, "0");
-  const cleanWhole = wholePart.replace(/^0+/, "") || "0";
-  return BigInt(cleanWhole) * 10n ** BigInt(USDC_DECIMALS) + BigInt(paddedFrac);
+  const normalized = trimmed.startsWith(".") ? `0${trimmed}` : trimmed;
+  const [wholePart = "0", fracPart] = normalized.split(".");
+  const capped =
+    fracPart !== undefined
+      ? `${wholePart}.${fracPart.slice(0, USDC_DECIMALS)}`
+      : wholePart;
+  try {
+    return parseAmount(ARC_TESTNET_CHAIN_ID, capped).raw;
+  } catch {
+    return 0n;
+  }
 }
 
 export function isValidAddress(address: unknown): address is `0x${string}` {
@@ -216,7 +239,8 @@ export function parseContractError(error: unknown): string {
   if (msg.includes("groupnotopen")) return "Nhóm không còn mở để tham gia.";
   if (msg.includes("groupnotactive")) return "Nhóm chưa bắt đầu.";
   if (msg.includes("alreadycontributed")) return "Bạn đã đóng góp rồi.";
-  if (msg.includes("roundstillopen")) return "Thời gian đóng tiền của vòng này đã kết thúc. Vui lòng bấm Kết thúc vòng để chuyển sang vòng tiếp theo.";
+  if (msg.includes("roundstillopen")) return "Vòng hụi chưa kết thúc, chưa thể quyết toán.";
+  if (msg.includes("roundended")) return "Thời gian đóng tiền của vòng này đã kết thúc. Vui lòng bấm Kết thúc vòng để chuyển sang vòng tiếp theo.";
   if (msg.includes("alreadywon")) return "Phòng hụi này được tạo trên phiên bản hợp đồng cũ trước Task-018 không hỗ trợ đóng hụi chết. Vui lòng tạo hoặc tham gia phòng mới.";
   if (msg.includes("insufficientbid")) return "Bid phải cao hơn bid hiện tại.";
   if (msg.includes("nopayout")) return "Không có tiền để nhận.";

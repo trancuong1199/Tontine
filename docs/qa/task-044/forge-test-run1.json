@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/tmp/tontine-task-044-toolchain/node_modules/@foundry-rs/forge-linux-amd64/bin/forge",
+    "test",
+    "--use",
+    "/tmp/tontine-task-044-toolchain/solc-0.8.28",
+    "--out",
+    "/tmp/task044-qa-out",
+    "--cache-path",
+    "/tmp/task044-qa-cache",
+    "-vv"
+  ],
+  "startedAt": "2026-10-25T12:06:21.775134+00:00",
+  "exitCode": 1,
+  "log": "forge-test-run1.log"
+}

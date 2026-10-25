@@ -41,7 +41,7 @@ export function MemberStatus({
           {isEn ? t("memberStatus.cancelledTitle", language) : "Nhóm hụi đã bị huỷ"}
         </p>
         <p className="text-slate-400 text-xs sm:text-sm">
-          {isEn ? t("memberStatus.cancelledHint", language) : "Hợp đồng đã giải tán an toàn, không còn thành viên hoạt động."}
+          {isEn ? t("memberStatus.cancelledHint", language) : "Nhóm đã huỷ. Hãy nhận khoản hoàn tiền và rút ký quỹ đủ điều kiện trong bảng thao tác."}
         </p>
       </div>
     );

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "npm",
+    "test"
+  ],
+  "startedAt": "2026-10-25T12:06:21.774899+00:00",
+  "exitCode": 1,
+  "log": "npm-test-run1.log"
+}

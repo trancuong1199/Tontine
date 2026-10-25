@@ -372,7 +372,7 @@ test("TC-I18N-04 (AC-01.4): Thông báo Toast và helper feedback song ngữ chu
     "App.tsx phải hiển thị toast start rounds song ngữ"
   );
   assert.ok(
-    appSrc.includes('toast.success(isEn ? "Club cancelled successfully!" : "Đã huỷ nhóm thành công!"'),
+    appSrc.includes('toast.success(isEn ? "Cancellation vote recorded." : "Đã ghi nhận phiếu huỷ nhóm."'),
     "App.tsx phải hiển thị toast cancel group song ngữ"
   );
 

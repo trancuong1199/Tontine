@@ -9,7 +9,6 @@ import { arcTestnet } from "viem/chains";
 import {
   createBundlerClient,
   toWebAuthnAccount,
-  type P256Credential,
   type SmartAccount,
 } from "viem/account-abstraction";
 import {
@@ -20,6 +19,8 @@ import {
   toWebAuthnCredential,
 } from "@circle-fin/modular-wallets-core";
 
+import { loadStoredCredential, saveCredential, clearCredential, type StoredCredential } from "../lib/passkeySession";
+
 const clientKey = import.meta.env.VITE_CLIENT_KEY as string;
 const clientUrl = import.meta.env.VITE_CLIENT_URL as string;
 
@@ -28,25 +29,6 @@ export type PasskeyWalletState =
   | { status: "loading"; message: string }
   | { status: "ready"; account: SmartAccount; address: `0x${string}` }
   | { status: "error"; message: string };
-
-const CREDENTIAL_KEY = "huichain_passkey_credential";
-
-function loadStoredCredential(): P256Credential | null {
-  try {
-    const raw = localStorage.getItem(CREDENTIAL_KEY);
-    return raw ? (JSON.parse(raw) as P256Credential) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveCredential(cred: P256Credential) {
-  localStorage.setItem(CREDENTIAL_KEY, JSON.stringify(cred));
-}
-
-function clearCredential() {
-  localStorage.removeItem(CREDENTIAL_KEY);
-}
 
 function buildTransports() {
   if (!clientKey || !clientUrl) return null;
@@ -70,7 +52,7 @@ export function usePasskeyWallet() {
     restoreSession(stored);
   }, [isConfigured]);
 
-  const restoreSession = useCallback(async (credential: P256Credential) => {
+  const restoreSession = useCallback(async (credential: StoredCredential) => {
     const transports = buildTransports();
     if (!transports) return;
     try {

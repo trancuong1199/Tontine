@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: TC-REFUND-01 (AC-01.1): Smart Contract RotatingSavings.sol tự động hoàn trả 100% tiền đóng góp vào claimable khi winner == address(0) và phát sự kiện ContributionRefunded
+not ok 1 - TC-REFUND-01 (AC-01.1): Smart Contract RotatingSavings.sol tự động hoàn trả 100% tiền đóng góp vào claimable khi winner == address(0) và phát sự kiện ContributionRefunded
+  ---
+  duration_ms: 2.026177
+  type: 'test'
+  location: '/home/avada/tontine/tests/auto-refund-no-winner.test.ts:16:1'
+  failureType: 'testCodeFailure'
+  error: 'settleRound must read member contribution for no-winner round'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///home/avada/tontine/tests/auto-refund-no-winner.test.ts:30:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: TC-REFUND-02 (AC-01.2): Smart Contract hoàn trả trọn vẹn cả tiền đóng góp và tiền bid (contrib + bid) cho thành viên trong vòng không có người thắng
+not ok 2 - TC-REFUND-02 (AC-01.2): Smart Contract hoàn trả trọn vẹn cả tiền đóng góp và tiền bid (contrib + bid) cho thành viên trong vòng không có người thắng
+  ---
+  duration_ms: 0.77357
+  type: 'test'
+  location: '/home/avada/tontine/tests/auto-refund-no-winner.test.ts:52:1'
+  failureType: 'testCodeFailure'
+  error: 'refundAmount must sum both contrib and bid'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///home/avada/tontine/tests/auto-refund-no-winner.test.ts:60:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: TC-REFUND-03 (AC-01.3): Foundry Test RotatingSavings.t.sol chứng minh thành viên nhận hoàn tiền và rút tiền thành công qua claimPayout
+ok 3 - TC-REFUND-03 (AC-01.3): Foundry Test RotatingSavings.t.sol chứng minh thành viên nhận hoàn tiền và rút tiền thành công qua claimPayout
+  ---
+  duration_ms: 3.351949
+  type: 'test'
+  ...
+# Subtest: TC-UI-01 (AC-02.1): RoundHistory.tsx nhận diện vòng không có người thắng (address 0), hiển thị Huy hiệu hoàn trả 100% kèm icon RotateCcw thay vì 0x0000...0000
+ok 4 - TC-UI-01 (AC-02.1): RoundHistory.tsx nhận diện vòng không có người thắng (address 0), hiển thị Huy hiệu hoàn trả 100% kèm icon RotateCcw thay vì 0x0000...0000
+  ---
+  duration_ms: 0.705515
+  type: 'test'
+  ...
+# Subtest: TC-UI-02 (AC-02.2): RoundHistory.tsx duy trì hiển thị bình thường cho vòng có người thắng (Bạn! hoặc formatAddress)
+ok 5 - TC-UI-02 (AC-02.2): RoundHistory.tsx duy trì hiển thị bình thường cho vòng có người thắng (Bạn! hoặc formatAddress)
+  ---
+  duration_ms: 0.416591
+  type: 'test'
+  ...
+# Subtest: TC-UI-03 (AC-03.1): ActionPanel và PasskeyActionPanel tự động hiển thị Thẻ Rút Tiền Thưởng Nổi Bật khi claimable > 0n sau khi nhận tiền hoàn trả
+ok 6 - TC-UI-03 (AC-03.1): ActionPanel và PasskeyActionPanel tự động hiển thị Thẻ Rút Tiền Thưởng Nổi Bật khi claimable > 0n sau khi nhận tiền hoàn trả
+  ---
+  duration_ms: 1.377793
+  type: 'test'
+  ...
+# Subtest: TC-I18N-01 (AC-03.2): Bộ từ điển song ngữ i18n cung cấp đầy đủ các khóa cho vòng không có người thắng trong cả vi và en
+ok 7 - TC-I18N-01 (AC-03.2): Bộ từ điển song ngữ i18n cung cấp đầy đủ các khóa cho vòng không có người thắng trong cả vi và en
+  ---
+  duration_ms: 0.972841
+  type: 'test'
+  ...
+# Subtest: TC-REGRESSION-01 (AC-03.3): Toàn bộ cấu trúc hệ thống và tính toàn vẹn kinh tế được bảo toàn (Zero Regression)
+ok 8 - TC-REGRESSION-01 (AC-03.3): Toàn bộ cấu trúc hệ thống và tính toàn vẹn kinh tế được bảo toàn (Zero Regression)
+  ---
+  duration_ms: 0.54202
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 6
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 60.714759

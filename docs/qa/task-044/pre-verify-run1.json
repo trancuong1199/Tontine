@@ -1,0 +1,11 @@
+{
+  "command": [
+    "node",
+    "scripts/manifest-tool.mjs",
+    "verify",
+    "task-044"
+  ],
+  "startedAt": "2026-10-25T12:06:21.721837+00:00",
+  "exitCode": 0,
+  "log": "pre-verify-run1.log"
+}

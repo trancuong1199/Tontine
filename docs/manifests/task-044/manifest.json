@@ -1,0 +1,102 @@
+{
+  "taskId": "task-044",
+  "frozenAt": "2026-10-25T12:06:02.711Z",
+  "status": "FROZEN",
+  "files": {
+    "contracts/RotatingSavings.sol": {
+      "sha256": "6a903039e10347526bdfd009bb866e88d207bba0d58c613648e06988c8e6f0fb",
+      "baselineSha256": "3ec72dc68e63b4ee0697aded3e31cb39931d1c25a3a75c7f4214e00018647d01",
+      "isNew": false
+    },
+    "contracts/out/RotatingSavings.sol/RotatingSavings.json": {
+      "sha256": "302983dabcb23fb841c0bf419dd1f036a1210c159b88b39b69b0997e28b285c7",
+      "baselineSha256": "8dd13a2b4e88b04e6e3564e210106089daa04c38ef8960c728426cda173a4842",
+      "isNew": false
+    },
+    "src/contract.ts": {
+      "sha256": "f7da28ed4b6d6eb62de089a56c87a63ace45c273979ddf8d171ae247c7da972c",
+      "baselineSha256": "b761048922683eb258aa3793179f56b47c3e5e47ee0b315fabecf2fdc1dba538",
+      "isNew": false
+    },
+    "src/onchain-money.ts": {
+      "sha256": "d7f80fea8fdf9edcca9c0859c95c7e2d1ef77b87306f7f387a96637150252aa7",
+      "baselineSha256": "27eb439a52f5d8405805944c6430895022be21101b6547eab3afd8614c9ada56",
+      "isNew": false
+    },
+    "src/config.ts": {
+      "sha256": "b3639c8bbcc6f6332960791bc3401a10ffdd97051f4a752e36b0fb8f5e135cf3",
+      "baselineSha256": "2f71b1d50f37aacc300b841e49ac35b4f824c70f2b56dc8bb330ce4b19940f56",
+      "isNew": false
+    },
+    "src/hooks/usePasskeyWallet.ts": {
+      "sha256": "5b82ad4c7f814c8a91121545db8b81eea031621ae5cb343b734abe5f6020c692",
+      "baselineSha256": "725192c7405716ec7784853713cd1c282080cce61faacee78e0ff4bc944df947",
+      "isNew": false
+    },
+    "src/hooks/useSavingsClub.ts": {
+      "sha256": "56b3998359473414858c30724a2a5b756d3fbfeef26d71223cf0c4ebd1839518",
+      "baselineSha256": "194f905e1b302a91fbe81455eeeacb7ccea913ffc0a1d52a04f7415c4fd34f58",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "b7db19cd2397109af73fbd9cc1c5fa43fc73968248455266255c2bdf2ce6453e",
+      "baselineSha256": "048a8b1f2d9c999bcd1c224f558cdd743bcd4ca81fb057cd069654db40fbff98",
+      "isNew": false
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "59ef48d01f11a1bbbc995920431957b1266bcc432b210ed8b93213d8d35bb610",
+      "baselineSha256": "be98421b643163d44332f23c2e37e819108efa8c059ad253170091d09d2f1e26",
+      "isNew": false
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "sha256": "91e6605b6f81859f59521b1c64aa895f8fe42fb8307ebbd91f3c5af505335f2c",
+      "baselineSha256": "a252c2018903eb632bc23f4c45d4afdff31f433462b07616742c4e6a51b5e428",
+      "isNew": false
+    },
+    "src/components/savings/CreateClubModal.tsx": {
+      "sha256": "708df2dd66df2defbf758623600fd6945ff1fd2312ad8ea90d2b678658a7e095",
+      "baselineSha256": "7c12975ff50ac572a723a65b0224bdd0f31300b3e1cf446063060714bd3b0541",
+      "isNew": false
+    },
+    "src/components/savings/RoundHistory.tsx": {
+      "sha256": "d414ea41fed54a7f01fe2fef433d75001bb0f95eb71af18c5863ff60261b4dc2",
+      "baselineSha256": "eccaf32ff593b18f146fc14e37f87b53dc26f7c848325198ebfdf41a9a33590e",
+      "isNew": false
+    },
+    "src/components/savings/MemberStatus.tsx": {
+      "sha256": "c603a5aeae0e106f348718aee180a7d1488aa9bcac3233128e8d349b243a8287",
+      "baselineSha256": "092d80350c70368451faf6dca0931d11cb97d92ff5df05699e190205fe1b9112",
+      "isNew": false
+    },
+    "src/components/savings/ClubMembersRoster.tsx": {
+      "sha256": "8f00fad44da50e1a1206d3dd47f4c74cdb07bd69434d81c3d813d34219ce7735",
+      "baselineSha256": "d485588e502c44e6570826ae3542891ad5978f2011a9707be717ae6b6d795ca0",
+      "isNew": false
+    },
+    "src/lib/i18n.ts": {
+      "sha256": "d405f79947054376e20abbc7fac22c5927f0bf0a9c6d2aef3fc6af463b1bf939",
+      "baselineSha256": "8f834ca9b33e2d74c1ae8acbf9b2a3ae82581557f021f16f59bbcdfb4a9407f6",
+      "isNew": false
+    },
+    "src/lib/arcWallet.ts": {
+      "sha256": "c2b8f86ee8134626e4e0d249b41c280da5765a3e47d33bb9368fe2b3efd74c7c",
+      "baselineSha256": null,
+      "isNew": true
+    },
+    "src/lib/passkeySession.ts": {
+      "sha256": "6de18bbe105c2a520697e938b4859ad2fdb035780500582e5cd28dff8f7a60a6",
+      "baselineSha256": null,
+      "isNew": true
+    },
+    "src/lib/roundHistory.ts": {
+      "sha256": "a6cf0010f2fd1f3b7ec5e56c7426f6b7121264fd9d209aa0b262e0c09d95a8ae",
+      "baselineSha256": null,
+      "isNew": true
+    },
+    "src/hooks/useArcWriteContract.ts": {
+      "sha256": "6e4456ba52ef389b240410122c850fc526f8787b06854e4757730cc662b31653",
+      "baselineSha256": null,
+      "isNew": true
+    }
+  }
+}

@@ -1,5 +1,6 @@
+import { useArcWriteContract } from "./hooks/useArcWriteContract";
 import { useEffect, useState, useMemo } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { encodeFunctionData } from "viem";
 import { toast } from "sonner";
 import { useModal } from "connectkit";
@@ -313,12 +314,12 @@ export default function App() {
   );
   const { allowance, refetch: refetchAllowance } = useUsdcAllowance(address, contractAddress);
   const { balance, refetch: refetchBalance } = useUsdcBalance(address);
-  const { settledRounds } = useRoundHistory(clubInfo.currentRound, contractAddress);
+  const { settledRounds, isHistoryLimited } = useRoundHistory(clubInfo.currentRound, contractAddress);
   const settledWinners = settledRounds.map((r) => ({
     address: r.winner,
     roundId: r.roundId,
   }));
-  const userWonRound = settledRounds.find(
+  const userWonRound = [...settledRounds].reverse().find(
     (r) => address && r.winner.toLowerCase() === address.toLowerCase()
   );
   const wonRoundId = userWonRound ? Number(userWonRound.roundId) : undefined;
@@ -329,10 +330,10 @@ export default function App() {
     data: claimHash,
     isPending: isClaiming,
     reset: resetClaim,
-  } = useWriteContract();
+  } = useArcWriteContract();
 
   const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } =
-    useWaitForTransactionReceipt({ hash: claimHash });
+    useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID, hash: claimHash });
 
   useEffect(() => {
     if (isClaimSuccess) {
@@ -371,10 +372,10 @@ export default function App() {
     data: ownerHash,
     isPending: isOwnerPending,
     reset: resetOwnerWrite,
-  } = useWriteContract();
+  } = useArcWriteContract();
 
   const { isLoading: isOwnerConfirming, isSuccess: isOwnerSuccess } =
-    useWaitForTransactionReceipt({ hash: ownerHash });
+    useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID, hash: ownerHash });
 
   useEffect(() => {
     if (isOwnerSuccess) {
@@ -463,7 +464,7 @@ export default function App() {
           paymaster: true,
         });
         const { receipt } = await bundler.waitForUserOperationReceipt({ hash });
-        toast.success(isEn ? "Club cancelled successfully!" : "Đã huỷ nhóm thành công!", {
+        toast.success(isEn ? "Cancellation vote recorded." : "Đã ghi nhận phiếu huỷ nhóm.", {
           description: (
             <a
               href={buildTxExplorerUrl(ARC_TESTNET_CHAIN_ID, receipt.transactionHash)}
@@ -495,7 +496,28 @@ export default function App() {
     }
   };
 
+  const sendPasskeyClubAction = async (functionName: string, args: readonly unknown[] = []) => {
+    if (!passkeyAccount || !bundler) return;
+    setIsOwnerOpLoading(true);
+    try {
+      const hash = await bundler.sendUserOperation({
+        account: passkeyAccount,
+        calls: [{ to: contractAddress, data: encodeFunctionData({ abi: ROTATING_SAVINGS_ABI, functionName, args }) }],
+        paymaster: true,
+      });
+      await bundler.waitForUserOperationReceipt({ hash });
+      toast.success(isEn ? "Transaction confirmed." : "Giao dịch đã xác nhận.");
+      refetchAll();
+    } catch (error) {
+      toast.error(parseContractError(error));
+    } finally { setIsOwnerOpLoading(false); }
+  };
+
   const handleAcceptOwnership = async () => {
+    if (passkeyAddress && passkeyAccount && bundler) {
+      await sendPasskeyClubAction("acceptOwnership");
+      return;
+    }
     try {
       ownerWrite({
         address: contractAddress,
@@ -545,6 +567,10 @@ export default function App() {
   }
 
   const handleClaimPayout = () => {
+    if (passkeyAddress && passkeyAccount && bundler) {
+      void sendPasskeyClubAction("claimPayout");
+      return;
+    }
     claimWrite({
       address: contractAddress,
       abi: ROTATING_SAVINGS_ABI,
@@ -1093,6 +1119,15 @@ export default function App() {
                 </div>
               )}
 
+              {isOwner && clubInfo.state === GROUP_STATE.ACTIVE && (
+                <div className="p-5 rounded-2xl border border-red-500/30 space-y-3">
+                  <p className="text-xs text-slate-300">{isEn ? "A majority vote ends future rounds and refunds only contributions and bids from the unsettled round. Earlier payouts remain final; eligible collateral is claimed separately." : "Biểu quyết đủ đa số sẽ chấm dứt các vòng tương lai, chỉ hoàn tiền góp và bid của vòng chưa quyết toán. Tiền đã trả giữ nguyên; ký quỹ đủ điều kiện được rút riêng."}</p>
+                  <button onClick={handleCancelGroup} disabled={isOwnerPending || isOwnerConfirming || isOwnerOpLoading || memberStatus.hasVotedCancel} className="w-full py-2 rounded-xl border border-red-500/30 text-red-300 disabled:opacity-50">
+                    {memberStatus.hasVotedCancel ? (isEn ? "Voted to cancel" : "Đã bỏ phiếu huỷ") : (isEn ? "Vote to cancel club" : "Biểu quyết huỷ nhóm")} ({String(clubInfo.cancelVoteCount ?? 0n)}/{String(clubInfo.requiredCancelVotes ?? 1n)})
+                  </button>
+                </div>
+              )}
+
               {/* Owner Controls (only visible to owner when group state is OPEN) */}
               {isOwner && clubInfo.state === GROUP_STATE.OPEN && (
                 <div className="bg-slate-900/90 rounded-3xl p-5 border border-amber-500/20 shadow-lg space-y-3.5">
@@ -1139,7 +1174,9 @@ export default function App() {
                               setNameUpdateTrigger((prev) => prev + 1);
                               if (clubInfo.memberCount === 0) {
                                 try {
-                                  ownerWrite({
+                                  if (passkeyAddress && passkeyAccount && bundler) {
+                                    void sendPasskeyClubAction("setCollateralAmount", [opt.sats]);
+                                  } else ownerWrite({
                                     address: contractAddress,
                                     abi: ROTATING_SAVINGS_ABI,
                                     functionName: "setCollateralAmount",
@@ -1152,8 +1189,8 @@ export default function App() {
                               }
                               toast.success(
                                 isEn
-                                  ? `Updated collateral to ${opt.label}`
-                                  : `Đã cập nhật mức ký quỹ: ${opt.label}`
+                                  ? `Collateral preference: ${opt.label}. Confirm the transaction if prompted.`
+                                  : `Mức ký quỹ đã chọn: ${opt.label}. Hãy xác nhận giao dịch nếu ví yêu cầu.`
                               );
                             }}
                             className={`py-1.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
@@ -1275,12 +1312,15 @@ export default function App() {
                   onOpenCreateModal={() => setShowCreateModal(true)}
                   claimable={memberStatus.claimable ?? 0n}
                   onClaimPayout={handleClaimPayout}
-                  isClaiming={isClaiming || isClaimConfirming}
+                  isClaiming={isClaiming || isClaimConfirming || isOwnerOpLoading}
                   userBid={roundMemberStatus.bid ?? 0n}
                   highestBid={clubMembers.highestBid ?? 0n}
                   collateralAmount={activeCollateralAmount}
                   lockedCollateral={memberStatus.lockedCollateral}
                   claimableCirBtc={memberStatus.claimableCirBtc}
+                  cancelVoteCount={clubInfo.cancelVoteCount}
+                  requiredCancelVotes={clubInfo.requiredCancelVotes}
+                  hasVotedCancel={memberStatus.hasVotedCancel}
                 />
               ) : (
                 <ActionPanel
@@ -1304,12 +1344,13 @@ export default function App() {
                   onOpenCreateModal={() => setShowCreateModal(true)}
                   claimable={memberStatus.claimable ?? 0n}
                   onClaimPayout={handleClaimPayout}
-                  isClaiming={isClaiming || isClaimConfirming}
+                  isClaiming={isClaiming || isClaimConfirming || isOwnerOpLoading}
                   userBid={roundMemberStatus.bid ?? 0n}
                   highestBid={clubMembers.highestBid ?? 0n}
                   collateralAmount={activeCollateralAmount}
                   lockedCollateral={memberStatus.lockedCollateral}
                   claimableCirBtc={memberStatus.claimableCirBtc}
+                  collateralToken={memberStatus.collateralToken}
                   cirBtcBalance={memberStatus.cirBtcBalance}
                   cirBtcAllowance={memberStatus.cirBtcAllowance}
                   cancelVoteCount={clubInfo.cancelVoteCount}
@@ -1318,6 +1359,7 @@ export default function App() {
                   totalJoined={clubMembers.totalJoined}
                   members={clubMembers.members}
                   settledRounds={settledRounds}
+                  isHistoryLimited={isHistoryLimited}
                 />
               )}
 
@@ -1334,7 +1376,7 @@ export default function App() {
                     bid={roundMemberStatus.bid}
                     contributionAmount={clubInfo.contributionAmount ?? 0n}
                     onClaimPayout={handleClaimPayout}
-                    isClaiming={isClaiming || isClaimConfirming}
+                    isClaiming={isClaiming || isClaimConfirming || isOwnerOpLoading}
                     language={language}
                     wonRoundId={wonRoundId}
                   />

@@ -241,7 +241,7 @@ test("TC-10MEM-10 (AC-03.3): App.tsx xử lý hàm handleClaimPayout() gọi hà
 
   // Verify receipt monitoring
   assert.ok(
-    appSrc.includes("useWaitForTransactionReceipt({ hash: claimHash })"),
+    appSrc.includes("useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID, hash: claimHash })"),
     "App.tsx must wait for transaction receipt for claimHash"
   );
 
@@ -265,7 +265,7 @@ test("TC-10MEM-10 (AC-03.3): App.tsx xử lý hàm handleClaimPayout() gọi hà
   // Verify MemberStatus binding
   assert.ok(
     appSrc.includes("onClaimPayout={handleClaimPayout}") &&
-    appSrc.includes("isClaiming={isClaiming || isClaimConfirming}"),
+    appSrc.includes("isClaiming={isClaiming || isClaimConfirming || isOwnerOpLoading}"),
     "App.tsx must pass handleClaimPayout and isClaiming state into MemberStatus"
   );
 });

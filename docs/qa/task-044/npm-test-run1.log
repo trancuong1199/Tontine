@@ -1,0 +1,314 @@
+
+> studio-app@0.0.0 test
+> node --experimental-strip-types --test tests/*.test.ts
+
+TAP version 13
+# Subtest: tests/active-round-pot-preservation.test.ts
+ok 1 - tests/active-round-pot-preservation.test.ts
+  ---
+  duration_ms: 362.57028
+  type: 'test'
+  ...
+# Subtest: tests/allowance-and-expiration-guard.test.ts
+not ok 2 - tests/allowance-and-expiration-guard.test.ts
+  ---
+  duration_ms: 372.438128
+  type: 'test'
+  location: '/home/avada/tontine/tests/allowance-and-expiration-guard.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: tests/arc-appkit-integration.test.ts
+ok 3 - tests/arc-appkit-integration.test.ts
+  ---
+  duration_ms: 707.080836
+  type: 'test'
+  ...
+# Subtest: tests/arc-review-fixes.test.ts
+not ok 4 - tests/arc-review-fixes.test.ts
+  ---
+  duration_ms: 1969.171846
+  type: 'test'
+  location: '/home/avada/tontine/tests/arc-review-fixes.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: tests/auto-refund-no-winner.test.ts
+not ok 5 - tests/auto-refund-no-winner.test.ts
+  ---
+  duration_ms: 512.186139
+  type: 'test'
+  location: '/home/avada/tontine/tests/auto-refund-no-winner.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: tests/bilingual-and-layout.test.ts
+not ok 6 - tests/bilingual-and-layout.test.ts
+  ---
+  duration_ms: 369.794713
+  type: 'test'
+  location: '/home/avada/tontine/tests/bilingual-and-layout.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: tests/cancelled-state-ux.test.ts
+not ok 7 - tests/cancelled-state-ux.test.ts
+  ---
+  duration_ms: 572.744207
+  type: 'test'
+  location: '/home/avada/tontine/tests/cancelled-state-ux.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: tests/cirbtc-collateral-vault.test.ts
+ok 8 - tests/cirbtc-collateral-vault.test.ts
+  ---
+  duration_ms: 486.331096
+  type: 'test'
+  ...
+# Subtest: tests/clean-url-navigation.test.ts
+ok 9 - tests/clean-url-navigation.test.ts
+  ---
+  duration_ms: 321.662432
+  type: 'test'
+  ...
+# Subtest: tests/club-members-roster.test.ts
+ok 10 - tests/club-members-roster.test.ts
+  ---
+  duration_ms: 413.457001
+  type: 'test'
+  ...
+# Subtest: tests/continuous-viewport-orbital-companion.test.ts
+ok 11 - tests/continuous-viewport-orbital-companion.test.ts
+  ---
+  duration_ms: 256.277313
+  type: 'test'
+  ...
+# Subtest: tests/contribute-section-prominence-and-layout.test.ts
+ok 12 - tests/contribute-section-prominence-and-layout.test.ts
+  ---
+  duration_ms: 234.622704
+  type: 'test'
+  ...
+# Subtest: tests/create-club.test.ts
+not ok 13 - tests/create-club.test.ts
+  ---
+  duration_ms: 303.085847
+  type: 'test'
+  location: '/home/avada/tontine/tests/create-club.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: tests/dark-theme-and-navbar-ux.test.ts
+ok 14 - tests/dark-theme-and-navbar-ux.test.ts
+  ---
+  duration_ms: 322.669624
+  type: 'test'
+  ...
+# Subtest: tests/delete-confirmation-and-bilingual-toasts.test.ts
+ok 15 - tests/delete-confirmation-and-bilingual-toasts.test.ts
+  ---
+  duration_ms: 367.639197
+  type: 'test'
+  ...
+# Subtest: tests/digital-timer-and-directory-cleanup.test.ts
+ok 16 - tests/digital-timer-and-directory-cleanup.test.ts
+  ---
+  duration_ms: 327.787889
+  type: 'test'
+  ...
+# Subtest: tests/edit-club-name-fixes.test.ts
+ok 17 - tests/edit-club-name-fixes.test.ts
+  ---
+  duration_ms: 329.43425
+  type: 'test'
+  ...
+# Subtest: tests/edit-club-name.test.ts
+ok 18 - tests/edit-club-name.test.ts
+  ---
+  duration_ms: 301.744873
+  type: 'test'
+  ...
+# Subtest: tests/enlarged-logo-and-immersive-background.test.ts
+ok 19 - tests/enlarged-logo-and-immersive-background.test.ts
+  ---
+  duration_ms: 307.914349
+  type: 'test'
+  ...
+# Subtest: tests/fair-timer-and-capacity-metrics.test.ts
+ok 20 - tests/fair-timer-and-capacity-metrics.test.ts
+  ---
+  duration_ms: 369.143523
+  type: 'test'
+  ...
+# Subtest: tests/guidemodal-and-homepage.test.ts
+ok 21 - tests/guidemodal-and-homepage.test.ts
+  ---
+  duration_ms: 380.947414
+  type: 'test'
+  ...
+# Subtest: tests/hero-concentric-orbits-and-perspective-grid.test.ts
+ok 22 - tests/hero-concentric-orbits-and-perspective-grid.test.ts
+  ---
+  duration_ms: 219.205559
+  type: 'test'
+  ...
+# Subtest: tests/hero-streamline-and-high-visibility-background.test.ts
+ok 23 - tests/hero-streamline-and-high-visibility-background.test.ts
+  ---
+  duration_ms: 346.326286
+  type: 'test'
+  ...
+# Subtest: tests/individual-club-delete.test.ts
+ok 24 - tests/individual-club-delete.test.ts
+  ---
+  duration_ms: 285.011291
+  type: 'test'
+  ...
+# Subtest: tests/modal-zindex-and-layering.test.ts
+ok 25 - tests/modal-zindex-and-layering.test.ts
+  ---
+  duration_ms: 222.571638
+  type: 'test'
+  ...
+# Subtest: tests/open-phase-pot-display.test.ts
+ok 26 - tests/open-phase-pot-display.test.ts
+  ---
+  duration_ms: 349.374297
+  type: 'test'
+  ...
+# Subtest: tests/open-phase-ux.test.ts
+ok 27 - tests/open-phase-ux.test.ts
+  ---
+  duration_ms: 232.494284
+  type: 'test'
+  ...
+# Subtest: tests/orbital-alignment-continuous-atmosphere-and-dapp-sync.test.ts
+ok 28 - tests/orbital-alignment-continuous-atmosphere-and-dapp-sync.test.ts
+  ---
+  duration_ms: 297.349232
+  type: 'test'
+  ...
+# Subtest: tests/pitch-black-sand-gold-theme.test.ts
+ok 29 - tests/pitch-black-sand-gold-theme.test.ts
+  ---
+  duration_ms: 261.527518
+  type: 'test'
+  ...
+# Subtest: tests/prominent-claim-and-confirmed-bid.test.ts
+not ok 30 - tests/prominent-claim-and-confirmed-bid.test.ts
+  ---
+  duration_ms: 584.806321
+  type: 'test'
+  location: '/home/avada/tontine/tests/prominent-claim-and-confirmed-bid.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: tests/saving-clubs-background-and-url-params.test.ts
+ok 31 - tests/saving-clubs-background-and-url-params.test.ts
+  ---
+  duration_ms: 393.792717
+  type: 'test'
+  ...
+# Subtest: tests/saving-clubs-scroll-orbital-motion.test.ts
+ok 32 - tests/saving-clubs-scroll-orbital-motion.test.ts
+  ---
+  duration_ms: 258.385187
+  type: 'test'
+  ...
+# Subtest: tests/savings-club-directory.test.ts
+ok 33 - tests/savings-club-directory.test.ts
+  ---
+  duration_ms: 350.509708
+  type: 'test'
+  ...
+# Subtest: tests/scroll-driven-orbital-motion-and-browserskill-verification.test.ts
+ok 34 - tests/scroll-driven-orbital-motion-and-browserskill-verification.test.ts
+  ---
+  duration_ms: 271.254607
+  type: 'test'
+  ...
+# Subtest: tests/single-click-join.test.ts
+ok 35 - tests/single-click-join.test.ts
+  ---
+  duration_ms: 260.375089
+  type: 'test'
+  ...
+# Subtest: tests/streamline-ui-hidden-status-and-header-create.test.ts
+not ok 36 - tests/streamline-ui-hidden-status-and-header-create.test.ts
+  ---
+  duration_ms: 291.322845
+  type: 'test'
+  location: '/home/avada/tontine/tests/streamline-ui-hidden-status-and-header-create.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: tests/ten-members-claim-payout.test.ts
+not ok 37 - tests/ten-members-claim-payout.test.ts
+  ---
+  duration_ms: 1191.83647
+  type: 'test'
+  location: '/home/avada/tontine/tests/ten-members-claim-payout.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: tests/tontine-branding-and-panel-darkening.test.ts
+ok 38 - tests/tontine-branding-and-panel-darkening.test.ts
+  ---
+  duration_ms: 307.782526
+  type: 'test'
+  ...
+# Subtest: tests/tontine-upgrade.test.ts
+ok 39 - tests/tontine-upgrade.test.ts
+  ---
+  duration_ms: 337.830157
+  type: 'test'
+  ...
+# Subtest: tests/ui-refinements-toast-clubname-singleplus.test.ts
+ok 40 - tests/ui-refinements-toast-clubname-singleplus.test.ts
+  ---
+  duration_ms: 377.667177
+  type: 'test'
+  ...
+# Subtest: tests/winner-mandatory-contribution.test.ts
+ok 41 - tests/winner-mandatory-contribution.test.ts
+  ---
+  duration_ms: 275.314076
+  type: 'test'
+  ...
+1..41
+# tests 41
+# suites 0
+# pass 32
+# fail 9
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3137.910452

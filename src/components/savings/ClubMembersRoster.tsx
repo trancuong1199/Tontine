@@ -105,7 +105,7 @@ export function ClubMembersRoster({
             const isUser = userAddrLower && member.address.toLowerCase() === userAddrLower;
             const isOwner = ownerAddrLower && member.address.toLowerCase() === ownerAddrLower;
             const isHighest = highestBidder && member.address.toLowerCase() === highestBidder.toLowerCase() && member.bid > 0n;
-            const wonRound = settledWinners?.find((w) => w.address.toLowerCase() === member.address.toLowerCase())?.roundId;
+            const wonRound = settledWinners?.slice().reverse().find((w) => w.address.toLowerCase() === member.address.toLowerCase())?.roundId;
 
             return (
               <div
@@ -207,8 +207,8 @@ export function ClubMembersRoster({
                           <Trophy size={13} className="text-amber-400 shrink-0" />
                           <span>
                             {isEn
-                              ? `Pot Paid (Round ${wonRound?.toString() ?? "1"})`
-                              : `Đã nhận Pot (Vòng ${wonRound?.toString() ?? "1"})`}
+                              ? `Pot Paid (Round ${wonRound?.toString() ?? (isEn ? "unknown" : "chưa xác định")})`
+                              : `Đã nhận Pot (Vòng ${wonRound?.toString() ?? (isEn ? "unknown" : "chưa xác định")})`}
                           </span>
                         </span>
                       ) : !member.isKicked ? (

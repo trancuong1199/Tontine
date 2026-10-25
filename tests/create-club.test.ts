@@ -9,6 +9,7 @@ import {
   ROTATING_SAVINGS_BYTECODE,
   ARC_TESTNET_CHAIN_ID,
   USDC_ADDRESS,
+  CIRBTC_ADDRESS,
   USDC_DECIMALS,
   formatUsdc,
   parseUsdc,
@@ -272,7 +273,7 @@ test("TC-CREATE-04 (AC-02.1): ROTATING_SAVINGS_BYTECODE được export và là 
 // ============================================================================
 // TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng thứ tự & định dạng
 // ============================================================================
-test("TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng thứ tự và định dạng: [USDC_ADDRESS, parseUsdc(contributionAmount), BigInt(maxMembers), BigInt(roundDuration), groupName]", () => {
+test("TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng thứ tự và định dạng: [USDC_ADDRESS, parseUsdc(contributionAmount), BigInt(maxMembers), BigInt(roundDuration), groupName, collateralToken]", () => {
   const modalSrc = readSource("src/components/savings/CreateClubModal.tsx");
 
   // Verify ABI constructor definition matches expected arguments
@@ -280,7 +281,7 @@ test("TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng th�
     (item: { type?: string }) => item.type === "constructor"
   );
   assert.ok(constructorAbi, "ROTATING_SAVINGS_ABI must contain constructor definition");
-  assert.equal(constructorAbi.inputs.length, 5, "Constructor must require exactly 5 arguments");
+  assert.equal(constructorAbi.inputs.length, 6, "Task-044 constructor must require exactly 6 arguments");
   assert.equal(constructorAbi.inputs[0].name, "usdcToken_");
   assert.equal(constructorAbi.inputs[0].type, "address");
   assert.equal(constructorAbi.inputs[1].name, "contributionAmount_");
@@ -291,6 +292,8 @@ test("TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng th�
   assert.equal(constructorAbi.inputs[3].type, "uint256");
   assert.equal(constructorAbi.inputs[4].name, "groupName_");
   assert.equal(constructorAbi.inputs[4].type, "string");
+  assert.equal(constructorAbi.inputs[5].name, "cirBtcToken_");
+  assert.equal(constructorAbi.inputs[5].type, "address");
 
   // Structural check in CreateClubModal.tsx
   assert.ok(
@@ -311,10 +314,10 @@ test("TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng th�
   );
 
   // Check exact args mapping in source
-  const argsPattern = /args:\s*\[\s*USDC_ADDRESS,\s*parsedAmount,\s*BigInt\(maxMembers\),\s*BigInt\(roundDuration\),\s*groupName\.trim\(\),?\s*\]/;
+  const argsPattern = /args:\s*\[\s*USDC_ADDRESS,\s*parsedAmount,\s*BigInt\(maxMembers\),\s*BigInt\(roundDuration\),\s*groupName\.trim\(\),\s*collateralToken,?\s*\]/;
   assert.ok(
     argsPattern.test(modalSrc),
-    "deployContract args must exactly be [USDC_ADDRESS, parsedAmount, BigInt(maxMembers), BigInt(roundDuration), groupName.trim()]"
+    "deployContract args must exactly be [USDC_ADDRESS, parsedAmount, BigInt(maxMembers), BigInt(roundDuration), groupName.trim(), collateralToken]"
   );
 
   // Behavioral test: build and validate arguments
@@ -329,6 +332,7 @@ test("TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng th�
     BigInt(sampleMembers),
     BigInt(sampleDuration),
     sampleGroupName.trim(),
+    CIRBTC_ADDRESS,
   ];
 
   assert.equal(builtArgs[0], "0x3600000000000000000000000000000000000000", "Arg 0 must be USDC_ADDRESS");
@@ -336,6 +340,7 @@ test("TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng th�
   assert.equal(builtArgs[2], 6n, "Arg 2 must be BigInt(6)");
   assert.equal(builtArgs[3], 259200n, "Arg 3 must be BigInt(259200)");
   assert.equal(builtArgs[4], "Nhóm Tết 2026", "Arg 4 must be trimmed groupName");
+  assert.equal(builtArgs[5], CIRBTC_ADDRESS, "Arg 5 must be configured collateral token");
 });
 
 // ============================================================================
@@ -350,7 +355,7 @@ test("TC-CREATE-06 (AC-02.3): Quản lý trạng thái pending ký ví và confi
     "CreateClubModal must use useDeployContract hook"
   );
   assert.ok(
-    modalSrc.includes("useWaitForTransactionReceipt({ hash: deployHash })"),
+    modalSrc.includes("useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID, hash: deployHash })"),
     "CreateClubModal must monitor transaction receipt via useWaitForTransactionReceipt"
   );
 

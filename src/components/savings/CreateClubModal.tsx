@@ -18,6 +18,7 @@ import {
   ROTATING_SAVINGS_ABI,
   ROTATING_SAVINGS_BYTECODE,
   USDC_ADDRESS,
+  getCirBtcDeploymentAddress,
   ARC_TESTNET_CHAIN_ID,
   parseUsdc,
   formatUsdc,
@@ -53,7 +54,7 @@ export function CreateClubModal({
 }: CreateClubModalProps) {
   const { isConnected, chainId } = useAccount();
   const { setOpen: openConnectModal } = useModal();
-  const { switchChain } = useSwitchChain();
+  const { switchChainAsync } = useSwitchChain();
   const isEn = language === "en";
 
   const [groupName, setGroupName] = useState("Nhóm Hụi Mới");
@@ -118,7 +119,7 @@ export function CreateClubModal({
     data: receipt,
     isLoading: isConfirming,
     isSuccess,
-  } = useWaitForTransactionReceipt({ hash: deployHash });
+  } = useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID, hash: deployHash });
 
   // Handle deploy success
   useEffect(() => {
@@ -182,7 +183,7 @@ export function CreateClubModal({
     }
   }
 
-  const handleDeploy = (e?: React.FormEvent) => {
+  const handleDeploy = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!isFormValid || isDeployPending || isConfirming) return;
 
@@ -191,12 +192,11 @@ export function CreateClubModal({
       return;
     }
 
-    if (chainId !== ARC_TESTNET_CHAIN_ID) {
-      switchChain({ chainId: ARC_TESTNET_CHAIN_ID });
-      return;
-    }
-
     try {
+      const collateralToken = getCirBtcDeploymentAddress();
+      if (chainId !== ARC_TESTNET_CHAIN_ID) {
+        await switchChainAsync({ chainId: ARC_TESTNET_CHAIN_ID });
+      }
       deployContract({
         abi: ROTATING_SAVINGS_ABI,
         bytecode: ROTATING_SAVINGS_BYTECODE,
@@ -206,6 +206,7 @@ export function CreateClubModal({
           BigInt(maxMembers),
           BigInt(roundDuration),
           groupName.trim(),
+          collateralToken,
         ],
         chainId: ARC_TESTNET_CHAIN_ID,
       });

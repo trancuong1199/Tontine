@@ -119,7 +119,7 @@ test("TC-CANCEL-03 (AC-01.3): MemberStatus hỗ trợ song ngữ vi/en chuẩn t
     "MemberStatus must support both Vietnamese and English for cancelled title"
   );
   assert.ok(
-    source.includes("isEn ? t(\"memberStatus.cancelledHint\", language) : \"Hợp đồng đã giải tán an toàn, không còn thành viên hoạt động.\"") ||
+    source.includes("isEn ? t(\"memberStatus.cancelledHint\", language) : \"Nhóm đã huỷ. Hãy nhận khoản hoàn tiền và rút ký quỹ đủ điều kiện trong bảng thao tác.\"") ||
     source.includes("t(\"memberStatus.cancelledHint\", language)"),
     "MemberStatus must support both Vietnamese and English for cancelled hint"
   );
@@ -128,12 +128,12 @@ test("TC-CANCEL-03 (AC-01.3): MemberStatus hỗ trợ song ngữ vi/en chuẩn t
   assert.equal(translations.vi.memberStatus.cancelledTitle, "Nhóm hụi đã bị huỷ");
   assert.equal(
     translations.vi.memberStatus.cancelledHint,
-    "Hợp đồng đã giải tán an toàn, không còn thành viên hoạt động."
+    "Nhóm đã huỷ. Hãy nhận khoản hoàn tiền và rút ký quỹ đủ điều kiện trong bảng thao tác."
   );
   assert.equal(translations.en.memberStatus.cancelledTitle, "Savings Club Cancelled");
   assert.equal(
     translations.en.memberStatus.cancelledHint,
-    "Contract dissolved safely with no active members."
+    "The club is cancelled. Claim your refund and eligible collateral in the action panel."
   );
 });
 
@@ -210,37 +210,17 @@ test("TC-CANCEL-05 (AC-02.2): PasskeyActionPanel hiển thị thẻ Cancelled đ
   );
 });
 
-test("TC-CANCEL-06 (AC-02.3): Thông điệp an tâm tài sản trên cả 2 panel khẳng định rõ 0 USDC bị giam giữ / an toàn vốn", () => {
+test("TC-CANCEL-06 (Task-044 AC-02b): Cancellation wording explains pull refunds and preserves earlier payouts", () => {
   const viDesc = translations.vi.actionPanel.cancelledDesc;
   const enDesc = translations.en.actionPanel.cancelledDesc;
-
-  // Vietnamese asset safety statement
-  assert.ok(
-    viDesc.includes("không có tài sản nào bị giam giữ"),
-    `Vietnamese message must contain 'không có tài sản nào bị giam giữ': got '${viDesc}'`
-  );
-  assert.ok(
-    viDesc.includes("rời nhóm an toàn"),
-    `Vietnamese message must confirm safe exit: got '${viDesc}'`
-  );
-  assert.ok(
-    viDesc.includes("hợp đồng đã đóng vĩnh viễn"),
-    `Vietnamese message must confirm contract closed permanently: got '${viDesc}'`
-  );
-
-  // English asset safety statement
-  assert.ok(
-    enDesc.includes("no assets are locked"),
-    `English message must contain 'no assets are locked': got '${enDesc}'`
-  );
-  assert.ok(
-    enDesc.includes("exited safely"),
-    `English message must confirm safe exit: got '${enDesc}'`
-  );
-  assert.ok(
-    enDesc.includes("permanently closed"),
-    `English message must confirm contract permanently closed: got '${enDesc}'`
-  );
+  assert.match(viDesc, /vòng chưa quyết toán/);
+  assert.match(viDesc, /Hãy rút tiền và ký quỹ đủ điều kiện/);
+  assert.match(viDesc, /đã trả trước đó giữ nguyên/);
+  assert.match(enDesc, /unsettled round/);
+  assert.match(enDesc, /Claim your payout and eligible collateral/);
+  assert.match(enDesc, /earlier payouts remain final/);
+  assert.doesNotMatch(viDesc, /không có tài sản nào bị giam giữ/);
+  assert.doesNotMatch(enDesc, /no assets are locked|registration phase/);
 });
 
 // ============================================================================
@@ -292,12 +272,12 @@ test("TC-CANCEL-08 (AC-03.2): Từ điển src/lib/i18n.ts có đầy đủ 5 ke
   assert.equal(translations.vi.memberStatus.cancelledTitle, "Nhóm hụi đã bị huỷ");
   assert.equal(
     translations.vi.memberStatus.cancelledHint,
-    "Hợp đồng đã giải tán an toàn, không còn thành viên hoạt động."
+    "Nhóm đã huỷ. Hãy nhận khoản hoàn tiền và rút ký quỹ đủ điều kiện trong bảng thao tác."
   );
   assert.equal(translations.vi.actionPanel.cancelledTitle, "Nhóm hụi đã bị huỷ");
   assert.equal(
     translations.vi.actionPanel.cancelledDesc,
-    "Nhóm hụi đã được huỷ bởi Chủ nhóm trong giai đoạn đăng ký. Toàn bộ người dùng đã rời nhóm an toàn, không có tài sản nào bị giam giữ và hợp đồng đã đóng vĩnh viễn."
+    "Nhóm đã huỷ theo biểu quyết. Tiền góp và bid của vòng chưa quyết toán được cộng vào khoản có thể nhận. Hãy rút tiền và ký quỹ đủ điều kiện; các khoản đã trả trước đó giữ nguyên."
   );
   assert.equal(
     translations.vi.actionPanel.cancelledNavHint,
@@ -307,12 +287,12 @@ test("TC-CANCEL-08 (AC-03.2): Từ điển src/lib/i18n.ts có đầy đủ 5 ke
   assert.equal(translations.en.memberStatus.cancelledTitle, "Savings Club Cancelled");
   assert.equal(
     translations.en.memberStatus.cancelledHint,
-    "Contract dissolved safely with no active members."
+    "The club is cancelled. Claim your refund and eligible collateral in the action panel."
   );
   assert.equal(translations.en.actionPanel.cancelledTitle, "Savings Club Cancelled");
   assert.equal(
     translations.en.actionPanel.cancelledDesc,
-    "The savings club was cancelled by the club owner during the registration phase. All members have exited safely, no assets are locked, and the contract is permanently closed."
+    "The club was cancelled by vote. Contributions and bids from the unsettled round were credited for withdrawal. Claim your payout and eligible collateral; earlier payouts remain final."
   );
   assert.equal(
     translations.en.actionPanel.cancelledNavHint,

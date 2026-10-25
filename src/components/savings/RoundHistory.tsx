@@ -16,7 +16,7 @@ export function RoundHistory({
   userAddress,
   language = "vi",
 }: RoundHistoryProps) {
-  const { settledRounds, isLoading } = useRoundHistory(currentRound, contractAddress);
+  const { settledRounds, isLoading, isHistoryLimited, historyStartRound } = useRoundHistory(currentRound, contractAddress);
   const isEn = language === "en";
 
   return (
@@ -42,6 +42,11 @@ export function RoundHistory({
         </span>
       </div>
 
+      {isHistoryLimited && (
+        <p className="text-xs text-amber-300">
+          {isEn ? `Showing the latest 50 rounds (${historyStartRound}–${currentRound}); counts cover this window only.` : `Hiển thị 50 vòng gần nhất (${historyStartRound}–${currentRound}); số liệu chỉ trong phạm vi này.`}
+        </p>
+      )}
       {isLoading ? (
         <div className="py-8 text-center text-slate-400 text-sm">
           <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />

@@ -45,7 +45,7 @@ test("TC-STREAMLINE-02 (AC-01.2): Cấu trúc <MemberStatus, đầy đủ props 
   assert.ok(appSrc.includes("bid={roundMemberStatus.bid}"), "MemberStatus must receive bid prop");
   assert.ok(appSrc.includes("contributionAmount={clubInfo.contributionAmount ?? 0n}"), "MemberStatus must receive contributionAmount prop");
   assert.ok(appSrc.includes("onClaimPayout={handleClaimPayout}"), "MemberStatus must receive onClaimPayout prop");
-  assert.ok(appSrc.includes("isClaiming={isClaiming || isClaimConfirming}"), "MemberStatus must receive isClaiming prop");
+  assert.ok(appSrc.includes("isClaiming={isClaiming || isClaimConfirming || isOwnerOpLoading}"), "MemberStatus must receive isClaiming prop");
   assert.ok(appSrc.includes("language={language}"), "MemberStatus must receive language prop");
   assert.ok(appSrc.includes("wonRoundId={wonRoundId}"), "MemberStatus must receive wonRoundId prop");
 

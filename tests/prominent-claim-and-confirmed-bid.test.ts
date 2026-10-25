@@ -267,7 +267,7 @@ test("TC-RAISE-03 (AC-03.3): App.tsx đồng bộ đầy đủ các props claima
     "App.tsx must pass handleClaimPayout to ActionPanels"
   );
   assert.ok(
-    appSrc.includes("isClaiming={isClaiming || isClaimConfirming}"),
+    appSrc.includes("isClaiming={isClaiming || isClaimConfirming || isOwnerOpLoading}"),
     "App.tsx must pass isClaiming state to ActionPanels"
   );
   assert.ok(

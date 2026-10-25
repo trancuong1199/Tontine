@@ -1,0 +1,14 @@
+{
+  "checks": {
+    "abi": true,
+    "creationBytecode": true,
+    "runtimeBytecode": true,
+    "linkReferences": true,
+    "immutableReferences": true
+  },
+  "source": "contracts/out/RotatingSavings.sol/RotatingSavings.json",
+  "independentBuild": "/tmp/task044-qa-out/RotatingSavings.sol/RotatingSavings.json",
+  "compiler": "0.8.28",
+  "note": "Source-map source IDs differ when independent build includes test sources; both executable bytecode objects and ABI match exactly.",
+  "exitCode": 0
+}

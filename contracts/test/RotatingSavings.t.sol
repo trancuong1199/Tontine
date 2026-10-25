@@ -52,7 +52,6 @@ contract SavingsHandler is Test {
         address actor = actors[actorSeed % actors.length];
         if (!savings.isMember(actor)) return;
         if (savings.isKicked(actor)) return;
-        if (savings.hasWon(actor)) return;
         if (savings.getRoundContribution(round, actor) == CONTRIBUTION) return; // already contributed
 
         (, uint256 endTime, , , , ) = savings.getRoundSummary(round);
@@ -179,7 +178,8 @@ contract RotatingSavingsTest is Test {
             CONTRIBUTION,
             MAX_MEMBERS,
             ROUND_DURATION,
-            "Test Hui"
+            "Test Hui",
+            address(0xCB7C)
         );
 
         // Seed USDC for participants and give unlimited approval.
@@ -251,31 +251,31 @@ contract RotatingSavingsTest is Test {
     function test_Constructor_RevertsOnZeroUsdcAddress() public {
         vm.prank(owner);
         vm.expectRevert(RotatingSavings.InvalidAddress.selector);
-        new RotatingSavings(address(0), CONTRIBUTION, MAX_MEMBERS, ROUND_DURATION, "x");
+        new RotatingSavings(address(0), CONTRIBUTION, MAX_MEMBERS, ROUND_DURATION, "x", address(0xCB7C));
     }
 
     function test_Constructor_RevertsOnZeroContribution() public {
         vm.prank(owner);
         vm.expectRevert(RotatingSavings.InvalidConfiguration.selector);
-        new RotatingSavings(address(usdc), 0, MAX_MEMBERS, ROUND_DURATION, "x");
+        new RotatingSavings(address(usdc), 0, MAX_MEMBERS, ROUND_DURATION, "x", address(0xCB7C));
     }
 
     function test_Constructor_RevertsOnZeroRoundDuration() public {
         vm.prank(owner);
         vm.expectRevert(RotatingSavings.InvalidConfiguration.selector);
-        new RotatingSavings(address(usdc), CONTRIBUTION, MAX_MEMBERS, 0, "x");
+        new RotatingSavings(address(usdc), CONTRIBUTION, MAX_MEMBERS, 0, "x", address(0xCB7C));
     }
 
     function test_Constructor_RevertsWhenMaxMembersLessThan2() public {
         vm.prank(owner);
         vm.expectRevert(RotatingSavings.InvalidConfiguration.selector);
-        new RotatingSavings(address(usdc), CONTRIBUTION, 1, ROUND_DURATION, "x");
+        new RotatingSavings(address(usdc), CONTRIBUTION, 1, ROUND_DURATION, "x", address(0xCB7C));
     }
 
     function test_Constructor_RevertsWhenMaxMembersExceeds20() public {
         vm.prank(owner);
         vm.expectRevert(RotatingSavings.InvalidConfiguration.selector);
-        new RotatingSavings(address(usdc), CONTRIBUTION, 21, ROUND_DURATION, "x");
+        new RotatingSavings(address(usdc), CONTRIBUTION, 21, ROUND_DURATION, "x", address(0xCB7C));
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -438,7 +438,7 @@ contract RotatingSavingsTest is Test {
         _warpPastDeadline();
 
         vm.prank(alice);
-        vm.expectRevert(RotatingSavings.RoundStillOpen.selector);
+        vm.expectRevert(RotatingSavings.RoundEnded.selector);
         savings.contribute(1);
     }
 
@@ -460,7 +460,7 @@ contract RotatingSavingsTest is Test {
         savings.contribute(2);
     }
 
-    function test_Contribute_RevertsIfAlreadyWon() public {
+    function test_Contribute_PreviousWinnerStillContributes() public {
         _startWithThree();
         _contributeAll3(1);
         _warpPastDeadline();
@@ -468,10 +468,10 @@ contract RotatingSavingsTest is Test {
         // alice won (join order tie-break, no bids)
         assertTrue(savings.hasWon(alice));
 
-        // round 2: alice tries to contribute
+        // Task-018: prior winners still owe the fixed contribution every round.
         vm.prank(alice);
-        vm.expectRevert(RotatingSavings.AlreadyWon.selector);
         savings.contribute(2);
+        assertEq(savings.getRoundContribution(2, alice), CONTRIBUTION);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -542,7 +542,7 @@ contract RotatingSavingsTest is Test {
         _warpPastDeadline();
 
         vm.prank(alice);
-        vm.expectRevert(RotatingSavings.RoundStillOpen.selector);
+        vm.expectRevert(RotatingSavings.RoundEnded.selector);
         savings.placeBid(1, 5e6);
     }
 
@@ -686,7 +686,7 @@ contract RotatingSavingsTest is Test {
         // Then a second settleRound(1) call hits the `round.settled` check.
         vm.prank(owner);
         RotatingSavings s2 = new RotatingSavings(
-            address(usdc), CONTRIBUTION, 2, ROUND_DURATION, "Double"
+            address(usdc), CONTRIBUTION, 2, ROUND_DURATION, "Double", address(0xCB7C)
         );
         vm.prank(alice); s2.joinGroup();
         vm.prank(bob);   s2.joinGroup();
@@ -737,7 +737,7 @@ contract RotatingSavingsTest is Test {
         // 2-member group → 2 rounds → complete
         vm.prank(owner);
         RotatingSavings twoMember = new RotatingSavings(
-            address(usdc), CONTRIBUTION, 2, ROUND_DURATION, "Mini Hui"
+            address(usdc), CONTRIBUTION, 2, ROUND_DURATION, "Mini Hui", address(0xCB7C)
         );
         vm.prank(alice); twoMember.joinGroup();
         vm.prank(bob);   twoMember.joinGroup();
@@ -949,11 +949,12 @@ contract RotatingSavingsTest is Test {
         savings.cancelGroup();
     }
 
-    function test_CancelGroup_RevertsIfNotOpen() public {
+    function test_CancelGroup_ActiveOwnerVoteRequiresMajority() public {
         _startWithThree();
         vm.prank(owner);
-        vm.expectRevert(RotatingSavings.GroupNotOpen.selector);
         savings.cancelGroup();
+        assertEq(uint256(savings.state()), uint256(RotatingSavings.GroupState.ACTIVE));
+        assertEq(savings.cancelVoteCount(), 1);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1002,7 +1003,8 @@ contract RotatingSavingsTest is Test {
         assertTrue(savings.hasWon(alice));
         assertEq(savings.currentRound(), 2);
 
-        // Round 2: bob bids and wins
+        // Round 2: prior winner alice pays the mandatory contribution too.
+        vm.prank(alice); savings.contribute(2);
         vm.prank(bob);   savings.contribute(2);
         vm.prank(carol); savings.contribute(2);
         vm.prank(bob);   savings.placeBid(2, 5e6);
@@ -1012,7 +1014,9 @@ contract RotatingSavingsTest is Test {
         assertTrue(savings.hasWon(bob));
         assertEq(savings.currentRound(), 3);
 
-        // Round 3: only carol left
+        // Round 3: only carol remains eligible to win, but everyone contributes.
+        vm.prank(alice); savings.contribute(3);
+        vm.prank(bob); savings.contribute(3);
         vm.prank(carol); savings.contribute(3);
         (, uint256 end3, , , , ) = savings.getRoundSummary(3);
         vm.warp(end3 + 1);
@@ -1176,7 +1180,8 @@ contract RotatingSavingsInvariantTest is Test {
             CONTRIBUTION,
             3,               // 3 members
             ROUND_DURATION,
-            "Invariant Hui"
+            "Invariant Hui",
+            address(0xCB7C)
         );
 
         // Create 3 actor addresses and join
@@ -1216,13 +1221,17 @@ contract RotatingSavingsInvariantTest is Test {
         assertLe(savings.activeMembers(), 3, "activeMembers exceeded total member count");
     }
 
-    /// INVARIANT: a member cannot both hasWon and isKicked.
-    function invariant_WonAndKickedMutuallyExclusive() public view {
+    /// INVARIANT: winning status must be backed by a settled winning round.
+    /// Task-018 permits a previous winner to be kicked for later non-contribution.
+    function invariant_WonStatusHasSettledWinningRound() public view {
         for (uint256 i = 0; i < actors.length; i++) {
-            assertFalse(
-                savings.hasWon(actors[i]) && savings.isKicked(actors[i]),
-                "Member both won and kicked - impossible state"
-            );
+            if (!savings.hasWon(actors[i])) continue;
+            bool found;
+            for (uint256 round = 1; round <= savings.currentRound(); round++) {
+                (, , address winner, , , bool settled) = savings.getRoundSummary(round);
+                if (settled && winner == actors[i]) found = true;
+            }
+            assertTrue(found, "hasWon lacks a settled winning round");
         }
     }
 

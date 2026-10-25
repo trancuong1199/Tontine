@@ -13,73 +13,18 @@ function readSource(relativePath: string): string {
 // REQ-01: Tự Động Hoàn Trả Tiền Khi Vòng Không Có Người Thắng Trong Smart Contract
 // ============================================================================
 
-test("TC-REFUND-01 (AC-01.1): Smart Contract RotatingSavings.sol tự động hoàn trả 100% tiền đóng góp vào claimable khi winner == address(0) và phát sự kiện ContributionRefunded", () => {
-  const contractSrc = readSource("contracts/RotatingSavings.sol");
-
-  // 1. Kiểm tra khai báo sự kiện ContributionRefunded
-  assert.ok(
-    contractSrc.includes("event ContributionRefunded(uint256 indexed roundId, address indexed member, uint256 amount);"),
-    "RotatingSavings.sol must define event ContributionRefunded"
-  );
-
-  // 2. Kiểm tra nhánh winner == address(0) trong hàm settleRound
-  assert.ok(
-    contractSrc.includes("for (uint256 i = 0; i < memberCount; i++) {"),
-    "settleRound must loop through all members when winner == address(0)"
-  );
-  assert.ok(
-    contractSrc.includes("uint256 contrib = round.contributions[member];"),
-    "settleRound must read member contribution for no-winner round"
-  );
-  assert.ok(
-    contractSrc.includes("uint256 refundAmount = contrib + bid;"),
-    "settleRound must calculate refundAmount = contrib + bid"
-  );
-  assert.ok(
-    contractSrc.includes("claimable[member] += refundAmount;"),
-    "settleRound must credit refundAmount to claimable[member]"
-  );
-  assert.ok(
-    contractSrc.includes("emit ContributionRefunded(roundId, member, refundAmount);"),
-    "settleRound must emit ContributionRefunded event"
-  );
-  assert.ok(
-    contractSrc.includes("emit RoundSettled(roundId, address(0), 0, 0);"),
-    "settleRound must emit RoundSettled with address(0)"
-  );
+test("TC-REFUND-01 (AC-01.1): No-winner settlement delegates to shared refund helper and emits settlement", () => {
+  const source = readSource("contracts/RotatingSavings.sol");
+  assert.match(source, /_refundRound\(roundId, false\);\s*emit RoundSettled\(roundId, address\(0\), 0, 0\);/);
+  assert.match(source, /event ContributionRefunded\(uint256 indexed roundId, address indexed member, uint256 amount\);/);
 });
 
-test("TC-REFUND-02 (AC-01.2): Smart Contract hoàn trả trọn vẹn cả tiền đóng góp và tiền bid (contrib + bid) cho thành viên trong vòng không có người thắng", () => {
-  const contractSrc = readSource("contracts/RotatingSavings.sol");
-
-  // 1. Kiểm tra logic gom cả contrib và bid
-  assert.ok(
-    contractSrc.includes("uint256 bid = round.bids[member];"),
-    "settleRound must read round.bids[member] for refund calculation"
-  );
-  assert.ok(
-    contractSrc.includes("uint256 refundAmount = contrib + bid;"),
-    "refundAmount must sum both contrib and bid"
-  );
-  assert.ok(
-    contractSrc.includes("if (refundAmount > 0) {"),
-    "settleRound must only credit and emit when refundAmount > 0"
-  );
-
-  // 2. Mô phỏng toán học chính xác theo quy chuẩn hợp đồng
-  const simulateRefund = (contrib: bigint, bid: bigint) => {
-    const refund = contrib + bid;
-    return refund;
-  };
-
-  // Case A: Đóng hụi chết 0.10 USDC (100000n), không bid (0n)
-  assert.equal(simulateRefund(100000n, 0n), 100000n);
-
-  // Case B: Đóng hụi sống 0.10 USDC (100000n), đặt bid 0.05 USDC (50000n)
-  assert.equal(simulateRefund(100000n, 50000n), 150000n);
-
-  // Case C: Thành viên bị kick không đóng tiền (0n) và không bid (0n)
-  assert.equal(simulateRefund(0n, 0n), 0n);
+test("TC-REFUND-02 (AC-01.2): Shared refund helper credits contributions plus bids; actual transfer covered by Foundry", () => {
+  const source = readSource("contracts/RotatingSavings.sol");
+  const helper = source.slice(source.indexOf("function _refundRound("), source.indexOf("function voteCancelGroup("));
+  assert.match(helper, /round.contributions\[member\] \+ round.bids\[member\]/);
+  assert.match(helper, /claimable\[member\] \+= refundAmount/);
+  assert.match(helper, /emit ContributionRefunded\(roundId, member, refundAmount\)/);
 });
 
 test("TC-REFUND-03 (AC-01.3): Foundry Test RotatingSavings.t.sol chứng minh thành viên nhận hoàn tiền và rút tiền thành công qua claimPayout", () => {

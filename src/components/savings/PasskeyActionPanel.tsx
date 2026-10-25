@@ -53,6 +53,9 @@ interface PasskeyActionPanelProps {
   lockedCollateral?: bigint;
   claimableCirBtc?: bigint;
   onClaimCollateral?: () => void;
+  cancelVoteCount?: bigint;
+  requiredCancelVotes?: bigint;
+  hasVotedCancel?: boolean;
 }
 
 /**
@@ -114,6 +117,9 @@ export function PasskeyActionPanel({
   lockedCollateral,
   claimableCirBtc,
   onClaimCollateral,
+  cancelVoteCount,
+  requiredCancelVotes,
+  hasVotedCancel,
 }: PasskeyActionPanelProps) {
   const targetContract = contractAddress ?? ROTATING_SAVINGS_ADDRESS;
   const isEn = language === "en";
@@ -157,6 +163,11 @@ export function PasskeyActionPanel({
     }
     setTimeout(() => setCopiedInvite(false), 2000);
   };
+
+  const handleVoteCancelGroup = () => sendOp([{
+    to: targetContract,
+    data: encodeFunctionData({ abi: ROTATING_SAVINGS_ABI, functionName: "voteCancelGroup" }),
+  }], isEn ? "Cancellation vote recorded." : "Đã ghi nhận phiếu huỷ nhóm.");
 
   const needsApproval = allowance < contributionAmount;
   const bidRaw = parseUsdc(bidAmount);
@@ -447,6 +458,15 @@ export function PasskeyActionPanel({
         </div>
       )}
 
+      {(state === GROUP_STATE.OPEN || state === GROUP_STATE.ACTIVE) && isMember && (
+        <div className="p-5 border-b border-red-500/20 space-y-3">
+          <p className="text-xs text-slate-300">{isEn ? "Cancellation refunds only contributions and bids from the unsettled round. Earlier payouts remain final and future rounds end; eligible collateral is claimed separately." : "Huỷ nhóm chỉ hoàn tiền góp và bid của vòng chưa quyết toán. Tiền đã trả ở vòng trước giữ nguyên, các vòng tương lai chấm dứt; ký quỹ đủ điều kiện được rút riêng."}</p>
+          <button onClick={handleVoteCancelGroup} disabled={isLoading || hasVotedCancel} className="w-full py-2 border border-red-500/30 rounded-xl text-red-300 disabled:opacity-50">
+            {hasVotedCancel ? (isEn ? "Voted to cancel" : "Đã bỏ phiếu huỷ") : (isEn ? "Vote to cancel club" : "Biểu quyết huỷ nhóm")} ({String(cancelVoteCount ?? 0n)}/{String(requiredCancelVotes ?? 1n)})
+          </button>
+        </div>
+      )}
+
       {/* OPEN: Join */}
       {state === GROUP_STATE.OPEN && (
         <div className="p-6 space-y-4">
@@ -614,7 +634,7 @@ export function PasskeyActionPanel({
                 </div>
                 <div className="space-y-1.5">
                   <h4 className="font-bold text-base sm:text-lg text-amber-200">
-                    {t("actionPanel.winnerHonoredTitle", language).replace("{round}", (wonRoundId ?? 1).toString())}
+                    {t("actionPanel.winnerHonoredTitle", language).replace("{round}", (wonRoundId?.toString() ?? (isEn ? "unknown" : "chưa xác định")))}
                   </h4>
                   <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
                     {t("actionPanel.winnerOfficialNotice", language).replace("{totalRounds}", (totalRounds ?? 10).toString())}
@@ -1055,7 +1075,7 @@ export function PasskeyActionPanel({
             <p className="text-slate-600 text-sm mt-2 leading-relaxed max-w-md mx-auto">
               {isEn
                 ? t("actionPanel.cancelledDesc", language)
-                : "Nhóm hụi đã được huỷ bởi Chủ nhóm trong giai đoạn đăng ký. Toàn bộ người dùng đã rời nhóm an toàn, không có tài sản nào bị giam giữ và hợp đồng đã đóng vĩnh viễn."}
+                : "Nhóm đã huỷ theo biểu quyết. Tiền góp và bid của vòng chưa quyết toán được cộng vào khoản có thể nhận. Hãy rút tiền và ký quỹ đủ điều kiện; các khoản đã trả trước đó giữ nguyên."}
             </p>
           </div>
           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">

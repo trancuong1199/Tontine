@@ -1,0 +1,14 @@
+{
+  "contracts/test/RotatingSavings.t.sol": "5ff789d2ea83427145be61e2ed9fe6e120ff41a5753d030db8bbc5da3a709b96",
+  "contracts/test/ArcReviewFixes.t.sol": "ffdf281a5e8098a71f792aca4ec268ad7db4ea9d5a3b7e318d4d6f20d4f27a27",
+  "tests/arc-review-fixes.test.ts": "ce344b1785194754e31f0fbbaec91b50d3f3837a8153dd3f97b13f3822211bdc",
+  "tests/create-club.test.ts": "1a461f292225e5e037ab054b9b4897f6d23f58e68d241c0c0527350277bd5daf",
+  "tests/cirbtc-collateral-vault.test.ts": "68cfe52898b3afbb3a45dfa594502ec0d6e11cb0fbe1ee068ffa40e5f7228b48",
+  "tests/allowance-and-expiration-guard.test.ts": "743d58e7c66092468a2f4360175617ff51dc868f688c5d02aadb9b493347cd68",
+  "tests/auto-refund-no-winner.test.ts": "c872ed096cb8134c9bc58c4af7632d71197bde1cffeaa053596b98e48191abb6",
+  "tests/bilingual-and-layout.test.ts": "94bc672d589e90bc2d4e6927cbf53b9b60a6854d9c1649534b72ca0f2c37cccc",
+  "tests/cancelled-state-ux.test.ts": "7a7cb55adfee80d166af280e8e3a0d90ac9c67da71c02d8b1395eba9f93c0a20",
+  "tests/prominent-claim-and-confirmed-bid.test.ts": "acf157471846908847af67ab444f7b1c302a5bbdd92df34cac95ac7759872948",
+  "tests/streamline-ui-hidden-status-and-header-create.test.ts": "d798af3e8bab1f8a5235168936c78a2a91a211e41a256c6d202bbdc9a49d1889",
+  "tests/ten-members-claim-payout.test.ts": "2684774f9e815af1a4287c98e1318b9e21b6a1cedb34871af04f86eac701b84f"
+}

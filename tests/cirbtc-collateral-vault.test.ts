@@ -22,7 +22,7 @@ test("TC-VAULT-01 (AC-01.1..01.3): Smart Contract RotatingSavings.sol tích hợ
   assert.ok(sol.includes("uint256 public cirBtcCollateralAmount;"), "Must declare cirBtcCollateralAmount");
   assert.ok(sol.includes("mapping(address => uint256) public cirBtcCollateral;"), "Must declare cirBtcCollateral mapping");
   assert.ok(sol.includes("mapping(address => uint256) public claimableCirBtc;"), "Must declare claimableCirBtc mapping");
-  assert.ok(sol.includes("0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF"), "Must reference official Arc Testnet CirBTC address");
+  assert.ok(sol.includes("cirBtcToken = cirBtcToken_;"), "Task-044 must use the constructor token instead of a hardcoded network token");
   assert.ok(sol.includes("function setCollateralAmount(uint256 collateralAmount_) external onlyGroupOwner"), "Must allow owner to configure collateral amount");
   assert.ok(sol.includes("emit CollateralDeposited(member, cirBtcCollateralAmount);"), "Must emit CollateralDeposited when member joins with collateral");
 });

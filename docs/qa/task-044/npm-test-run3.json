@@ -1,0 +1,1 @@
+{"command":["npm","test"],"exitCode":0,"sandbox":"require_escalated; legacy CLI subprocess EPERM workaround"}
