@@ -1,3 +1,4 @@
+import { CIRBTC_ADDRESS as DEFAULT_CIRBTC_ADDRESS } from "./config/arc-constants.ts";
 import artifact from "../contracts/out/RotatingSavings.sol/RotatingSavings.json" with { type: "json" };
 import { getUsdc, requireChain } from "./onchain-facts.ts";
 import { formatUnitsFixed, parseAmount } from "./onchain-money.ts";
@@ -124,10 +125,10 @@ export function getCirBtcDeploymentAddress(override = envCirBtcAddress): `0x${st
   if (override !== undefined && (!/^0x[0-9a-fA-F]{40}$/.test(override) || /^0x0{40}$/.test(override))) {
     throw new Error("VITE_CIRBTC_ADDRESS_TESTNET must be a nonzero token address");
   }
-  return (override ?? "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF") as `0x${string}`;
+  return (override ?? DEFAULT_CIRBTC_ADDRESS) as `0x${string}`;
 }
 // Default only for new deployments; existing clubs read their own cirBtcToken getter.
-export const CIRBTC_ADDRESS = "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF" as const;
+export const CIRBTC_ADDRESS = DEFAULT_CIRBTC_ADDRESS;
 export const CIRBTC_DECIMALS = 8;
 
 export function formatCirBtc(raw: bigint): string {
@@ -236,7 +237,7 @@ export function parseContractError(error: unknown): string {
   if (msg.includes("alreadycontributed")) return "Bạn đã đóng góp rồi.";
   if (msg.includes("roundstillopen")) return "Vòng hụi chưa kết thúc, chưa thể quyết toán.";
   if (msg.includes("roundended")) return "Thời gian đóng tiền của vòng này đã kết thúc. Vui lòng bấm Kết thúc vòng để chuyển sang vòng tiếp theo.";
-  if (msg.includes("alreadywon")) return "Phòng hụi này được tạo trên phiên bản hợp đồng cũ trước Task-018 không hỗ trợ đóng hụi chết. Vui lòng tạo hoặc tham gia phòng mới.";
+  if (msg.includes("alreadywon")) return "Thành viên này đã nhận hụi trong chu kỳ hiện tại; không thể đặt bid hoặc bị loại bằng thao tác này.";
   if (msg.includes("insufficientbid")) return "Bid phải cao hơn bid hiện tại.";
   if (msg.includes("nopayout")) return "Không có tiền để nhận.";
   if (msg.includes("maxmembersreached")) return "Nhóm đã đủ thành viên.";

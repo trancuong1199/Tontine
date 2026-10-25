@@ -1,3 +1,4 @@
+import { TOKEN_ADDRESSES, TOKEN_DECIMALS, ARC_CHAIN_ID, ARC_CHAIN_ID_HEX, ARC_EXPLORER } from '../config/arc-constants';
 import { confirmTransaction } from '../lib/swapSafety';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -13,9 +14,9 @@ interface MerchantTreasuryProps {
 }
 
 const TOKEN_CONFIGS = {
-  USDC: { address: '0x3600000000000000000000000000000000000000', decimals: 6, icon: '🪙' },
-  EURC: { address: '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a', decimals: 6, icon: '💶' },
-  cirBTC: { address: '0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF', decimals: 8, icon: '₿' }
+  USDC: { address: TOKEN_ADDRESSES.USDC, decimals: TOKEN_DECIMALS.USDC, icon: '🪙' },
+  EURC: { address: TOKEN_ADDRESSES.EURC, decimals: TOKEN_DECIMALS.EURC, icon: '💶' },
+  cirBTC: { address: TOKEN_ADDRESSES.cirBTC, decimals: TOKEN_DECIMALS.cirBTC, icon: '₿' }
 };
 
 type TokenType = 'USDC' | 'EURC' | 'cirBTC';
@@ -162,7 +163,7 @@ export const MerchantTreasury: React.FC<MerchantTreasuryProps> = ({ connectedAcc
       if (walletProvider) {
         try {
           const chainId = await walletProvider.request({ method: 'eth_chainId' });
-          if (chainId && chainId.toLowerCase() === '0x4cef52') {
+          if (chainId && chainId.toLowerCase() === ARC_CHAIN_ID_HEX) {
             setIsWrongNetwork(false);
           } else {
             setIsWrongNetwork(true);
@@ -178,7 +179,7 @@ export const MerchantTreasury: React.FC<MerchantTreasuryProps> = ({ connectedAcc
 
     if (walletProvider && walletProvider.on) {
       const handleChainChanged = (chainId: string) => {
-        setIsWrongNetwork(chainId.toLowerCase() !== '0x4cef52');
+        setIsWrongNetwork(chainId.toLowerCase() !== ARC_CHAIN_ID_HEX);
         handleRefresh();
       };
       walletProvider.on('chainChanged', handleChainChanged);
@@ -227,7 +228,7 @@ export const MerchantTreasury: React.FC<MerchantTreasuryProps> = ({ connectedAcc
     try {
       if (!await switchOrAddArcNetwork(walletProvider)) throw new Error('Switch to Arc Testnet first.');
       const provider = new BrowserProvider(walletProvider);
-      if ((await provider.getNetwork()).chainId !== 5042002n) throw new Error('Arc Testnet is required.');
+      if ((await provider.getNetwork()).chainId !== ARC_CHAIN_ID) throw new Error('Arc Testnet is required.');
       const signer = await provider.getSigner();
       if ((await signer.getAddress()).toLowerCase() !== connectedAccount.toLowerCase()) throw new Error('Wallet account changed. Reconnect before deploying.');
       const factory = new ContractFactory(MerchantTreasuryArtifact.abi, MerchantTreasuryArtifact.bytecode, signer);
@@ -298,7 +299,7 @@ export const MerchantTreasury: React.FC<MerchantTreasuryProps> = ({ connectedAcc
       try {
         if (walletProvider) {
           const chainId = await walletProvider.request({ method: 'eth_chainId' });
-          if (chainId && chainId.toLowerCase() === '0x4cef52') {
+          if (chainId && chainId.toLowerCase() === ARC_CHAIN_ID_HEX) {
             provider = new BrowserProvider(walletProvider) as any;
           }
         }
@@ -480,7 +481,7 @@ export const MerchantTreasury: React.FC<MerchantTreasuryProps> = ({ connectedAcc
       try {
         if (walletProvider) {
           const chainId = await walletProvider.request({ method: 'eth_chainId' });
-          if (chainId && chainId.toLowerCase() === '0x4cef52') {
+          if (chainId && chainId.toLowerCase() === ARC_CHAIN_ID_HEX) {
             provider = new BrowserProvider(walletProvider) as any;
           }
         }
@@ -641,7 +642,7 @@ export const MerchantTreasury: React.FC<MerchantTreasuryProps> = ({ connectedAcc
         to: deployedContractAddress,
         txHash: depositTx.hash,
         status: 'COMPLETE',
-        explorerUrl: `https://testnet.arcscan.app/tx/${depositTx.hash}`,
+        explorerUrl: `${ARC_EXPLORER}/tx/${depositTx.hash}`,
         timestamp: Date.now(),
         tokenSymbol: selectedToken
       });
@@ -725,7 +726,7 @@ export const MerchantTreasury: React.FC<MerchantTreasuryProps> = ({ connectedAcc
         to: connectedAccount || '',
         txHash: withdrawTx.hash,
         status: 'COMPLETE',
-        explorerUrl: `https://testnet.arcscan.app/tx/${withdrawTx.hash}`,
+        explorerUrl: `${ARC_EXPLORER}/tx/${withdrawTx.hash}`,
         timestamp: Date.now(),
         tokenSymbol: selectedToken
       });
@@ -769,7 +770,7 @@ export const MerchantTreasury: React.FC<MerchantTreasuryProps> = ({ connectedAcc
               if (walletProvider) {
                 await switchOrAddArcNetwork(walletProvider);
                 const chainId = await walletProvider.request({ method: 'eth_chainId' });
-                setIsWrongNetwork(chainId && chainId.toLowerCase() !== '0x4cef52');
+                setIsWrongNetwork(chainId && chainId.toLowerCase() !== ARC_CHAIN_ID_HEX);
                 handleRefresh();
               }
             }}
@@ -999,7 +1000,7 @@ export const MerchantTreasury: React.FC<MerchantTreasuryProps> = ({ connectedAcc
                   </div>
                   {isSimulated && (
                     <div style={{ marginTop: '0.5rem', padding: '0.6rem 0.8rem', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '8px', fontSize: '0.85rem', color: '#0284c7', lineHeight: '1.4', fontWeight: 500 }}>
-                      💡 <strong>Simulation Mode Active:</strong> This contract was simulated in the browser and does not exist on the live blockchain. Real transactions on <a href="https://testnet.arcscan.app/" target="_blank" rel="noopener noreferrer" style={{ color: '#0ea5e9', textDecoration: 'underline' }}>ArcScan Explorer</a> are only generated when <strong>Live On-Chain</strong> mode is enabled with a real contract deployed.
+                      💡 <strong>Simulation Mode Active:</strong> This contract was simulated in the browser and does not exist on the live blockchain. Real transactions on <a href={ARC_EXPLORER} target="_blank" rel="noopener noreferrer" style={{ color: '#0ea5e9', textDecoration: 'underline' }}>ArcScan Explorer</a> are only generated when <strong>Live On-Chain</strong> mode is enabled with a real contract deployed.
                     </div>
                   )}
                 </div>
@@ -1161,13 +1162,13 @@ export const MerchantTreasury: React.FC<MerchantTreasuryProps> = ({ connectedAcc
 
                           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
                             <div style={{ fontWeight: 700, color: isDeposit ? '#34d399' : isWithdraw ? '#f87171' : '#a78bfa', fontSize: '1rem' }}>
-                              {isDeposit ? '+' : isWithdraw ? '-' : '⇄ '}{parseFloat(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} {tx.tokenSymbol || selectedToken}
+                              {isDeposit ? '+' : isWithdraw ? '-' : '⇄ '}{tx.amount} {tx.tokenSymbol || selectedToken}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: '#71717a', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                               <span>{tx.timestamp ? new Date(tx.timestamp).toLocaleString() : `Block #${tx.blockNumber}`}</span>
                               {!tx.isSimulated && tx.txHash && (
                                 <a
-                                  href={`https://testnet.arcscan.app/tx/${tx.txHash}`}
+                                  href={`${ARC_EXPLORER}/tx/${tx.txHash}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   style={{ color: '#c084fc', display: 'inline-flex', alignItems: 'center' }}

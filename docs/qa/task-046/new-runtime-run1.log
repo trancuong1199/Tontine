@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: T046 ERC20 reader sends canonical balanceOf and preserves bigint; individual read failures remain null
+ok 1 - T046 ERC20 reader sends canonical balanceOf and preserves bigint; individual read failures remain null
+  ---
+  duration_ms: 88.043292
+  type: 'test'
+  ...
+# Subtest: T046 balance display is exact before rounding and chart conversions stay finite
+ok 2 - T046 balance display is exact before rounding and chart conversions stay finite
+  ---
+  duration_ms: 0.876955
+  type: 'test'
+  ...
+# Subtest: T046 holdings use canonical token address identity, not symbol or native dual view
+ok 3 - T046 holdings use canonical token address identity, not symbol or native dual view
+  ---
+  duration_ms: 0.765138
+  type: 'test'
+  ...
+# Subtest: T046 explorer and local transactions preserve decimals, symbols and unknown fees
+ok 4 - T046 explorer and local transactions preserve decimals, symbols and unknown fees
+  ---
+  duration_ms: 1.54362
+  type: 'test'
+  ...
+# Subtest: T046 configuration retains Arc facts, token distinctions and non-Arc chain metadata
+ok 5 - T046 configuration retains Arc facts, token distinctions and non-Arc chain metadata
+  ---
+  duration_ms: 467.122543
+  type: 'test'
+  ...
+# Subtest: T046 AlreadyWon matches current-cycle bid and manual-kick restrictions
+ok 6 - T046 AlreadyWon matches current-cycle bid and manual-kick restrictions
+  ---
+  duration_ms: 0.703537
+  type: 'test'
+  ...
+# Subtest: T046 all balance consumers and Merchant use shared sources without native balance reparsing
+ok 7 - T046 all balance consumers and Merchant use shared sources without native balance reparsing
+  ---
+  duration_ms: 5.412245
+  type: 'test'
+  ...
+# Subtest: T046 actual Dashboard lifecycle renders exact balance, unavailable errors and ignores wrong-chain wallet reads
+ok 8 - T046 actual Dashboard lifecycle renders exact balance, unavailable errors and ignores wrong-chain wallet reads
+  ---
+  duration_ms: 1660.514863
+  type: 'test'
+  ...
+# Subtest: T046 actual Analytics integrates deduped chart, exact rows, unknown local fees and RPC failure
+ok 9 - T046 actual Analytics integrates deduped chart, exact rows, unknown local fees and RPC failure
+  ---
+  duration_ms: 168.839987
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2431.315696

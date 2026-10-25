@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { build } from "esbuild";
 import { formatUsdc as facadeFormatUsdc, parseUsdc } from "../src/contract.ts";
 import { formatUsdc, formatUsdcExact, formatUnitsExact } from "../src/onchain-money.ts";
-import { getRaisedBidInput } from "../src/lib/bidPresets.ts";
+import { BID_PRESETS, getRaisedBidInput } from "../src/lib/bidPresets.ts";
 import { t } from "../src/lib/i18n.ts";
 
 test("T045 canonical display formatter shares function and preserves exact machine conversion", () => {
@@ -81,6 +81,33 @@ const baseProps = {
   account: { address: "0x1111111111111111111111111111111111111111" }, bundler: {},
   endTime: BigInt(Math.floor(Date.now() / 1000) + 86400), lockedCollateral: 0n,
 };
+
+test("T046 shared initial presets and permissionless notices execute in both wallet panels", async () => {
+  assert.deepEqual(BID_PRESETS, ["1", "2", "5", "10"]);
+  assert.ok(Object.isFrozen(BID_PRESETS));
+  try {
+    for (const name of ["ActionPanel", "PasskeyActionPanel"]) {
+      const source = fs.readFileSync(`src/components/savings/${name}.tsx`, "utf8");
+      assert.equal(source.match(/BID_PRESETS\.map/g)?.length, 2);
+      const mod = await loadPanel(`src/components/savings/${name}.tsx`);
+      for (const language of ["vi", "en"]) {
+        const render = harness(mod[name], { ...baseProps, userBid: 0n, language });
+        let tree = render();
+        const notice = t("actionPanel.permissionlessNotice", language);
+        assert.ok(textOf(tree).includes(notice), `${name}/${language}: notice rendered`);
+        assert.match(notice, language === "en" ? /anyone/i : /bất kỳ ai/i);
+        assert.match(notice, language === "en" ? /deadline/i : /hạn/i);
+        assert.match(notice, language === "en" ? /does not slash/i : /không.*tịch thu|không.*trừ/i);
+        for (const preset of BID_PRESETS) {
+          const button = nodes(tree).find(node => node.type === "button" && textOf(node) === `+${preset} USDC`);
+          assert.ok(button, `${name}: initial ${preset} preset`);
+          button.props.onClick(); tree = render();
+          assert.ok(nodes(tree).some(node => node.type === "input" && node.props.value === preset), `${name}: initial input ${preset}`);
+        }
+      }
+    }
+  } finally { delete (globalThis as any).__task045Hooks; }
+});
 
 test("T045 both real panel preset buttons preserve exact bigint input", async () => {
   try {

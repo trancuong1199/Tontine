@@ -1,0 +1,1462 @@
+--- baseline/src/components/savings/ArcAppKitModal.tsx
++++ src/components/savings/ArcAppKitModal.tsx
+@@ -1,3 +1,5 @@
++import { readArcBalances, formatArcBalance, formatApproximateQuote } from "../../lib/arcBalances";
++import { ARC_RPC } from "../../config/arc-constants";
+ import React, { useState, useEffect } from "react";
+ import {
+   X,
+@@ -16,8 +18,8 @@
+ } from "lucide-react";
+ import { Language, t } from "../../lib/i18n";
+ import { executeArcSwap, ARC_ROUTER } from "../../lib/arcSwap";
+-import { switchOrAddArcNetwork, forceUpdateArcRpc, globalRpcProvider } from "../../utils/arcChain";
+-import { BrowserProvider, Contract, formatUnits } from "ethers";
++import { switchOrAddArcNetwork, forceUpdateArcRpc } from "../../utils/arcChain";
++
+ import { formatAddress } from "../../contract";
+ 
+ interface ArcAppKitModalProps {
+@@ -54,9 +56,9 @@
+   const [swapSuccess, setSwapSuccess] = useState<string>("");
+   const [rpcSyncMsg, setRpcSyncMsg] = useState<string>("");
+   const [balances, setBalances] = useState<{ usdc: string; eurc: string; cirbtc: string }>({
+-    usdc: "0.00",
+-    eurc: "0.00",
+-    cirbtc: "0.0000",
++    usdc: "—",
++    eurc: "—",
++    cirbtc: "—",
+   });
+   const [exchangeRate, setExchangeRate] = useState<number>(0.8238); // 1 USDC ≈ 0.8238 EURC on Arc pool
+ 
+@@ -88,7 +90,7 @@
+       const provider = await getBestProvider();
+       const ok = await forceUpdateArcRpc(provider);
+       if (ok) {
+-        setRpcSyncMsg(isEn ? "Arc RPC updated to https://rpc.testnet.arc.io!" : "Đã cập nhật RPC thành https://rpc.testnet.arc.io!");
++        setRpcSyncMsg(isEn ? `Arc RPC updated to ${ARC_RPC}!` : `Đã cập nhật RPC thành ${ARC_RPC}!`);
+       } else {
+         setRpcSyncMsg(isEn ? "Could not update automatically. Please check wallet settings." : "Không thể tự cập nhật. Vui lòng kiểm tra cài đặt ví.");
+       }
+@@ -111,52 +113,17 @@
+     return () => window.removeEventListener("keydown", handleKeyDown);
+   }, [isOpen, onClose]);
+ 
+-  // Fetch balances when opened
++  // Arc-pinned reads also work with no injected wallet or a wallet on another chain.
+   useEffect(() => {
++    setBalances({ usdc: "—", eurc: "—", cirbtc: "—" });
+     if (!isOpen || !connectedAccount) return;
+     let isMounted = true;
+-
+-    async function loadBalances() {
+-      try {
+-        let usdc = "0.00";
+-        let eurc = "0.00";
+-        let cirbtc = "0.0000";
+-        if (window.ethereum) {
+-          const provider = new BrowserProvider(window.ethereum);
+-          const rawNative = await provider.getBalance(connectedAccount!);
+-          usdc = parseFloat(formatUnits(rawNative, 18)).toFixed(2);
+-
+-          const eurcContract = new Contract(
+-            "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a",
+-            ["function balanceOf(address) view returns (uint256)"],
+-            provider
+-          );
+-          const rawEurc = await eurcContract.balanceOf(connectedAccount!);
+-          eurc = parseFloat(formatUnits(rawEurc, 6)).toFixed(2);
+-
+-          const cirbtcContract = new Contract(
+-            "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF",
+-            ["function balanceOf(address) view returns (uint256)"],
+-            provider
+-          );
+-          const rawCirbtc = await cirbtcContract.balanceOf(connectedAccount!);
+-          cirbtc = parseFloat(formatUnits(rawCirbtc, 8)).toFixed(6);
+-        } else {
+-          const rawNative = await globalRpcProvider.getBalance(connectedAccount!);
+-          usdc = parseFloat(formatUnits(rawNative, 18)).toFixed(2);
+-        }
+-        if (isMounted) {
+-          setBalances({ usdc, eurc, cirbtc });
+-        }
+-      } catch (err) {
+-        console.warn("Failed to fetch balances:", err);
+-      }
+-    }
+-
+-    loadBalances();
+-    return () => {
+-      isMounted = false;
+-    };
++    void readArcBalances(connectedAccount).then(raw => {
++      if (isMounted) setBalances({
++        usdc: formatArcBalance(raw.usdc, 'USDC'), eurc: formatArcBalance(raw.eurc, 'EURC'), cirbtc: formatArcBalance(raw.cirbtc, 'cirBTC'),
++      });
++    });
++    return () => { isMounted = false; };
+   }, [isOpen, connectedAccount, swapSuccess]);
+ 
+   if (!isOpen) return null;
+@@ -232,12 +199,7 @@
+     EURC: 1 / (exchangeRate || 0.8238),
+     cirBTC: 350000,
+   };
+-  const estimatedOutput = (() => {
+-    const val = parseFloat(amount || "0");
+-    if (!val || val <= 0) return "0.0000";
+-    const out = (val * tokenPriceMap[fromToken]) / tokenPriceMap[toToken];
+-    return toToken === "cirBTC" ? out.toFixed(8) : out.toFixed(4);
+-  })();
++  const estimatedOutput = formatApproximateQuote(amount, tokenPriceMap[fromToken] / tokenPriceMap[toToken], toToken === "cirBTC" ? 8 : 4);
+ 
+   return (
+     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+@@ -455,7 +417,7 @@
+                           onClick={handleSyncRpc}
+                           className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold rounded-lg border border-amber-500/40 transition-colors cursor-pointer"
+                         >
+-                          {isEn ? "🔧 Fix Wallet RPC (Switch to https://rpc.testnet.arc.io)" : "🔧 Sửa RPC Ví (Chuyển sang https://rpc.testnet.arc.io)"}
++                          {isEn ? `🔧 Fix Wallet RPC (Switch to ${ARC_RPC})` : `🔧 Sửa RPC Ví (Chuyển sang ${ARC_RPC})`}
+                         </button>
+                       </div>
+                     )}
+@@ -510,7 +472,7 @@
+                 <div className="pt-1 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/60 mt-1">
+                   <span className="flex items-center gap-1.5">
+                     <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
+-                    <span>RPC: rpc.testnet.arc.io</span>
++                    <span>RPC: {ARC_RPC}</span>
+                   </span>
+                   <button
+                     type="button"
+--- baseline/src/components/RightSidebar.tsx
++++ src/components/RightSidebar.tsx
+@@ -1,9 +1,11 @@
+-import React, { useState, useEffect, useCallback } from 'react';
+-import { BrowserProvider, Contract, formatUnits, Interface } from 'ethers';
++import { readArcBalances, formatArcBalance, formatApproximateQuote } from "../lib/arcBalances";
++import { ARC_EXPLORER, ARC_CHAIN_ID_HEX as ARC_CHAIN_ID, ARC_SWAP_ROUTER as ROUTER_ADDRESS, WUSDC_ADDRESS, EURC_ADDRESS, TOKEN_ADDRESSES, TOKEN_DECIMALS } from "../config/arc-constants";
++import React, { useState, useEffect, useCallback, useRef } from 'react';
++import { BrowserProvider, Contract, Interface } from 'ethers';
+ import { getTransactionHistory, saveTransaction } from '../lib/TransactionHistory';
+ import type { Transaction } from '../lib/TransactionHistory';
+ import { ArrowUpDown, ChevronDown, RefreshCw, Send, ArrowDown, Code2, FileText } from 'lucide-react';
+-import { switchOrAddArcNetwork, globalRpcProvider } from '../utils/arcChain';
++import { switchOrAddArcNetwork } from '../utils/arcChain';
+ 
+ interface RightSidebarProps {
+   connectedAccount: string | null;
+@@ -11,9 +13,6 @@
+   navigateTo: (view: any) => void;
+ }
+ 
+-const ROUTER_ADDRESS = '0x509cF58CdA08C7aee83a2BdBb4A1Eac907343D01';
+-const WUSDC_ADDRESS = '0x911b4000D3422F482F4062a913885f7b035382Df';
+-const EURC_ADDRESS = '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a';
+ 
+ const ERC20_INTERFACE = new Interface([
+   "function approve(address spender, uint256 amount) returns (bool)",
+@@ -55,23 +54,14 @@
+ ]);
+ 
+ // Arc USDC ERC-20 = 6 decimals. 18 is the native gas view only — never use 18 for ERC-20 calls.
+-const DECIMALS = {
+-  USDC: 6,
+-  EURC: 6,
+-  cirBTC: 8
+-};
+-const ADDRESSES = {
+-  USDC: '0x911b4000D3422F482F4062a913885f7b035382Df', // WUSDC
+-  EURC: '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a',
+-  cirBTC: '0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF'
+-};
++const DECIMALS = TOKEN_DECIMALS;
++const ADDRESSES = { USDC: WUSDC_ADDRESS, EURC: TOKEN_ADDRESSES.EURC, cirBTC: TOKEN_ADDRESSES.cirBTC }; // Router uses wrapped USDC.
+ const TOKEN_PRICES: Record<string, number> = {
+   USDC: 1.0,
+   EURC: 1.08,
+   cirBTC: 60000.0
+ };
+ 
+-const ARC_CHAIN_ID = '0x4CEF52';
+ 
+ export const RightSidebar: React.FC<RightSidebarProps> = ({ connectedAccount, getProvider, navigateTo }) => {
+   const [txs, setTxs] = useState<Transaction[]>([]);
+@@ -82,46 +72,24 @@
+   const [statusMsg, setStatusMsg] = useState('');
+   const [isDropdownInOpen, setIsDropdownInOpen] = useState(false);
+   const [isDropdownOutOpen, setIsDropdownOutOpen] = useState(false);
+-  const [balances, setBalances] = useState({ usdc: '0.00', eurc: '0.00', cirbtc: '0.0000' });
++  const [balances, setBalances] = useState({ usdc: '—', eurc: '—', cirbtc: '—' });
+ 
+   const fetchTxs = useCallback(() => {
+     const history = getTransactionHistory();
+     setTxs(history.slice(0, 5));
+   }, []);
+ 
++  const balanceRequest = useRef(0);
++  const balanceAccount = useRef(connectedAccount);
++  balanceAccount.current = connectedAccount;
+   const fetchBalances = useCallback(async () => {
++    const request = ++balanceRequest.current;
++    setBalances({ usdc: '—', eurc: '—', cirbtc: '—' });
+     if (!connectedAccount) return;
+-    try {
+-      const eth = getProvider();
+-      let provider = globalRpcProvider;
+-      try {
+-        if (eth) {
+-          const chainId = await eth.request({ method: 'eth_chainId' });
+-          if (chainId && chainId.toLowerCase() === ARC_CHAIN_ID.toLowerCase()) {
+-            provider = new BrowserProvider(eth) as any;
+-          }
+-        }
+-      } catch (e) {}
+-
+-      // USDC Native Gas Balance
+-      const nativeBalance = await provider.getBalance(connectedAccount);
+-      const usdcVal = parseFloat(formatUnits(nativeBalance, 18)).toFixed(2);
+-
+-      // EURC Balance
+-      const eurcContract = new Contract(EURC_ADDRESS, ERC20_INTERFACE, provider);
+-      const eurcBalance = await eurcContract.balanceOf(connectedAccount);
+-      const eurcVal = parseFloat(formatUnits(eurcBalance, 6)).toFixed(2);
+-
+-      // cirBTC Balance
+-      const cirbtcContract = new Contract(ADDRESSES.cirBTC, ERC20_INTERFACE, provider);
+-      const cirbtcBalance = await cirbtcContract.balanceOf(connectedAccount);
+-      const cirbtcVal = parseFloat(formatUnits(cirbtcBalance, 8)).toFixed(4);
+-
+-      setBalances({ usdc: usdcVal, eurc: eurcVal, cirbtc: cirbtcVal });
+-    } catch (e) {
+-      console.warn("Failed to fetch balances for RightSidebar", e);
+-    }
+-  }, [connectedAccount, getProvider]);
++    const raw = await readArcBalances(connectedAccount);
++    if (request !== balanceRequest.current || connectedAccount !== balanceAccount.current) return;
++    setBalances({ usdc: formatArcBalance(raw.usdc, 'USDC'), eurc: formatArcBalance(raw.eurc, 'EURC'), cirbtc: formatArcBalance(raw.cirbtc, 'cirBTC') });
++  }, [connectedAccount]);
+ 
+   useEffect(() => {
+     fetchTxs();
+@@ -150,9 +118,7 @@
+   const displayOutBalance = tokenOut === 'USDC' ? balances.usdc : tokenOut === 'EURC' ? balances.eurc : balances.cirbtc;
+   const exchangeRate = TOKEN_PRICES[tokenIn] / TOKEN_PRICES[tokenOut];
+ 
+-  const receiveAmount = swapAmount && !isNaN(Number(swapAmount))
+-    ? (Number(swapAmount) * exchangeRate).toFixed(tokenOut === 'cirBTC' ? 8 : 4)
+-    : '0.00';
++  const receiveAmount = formatApproximateQuote(swapAmount, exchangeRate, tokenOut === 'cirBTC' ? 8 : 4);
+ 
+   const handleSwap = async () => {
+     setStatusMsg('');
+@@ -317,7 +283,7 @@
+         to: from,
+         txHash,
+         status: 'COMPLETE',
+-        explorerUrl: `https://testnet.arcscan.app/tx/${txHash}`,
++        explorerUrl: `${ARC_EXPLORER}/tx/${txHash}`,
+         timestamp: Date.now(),
+         tokenSymbol: tokenIn
+       });
+--- baseline/src/components/ArcAppKit.tsx
++++ src/components/ArcAppKit.tsx
+@@ -1,18 +1,12 @@
++import { readArcBalances, formatArcBalance, formatApproximateQuote } from "../lib/arcBalances";
++import { ARC_EXPLORER, ARC_CHAIN_ID_HEX as ARC_CHAIN_ID } from "../config/arc-constants";
++import { ARC_TESTNET_CONFIG as ARC_CHAIN_PARAMS } from "../utils/arcChain";
+ import { executeArcSwap } from '../lib/arcSwap';
+-import React, { useState, useEffect } from 'react';
++import React, { useState, useEffect, useRef } from 'react';
+ import { ArrowUpDown, RefreshCw } from 'lucide-react';
+ import { saveTransaction } from '../lib/TransactionHistory';
+-import { BrowserProvider, Contract, formatUnits } from 'ethers';
++import { BrowserProvider, Contract } from 'ethers';
+ import { switchOrAddArcNetwork, globalRpcProvider } from '../utils/arcChain';
+-
+-const ARC_CHAIN_ID = '0x4CEF52'; // 5042002 in hex
+-const ARC_CHAIN_PARAMS = {
+-  chainId: ARC_CHAIN_ID,
+-  chainName: 'Arc Testnet',
+-  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+-  rpcUrls: ['https://rpc.testnet.arc.io'],
+-  blockExplorerUrls: ['https://explorer.testnet.arc.io'],
+-};
+ 
+ interface ArcAppKitProps {
+   connectedAccount: string | null;
+@@ -64,7 +58,7 @@
+   }, [connectedAccount, getProvider]);
+ 
+   // USDC <➔ EURC Exchange and Balance states
+-  const [balances, setBalances] = useState<{ usdc: string; eurc: string }>({ usdc: '0.0000', eurc: '0.0000' });
++  const [balances, setBalances] = useState<{ usdc: string; eurc: string }>({ usdc: '—', eurc: '—' });
+   const [isFetchingBalances, setIsFetchingBalances] = useState(false);
+   const [realExchangeRate, setRealExchangeRate] = useState<number>(0.6727); // 1 USDC ≈ 0.6727 EURC on-chain V3 pool
+ 
+@@ -101,85 +95,32 @@
+     }
+   };
+ 
++  const balanceRequest = useRef(0);
++  const balanceAccount = useRef(connectedAccount);
++  balanceAccount.current = connectedAccount;
+   const fetchBalances = async () => {
+-    if (!connectedAccount) return;
++    const request = ++balanceRequest.current;
++    setBalances({ usdc: '—', eurc: '—' });
++    if (!connectedAccount) { setIsFetchingBalances(false); return; }
+     setIsFetchingBalances(true);
+-
+-    let usdcVal = balances.usdc;
+-    let eurcVal = balances.eurc;
+-    
+-    const eth = getProvider();
+-    let provider = globalRpcProvider;
+-    
+-    try {
+-      if (eth) {
+-        const chainId = await eth.request({ method: 'eth_chainId' });
+-        if (chainId && chainId.toLowerCase() === ARC_CHAIN_ID.toLowerCase()) {
+-          provider = new BrowserProvider(eth) as any;
+-        }
+-      }
+-    } catch (e) { }
+-
+-    // Fetch USDC balance independently
+-    try {
+-      const nativeBalance = await provider.getBalance(connectedAccount);
+-      usdcVal = parseFloat(formatUnits(nativeBalance, 18)).toFixed(4);
+-    } catch (e) {
+-      console.warn("Failed to fetch native USDC balance:", e);
+-      // Fallback
+-      try {
+-        const nativeBalance = await globalRpcProvider.getBalance(connectedAccount);
+-        usdcVal = parseFloat(formatUnits(nativeBalance, 18)).toFixed(4);
+-      } catch (err) {
+-        console.warn("USDC fallback query failed:", err);
+-      }
+-    }
+-
+-    // Fetch EURC balance independently
+-    try {
+-      const eurcContract = new Contract(
+-        '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a',
+-        ["function balanceOf(address account) view returns (uint256)"],
+-        provider
+-      );
+-      const eurcBalance = await eurcContract.balanceOf(connectedAccount);
+-      eurcVal = parseFloat(formatUnits(eurcBalance, 6)).toFixed(4);
+-    } catch (e) {
+-      console.warn("Failed to fetch EURC balance:", e);
+-      // Fallback
+-      try {
+-        const eurcContract = new Contract(
+-          '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a',
+-          ["function balanceOf(address account) view returns (uint256)"],
+-          globalRpcProvider
+-        );
+-        const eurcBalance = await eurcContract.balanceOf(connectedAccount);
+-        eurcVal = parseFloat(formatUnits(eurcBalance, 6)).toFixed(4);
+-      } catch (err) {
+-        console.warn("EURC fallback query failed:", err);
+-      }
+-    }
+-
+-    setBalances({ usdc: usdcVal, eurc: eurcVal });
++    const raw = await readArcBalances(connectedAccount);
++    if (request !== balanceRequest.current || connectedAccount !== balanceAccount.current) return;
++    setBalances({ usdc: formatArcBalance(raw.usdc, 'USDC'), eurc: formatArcBalance(raw.eurc, 'EURC') });
+     setIsFetchingBalances(false);
+   };
+ 
+   useEffect(() => {
+-    if (connectedAccount) {
+-      fetchBalances();
+-      fetchExchangeRate();
+-    }
++    void fetchBalances();
++    if (connectedAccount) fetchExchangeRate();
+   }, [connectedAccount, activeTab]);
+ 
+-  const displayUsdc = parseFloat(balances.usdc).toFixed(4);
+-  const displayEurc = parseFloat(balances.eurc).toFixed(4);
++  const displayUsdc = balances.usdc;
++  const displayEurc = balances.eurc;
+ 
+   const tokenInLabel = isReversed ? 'EURC' : 'USDC';
+   const tokenOutLabel = isReversed ? 'USDC' : 'EURC';
+   const exchangeRate = isReversed ? (1 / realExchangeRate) : realExchangeRate;
+-  const receiveAmount = swapAmount && !isNaN(Number(swapAmount))
+-    ? (Number(swapAmount) * exchangeRate).toFixed(4)
+-    : '0.0000';
++  const receiveAmount = formatApproximateQuote(swapAmount, exchangeRate, 4);
+ 
+   const handleAction = async () => {
+     setResult(null);
+@@ -233,7 +174,7 @@
+           from,
+           to: finalRecipient,
+           value: `${swapAmount} ${tokenInLabel} swapped; see confirmed receipt for output`,
+-          explorerUrl: `https://testnet.arcscan.app/tx/${txHash}`,
++          explorerUrl: `${ARC_EXPLORER}/tx/${txHash}`,
+         };
+ 
+         setResult(JSON.stringify(swapResult, null, 2));
+--- baseline/src/components/Dashboard.tsx
++++ src/components/Dashboard.tsx
+@@ -1,4 +1,6 @@
+-import React, { useState, useEffect, useCallback } from 'react';
++import { readArcBalances, formatArcBalance, toApproximateChartValue, type ArcBalances } from "../lib/arcBalances";
++import { USDC_ERC20_DECIMALS, EURC_DECIMALS, CIRBTC_DECIMALS } from "../config/arc-constants";
++import React, { useState, useEffect, useCallback, useRef } from 'react';
+ import {
+   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+   ResponsiveContainer, PieChart, Pie, Cell
+@@ -8,21 +10,11 @@
+   ArrowUpRight, TrendingUp, Activity,
+   ExternalLink
+ } from 'lucide-react';
+-import { BrowserProvider, Contract, formatUnits, type Eip1193Provider } from 'ethers';
++import { type Eip1193Provider } from 'ethers';
+ import { getTransactionHistory } from '../lib/TransactionHistory';
+ import type { Transaction } from '../lib/TransactionHistory';
+ import { RightSidebar } from './RightSidebar';
+-import { globalRpcProvider } from '../utils/arcChain';
+ import type { ViewState } from '../lib/navigation';
+-
+-// Arc Testnet token addresses
+-const TOKEN_ADDRESSES = {
+-  USDC: '0x3600000000000000000000000000000000000000', // native
+-  EURC: '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a',
+-  cirBTC: '0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF',
+-};
+-const ARC_CHAIN_ID = '0x4CEF52';
+-const ERC20_ABI = ['function balanceOf(address) view returns (uint256)'];
+ 
+ // Declared outside Dashboard to avoid "component created during render" lint warning
+ interface TokenCardProps {
+@@ -85,12 +77,7 @@
+   getProvider: () => Eip1193Provider | null;
+ }
+ 
+-interface Balances {
+-  usdc: string;
+-  eurc: string;
+-  cirbtc: string;
+-  loading: boolean;
+-}
++interface Balances extends ArcBalances { loading: boolean }
+ 
+ export const Dashboard: React.FC<DashboardProps> = ({
+   connectedAccount,
+@@ -99,50 +86,21 @@
+ }) => {
+   const [txs, setTxs] = useState<Transaction[]>([]);
+   const [balances, setBalances] = useState<Balances>({
+-    usdc: '—', eurc: '—', cirbtc: '—', loading: false,
++    usdc: null, eurc: null, cirbtc: null, loading: false,
+   });
+   const [refreshing, setRefreshing] = useState(false);
+ 
+-  // ── Real balances from chain ──────────────────────────────────────────────
++  const balanceRequest = useRef(0);
++  const balanceAccount = useRef(connectedAccount);
++  balanceAccount.current = connectedAccount;
+   const fetchBalances = useCallback(async () => {
+-    if (!connectedAccount) {
+-      setBalances({ usdc: '—', eurc: '—', cirbtc: '—', loading: false });
+-      return;
+-    }
+-    setBalances(prev => ({ ...prev, loading: true }));
+-    try {
+-      const eth = getProvider();
+-      // globalRpcProvider is JsonRpcProvider, BrowserProvider extends it — use a union
+-      let provider: InstanceType<typeof BrowserProvider> | typeof globalRpcProvider = globalRpcProvider;
+-      if (eth) {
+-        try {
+-          const chainIdHex = await eth.request({ method: 'eth_chainId' }) as string;
+-          if (chainIdHex?.toLowerCase() === ARC_CHAIN_ID.toLowerCase()) {
+-            provider = new BrowserProvider(eth);
+-          }
+-        } catch { /* provider fallback */ }
+-      }
+-
+-      // USDC: native gas balance (18 dec) → display
+-      const nativeBal = await provider.getBalance(connectedAccount);
+-      const usdcDisplay = parseFloat(formatUnits(nativeBal, 18)).toFixed(4);
+-
+-      // EURC: ERC-20 (6 dec)
+-      const eurcContract = new Contract(TOKEN_ADDRESSES.EURC, ERC20_ABI, provider);
+-      const eurcBal = (await eurcContract.balanceOf(connectedAccount)) as bigint;
+-      const eurcDisplay = parseFloat(formatUnits(eurcBal, 6)).toFixed(4);
+-
+-      // cirBTC: ERC-20 (8 dec)
+-      const btcContract = new Contract(TOKEN_ADDRESSES.cirBTC, ERC20_ABI, provider);
+-      const btcBal = (await btcContract.balanceOf(connectedAccount)) as bigint;
+-      const btcDisplay = parseFloat(formatUnits(btcBal, 8)).toFixed(6);
+-
+-      setBalances({ usdc: usdcDisplay, eurc: eurcDisplay, cirbtc: btcDisplay, loading: false });
+-    } catch (err) {
+-      console.warn('Balance fetch failed', err);
+-      setBalances(prev => ({ ...prev, loading: false }));
+-    }
+-  }, [connectedAccount, getProvider]);
++    const request = ++balanceRequest.current;
++    setBalances({ usdc: null, eurc: null, cirbtc: null, loading: Boolean(connectedAccount) });
++    if (!connectedAccount) return;
++    const raw = await readArcBalances(connectedAccount);
++    if (request !== balanceRequest.current || connectedAccount !== balanceAccount.current) return;
++    setBalances({ ...raw, loading: false });
++  }, [connectedAccount]);
+ 
+   const handleRefresh = async () => {
+     setRefreshing(true);
+@@ -175,11 +133,13 @@
+   }, [connectedAccount, fetchBalances]);
+ 
+   // ── Pie data: only shown when balances are loaded ─────────────────────────
+-  const hasBalances = balances.usdc !== '—';
+-  const usdcNum = hasBalances ? parseFloat(balances.usdc) : 0;
+-  const eurcNum = hasBalances ? parseFloat(balances.eurc) * 1.08 : 0;   // approx USD
+-  const btcNum = hasBalances ? parseFloat(balances.cirbtc) * 60000 : 0; // approx USD
+-  const totalUsd = usdcNum + eurcNum + btcNum;
++  const hasBalances = balances.usdc !== null || balances.eurc !== null || balances.cirbtc !== null;
++  // Approximate chart allocation using illustrative rates, never a balance source.
++  const usdcNum = toApproximateChartValue(balances.usdc, USDC_ERC20_DECIMALS);
++  const eurcNum = toApproximateChartValue(balances.eurc, EURC_DECIMALS, 1.08);
++  const btcNum = toApproximateChartValue(balances.cirbtc, CIRBTC_DECIMALS, 60000);
++  const estimatedTotal = usdcNum + eurcNum + btcNum;
++  const totalUsd = Number.isFinite(estimatedTotal) ? estimatedTotal : 0;
+ 
+   const pieData = hasBalances && totalUsd > 0
+     ? [
+@@ -187,11 +147,7 @@
+         { name: 'EURC', value: (eurcNum / totalUsd) * 100, color: '#0ea5e9' },
+         { name: 'cirBTC', value: (btcNum / totalUsd) * 100, color: '#a855f7' },
+       ]
+-    : [
+-        { name: 'USDC', value: 60, color: '#0d9488' },
+-        { name: 'EURC', value: 25, color: '#0ea5e9' },
+-        { name: 'cirBTC', value: 15, color: '#a855f7' },
+-      ];
++    : [];
+ 
+   const activityData = [
+     { name: 'Mon', txs: 12 },
+@@ -264,9 +220,9 @@
+             Your Assets
+           </h3>
+           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.85rem' }}>
+-            <TokenCard symbol="USDC" balance={balances.usdc} color="#0d9488" icon="🪙" loading={balances.loading} />
+-            <TokenCard symbol="EURC" balance={balances.eurc} color="#0ea5e9" icon="💶" loading={balances.loading} />
+-            <TokenCard symbol="cirBTC" balance={balances.cirbtc} color="#a855f7" icon="₿" loading={balances.loading} />
++            <TokenCard symbol="USDC" balance={formatArcBalance(balances.usdc, 'USDC')} color="#0d9488" icon="🪙" loading={balances.loading} />
++            <TokenCard symbol="EURC" balance={formatArcBalance(balances.eurc, 'EURC')} color="#0ea5e9" icon="💶" loading={balances.loading} />
++            <TokenCard symbol="cirBTC" balance={formatArcBalance(balances.cirbtc, 'cirBTC')} color="#a855f7" icon="₿" loading={balances.loading} />
+           </div>
+         </div>
+ 
+@@ -278,7 +234,7 @@
+           {/* Portfolio donut */}
+           <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '16px' }}>
+             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 1rem', fontFamily: "'Space Grotesk', sans-serif" }}>
+-              Portfolio
++              Portfolio (approximate; illustrative rates)
+             </h3>
+             <div style={{ position: 'relative', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+               <ResponsiveContainer width="100%" height="100%">
+@@ -319,7 +275,7 @@
+                 Activity (7d)
+               </h3>
+               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+-                <Activity size={13} /> Live
++                <Activity size={13} /> Sample
+               </span>
+             </div>
+             <div style={{ height: '190px' }}>
+--- baseline/src/components/Analytics.tsx
++++ src/components/Analytics.tsx
+@@ -1,8 +1,11 @@
+-import React, { useEffect, useState, useMemo } from 'react';
++import { readArcTokenBalance, formatArcBalance, toApproximateChartValue } from '../lib/arcBalances';
++import { buildTokenHoldings, normalizeExplorerTransaction, normalizeLocalTransaction, formatAnalyticsValue, formatNativeFee, sumKnownFees, usdcVolumeByDay, type AnalyticsTx } from '../lib/arcAnalytics';
++import { ARC_EXPLORER, USDC_NATIVE_DECIMALS, USDC_ADDRESS } from '../config/arc-constants';
++import React, { useEffect, useState, useMemo, useRef } from 'react';
+ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+ import { Wallet, ArrowUpRight, ArrowDownLeft, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
+ 
+-const ARC_API = 'https://testnet.arcscan.app/api/v2';
++const ARC_API = `${ARC_EXPLORER}/api/v2`;
+ 
+ const shortenAddress = (addr: string) =>
+   addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '—';
+@@ -18,141 +21,72 @@
+   address: string | null;
+ }
+ 
+-interface WalletTx {
+-  hash: string;
+-  timestamp: string;
+-  from: { hash: string };
+-  to: { hash: string } | null;
+-  value: string;
+-  status: string;
+-  method: string | null;
+-  fee: { value: string };
+-  gas_used: string;
+-}
+-
+-interface TokenBalance {
+-  token: {
+-    symbol: string;
+-    name: string;
+-    decimals: string;
+-    icon_url: string | null;
+-  };
+-  value: string;
+-}
+-
+ export const Analytics: React.FC<AnalyticsProps> = ({ address }) => {
+-  const [walletTxs, setWalletTxs] = useState<WalletTx[]>([]);
+-  const [tokenBalances, setTokenBalances] = useState<TokenBalance[]>([]);
+-  const [nativeBalance, setNativeBalance] = useState<string>('0');
++  const [walletTxs, setWalletTxs] = useState<AnalyticsTx[]>([]);
++  const [tokenBalances, setTokenBalances] = useState<unknown[]>([]);
++  const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null);
+   const [walletLoading, setWalletLoading] = useState(false);
+   const [walletError, setWalletError] = useState('');
+-  const [totalGasSpent, setTotalGasSpent] = useState(0);
+-  const [successCount, setSuccessCount] = useState(0);
+-  const [failCount, setFailCount] = useState(0);
++  const requestRef = useRef(0);
++  const accountRef = useRef(address);
++  accountRef.current = address;
+ 
+   const fetchWalletData = async () => {
++    const request = ++requestRef.current;
++    setWalletTxs([]);
++    setTokenBalances([]);
++    setUsdcBalance(null);
++    setWalletError('');
++    setWalletLoading(Boolean(address));
+     if (!address) return;
+-    setWalletLoading(true);
+-    setWalletError('');
+     try {
+-      const [addrRes, txRes, tokRes] = await Promise.all([
+-        fetch(`${ARC_API}/addresses/${address}`),
++      const [rawUsdc, txRes, tokRes] = await Promise.all([
++        readArcTokenBalance(address, 'USDC'),
+         fetch(`${ARC_API}/addresses/${address}/transactions`),
+-        fetch(`${ARC_API}/addresses/${address}/tokens`)
++        fetch(`${ARC_API}/addresses/${address}/tokens`),
+       ]);
+-
+-      if (addrRes.ok) {
+-        const d = await addrRes.json();
+-        setNativeBalance(d.coin_balance || '0');
+-      }
+-
+-      if (txRes.ok) {
+-        const d = await txRes.json();
+-        const items: WalletTx[] = d.items || [];
+-        
+-        let merged: any[] = [...items];
+-        try {
+-          const { getTransactionHistory } = await import('../lib/TransactionHistory');
+-          const history = getTransactionHistory();
+-          const localUserTxs = history.filter(tx => 
+-            tx.from?.toLowerCase() === address.toLowerCase() || 
+-            tx.to?.toLowerCase() === address.toLowerCase()
+-          );
+-
+-          const formattedLocal: WalletTx[] = localUserTxs.map(tx => ({
+-            hash: tx.txHash || tx.id,
+-            timestamp: new Date(tx.timestamp).toISOString(),
+-            from: { hash: tx.from },
+-            to: tx.to ? { hash: tx.to } : null,
+-            value: tx.amount && !isNaN(parseFloat(tx.amount)) ? (parseFloat(tx.amount) * 1e18).toString() : '0',
+-            status: tx.status === 'COMPLETE' ? 'ok' : 'error',
+-            method: tx.action,
+-            fee: { value: '10000000000000' },
+-            gas_used: '21000'
+-          }));
+-
+-          for (const lTx of formattedLocal) {
+-            if (!merged.find(m => m.hash && lTx.hash && m.hash.toLowerCase() === lTx.hash.toLowerCase())) {
+-              merged.push(lTx);
+-            }
+-          }
+-        } catch (e) {
+-          console.warn('Failed to load local tx history', e);
++      if (!txRes.ok || !tokRes.ok) throw new Error('Explorer data unavailable');
++      const [txData, tokenData] = await Promise.all([txRes.json(), tokRes.json()]);
++      const items: unknown[] = Array.isArray(txData.items) ? txData.items : [];
++      const merged = items.map(normalizeExplorerTransaction).filter((tx): tx is AnalyticsTx => tx !== null);
++      try {
++        const { getTransactionHistory } = await import('../lib/TransactionHistory');
++        const history = getTransactionHistory();
++        for (const tx of Array.isArray(history) ? history : []) {
++          if (typeof tx?.from !== 'string' && typeof tx?.to !== 'string') continue;
++          const from = typeof tx.from === 'string' ? tx.from.toLowerCase() : '';
++          const to = typeof tx.to === 'string' ? tx.to.toLowerCase() : '';
++          if (from !== address.toLowerCase() && to !== address.toLowerCase()) continue;
++          const local = normalizeLocalTransaction(tx);
++          if (local && !merged.some(item => item.hash.toLowerCase() === local.hash.toLowerCase())) merged.push(local);
+         }
+-
+-        merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+-        setWalletTxs(merged);
+-
+-        let gas = 0, ok = 0, fail = 0;
+-        for (const tx of merged) {
+-          gas += parseFloat(tx.fee?.value || '0') / 1e18;
+-          if (tx.status === 'ok') ok++;
+-          else fail++;
+-        }
+-        setTotalGasSpent(gas);
+-        setSuccessCount(ok);
+-        setFailCount(fail);
+-      }
+-
+-      if (tokRes.ok) {
+-        const d = await tokRes.json();
+-        setTokenBalances(d.items || []);
+-      }
++      } catch (error) { console.warn('Local transaction history unavailable', error); }
++      merged.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
++      if (request !== requestRef.current || address !== accountRef.current) return;
++      setUsdcBalance(rawUsdc);
++      setWalletTxs(merged);
++      setTokenBalances(Array.isArray(tokenData.items) ? tokenData.items : []);
+     } catch {
+-      setWalletError('Failed to fetch wallet data. Please check your connection.');
++      if (request === requestRef.current && address === accountRef.current) setWalletError('Arc wallet data is unavailable. Please retry.');
+     } finally {
+-      setWalletLoading(false);
++      if (request === requestRef.current && address === accountRef.current) setWalletLoading(false);
+     }
+   };
+ 
+-  useEffect(() => { fetchWalletData(); }, [address]);
+-
+-  // Volume chart — aggregate value sent per day
+-  const volumeChartData = useMemo(() => {
+-    const map: Record<string, number> = {};
+-    for (const tx of walletTxs) {
+-      const d = new Date(tx.timestamp);
+-      const key = `${d.getDate()}/${d.getMonth() + 1}`;
+-      const val = parseFloat(tx.value || '0') / 1e18;
+-      map[key] = (map[key] || 0) + val;
+-    }
+-    return Object.entries(map)
+-      .map(([date, value]) => ({ date, value: parseFloat(value.toFixed(4)) }))
+-      .reverse();
+-  }, [walletTxs]);
+-
+-  // Pie chart — top tokens with meaningful balance only
+-  const pieData = useMemo(() => {
+-    const result: { name: string; value: number }[] = [];
+-    const native = parseFloat(nativeBalance) / 1e18;
+-    if (native >= 0.0001) result.push({ name: 'USDC (Native)', value: parseFloat(native.toFixed(4)) });
+-    for (const t of tokenBalances) {
+-      const decimals = parseInt(t.token.decimals || '18');
+-      const val = parseFloat(t.value || '0') / Math.pow(10, decimals);
+-      if (val >= 0.0001) result.push({ name: t.token.symbol, value: parseFloat(val.toFixed(6)) });
+-    }
+-    return result.sort((a, b) => b.value - a.value).slice(0, 8);
+-  }, [nativeBalance, tokenBalances]);
++  useEffect(() => { void fetchWalletData(); return () => { requestRef.current++; }; }, [address]);
++  const totalGasSpent = useMemo(() => sumKnownFees(walletTxs), [walletTxs]);
++  const successCount = walletTxs.filter(tx => tx.status === 'ok').length;
++  const failCount = walletTxs.filter(tx => tx.status === 'error').length;
++  const holdings = useMemo(() => buildTokenHoldings(usdcBalance, tokenBalances), [usdcBalance, tokenBalances]);
++  // Approximate chart boundaries only; transaction rows and fee totals stay bigint.
++  const volumeChartData = useMemo(() => usdcVolumeByDay(walletTxs, address ?? '').map(row => ({
++    date: row.date, value: toApproximateChartValue(row.raw, USDC_NATIVE_DECIMALS),
++  })), [walletTxs, address]);
++  const pieData = useMemo(() => holdings.map(token => ({
++    name: token.address.toLowerCase() === USDC_ADDRESS.toLowerCase()
++      ? token.symbol : `${token.symbol} (${shortenAddress(token.address)})`,
++    value: toApproximateChartValue(token.raw, token.decimals),
++  })).filter(token => token.value >= 0.0001).sort((a, b) => b.value - a.value).slice(0, 8), [holdings]);
+ 
+   return (
+     <div className="page-container animate-fade-in" style={{ maxWidth: '100%', paddingBottom: '4rem' }}>
+@@ -196,11 +130,11 @@
+         <>
+           {/* KPI Cards */}
+           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+-            <WalletStatCard label="USDC Balance (Native)" value={`${(parseFloat(nativeBalance) / 1e18).toFixed(4)} USDC`} loading={walletLoading} color="#60a5fa" />
++            <WalletStatCard label="USDC Balance" value={`${formatArcBalance(usdcBalance, 'USDC')} USDC`} loading={walletLoading} color="#60a5fa" />
+             <WalletStatCard label="Total Transactions" value={walletTxs.length.toString() + (walletTxs.length === 50 ? '+' : '')} loading={walletLoading} color="#a78bfa" />
+             <WalletStatCard label="Success / Failed" value={`${successCount} / ${failCount}`} loading={walletLoading} color="#34d399" />
+-            <WalletStatCard label="Gas Spent (recent 50)" value={`${totalGasSpent.toFixed(6)} USDC`} loading={walletLoading} color="#f59e0b" />
+-            <WalletStatCard label="Token Holdings" value={tokenBalances.length.toString()} loading={walletLoading} color="#38bdf8" />
++            <WalletStatCard label="Known Gas Fees (loaded transactions)" value={formatNativeFee(totalGasSpent)} loading={walletLoading} color="#f59e0b" />
++            <WalletStatCard label="Token Holdings" value={holdings.length.toString()} loading={walletLoading} color="#38bdf8" />
+           </div>
+ 
+           {/* Charts Row */}
+@@ -208,7 +142,7 @@
+ 
+             {/* Volume Chart */}
+             <div style={{ background: 'var(--stat-card-bg)', border: '1px solid var(--stat-card-border)', borderRadius: '14px', padding: '1.5rem', boxShadow: 'var(--shadow-card)' }}>
+-              <h4 style={{ margin: '0 0 1rem', color: '#0ea5e9', fontSize: '1rem', fontWeight: 700 }}>Transaction Volume (USDC sent)</h4>
++              <h4 style={{ margin: '0 0 1rem', color: '#0ea5e9', fontSize: '1rem', fontWeight: 700 }}>Transaction Volume (USDC sent, approximate)</h4>
+               {walletLoading ? (
+                 <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Loading...</div>
+               ) : volumeChartData.length === 0 ? (
+@@ -234,7 +168,7 @@
+ 
+             {/* Token Pie */}
+             <div style={{ background: 'var(--stat-card-bg)', border: '1px solid var(--stat-card-border)', borderRadius: '14px', padding: '1.5rem', boxShadow: 'var(--shadow-card)' }}>
+-              <h4 style={{ margin: '0 0 1rem', color: '#8b5cf6', fontSize: '1rem', fontWeight: 700 }}>Token Portfolio Distribution</h4>
++              <h4 style={{ margin: '0 0 1rem', color: '#8b5cf6', fontSize: '1rem', fontWeight: 700 }}>Token Units (approximate, not USD value)</h4>
+               {walletLoading ? (
+                 <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Loading...</div>
+               ) : pieData.length === 0 ? (
+@@ -268,7 +202,7 @@
+             <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+               <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 700 }}>Recent Transactions</h4>
+               <a
+-                href={`https://testnet.arcscan.app/address/${address}`}
++                href={`${ARC_EXPLORER}/address/${address}`}
+                 target="_blank"
+                 rel="noreferrer"
+                 style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#0ea5e9', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 600 }}
+@@ -285,7 +219,7 @@
+                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                   <thead>
+                     <tr style={{ background: 'var(--bg-tertiary)' }}>
+-                      {['Type', 'Hash', 'From', 'To', 'Value (USDC)', 'Gas Fee', 'Time', 'Status'].map(h => (
++                      {['Type', 'Hash', 'From', 'To', 'Value (token)', 'Gas Fee', 'Time', 'Status'].map(h => (
+                         <th key={h} style={{ padding: '0.7rem 1rem', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', borderBottom: '1px solid var(--border-color)' }}>{h}</th>
+                       ))}
+                     </tr>
+@@ -293,8 +227,8 @@
+                   <tbody>
+                     {walletTxs.slice(0, 20).map((tx, i) => {
+                       const isOut = tx.from?.hash?.toLowerCase() === address?.toLowerCase();
+-                      const val = (parseFloat(tx.value || '0') / 1e18).toFixed(4);
+-                      const fee = (parseFloat(tx.fee?.value || '0') / 1e18).toFixed(6);
++                      const val = formatAnalyticsValue(tx);
++                      const fee = formatNativeFee(tx.feeRaw);
+                       return (
+                         <tr key={i} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.15s' }}>
+                           <td style={{ padding: '0.65rem 1rem' }}>
+@@ -304,7 +238,7 @@
+                             </span>
+                           </td>
+                           <td style={{ padding: '0.65rem 1rem' }}>
+-                            <a href={`https://testnet.arcscan.app/tx/${tx.hash}`} target="_blank" rel="noreferrer" style={{ color: '#0ea5e9', textDecoration: 'none', fontFamily: 'monospace', fontWeight: 600 }}>
++                            <a href={`${ARC_EXPLORER}/tx/${tx.hash}`} target="_blank" rel="noreferrer" style={{ color: '#0ea5e9', textDecoration: 'none', fontFamily: 'monospace', fontWeight: 600 }}>
+                               {tx.hash.slice(0, 8)}...{tx.hash.slice(-4)}
+                             </a>
+                           </td>
+--- baseline/src/components/MerchantTreasury.tsx
++++ src/components/MerchantTreasury.tsx
+@@ -1,3 +1,4 @@
++import { TOKEN_ADDRESSES, TOKEN_DECIMALS, ARC_CHAIN_ID, ARC_CHAIN_ID_HEX, ARC_EXPLORER } from '../config/arc-constants';
+ import { confirmTransaction } from '../lib/swapSafety';
+ import React, { useState, useEffect } from 'react';
+ import { createPortal } from 'react-dom';
+@@ -13,9 +14,9 @@
+ }
+ 
+ const TOKEN_CONFIGS = {
+-  USDC: { address: '0x3600000000000000000000000000000000000000', decimals: 6, icon: '🪙' },
+-  EURC: { address: '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a', decimals: 6, icon: '💶' },
+-  cirBTC: { address: '0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF', decimals: 8, icon: '₿' }
++  USDC: { address: TOKEN_ADDRESSES.USDC, decimals: TOKEN_DECIMALS.USDC, icon: '🪙' },
++  EURC: { address: TOKEN_ADDRESSES.EURC, decimals: TOKEN_DECIMALS.EURC, icon: '💶' },
++  cirBTC: { address: TOKEN_ADDRESSES.cirBTC, decimals: TOKEN_DECIMALS.cirBTC, icon: '₿' }
+ };
+ 
+ type TokenType = 'USDC' | 'EURC' | 'cirBTC';
+@@ -162,7 +163,7 @@
+       if (walletProvider) {
+         try {
+           const chainId = await walletProvider.request({ method: 'eth_chainId' });
+-          if (chainId && chainId.toLowerCase() === '0x4cef52') {
++          if (chainId && chainId.toLowerCase() === ARC_CHAIN_ID_HEX) {
+             setIsWrongNetwork(false);
+           } else {
+             setIsWrongNetwork(true);
+@@ -178,7 +179,7 @@
+ 
+     if (walletProvider && walletProvider.on) {
+       const handleChainChanged = (chainId: string) => {
+-        setIsWrongNetwork(chainId.toLowerCase() !== '0x4cef52');
++        setIsWrongNetwork(chainId.toLowerCase() !== ARC_CHAIN_ID_HEX);
+         handleRefresh();
+       };
+       walletProvider.on('chainChanged', handleChainChanged);
+@@ -227,7 +228,7 @@
+     try {
+       if (!await switchOrAddArcNetwork(walletProvider)) throw new Error('Switch to Arc Testnet first.');
+       const provider = new BrowserProvider(walletProvider);
+-      if ((await provider.getNetwork()).chainId !== 5042002n) throw new Error('Arc Testnet is required.');
++      if ((await provider.getNetwork()).chainId !== ARC_CHAIN_ID) throw new Error('Arc Testnet is required.');
+       const signer = await provider.getSigner();
+       if ((await signer.getAddress()).toLowerCase() !== connectedAccount.toLowerCase()) throw new Error('Wallet account changed. Reconnect before deploying.');
+       const factory = new ContractFactory(MerchantTreasuryArtifact.abi, MerchantTreasuryArtifact.bytecode, signer);
+@@ -298,7 +299,7 @@
+       try {
+         if (walletProvider) {
+           const chainId = await walletProvider.request({ method: 'eth_chainId' });
+-          if (chainId && chainId.toLowerCase() === '0x4cef52') {
++          if (chainId && chainId.toLowerCase() === ARC_CHAIN_ID_HEX) {
+             provider = new BrowserProvider(walletProvider) as any;
+           }
+         }
+@@ -480,7 +481,7 @@
+       try {
+         if (walletProvider) {
+           const chainId = await walletProvider.request({ method: 'eth_chainId' });
+-          if (chainId && chainId.toLowerCase() === '0x4cef52') {
++          if (chainId && chainId.toLowerCase() === ARC_CHAIN_ID_HEX) {
+             provider = new BrowserProvider(walletProvider) as any;
+           }
+         }
+@@ -641,7 +642,7 @@
+         to: deployedContractAddress,
+         txHash: depositTx.hash,
+         status: 'COMPLETE',
+-        explorerUrl: `https://testnet.arcscan.app/tx/${depositTx.hash}`,
++        explorerUrl: `${ARC_EXPLORER}/tx/${depositTx.hash}`,
+         timestamp: Date.now(),
+         tokenSymbol: selectedToken
+       });
+@@ -725,7 +726,7 @@
+         to: connectedAccount || '',
+         txHash: withdrawTx.hash,
+         status: 'COMPLETE',
+-        explorerUrl: `https://testnet.arcscan.app/tx/${withdrawTx.hash}`,
++        explorerUrl: `${ARC_EXPLORER}/tx/${withdrawTx.hash}`,
+         timestamp: Date.now(),
+         tokenSymbol: selectedToken
+       });
+@@ -769,7 +770,7 @@
+               if (walletProvider) {
+                 await switchOrAddArcNetwork(walletProvider);
+                 const chainId = await walletProvider.request({ method: 'eth_chainId' });
+-                setIsWrongNetwork(chainId && chainId.toLowerCase() !== '0x4cef52');
++                setIsWrongNetwork(chainId && chainId.toLowerCase() !== ARC_CHAIN_ID_HEX);
+                 handleRefresh();
+               }
+             }}
+@@ -999,7 +1000,7 @@
+                   </div>
+                   {isSimulated && (
+                     <div style={{ marginTop: '0.5rem', padding: '0.6rem 0.8rem', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '8px', fontSize: '0.85rem', color: '#0284c7', lineHeight: '1.4', fontWeight: 500 }}>
+-                      💡 <strong>Simulation Mode Active:</strong> This contract was simulated in the browser and does not exist on the live blockchain. Real transactions on <a href="https://testnet.arcscan.app/" target="_blank" rel="noopener noreferrer" style={{ color: '#0ea5e9', textDecoration: 'underline' }}>ArcScan Explorer</a> are only generated when <strong>Live On-Chain</strong> mode is enabled with a real contract deployed.
++                      💡 <strong>Simulation Mode Active:</strong> This contract was simulated in the browser and does not exist on the live blockchain. Real transactions on <a href={ARC_EXPLORER} target="_blank" rel="noopener noreferrer" style={{ color: '#0ea5e9', textDecoration: 'underline' }}>ArcScan Explorer</a> are only generated when <strong>Live On-Chain</strong> mode is enabled with a real contract deployed.
+                     </div>
+                   )}
+                 </div>
+@@ -1161,13 +1162,13 @@
+ 
+                           <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                             <div style={{ fontWeight: 700, color: isDeposit ? '#34d399' : isWithdraw ? '#f87171' : '#a78bfa', fontSize: '1rem' }}>
+-                              {isDeposit ? '+' : isWithdraw ? '-' : '⇄ '}{parseFloat(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} {tx.tokenSymbol || selectedToken}
++                              {isDeposit ? '+' : isWithdraw ? '-' : '⇄ '}{tx.amount} {tx.tokenSymbol || selectedToken}
+                             </div>
+                             <div style={{ fontSize: '0.75rem', color: '#71717a', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                               <span>{tx.timestamp ? new Date(tx.timestamp).toLocaleString() : `Block #${tx.blockNumber}`}</span>
+                               {!tx.isSimulated && tx.txHash && (
+                                 <a
+-                                  href={`https://testnet.arcscan.app/tx/${tx.txHash}`}
++                                  href={`${ARC_EXPLORER}/tx/${tx.txHash}`}
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   style={{ color: '#c084fc', display: 'inline-flex', alignItems: 'center' }}
+--- baseline/src/config/arc-constants.ts
++++ src/config/arc-constants.ts
+@@ -9,15 +9,25 @@
+  * Always use ERC20_DECIMALS when calling ERC-20 methods on any token.
+  */
+ 
+-// ─── Chain ───────────────────────────────────────────────────────────────────
+-export const ARC_CHAIN_ID = 5042002n;
+-export const ARC_CHAIN_ID_HEX = '0x4cef52';
+-export const ARC_RPC = 'https://rpc.testnet.arc.io';
+-export const ARC_EXPLORER = 'https://explorer.testnet.arc.io';
++import { requireChain, getUsdc } from '../onchain-facts.ts';
++
++const arc = requireChain(5042002);
++const usdc = getUsdc(arc.chainId);
++if (!usdc) throw new Error('Arc USDC is not configured');
++if (!arc.rpcUrls[0] || !arc.explorerBase) throw new Error('Arc RPC/explorer is not configured');
++
++// ─── Chain facts ─────────────────────────────────────────────────────────────
++export const ARC_CHAIN_ID = BigInt(arc.chainId);
++export const ARC_CHAIN_ID_HEX = `0x${arc.chainId.toString(16)}`;
++export const ARC_CHAIN_NAME = arc.name;
++export const ARC_RPC = arc.rpcUrls[0];
++export const ARC_EXPLORER = arc.explorerBase;
++export const ARC_NATIVE_SYMBOL = arc.nativeCurrency.symbol;
+ 
+ // ─── Token addresses ─────────────────────────────────────────────────────────
+ /** USDC on Arc — acts as BOTH the native gas token AND an ERC-20. */
+-export const USDC_ADDRESS = '0x3600000000000000000000000000000000000000';
++export const USDC_ADDRESS = usdc.address as `0x${string}`;
++// Project deployment defaults: EURC and CirBTC are not present in the facts registry.
+ export const EURC_ADDRESS = '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a';
+ export const CIRBTC_ADDRESS = '0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF';
+ 
+@@ -26,12 +36,12 @@
+ 
+ // ─── Token decimals ───────────────────────────────────────────────────────────
+ /** Use for ERC-20 calls: approve, transferFrom, vault deposit, escrow budget. */
+-export const USDC_ERC20_DECIMALS = 6;
++export const USDC_ERC20_DECIMALS = usdc.decimals;
+ export const EURC_DECIMALS = 6;
+ export const CIRBTC_DECIMALS = 8;
+ 
+ /** Use ONLY for native gas (msg.value, gas estimation). NOT for ERC-20 calls. */
+-export const USDC_NATIVE_DECIMALS = 18;
++export const USDC_NATIVE_DECIMALS = arc.nativeCurrency.decimals;
+ 
+ // ─── Convenience map: token symbol → ERC-20 decimals ─────────────────────────
+ export const TOKEN_DECIMALS: Record<string, number> = {
+--- baseline/src/config/arcNetwork.ts
++++ src/config/arcNetwork.ts
+@@ -1,29 +1,30 @@
++import { ARC_CHAIN_ID, ARC_CHAIN_NAME, ARC_RPC, ARC_EXPLORER, ARC_NATIVE_SYMBOL, USDC_NATIVE_DECIMALS, USDC_ERC20_DECIMALS, USDC_ADDRESS } from './arc-constants';
+ import { type Chain } from 'viem';
+ 
+ export const arcTestnet = {
+-  id: 5042002,
+-  name: 'Build on Arc',
++  id: Number(ARC_CHAIN_ID),
++  name: ARC_CHAIN_NAME,
+   nativeCurrency: {
+-    decimals: 18,
+-    name: 'USDC',
+-    symbol: 'USDC',
++    decimals: USDC_NATIVE_DECIMALS,
++    name: ARC_NATIVE_SYMBOL,
++    symbol: ARC_NATIVE_SYMBOL,
+   },
+   rpcUrls: {
+     default: {
+-      http: ['https://rpc.testnet.arc.io'],
++      http: [ARC_RPC],
+     },
+     public: {
+-      http: ['https://rpc.testnet.arc.io'],
++      http: [ARC_RPC],
+     },
+   },
+   blockExplorers: {
+-    default: { name: 'ArcScan', url: 'https://testnet.arcscan.app' },
++    default: { name: 'ArcScan', url: ARC_EXPLORER },
+   },
+   testnet: true,
+ } as const satisfies Chain;
+ 
+-export const ARC_GAS_TOKEN_DECIMALS = 18;
+-export const ARC_ERC20_TOKEN_DECIMALS = 6;
++export const ARC_GAS_TOKEN_DECIMALS = USDC_NATIVE_DECIMALS;
++export const ARC_ERC20_TOKEN_DECIMALS = USDC_ERC20_DECIMALS;
+ 
+ /**
+  * USDC on Arc Testnet.
+@@ -32,4 +33,4 @@
+  * - Use ARC_ERC20_TOKEN_DECIMALS (6) for approve/transferFrom/vault deposits/escrow budgets.
+  * Prefer importing from arc-constants.ts (TOKEN_ADDRESSES, TOKEN_DECIMALS) in new code.
+  */
+-export const ARC_USDC_ADDRESS = '0x3600000000000000000000000000000000000000';
++export const ARC_USDC_ADDRESS = USDC_ADDRESS;
+--- baseline/src/utils/arcChain.ts
++++ src/utils/arcChain.ts
+@@ -1,8 +1,9 @@
+ import { createViemAdapterFromProvider, createViemAdapterFromPrivateKey } from "@circle-fin/adapter-viem-v2";
+ import { AppKit } from "@circle-fin/app-kit";
+-import { JsonRpcProvider } from "ethers";
++import { arcBalanceProvider } from "../lib/arcBalances";
++import { ARC_CHAIN_ID_HEX, ARC_CHAIN_NAME, ARC_RPC, ARC_EXPLORER, ARC_NATIVE_SYMBOL, USDC_NATIVE_DECIMALS } from "../config/arc-constants";
+ 
+-export const globalRpcProvider = new JsonRpcProvider("https://rpc.testnet.arc.io", undefined, { staticNetwork: true });
++export const globalRpcProvider = arcBalanceProvider;
+ 
+ 
+ declare global {
+@@ -12,19 +13,19 @@
+ }
+ 
+ export const ARC_TESTNET_CONFIG = {
+-  chainId: "0x4cef52", // 5042002 in hex
+-  chainName: "Arc Testnet",
+-  rpcUrls: ["https://rpc.testnet.arc.io"],
++  chainId: ARC_CHAIN_ID_HEX,
++  chainName: ARC_CHAIN_NAME,
++  rpcUrls: [ARC_RPC],
+   nativeCurrency: {
+-    name: "USDC",
+-    symbol: "USDC",
+-    decimals: 18,
++    name: ARC_NATIVE_SYMBOL,
++    symbol: ARC_NATIVE_SYMBOL,
++    decimals: USDC_NATIVE_DECIMALS,
+   },
+-  blockExplorerUrls: ["https://explorer.testnet.arc.io"],
++  blockExplorerUrls: [ARC_EXPLORER],
+ };
+ 
+ export const SUPPORTED_CHAINS = [
+-  { name: "Arc Testnet", id: "Arc_Testnet", chainIdHex: "0x4cef52", isArc: true },
++  { name: ARC_CHAIN_NAME, id: "Arc_Testnet", chainIdHex: ARC_CHAIN_ID_HEX, isArc: true },
+   { name: "Base Sepolia", id: "Base_Sepolia", chainIdHex: "0x14a34", isArc: false },
+   { name: "Arbitrum Sepolia", id: "Arbitrum_Sepolia", chainIdHex: "0x66eee", isArc: false },
+   { name: "Avalanche Fuji", id: "Avalanche_Fuji", chainIdHex: "0x2a", isArc: false },
+--- baseline/src/contract.ts
++++ src/contract.ts
+@@ -1,3 +1,4 @@
++import { CIRBTC_ADDRESS as DEFAULT_CIRBTC_ADDRESS } from "./config/arc-constants.ts";
+ import artifact from "../contracts/out/RotatingSavings.sol/RotatingSavings.json" with { type: "json" };
+ import { getUsdc, requireChain } from "./onchain-facts.ts";
+ import { formatUnitsFixed, parseAmount } from "./onchain-money.ts";
+@@ -124,10 +125,10 @@
+   if (override !== undefined && (!/^0x[0-9a-fA-F]{40}$/.test(override) || /^0x0{40}$/.test(override))) {
+     throw new Error("VITE_CIRBTC_ADDRESS_TESTNET must be a nonzero token address");
+   }
+-  return (override ?? "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF") as `0x${string}`;
++  return (override ?? DEFAULT_CIRBTC_ADDRESS) as `0x${string}`;
+ }
+ // Default only for new deployments; existing clubs read their own cirBtcToken getter.
+-export const CIRBTC_ADDRESS = "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF" as const;
++export const CIRBTC_ADDRESS = DEFAULT_CIRBTC_ADDRESS;
+ export const CIRBTC_DECIMALS = 8;
+ 
+ export function formatCirBtc(raw: bigint): string {
+@@ -236,7 +237,7 @@
+   if (msg.includes("alreadycontributed")) return "Bạn đã đóng góp rồi.";
+   if (msg.includes("roundstillopen")) return "Vòng hụi chưa kết thúc, chưa thể quyết toán.";
+   if (msg.includes("roundended")) return "Thời gian đóng tiền của vòng này đã kết thúc. Vui lòng bấm Kết thúc vòng để chuyển sang vòng tiếp theo.";
+-  if (msg.includes("alreadywon")) return "Phòng hụi này được tạo trên phiên bản hợp đồng cũ trước Task-018 không hỗ trợ đóng hụi chết. Vui lòng tạo hoặc tham gia phòng mới.";
++  if (msg.includes("alreadywon")) return "Thành viên này đã nhận hụi trong chu kỳ hiện tại; không thể đặt bid hoặc bị loại bằng thao tác này.";
+   if (msg.includes("insufficientbid")) return "Bid phải cao hơn bid hiện tại.";
+   if (msg.includes("nopayout")) return "Không có tiền để nhận.";
+   if (msg.includes("maxmembersreached")) return "Nhóm đã đủ thành viên.";
+--- baseline/src/lib/bidPresets.ts
++++ src/lib/bidPresets.ts
+@@ -1,4 +1,6 @@
+ import { formatUsdcExact, parseUsdc } from "../onchain-money.ts";
++
++export const BID_PRESETS = Object.freeze(["1", "2", "5", "10"] as const);
+ 
+ /** Raise a raw bid without converting its rounded display back into a number. */
+ export function getRaisedBidInput(userBid: bigint, delta: string): string {
+--- baseline/src/lib/i18n.ts
++++ src/lib/i18n.ts
+@@ -164,6 +164,7 @@
+     kickedNoticeTitle: string;
+     kickedNoticeDesc: string;
+     completedNotice: string;
++    permissionlessNotice: string;
+     cycleEndNotice: string;
+     cycleRestartNotice: string;
+     cycleNoCollateralNotice: string;
+@@ -590,6 +591,7 @@
+       kickedNoticeTitle: "Bạn đã bị loại khỏi nhóm",
+       kickedNoticeDesc: "Do không đóng góp đúng hạn theo chu kỳ của vòng.",
+       completedNotice: "Chu kỳ hụi đã kết thúc.",
++      permissionlessNotice: "Bất kỳ ai cũng có thể quyết toán khi đủ điều kiện. Sau hạn đóng tiền, bất kỳ ai có thể loại thành viên chưa đóng và chưa hốt; quyết toán vẫn áp dụng quy tắc vỡ hụi hiện có. Lệnh loại riêng chỉ đánh dấu bị loại, không tịch thu ký quỹ.",
+       cycleEndNotice: "Chu kỳ kết thúc khi đủ số vòng dự kiến hoặc sớm hơn nếu không còn người đủ điều kiện nhận pot.",
+       cycleRestartNotice: "Chu kỳ mới đặt lại trạng thái đã hốt và bị loại, cho phép thành viên bị loại tham gia lại. Ký quỹ đã bị phạt hoặc đã rút không tự phục hồi và không được nộp lại tự động. Bổ sung ký quỹ cần một giao dịch nộp riêng.",
+       cycleNoCollateralNotice: "Bạn hiện không có ký quỹ đang khóa. Mở chu kỳ mới không tự phục hồi ký quỹ đã bị phạt hoặc đã rút, cũng không tự nộp lại. Bổ sung ký quỹ cần một giao dịch nộp riêng.",
+@@ -671,10 +673,10 @@
+       step3Desc: "Thành viên nào cần vốn sớm sẽ đặt Bid. Người trả giá bid cao nhất sẽ thắng toàn bộ Pot vòng đó.",
+       step3Badge: "Đấu giá",
+       step4Title: "Tất toán & Chia thưởng",
+-      step4Desc: "Tiền bid của người thắng được chia đều làm lợi tức thưởng cho những người chưa hốt hụi.",
++      step4Desc: "Tiền bid của người không thắng được chia cho thành viên đóng đủ, chưa hốt và chưa bị loại; người thắng nhận lại bid của mình.",
+       step4Badge: "Nhận tiền",
+-      safetyTitle: "Không thể quỵt hụi — Cơ chế bảo vệ dòng tiền thông minh",
+-      safetyDesc: "Hợp đồng tự động loại (kick) thành viên không đóng tiền ở vòng kế tiếp, đồng thời giữ lại toàn bộ số tiền đã đóng để bù trừ rủi ro cho nhóm. Tất cả lệnh rút tiền đều là pull-based trực tiếp từ ví của bạn.",
++      safetyTitle: "Quyết toán và xử lý thành viên trễ hạn",
++      safetyDesc: "Bất kỳ ai cũng có thể quyết toán khi đủ điều kiện. Sau hạn đóng tiền, bất kỳ ai có thể loại thành viên chưa đóng và chưa hốt; quyết toán vẫn áp dụng quy tắc vỡ hụi hiện có. Lệnh loại riêng chỉ đánh dấu bị loại, không tịch thu ký quỹ.",
+     },
+     createClubModal: {
+       title: "Tạo Nhóm Hụi Mới",
+@@ -792,7 +794,7 @@
+       step4Title: "Tất toán & Nhận thưởng (Claim Payout)",
+       step4Desc: "Bất kỳ ai cũng có thể kích hoạt kết thúc vòng (Settle). Người thắng chủ động bấm \"Nhận tiền\" để rút toàn bộ quỹ Pot về ví an toàn.",
+       pillar4Title: "4. Cơ chế Tự động Loại trừ (Auto-kick) Bảo vệ Nhóm",
+-      pillar4Desc: "Nếu một thành viên không đóng tiền đúng hạn khi chu kỳ vòng kết thúc, Smart Contract sẽ tự động đánh dấu Kicked (Loại khỏi nhóm) và tước quyền tham gia các vòng tiếp theo. Cơ chế này bảo vệ quyền lợi tuyệt đối cho các thành viên nghiêm túc còn lại.",
++      pillar4Desc: "Bất kỳ ai cũng có thể quyết toán khi đủ điều kiện. Sau hạn đóng tiền, bất kỳ ai có thể loại thành viên chưa đóng và chưa hốt; quyết toán vẫn áp dụng quy tắc vỡ hụi hiện có. Lệnh loại riêng chỉ đánh dấu bị loại, không tịch thu ký quỹ.",
+       pillar5Title: "5. Ưu thế Đột phá của Mạng Arc Network",
+       pillar5Desc: "Arc Testnet sử dụng trực tiếp stablecoin USDC làm Gas Token, loại bỏ nhu cầu sở hữu ETH để trả phí mạng. Thời gian xác thực khối dưới 1 giây và phí giao dịch siêu rẻ (≈ 0 USDC) mang lại trải nghiệm mượt mà như Web2.",
+     },
+@@ -1019,6 +1021,7 @@
+       kickedNoticeTitle: "You have been kicked from the club",
+       kickedNoticeDesc: "Due to defaulting on round contribution deadline.",
+       completedNotice: "The savings cycle has ended.",
++      permissionlessNotice: "Anyone may settle when its conditions are met. After the deadline, anyone may kick a member who has not contributed and has not won; settlement still applies its own default rules. Manual kick only marks the member and does not slash collateral.",
+       cycleEndNotice: "A cycle ends after its allotted rounds or earlier when no eligible pot recipients remain.",
+       cycleRestartNotice: "A new cycle resets winner and kicked status, allowing kicked members to participate again. Collateral already slashed or withdrawn is not restored or deposited automatically. Adding collateral requires a separate deposit transaction.",
+       cycleNoCollateralNotice: "You currently have no locked collateral. Starting a new cycle does not restore slashed or withdrawn collateral or deposit it automatically. Adding collateral requires a separate deposit transaction.",
+@@ -1100,10 +1103,10 @@
+       step3Desc: "Members needing liquidity early place bids. Highest bidder wins the entire round's Pot.",
+       step3Badge: "Bid",
+       step4Title: "Settle & Distribute",
+-      step4Desc: "Winner's bid is distributed as dividends equally among members who haven't taken the pot.",
++      step4Desc: "Losing bids are shared among contributing members who have not won or been kicked; the winner receives their own bid back.",
+       step4Badge: "Payout",
+-      safetyTitle: "Default-proof — Smart Fund Protection",
+-      safetyDesc: "Smart contract automatically kicks defaulting members from subsequent rounds, retaining prior funds to offset club risk. All payouts are pull-based directly to your wallet.",
++      safetyTitle: "Settlement and overdue contributions",
++      safetyDesc: "Anyone may settle when its conditions are met. After the deadline, anyone may kick a member who has not contributed and has not won; settlement still applies its own default rules. Manual kick only marks the member and does not slash collateral.",
+     },
+     createClubModal: {
+       title: "Create New Savings Club",
+@@ -1221,7 +1224,7 @@
+       step4Title: "Settlement & Payout Claim",
+       step4Desc: "Anyone can settle the completed round. The winner clicks \"Claim Payout\" to withdraw the full pot directly to their wallet safely and instantly.",
+       pillar4Title: "4. Automatic Default Protection (Auto-kick)",
+-      pillar4Desc: "If a member fails to contribute before the round deadline, the smart contract automatically flags them as Kicked and revokes their eligibility for future rounds, safeguarding the remaining savers.",
++      pillar4Desc: "Anyone may settle when its conditions are met. After the deadline, anyone may kick a member who has not contributed and has not won; settlement still applies its own default rules. Manual kick only marks the member and does not slash collateral.",
+       pillar5Title: "5. Groundbreaking Advantages of Arc Network",
+       pillar5Desc: "Arc Testnet natively utilizes USDC as the gas token, removing the need for native ETH tokens. Sub-second block finality and near-zero transaction fees (≈ $0) deliver a smooth Web2-like user experience.",
+     },
+--- baseline/src/components/savings/ActionPanel.tsx
++++ src/components/savings/ActionPanel.tsx
+@@ -1,4 +1,4 @@
+-import { getRaisedBidInput } from "../../lib/bidPresets";
++import { BID_PRESETS, getRaisedBidInput } from "../../lib/bidPresets";
+ import { useArcWriteContract } from "../../hooks/useArcWriteContract";
+ import { useEffect, useState } from "react";
+ import { erc20Abi } from "viem";
+@@ -630,6 +630,12 @@
+             </button>
+           </div>
+         </div>
++      )}
++
++      {state === GROUP_STATE.ACTIVE && (
++        <p className="mx-5 my-3 rounded-xl border border-slate-700 p-3 text-xs text-slate-300">
++          {t("actionPanel.permissionlessNotice", language)}
++        </p>
+       )}
+ 
+       {state === GROUP_STATE.ACTIVE && isMember && !isKicked && lockedCollateral === 0n && (
+@@ -1204,7 +1210,7 @@
+ 
+                       {/* Quick preset chips for raise */}
+                       <div className="flex items-center gap-2">
+-                        {["1", "2", "5", "10"].map((preset) => {
++                        {BID_PRESETS.map((preset) => {
+                           const presetValue = getRaisedBidInput(userBid, preset);
+                           return (
+                             <button
+@@ -1265,7 +1271,7 @@
+ 
+                   {/* Quick preset chips */}
+                   <div className="flex items-center gap-2">
+-                    {["1", "2", "5", "10"].map((preset) => (
++                    {BID_PRESETS.map((preset) => (
+                       <button
+                         key={preset}
+                         type="button"
+--- baseline/src/components/savings/PasskeyActionPanel.tsx
++++ src/components/savings/PasskeyActionPanel.tsx
+@@ -1,4 +1,4 @@
+-import { getRaisedBidInput } from "../../lib/bidPresets";
++import { BID_PRESETS, getRaisedBidInput } from "../../lib/bidPresets";
+ /**
+  * PasskeyActionPanel — Phiên bản ActionPanel dùng Circle Modular Wallet.
+  * Gửi user operations (ERC-4337) thay vì EOA transactions.
+@@ -410,6 +410,12 @@
+         </div>
+       )}
+ 
++      {state === GROUP_STATE.ACTIVE && (
++        <p className="mx-5 my-3 rounded-xl border border-slate-700 p-3 text-xs text-slate-300">
++          {t("actionPanel.permissionlessNotice", language)}
++        </p>
++      )}
++
+       {state === GROUP_STATE.ACTIVE && isMember && !isKicked && lockedCollateral === 0n && (
+         <p role="status" className="mx-5 my-3 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-xs text-amber-200">
+           {t("actionPanel.cycleNoCollateralNotice", language)}
+@@ -880,7 +886,7 @@
+ 
+                       {/* Quick preset chips for raise */}
+                       <div className="flex items-center gap-2">
+-                        {["1", "2", "5", "10"].map((preset) => {
++                        {BID_PRESETS.map((preset) => {
+                           const presetValue = getRaisedBidInput(userBid, preset);
+                           return (
+                             <button
+@@ -938,7 +944,7 @@
+                     </p>
+                   </div>
+                   <div className="flex items-center gap-2">
+-                    {["1", "2", "5", "10"].map((preset) => (
++                    {BID_PRESETS.map((preset) => (
+                       <button
+                         key={preset}
+                         type="button"
+--- baseline/contracts/RotatingSavings.sol
++++ contracts/RotatingSavings.sol
+@@ -396,7 +396,9 @@
+         }
+     }
+ 
+-    /// @dev Distributes `distributableBonus` equally among non-winner contributors.
++    /// @dev Distributes `distributableBonus` equally among eligible non-winner contributors.
++    /// The current winner is excluded explicitly; hasWon also excludes earlier winners in the current cycle.
++    /// Setting hasWon[winner] before this call does not change the recipient pool.
+     /// Returns any dust remainder (from integer division) to be added to winner payout.
+     function _distributeBonuses(
+         uint256 roundId,
+@@ -430,6 +432,8 @@
+         remainder = distributableBonus - distributed;
+     }
+ 
++    /// @notice Anyone may mark an unpaid, non-winning member as kicked after the deadline.
++    /// @dev This manual path does not slash collateral; settlement skips already kicked members.
+     function kickDefaulter(uint256 roundId, address member) external {
+         if (state != GroupState.ACTIVE) revert GroupNotActive();
+         if (roundId != currentRound) revert RoundNotCurrent();
+--- baseline/src/lib/arcBalances.ts
++++ src/lib/arcBalances.ts
+@@ -0,0 +1,36 @@
++import { Contract, JsonRpcProvider, type ContractRunner } from 'ethers';
++import { ARC_CHAIN_ID, ARC_RPC, TOKEN_ADDRESSES, TOKEN_DECIMALS } from '../config/arc-constants.ts';
++import { formatUsdc, formatUnitsFixed, formatUnitsExact } from '../onchain-money.ts';
++
++export type ArcToken = 'USDC' | 'EURC' | 'cirBTC';
++export type ArcBalances = { usdc: bigint | null; eurc: bigint | null; cirbtc: bigint | null };
++export const EMPTY_ARC_BALANCES: ArcBalances = { usdc: null, eurc: null, cirbtc: null };
++// Never use the connected wallet's current-chain native balance as Arc USDC.
++export const arcBalanceProvider = new JsonRpcProvider(ARC_RPC, Number(ARC_CHAIN_ID), { staticNetwork: true });
++const BALANCE_ABI = ['function balanceOf(address account) view returns (uint256)'];
++
++export async function readArcTokenBalance(account: string, token: ArcToken, runner: ContractRunner = arcBalanceProvider): Promise<bigint> {
++  const balance: unknown = await new Contract(TOKEN_ADDRESSES[token], BALANCE_ABI, runner).balanceOf(account);
++  if (typeof balance !== 'bigint' || balance < 0n) throw new Error('Invalid ERC-20 balance');
++  return balance;
++}
++export async function readArcBalances(account: string, runner: ContractRunner = arcBalanceProvider): Promise<ArcBalances> {
++  const values = await Promise.allSettled((['USDC', 'EURC', 'cirBTC'] as const).map(token => readArcTokenBalance(account, token, runner)));
++  const value = (index: number) => values[index].status === 'fulfilled' ? values[index].value : null;
++  return { usdc: value(0), eurc: value(1), cirbtc: value(2) };
++}
++export function formatArcBalance(raw: bigint | null, token: ArcToken): string {
++  if (raw === null) return '—';
++  return token === 'USDC' ? formatUsdc(raw) : formatUnitsFixed(raw, TOKEN_DECIMALS[token], token === 'cirBTC' ? 6 : 4, 'half-up');
++}
++/** Approximate chart/price-estimate boundary only; never feed this into money logic. */
++export function toApproximateChartValue(raw: bigint | null, decimals: number, rate = 1): number {
++  if (raw === null) return 0;
++  const value = Number(formatUnitsExact(raw, decimals)) * rate;
++  return Number.isFinite(value) ? value : 0;
++}
++/** User-facing estimate only; never used to construct a transaction amount. */
++export function formatApproximateQuote(input: string, rate: number, fractionDigits = 4): string {
++  const value = Number(input) * rate;
++  return Number.isFinite(value) && value >= 0 ? value.toFixed(fractionDigits) : '—';
++}
+--- baseline/src/lib/arcAnalytics.ts
++++ src/lib/arcAnalytics.ts
+@@ -0,0 +1,93 @@
++import { USDC_ADDRESS, USDC_ERC20_DECIMALS, USDC_NATIVE_DECIMALS, TOKEN_DECIMALS } from '../config/arc-constants.ts';
++import { formatUnitsExact, parseUnitsExact } from '../onchain-money.ts';
++import type { Transaction } from './TransactionHistory.ts';
++
++export interface TokenHolding { address: string; symbol: string; raw: bigint; decimals: number }
++export interface AnalyticsTx {
++  hash: string; timestamp: string; from: { hash: string }; to: { hash: string } | null;
++  valueRaw: bigint | null; decimals: number | null; tokenSymbol: string; isUsdc: boolean;
++  status: string; method: string | null; feeRaw: bigint | null;
++}
++export function parseUnsignedRaw(value: unknown): bigint | null {
++  if (typeof value === 'bigint') return value >= 0n ? value : null;
++  if (typeof value !== 'string' || !/^\d+$/.test(value)) return null;
++  try { return BigInt(value); } catch { return null; }
++}
++function parseDecimals(value: unknown): number | null {
++  if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d+$/.test(value))) return null;
++  const decimals = Number(value);
++  return Number.isInteger(decimals) && decimals >= 0 && decimals <= 255 ? decimals : null;
++}
++/** Identity comes from address, never symbol: native and ERC-20 USDC are one pool. */
++export function buildTokenHoldings(usdcRaw: bigint | null, rows: unknown[]): TokenHolding[] {
++  const canonical = USDC_ADDRESS.toLowerCase();
++  const seen = new Set([canonical]);
++  const holdings: TokenHolding[] = usdcRaw === null ? [] : [{ address: canonical, symbol: 'USDC', raw: usdcRaw, decimals: USDC_ERC20_DECIMALS }];
++  for (const row of rows) {
++    if (!row || typeof row !== 'object') continue;
++    const item = row as { token?: { address_hash?: unknown; address?: unknown; symbol?: unknown; decimals?: unknown }; value?: unknown };
++    const token = item.token;
++    if (!token) continue;
++    const address = token.address_hash ?? token.address;
++    if (typeof address !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(address)) continue;
++    const key = address.toLowerCase();
++    if (seen.has(key)) continue;
++    const decimals = parseDecimals(token.decimals);
++    const raw = parseUnsignedRaw(item.value);
++    if (decimals === null || raw === null) continue;
++    seen.add(key);
++    holdings.push({ address: key, symbol: typeof token.symbol === 'string' && token.symbol ? token.symbol : 'Unknown', raw, decimals });
++  }
++  return holdings;
++}
++export function normalizeExplorerTransaction(value: unknown): AnalyticsTx | null {
++  if (!value || typeof value !== 'object') return null;
++  const tx = value as Record<string, any>;
++  if (typeof tx.hash !== 'string' || typeof tx.timestamp !== 'string' || !Number.isFinite(Date.parse(tx.timestamp))) return null;
++  return {
++    hash: tx.hash, timestamp: tx.timestamp,
++    from: { hash: typeof tx.from?.hash === 'string' ? tx.from.hash : '' },
++    to: typeof tx.to?.hash === 'string' ? { hash: tx.to.hash } : null,
++    valueRaw: parseUnsignedRaw(tx.value), decimals: USDC_NATIVE_DECIMALS, tokenSymbol: 'USDC', isUsdc: true,
++    status: typeof tx.status === 'string' ? tx.status : 'unknown',
++    method: typeof tx.method === 'string' ? tx.method : null, feeRaw: parseUnsignedRaw(tx.fee?.value),
++  };
++}
++export function normalizeLocalTransaction(tx: Transaction): AnalyticsTx | null {
++  if (!tx || !Number.isFinite(tx.timestamp) || !Number.isFinite(new Date(tx.timestamp).getTime())) return null;
++  const hash = typeof tx.txHash === 'string' && tx.txHash ? tx.txHash : typeof tx.id === 'string' ? tx.id : '';
++  if (!hash) return null;
++  const symbol = typeof tx.tokenSymbol === 'string' && tx.tokenSymbol ? tx.tokenSymbol : 'Unknown';
++  const decimals = Object.prototype.hasOwnProperty.call(TOKEN_DECIMALS, symbol) ? TOKEN_DECIMALS[symbol] : null;
++  let valueRaw: bigint | null = null;
++  if (decimals !== null && typeof tx.amount === 'string') {
++    try { const raw = parseUnitsExact(tx.amount, decimals); if (raw >= 0n) valueRaw = raw; } catch { /* Invalid history is unavailable, not zero. */ }
++  }
++  return {
++    hash, timestamp: new Date(tx.timestamp).toISOString(),
++    from: { hash: typeof tx.from === 'string' ? tx.from : '' }, to: typeof tx.to === 'string' && tx.to ? { hash: tx.to } : null,
++    valueRaw, decimals, tokenSymbol: symbol, isUsdc: symbol === 'USDC',
++    status: tx.status === 'COMPLETE' ? 'ok' : tx.status === 'FAILED' ? 'error' : 'pending', method: typeof tx.action === 'string' ? tx.action : null, feeRaw: null,
++  };
++}
++export function formatAnalyticsValue(tx: AnalyticsTx): string {
++  return tx.valueRaw === null || tx.decimals === null ? '—' : `${formatUnitsExact(tx.valueRaw, tx.decimals)} ${tx.tokenSymbol}`;
++}
++export function formatNativeFee(raw: bigint | null): string {
++  return raw === null ? '—' : `${formatUnitsExact(raw, USDC_NATIVE_DECIMALS)} USDC`;
++}
++export function sumKnownFees(txs: AnalyticsTx[]): bigint | null {
++  const known = txs.filter(tx => tx.feeRaw !== null);
++  return known.length ? known.reduce((sum, tx) => sum + tx.feeRaw!, 0n) : null;
++}
++/** Aggregate only successful outgoing USDC, normalized to native 18 decimals. */
++export function usdcVolumeByDay(txs: AnalyticsTx[], account: string): { date: string; raw: bigint }[] {
++  const totals = new Map<string, bigint>();
++  for (const tx of txs) {
++    if (!tx.isUsdc || tx.status !== 'ok' || tx.from.hash.toLowerCase() !== account.toLowerCase() || tx.valueRaw === null || tx.decimals === null || tx.decimals > USDC_NATIVE_DECIMALS) continue;
++    const date = tx.timestamp.slice(0, 10);
++    const raw = tx.valueRaw * 10n ** BigInt(USDC_NATIVE_DECIMALS - tx.decimals);
++    totals.set(date, (totals.get(date) ?? 0n) + raw);
++  }
++  return [...totals.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, raw]) => ({ date, raw }));
++}

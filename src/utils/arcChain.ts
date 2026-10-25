@@ -1,8 +1,9 @@
 import { createViemAdapterFromProvider, createViemAdapterFromPrivateKey } from "@circle-fin/adapter-viem-v2";
 import { AppKit } from "@circle-fin/app-kit";
-import { JsonRpcProvider } from "ethers";
+import { arcBalanceProvider } from "../lib/arcBalances";
+import { ARC_CHAIN_ID_HEX, ARC_CHAIN_NAME, ARC_RPC, ARC_EXPLORER, ARC_NATIVE_SYMBOL, USDC_NATIVE_DECIMALS } from "../config/arc-constants";
 
-export const globalRpcProvider = new JsonRpcProvider("https://rpc.testnet.arc.io", undefined, { staticNetwork: true });
+export const globalRpcProvider = arcBalanceProvider;
 
 
 declare global {
@@ -12,19 +13,19 @@ declare global {
 }
 
 export const ARC_TESTNET_CONFIG = {
-  chainId: "0x4cef52", // 5042002 in hex
-  chainName: "Arc Testnet",
-  rpcUrls: ["https://rpc.testnet.arc.io"],
+  chainId: ARC_CHAIN_ID_HEX,
+  chainName: ARC_CHAIN_NAME,
+  rpcUrls: [ARC_RPC],
   nativeCurrency: {
-    name: "USDC",
-    symbol: "USDC",
-    decimals: 18,
+    name: ARC_NATIVE_SYMBOL,
+    symbol: ARC_NATIVE_SYMBOL,
+    decimals: USDC_NATIVE_DECIMALS,
   },
-  blockExplorerUrls: ["https://explorer.testnet.arc.io"],
+  blockExplorerUrls: [ARC_EXPLORER],
 };
 
 export const SUPPORTED_CHAINS = [
-  { name: "Arc Testnet", id: "Arc_Testnet", chainIdHex: "0x4cef52", isArc: true },
+  { name: ARC_CHAIN_NAME, id: "Arc_Testnet", chainIdHex: ARC_CHAIN_ID_HEX, isArc: true },
   { name: "Base Sepolia", id: "Base_Sepolia", chainIdHex: "0x14a34", isArc: false },
   { name: "Arbitrum Sepolia", id: "Arbitrum_Sepolia", chainIdHex: "0x66eee", isArc: false },
   { name: "Avalanche Fuji", id: "Avalanche_Fuji", chainIdHex: "0x2a", isArc: false },

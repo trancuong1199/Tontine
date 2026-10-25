@@ -1,3 +1,5 @@
+import { readArcBalances, formatArcBalance, formatApproximateQuote } from "../../lib/arcBalances";
+import { ARC_RPC } from "../../config/arc-constants";
 import React, { useState, useEffect } from "react";
 import {
   X,
@@ -16,8 +18,8 @@ import {
 } from "lucide-react";
 import { Language, t } from "../../lib/i18n";
 import { executeArcSwap, ARC_ROUTER } from "../../lib/arcSwap";
-import { switchOrAddArcNetwork, forceUpdateArcRpc, globalRpcProvider } from "../../utils/arcChain";
-import { BrowserProvider, Contract, formatUnits } from "ethers";
+import { switchOrAddArcNetwork, forceUpdateArcRpc } from "../../utils/arcChain";
+
 import { formatAddress } from "../../contract";
 
 interface ArcAppKitModalProps {
@@ -54,9 +56,9 @@ export function ArcAppKitModal({
   const [swapSuccess, setSwapSuccess] = useState<string>("");
   const [rpcSyncMsg, setRpcSyncMsg] = useState<string>("");
   const [balances, setBalances] = useState<{ usdc: string; eurc: string; cirbtc: string }>({
-    usdc: "0.00",
-    eurc: "0.00",
-    cirbtc: "0.0000",
+    usdc: "—",
+    eurc: "—",
+    cirbtc: "—",
   });
   const [exchangeRate, setExchangeRate] = useState<number>(0.8238); // 1 USDC ≈ 0.8238 EURC on Arc pool
 
@@ -88,7 +90,7 @@ export function ArcAppKitModal({
       const provider = await getBestProvider();
       const ok = await forceUpdateArcRpc(provider);
       if (ok) {
-        setRpcSyncMsg(isEn ? "Arc RPC updated to https://rpc.testnet.arc.io!" : "Đã cập nhật RPC thành https://rpc.testnet.arc.io!");
+        setRpcSyncMsg(isEn ? `Arc RPC updated to ${ARC_RPC}!` : `Đã cập nhật RPC thành ${ARC_RPC}!`);
       } else {
         setRpcSyncMsg(isEn ? "Could not update automatically. Please check wallet settings." : "Không thể tự cập nhật. Vui lòng kiểm tra cài đặt ví.");
       }
@@ -111,52 +113,17 @@ export function ArcAppKitModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Fetch balances when opened
+  // Arc-pinned reads also work with no injected wallet or a wallet on another chain.
   useEffect(() => {
+    setBalances({ usdc: "—", eurc: "—", cirbtc: "—" });
     if (!isOpen || !connectedAccount) return;
     let isMounted = true;
-
-    async function loadBalances() {
-      try {
-        let usdc = "0.00";
-        let eurc = "0.00";
-        let cirbtc = "0.0000";
-        if (window.ethereum) {
-          const provider = new BrowserProvider(window.ethereum);
-          const rawNative = await provider.getBalance(connectedAccount!);
-          usdc = parseFloat(formatUnits(rawNative, 18)).toFixed(2);
-
-          const eurcContract = new Contract(
-            "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a",
-            ["function balanceOf(address) view returns (uint256)"],
-            provider
-          );
-          const rawEurc = await eurcContract.balanceOf(connectedAccount!);
-          eurc = parseFloat(formatUnits(rawEurc, 6)).toFixed(2);
-
-          const cirbtcContract = new Contract(
-            "0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF",
-            ["function balanceOf(address) view returns (uint256)"],
-            provider
-          );
-          const rawCirbtc = await cirbtcContract.balanceOf(connectedAccount!);
-          cirbtc = parseFloat(formatUnits(rawCirbtc, 8)).toFixed(6);
-        } else {
-          const rawNative = await globalRpcProvider.getBalance(connectedAccount!);
-          usdc = parseFloat(formatUnits(rawNative, 18)).toFixed(2);
-        }
-        if (isMounted) {
-          setBalances({ usdc, eurc, cirbtc });
-        }
-      } catch (err) {
-        console.warn("Failed to fetch balances:", err);
-      }
-    }
-
-    loadBalances();
-    return () => {
-      isMounted = false;
-    };
+    void readArcBalances(connectedAccount).then(raw => {
+      if (isMounted) setBalances({
+        usdc: formatArcBalance(raw.usdc, 'USDC'), eurc: formatArcBalance(raw.eurc, 'EURC'), cirbtc: formatArcBalance(raw.cirbtc, 'cirBTC'),
+      });
+    });
+    return () => { isMounted = false; };
   }, [isOpen, connectedAccount, swapSuccess]);
 
   if (!isOpen) return null;
@@ -232,12 +199,7 @@ export function ArcAppKitModal({
     EURC: 1 / (exchangeRate || 0.8238),
     cirBTC: 350000,
   };
-  const estimatedOutput = (() => {
-    const val = parseFloat(amount || "0");
-    if (!val || val <= 0) return "0.0000";
-    const out = (val * tokenPriceMap[fromToken]) / tokenPriceMap[toToken];
-    return toToken === "cirBTC" ? out.toFixed(8) : out.toFixed(4);
-  })();
+  const estimatedOutput = formatApproximateQuote(amount, tokenPriceMap[fromToken] / tokenPriceMap[toToken], toToken === "cirBTC" ? 8 : 4);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
@@ -455,7 +417,7 @@ export function ArcAppKitModal({
                           onClick={handleSyncRpc}
                           className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold rounded-lg border border-amber-500/40 transition-colors cursor-pointer"
                         >
-                          {isEn ? "🔧 Fix Wallet RPC (Switch to https://rpc.testnet.arc.io)" : "🔧 Sửa RPC Ví (Chuyển sang https://rpc.testnet.arc.io)"}
+                          {isEn ? `🔧 Fix Wallet RPC (Switch to ${ARC_RPC})` : `🔧 Sửa RPC Ví (Chuyển sang ${ARC_RPC})`}
                         </button>
                       </div>
                     )}
@@ -510,7 +472,7 @@ export function ArcAppKitModal({
                 <div className="pt-1 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/60 mt-1">
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
-                    <span>RPC: rpc.testnet.arc.io</span>
+                    <span>RPC: {ARC_RPC}</span>
                   </span>
                   <button
                     type="button"

@@ -1,4 +1,4 @@
-import { getRaisedBidInput } from "../../lib/bidPresets";
+import { BID_PRESETS, getRaisedBidInput } from "../../lib/bidPresets";
 import { useArcWriteContract } from "../../hooks/useArcWriteContract";
 import { useEffect, useState } from "react";
 import { erc20Abi } from "viem";
@@ -632,6 +632,12 @@ export function ActionPanel({
         </div>
       )}
 
+      {state === GROUP_STATE.ACTIVE && (
+        <p className="mx-5 my-3 rounded-xl border border-slate-700 p-3 text-xs text-slate-300">
+          {t("actionPanel.permissionlessNotice", language)}
+        </p>
+      )}
+
       {state === GROUP_STATE.ACTIVE && isMember && !isKicked && lockedCollateral === 0n && (
         <p role="status" className="mx-5 my-3 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-xs text-amber-200">
           {t("actionPanel.cycleNoCollateralNotice", language)}
@@ -1204,7 +1210,7 @@ export function ActionPanel({
 
                       {/* Quick preset chips for raise */}
                       <div className="flex items-center gap-2">
-                        {["1", "2", "5", "10"].map((preset) => {
+                        {BID_PRESETS.map((preset) => {
                           const presetValue = getRaisedBidInput(userBid, preset);
                           return (
                             <button
@@ -1265,7 +1271,7 @@ export function ActionPanel({
 
                   {/* Quick preset chips */}
                   <div className="flex items-center gap-2">
-                    {["1", "2", "5", "10"].map((preset) => (
+                    {BID_PRESETS.map((preset) => (
                       <button
                         key={preset}
                         type="button"

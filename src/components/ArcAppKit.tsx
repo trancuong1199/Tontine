@@ -1,18 +1,12 @@
+import { readArcBalances, formatArcBalance, formatApproximateQuote } from "../lib/arcBalances";
+import { ARC_EXPLORER, ARC_CHAIN_ID_HEX as ARC_CHAIN_ID } from "../config/arc-constants";
+import { ARC_TESTNET_CONFIG as ARC_CHAIN_PARAMS } from "../utils/arcChain";
 import { executeArcSwap } from '../lib/arcSwap';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowUpDown, RefreshCw } from 'lucide-react';
 import { saveTransaction } from '../lib/TransactionHistory';
-import { BrowserProvider, Contract, formatUnits } from 'ethers';
+import { BrowserProvider, Contract } from 'ethers';
 import { switchOrAddArcNetwork, globalRpcProvider } from '../utils/arcChain';
-
-const ARC_CHAIN_ID = '0x4CEF52'; // 5042002 in hex
-const ARC_CHAIN_PARAMS = {
-  chainId: ARC_CHAIN_ID,
-  chainName: 'Arc Testnet',
-  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
-  rpcUrls: ['https://rpc.testnet.arc.io'],
-  blockExplorerUrls: ['https://explorer.testnet.arc.io'],
-};
 
 interface ArcAppKitProps {
   connectedAccount: string | null;
@@ -64,7 +58,7 @@ export const ArcAppKit: React.FC<ArcAppKitProps> = ({ connectedAccount, getProvi
   }, [connectedAccount, getProvider]);
 
   // USDC <➔ EURC Exchange and Balance states
-  const [balances, setBalances] = useState<{ usdc: string; eurc: string }>({ usdc: '0.0000', eurc: '0.0000' });
+  const [balances, setBalances] = useState<{ usdc: string; eurc: string }>({ usdc: '—', eurc: '—' });
   const [isFetchingBalances, setIsFetchingBalances] = useState(false);
   const [realExchangeRate, setRealExchangeRate] = useState<number>(0.6727); // 1 USDC ≈ 0.6727 EURC on-chain V3 pool
 
@@ -101,85 +95,32 @@ export const ArcAppKit: React.FC<ArcAppKitProps> = ({ connectedAccount, getProvi
     }
   };
 
+  const balanceRequest = useRef(0);
+  const balanceAccount = useRef(connectedAccount);
+  balanceAccount.current = connectedAccount;
   const fetchBalances = async () => {
-    if (!connectedAccount) return;
+    const request = ++balanceRequest.current;
+    setBalances({ usdc: '—', eurc: '—' });
+    if (!connectedAccount) { setIsFetchingBalances(false); return; }
     setIsFetchingBalances(true);
-
-    let usdcVal = balances.usdc;
-    let eurcVal = balances.eurc;
-    
-    const eth = getProvider();
-    let provider = globalRpcProvider;
-    
-    try {
-      if (eth) {
-        const chainId = await eth.request({ method: 'eth_chainId' });
-        if (chainId && chainId.toLowerCase() === ARC_CHAIN_ID.toLowerCase()) {
-          provider = new BrowserProvider(eth) as any;
-        }
-      }
-    } catch (e) { }
-
-    // Fetch USDC balance independently
-    try {
-      const nativeBalance = await provider.getBalance(connectedAccount);
-      usdcVal = parseFloat(formatUnits(nativeBalance, 18)).toFixed(4);
-    } catch (e) {
-      console.warn("Failed to fetch native USDC balance:", e);
-      // Fallback
-      try {
-        const nativeBalance = await globalRpcProvider.getBalance(connectedAccount);
-        usdcVal = parseFloat(formatUnits(nativeBalance, 18)).toFixed(4);
-      } catch (err) {
-        console.warn("USDC fallback query failed:", err);
-      }
-    }
-
-    // Fetch EURC balance independently
-    try {
-      const eurcContract = new Contract(
-        '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a',
-        ["function balanceOf(address account) view returns (uint256)"],
-        provider
-      );
-      const eurcBalance = await eurcContract.balanceOf(connectedAccount);
-      eurcVal = parseFloat(formatUnits(eurcBalance, 6)).toFixed(4);
-    } catch (e) {
-      console.warn("Failed to fetch EURC balance:", e);
-      // Fallback
-      try {
-        const eurcContract = new Contract(
-          '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a',
-          ["function balanceOf(address account) view returns (uint256)"],
-          globalRpcProvider
-        );
-        const eurcBalance = await eurcContract.balanceOf(connectedAccount);
-        eurcVal = parseFloat(formatUnits(eurcBalance, 6)).toFixed(4);
-      } catch (err) {
-        console.warn("EURC fallback query failed:", err);
-      }
-    }
-
-    setBalances({ usdc: usdcVal, eurc: eurcVal });
+    const raw = await readArcBalances(connectedAccount);
+    if (request !== balanceRequest.current || connectedAccount !== balanceAccount.current) return;
+    setBalances({ usdc: formatArcBalance(raw.usdc, 'USDC'), eurc: formatArcBalance(raw.eurc, 'EURC') });
     setIsFetchingBalances(false);
   };
 
   useEffect(() => {
-    if (connectedAccount) {
-      fetchBalances();
-      fetchExchangeRate();
-    }
+    void fetchBalances();
+    if (connectedAccount) fetchExchangeRate();
   }, [connectedAccount, activeTab]);
 
-  const displayUsdc = parseFloat(balances.usdc).toFixed(4);
-  const displayEurc = parseFloat(balances.eurc).toFixed(4);
+  const displayUsdc = balances.usdc;
+  const displayEurc = balances.eurc;
 
   const tokenInLabel = isReversed ? 'EURC' : 'USDC';
   const tokenOutLabel = isReversed ? 'USDC' : 'EURC';
   const exchangeRate = isReversed ? (1 / realExchangeRate) : realExchangeRate;
-  const receiveAmount = swapAmount && !isNaN(Number(swapAmount))
-    ? (Number(swapAmount) * exchangeRate).toFixed(4)
-    : '0.0000';
+  const receiveAmount = formatApproximateQuote(swapAmount, exchangeRate, 4);
 
   const handleAction = async () => {
     setResult(null);
@@ -233,7 +174,7 @@ export const ArcAppKit: React.FC<ArcAppKitProps> = ({ connectedAccount, getProvi
           from,
           to: finalRecipient,
           value: `${swapAmount} ${tokenInLabel} swapped; see confirmed receipt for output`,
-          explorerUrl: `https://testnet.arcscan.app/tx/${txHash}`,
+          explorerUrl: `${ARC_EXPLORER}/tx/${txHash}`,
         };
 
         setResult(JSON.stringify(swapResult, null, 2));

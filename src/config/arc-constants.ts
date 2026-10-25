@@ -9,15 +9,25 @@
  * Always use ERC20_DECIMALS when calling ERC-20 methods on any token.
  */
 
-// ─── Chain ───────────────────────────────────────────────────────────────────
-export const ARC_CHAIN_ID = 5042002n;
-export const ARC_CHAIN_ID_HEX = '0x4cef52';
-export const ARC_RPC = 'https://rpc.testnet.arc.io';
-export const ARC_EXPLORER = 'https://explorer.testnet.arc.io';
+import { requireChain, getUsdc } from '../onchain-facts.ts';
+
+const arc = requireChain(5042002);
+const usdc = getUsdc(arc.chainId);
+if (!usdc) throw new Error('Arc USDC is not configured');
+if (!arc.rpcUrls[0] || !arc.explorerBase) throw new Error('Arc RPC/explorer is not configured');
+
+// ─── Chain facts ─────────────────────────────────────────────────────────────
+export const ARC_CHAIN_ID = BigInt(arc.chainId);
+export const ARC_CHAIN_ID_HEX = `0x${arc.chainId.toString(16)}`;
+export const ARC_CHAIN_NAME = arc.name;
+export const ARC_RPC = arc.rpcUrls[0];
+export const ARC_EXPLORER = arc.explorerBase;
+export const ARC_NATIVE_SYMBOL = arc.nativeCurrency.symbol;
 
 // ─── Token addresses ─────────────────────────────────────────────────────────
 /** USDC on Arc — acts as BOTH the native gas token AND an ERC-20. */
-export const USDC_ADDRESS = '0x3600000000000000000000000000000000000000';
+export const USDC_ADDRESS = usdc.address as `0x${string}`;
+// Project deployment defaults: EURC and CirBTC are not present in the facts registry.
 export const EURC_ADDRESS = '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a';
 export const CIRBTC_ADDRESS = '0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF';
 
@@ -26,12 +36,12 @@ export const WUSDC_ADDRESS = '0x911b4000D3422F482F4062a913885f7b035382Df';
 
 // ─── Token decimals ───────────────────────────────────────────────────────────
 /** Use for ERC-20 calls: approve, transferFrom, vault deposit, escrow budget. */
-export const USDC_ERC20_DECIMALS = 6;
+export const USDC_ERC20_DECIMALS = usdc.decimals;
 export const EURC_DECIMALS = 6;
 export const CIRBTC_DECIMALS = 8;
 
 /** Use ONLY for native gas (msg.value, gas estimation). NOT for ERC-20 calls. */
-export const USDC_NATIVE_DECIMALS = 18;
+export const USDC_NATIVE_DECIMALS = arc.nativeCurrency.decimals;
 
 // ─── Convenience map: token symbol → ERC-20 decimals ─────────────────────────
 export const TOKEN_DECIMALS: Record<string, number> = {

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: T045 canonical display formatter shares function and preserves exact machine conversion
+ok 1 - T045 canonical display formatter shares function and preserves exact machine conversion
+  ---
+  duration_ms: 4.037126
+  type: 'test'
+  ...
+# Subtest: T045 bid preset helper adds exact deltas without grouping, NaN or precision loss
+ok 2 - T045 bid preset helper adds exact deltas without grouping, NaN or precision loss
+  ---
+  duration_ms: 1.012608
+  type: 'test'
+  ...
+# Subtest: T046 shared initial presets and permissionless notices execute in both wallet panels
+ok 3 - T046 shared initial presets and permissionless notices execute in both wallet panels
+  ---
+  duration_ms: 1279.990625
+  type: 'test'
+  ...
+# Subtest: T045 both real panel preset buttons preserve exact bigint input
+ok 4 - T045 both real panel preset buttons preserve exact bigint input
+  ---
+  duration_ms: 190.221688
+  type: 'test'
+  ...
+# Subtest: T045 completed and zero-collateral notices are rendered in both languages and wallet panels
+ok 5 - T045 completed and zero-collateral notices are rendered in both languages and wallet panels
+  ---
+  duration_ms: 70.835073
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1568.0666

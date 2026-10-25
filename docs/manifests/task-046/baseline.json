@@ -1,0 +1,101 @@
+{
+  "taskId": "task-046",
+  "createdAt": "2026-10-25T13:02:14.711Z",
+  "files": {
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "exists": true,
+      "sha256": "57aa2ddbc47b3ae7afca482dc5da2daf6dcc572c00dbc719dc5794d6c02b7a58",
+      "snapshot": "docs/manifests/task-046/baseline/src_components_savings_ArcAppKitModal.tsx"
+    },
+    "src/components/RightSidebar.tsx": {
+      "exists": true,
+      "sha256": "fa19279038932911351ab36d49e6ac6e0125bc3942145039639d580ae6aabec6",
+      "snapshot": "docs/manifests/task-046/baseline/src_components_RightSidebar.tsx"
+    },
+    "src/components/ArcAppKit.tsx": {
+      "exists": true,
+      "sha256": "5f34043615522f9d675c0dfc06ce61379a90a565dda85b8d1253b63487d10548",
+      "snapshot": "docs/manifests/task-046/baseline/src_components_ArcAppKit.tsx"
+    },
+    "src/components/Dashboard.tsx": {
+      "exists": true,
+      "sha256": "c9c9d5a5ebba8a5a5aa29ba89dac3a98b197305a93516920fd1d983144dc84aa",
+      "snapshot": "docs/manifests/task-046/baseline/src_components_Dashboard.tsx"
+    },
+    "src/components/Analytics.tsx": {
+      "exists": true,
+      "sha256": "7c3262dc236f9e1391e1b4ec6cc4fa5b1ebfba18ed003b02b070d687113fbd58",
+      "snapshot": "docs/manifests/task-046/baseline/src_components_Analytics.tsx"
+    },
+    "src/components/MerchantTreasury.tsx": {
+      "exists": true,
+      "sha256": "581fb0dbe89f0fcfefe9c5720432bee7549a347c2ee869f91380634a7706161f",
+      "snapshot": "docs/manifests/task-046/baseline/src_components_MerchantTreasury.tsx"
+    },
+    "src/config/arc-constants.ts": {
+      "exists": true,
+      "sha256": "325aa3b3a7669ec16ddeb7bee9627604a4c7817adaca036db5b3ca7b30dca6bc",
+      "snapshot": "docs/manifests/task-046/baseline/src_config_arc-constants.ts"
+    },
+    "src/config/arcNetwork.ts": {
+      "exists": true,
+      "sha256": "21aa88120a9516bb56695bcac61177e0ea572b595290513093ae9d322b6a29e6",
+      "snapshot": "docs/manifests/task-046/baseline/src_config_arcNetwork.ts"
+    },
+    "src/utils/arcChain.ts": {
+      "exists": true,
+      "sha256": "8872ae3faf355fa5820c628f7860d53543087b4da166b2a4c1cbc4ddb4d2bb0a",
+      "snapshot": "docs/manifests/task-046/baseline/src_utils_arcChain.ts"
+    },
+    "src/contract.ts": {
+      "exists": true,
+      "sha256": "ad3d97f1416ce3a19780bcd3f8fe5d779badb4727077e39b15036e91a3ec8670",
+      "snapshot": "docs/manifests/task-046/baseline/src_contract.ts"
+    },
+    "src/lib/bidPresets.ts": {
+      "exists": true,
+      "sha256": "d9df3af2c9a25fbbe41f415ae96578b98cfc1e741ece3e5f218572f471cd8dd2",
+      "snapshot": "docs/manifests/task-046/baseline/src_lib_bidPresets.ts"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "8138862745f19f245535f1bd6eb43d1a6eeb5e997f7f30a923142e948876e9cb",
+      "snapshot": "docs/manifests/task-046/baseline/src_lib_i18n.ts"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "84ca12a379e6096ea566ae623d485b480b2cf61fd503c68ccb5ff19910f6610a",
+      "snapshot": "docs/manifests/task-046/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "0843760d616c1613ec84fbd0f58e8d9bdbbde007747248408adaaf758784cb8f",
+      "snapshot": "docs/manifests/task-046/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    },
+    "src/onchain-money.ts": {
+      "exists": true,
+      "sha256": "8405ce18d622a27303569c7a6dbb152599604574a76a2dc41836c6fcbee84f58",
+      "snapshot": "docs/manifests/task-046/baseline/src_onchain-money.ts"
+    },
+    "contracts/RotatingSavings.sol": {
+      "exists": true,
+      "sha256": "768f9d228c5cff2b87fbe96a5c8b1ea388061ba8af3b01bd1dd3ff372fb260b5",
+      "snapshot": "docs/manifests/task-046/baseline/contracts_RotatingSavings.sol"
+    },
+    "contracts/out/RotatingSavings.sol/RotatingSavings.json": {
+      "exists": true,
+      "sha256": "094a6400326b64f994d25fa263153f4b25cbabe01b50400dff002366650904bd",
+      "snapshot": "docs/manifests/task-046/baseline/contracts_out_RotatingSavings.sol_RotatingSavings.json"
+    },
+    "src/lib/arcBalances.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/lib/arcAnalytics.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    }
+  }
+}

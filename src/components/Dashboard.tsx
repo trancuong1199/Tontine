@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { readArcBalances, formatArcBalance, toApproximateChartValue, type ArcBalances } from "../lib/arcBalances";
+import { USDC_ERC20_DECIMALS, EURC_DECIMALS, CIRBTC_DECIMALS } from "../config/arc-constants";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
@@ -8,21 +10,11 @@ import {
   ArrowUpRight, TrendingUp, Activity,
   ExternalLink
 } from 'lucide-react';
-import { BrowserProvider, Contract, formatUnits, type Eip1193Provider } from 'ethers';
+import { type Eip1193Provider } from 'ethers';
 import { getTransactionHistory } from '../lib/TransactionHistory';
 import type { Transaction } from '../lib/TransactionHistory';
 import { RightSidebar } from './RightSidebar';
-import { globalRpcProvider } from '../utils/arcChain';
 import type { ViewState } from '../lib/navigation';
-
-// Arc Testnet token addresses
-const TOKEN_ADDRESSES = {
-  USDC: '0x3600000000000000000000000000000000000000', // native
-  EURC: '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a',
-  cirBTC: '0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF',
-};
-const ARC_CHAIN_ID = '0x4CEF52';
-const ERC20_ABI = ['function balanceOf(address) view returns (uint256)'];
 
 // Declared outside Dashboard to avoid "component created during render" lint warning
 interface TokenCardProps {
@@ -85,12 +77,7 @@ interface DashboardProps {
   getProvider: () => Eip1193Provider | null;
 }
 
-interface Balances {
-  usdc: string;
-  eurc: string;
-  cirbtc: string;
-  loading: boolean;
-}
+interface Balances extends ArcBalances { loading: boolean }
 
 export const Dashboard: React.FC<DashboardProps> = ({
   connectedAccount,
@@ -99,50 +86,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [txs, setTxs] = useState<Transaction[]>([]);
   const [balances, setBalances] = useState<Balances>({
-    usdc: '—', eurc: '—', cirbtc: '—', loading: false,
+    usdc: null, eurc: null, cirbtc: null, loading: false,
   });
   const [refreshing, setRefreshing] = useState(false);
 
-  // ── Real balances from chain ──────────────────────────────────────────────
+  const balanceRequest = useRef(0);
+  const balanceAccount = useRef(connectedAccount);
+  balanceAccount.current = connectedAccount;
   const fetchBalances = useCallback(async () => {
-    if (!connectedAccount) {
-      setBalances({ usdc: '—', eurc: '—', cirbtc: '—', loading: false });
-      return;
-    }
-    setBalances(prev => ({ ...prev, loading: true }));
-    try {
-      const eth = getProvider();
-      // globalRpcProvider is JsonRpcProvider, BrowserProvider extends it — use a union
-      let provider: InstanceType<typeof BrowserProvider> | typeof globalRpcProvider = globalRpcProvider;
-      if (eth) {
-        try {
-          const chainIdHex = await eth.request({ method: 'eth_chainId' }) as string;
-          if (chainIdHex?.toLowerCase() === ARC_CHAIN_ID.toLowerCase()) {
-            provider = new BrowserProvider(eth);
-          }
-        } catch { /* provider fallback */ }
-      }
-
-      // USDC: native gas balance (18 dec) → display
-      const nativeBal = await provider.getBalance(connectedAccount);
-      const usdcDisplay = parseFloat(formatUnits(nativeBal, 18)).toFixed(4);
-
-      // EURC: ERC-20 (6 dec)
-      const eurcContract = new Contract(TOKEN_ADDRESSES.EURC, ERC20_ABI, provider);
-      const eurcBal = (await eurcContract.balanceOf(connectedAccount)) as bigint;
-      const eurcDisplay = parseFloat(formatUnits(eurcBal, 6)).toFixed(4);
-
-      // cirBTC: ERC-20 (8 dec)
-      const btcContract = new Contract(TOKEN_ADDRESSES.cirBTC, ERC20_ABI, provider);
-      const btcBal = (await btcContract.balanceOf(connectedAccount)) as bigint;
-      const btcDisplay = parseFloat(formatUnits(btcBal, 8)).toFixed(6);
-
-      setBalances({ usdc: usdcDisplay, eurc: eurcDisplay, cirbtc: btcDisplay, loading: false });
-    } catch (err) {
-      console.warn('Balance fetch failed', err);
-      setBalances(prev => ({ ...prev, loading: false }));
-    }
-  }, [connectedAccount, getProvider]);
+    const request = ++balanceRequest.current;
+    setBalances({ usdc: null, eurc: null, cirbtc: null, loading: Boolean(connectedAccount) });
+    if (!connectedAccount) return;
+    const raw = await readArcBalances(connectedAccount);
+    if (request !== balanceRequest.current || connectedAccount !== balanceAccount.current) return;
+    setBalances({ ...raw, loading: false });
+  }, [connectedAccount]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -175,11 +133,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, [connectedAccount, fetchBalances]);
 
   // ── Pie data: only shown when balances are loaded ─────────────────────────
-  const hasBalances = balances.usdc !== '—';
-  const usdcNum = hasBalances ? parseFloat(balances.usdc) : 0;
-  const eurcNum = hasBalances ? parseFloat(balances.eurc) * 1.08 : 0;   // approx USD
-  const btcNum = hasBalances ? parseFloat(balances.cirbtc) * 60000 : 0; // approx USD
-  const totalUsd = usdcNum + eurcNum + btcNum;
+  const hasBalances = balances.usdc !== null || balances.eurc !== null || balances.cirbtc !== null;
+  // Approximate chart allocation using illustrative rates, never a balance source.
+  const usdcNum = toApproximateChartValue(balances.usdc, USDC_ERC20_DECIMALS);
+  const eurcNum = toApproximateChartValue(balances.eurc, EURC_DECIMALS, 1.08);
+  const btcNum = toApproximateChartValue(balances.cirbtc, CIRBTC_DECIMALS, 60000);
+  const estimatedTotal = usdcNum + eurcNum + btcNum;
+  const totalUsd = Number.isFinite(estimatedTotal) ? estimatedTotal : 0;
 
   const pieData = hasBalances && totalUsd > 0
     ? [
@@ -187,11 +147,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         { name: 'EURC', value: (eurcNum / totalUsd) * 100, color: '#0ea5e9' },
         { name: 'cirBTC', value: (btcNum / totalUsd) * 100, color: '#a855f7' },
       ]
-    : [
-        { name: 'USDC', value: 60, color: '#0d9488' },
-        { name: 'EURC', value: 25, color: '#0ea5e9' },
-        { name: 'cirBTC', value: 15, color: '#a855f7' },
-      ];
+    : [];
 
   const activityData = [
     { name: 'Mon', txs: 12 },
@@ -264,9 +220,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             Your Assets
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.85rem' }}>
-            <TokenCard symbol="USDC" balance={balances.usdc} color="#0d9488" icon="🪙" loading={balances.loading} />
-            <TokenCard symbol="EURC" balance={balances.eurc} color="#0ea5e9" icon="💶" loading={balances.loading} />
-            <TokenCard symbol="cirBTC" balance={balances.cirbtc} color="#a855f7" icon="₿" loading={balances.loading} />
+            <TokenCard symbol="USDC" balance={formatArcBalance(balances.usdc, 'USDC')} color="#0d9488" icon="🪙" loading={balances.loading} />
+            <TokenCard symbol="EURC" balance={formatArcBalance(balances.eurc, 'EURC')} color="#0ea5e9" icon="💶" loading={balances.loading} />
+            <TokenCard symbol="cirBTC" balance={formatArcBalance(balances.cirbtc, 'cirBTC')} color="#a855f7" icon="₿" loading={balances.loading} />
           </div>
         </div>
 
@@ -278,7 +234,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Portfolio donut */}
           <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '16px' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 1rem', fontFamily: "'Space Grotesk', sans-serif" }}>
-              Portfolio
+              Portfolio (approximate; illustrative rates)
             </h3>
             <div style={{ position: 'relative', height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -319,7 +275,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 Activity (7d)
               </h3>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Activity size={13} /> Live
+                <Activity size={13} /> Sample
               </span>
             </div>
             <div style={{ height: '190px' }}>

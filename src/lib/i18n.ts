@@ -164,6 +164,7 @@ export interface Translations {
     kickedNoticeTitle: string;
     kickedNoticeDesc: string;
     completedNotice: string;
+    permissionlessNotice: string;
     cycleEndNotice: string;
     cycleRestartNotice: string;
     cycleNoCollateralNotice: string;
@@ -590,6 +591,7 @@ export const translations: Record<Language, Translations> = {
       kickedNoticeTitle: "Bạn đã bị loại khỏi nhóm",
       kickedNoticeDesc: "Do không đóng góp đúng hạn theo chu kỳ của vòng.",
       completedNotice: "Chu kỳ hụi đã kết thúc.",
+      permissionlessNotice: "Bất kỳ ai cũng có thể quyết toán khi đủ điều kiện. Sau hạn đóng tiền, bất kỳ ai có thể loại thành viên chưa đóng và chưa hốt; quyết toán vẫn áp dụng quy tắc vỡ hụi hiện có. Lệnh loại riêng chỉ đánh dấu bị loại, không tịch thu ký quỹ.",
       cycleEndNotice: "Chu kỳ kết thúc khi đủ số vòng dự kiến hoặc sớm hơn nếu không còn người đủ điều kiện nhận pot.",
       cycleRestartNotice: "Chu kỳ mới đặt lại trạng thái đã hốt và bị loại, cho phép thành viên bị loại tham gia lại. Ký quỹ đã bị phạt hoặc đã rút không tự phục hồi và không được nộp lại tự động. Bổ sung ký quỹ cần một giao dịch nộp riêng.",
       cycleNoCollateralNotice: "Bạn hiện không có ký quỹ đang khóa. Mở chu kỳ mới không tự phục hồi ký quỹ đã bị phạt hoặc đã rút, cũng không tự nộp lại. Bổ sung ký quỹ cần một giao dịch nộp riêng.",
@@ -671,10 +673,10 @@ export const translations: Record<Language, Translations> = {
       step3Desc: "Thành viên nào cần vốn sớm sẽ đặt Bid. Người trả giá bid cao nhất sẽ thắng toàn bộ Pot vòng đó.",
       step3Badge: "Đấu giá",
       step4Title: "Tất toán & Chia thưởng",
-      step4Desc: "Tiền bid của người thắng được chia đều làm lợi tức thưởng cho những người chưa hốt hụi.",
+      step4Desc: "Tiền bid của người không thắng được chia cho thành viên đóng đủ, chưa hốt và chưa bị loại; người thắng nhận lại bid của mình.",
       step4Badge: "Nhận tiền",
-      safetyTitle: "Không thể quỵt hụi — Cơ chế bảo vệ dòng tiền thông minh",
-      safetyDesc: "Hợp đồng tự động loại (kick) thành viên không đóng tiền ở vòng kế tiếp, đồng thời giữ lại toàn bộ số tiền đã đóng để bù trừ rủi ro cho nhóm. Tất cả lệnh rút tiền đều là pull-based trực tiếp từ ví của bạn.",
+      safetyTitle: "Quyết toán và xử lý thành viên trễ hạn",
+      safetyDesc: "Bất kỳ ai cũng có thể quyết toán khi đủ điều kiện. Sau hạn đóng tiền, bất kỳ ai có thể loại thành viên chưa đóng và chưa hốt; quyết toán vẫn áp dụng quy tắc vỡ hụi hiện có. Lệnh loại riêng chỉ đánh dấu bị loại, không tịch thu ký quỹ.",
     },
     createClubModal: {
       title: "Tạo Nhóm Hụi Mới",
@@ -792,7 +794,7 @@ export const translations: Record<Language, Translations> = {
       step4Title: "Tất toán & Nhận thưởng (Claim Payout)",
       step4Desc: "Bất kỳ ai cũng có thể kích hoạt kết thúc vòng (Settle). Người thắng chủ động bấm \"Nhận tiền\" để rút toàn bộ quỹ Pot về ví an toàn.",
       pillar4Title: "4. Cơ chế Tự động Loại trừ (Auto-kick) Bảo vệ Nhóm",
-      pillar4Desc: "Nếu một thành viên không đóng tiền đúng hạn khi chu kỳ vòng kết thúc, Smart Contract sẽ tự động đánh dấu Kicked (Loại khỏi nhóm) và tước quyền tham gia các vòng tiếp theo. Cơ chế này bảo vệ quyền lợi tuyệt đối cho các thành viên nghiêm túc còn lại.",
+      pillar4Desc: "Bất kỳ ai cũng có thể quyết toán khi đủ điều kiện. Sau hạn đóng tiền, bất kỳ ai có thể loại thành viên chưa đóng và chưa hốt; quyết toán vẫn áp dụng quy tắc vỡ hụi hiện có. Lệnh loại riêng chỉ đánh dấu bị loại, không tịch thu ký quỹ.",
       pillar5Title: "5. Ưu thế Đột phá của Mạng Arc Network",
       pillar5Desc: "Arc Testnet sử dụng trực tiếp stablecoin USDC làm Gas Token, loại bỏ nhu cầu sở hữu ETH để trả phí mạng. Thời gian xác thực khối dưới 1 giây và phí giao dịch siêu rẻ (≈ 0 USDC) mang lại trải nghiệm mượt mà như Web2.",
     },
@@ -1019,6 +1021,7 @@ export const translations: Record<Language, Translations> = {
       kickedNoticeTitle: "You have been kicked from the club",
       kickedNoticeDesc: "Due to defaulting on round contribution deadline.",
       completedNotice: "The savings cycle has ended.",
+      permissionlessNotice: "Anyone may settle when its conditions are met. After the deadline, anyone may kick a member who has not contributed and has not won; settlement still applies its own default rules. Manual kick only marks the member and does not slash collateral.",
       cycleEndNotice: "A cycle ends after its allotted rounds or earlier when no eligible pot recipients remain.",
       cycleRestartNotice: "A new cycle resets winner and kicked status, allowing kicked members to participate again. Collateral already slashed or withdrawn is not restored or deposited automatically. Adding collateral requires a separate deposit transaction.",
       cycleNoCollateralNotice: "You currently have no locked collateral. Starting a new cycle does not restore slashed or withdrawn collateral or deposit it automatically. Adding collateral requires a separate deposit transaction.",
@@ -1100,10 +1103,10 @@ export const translations: Record<Language, Translations> = {
       step3Desc: "Members needing liquidity early place bids. Highest bidder wins the entire round's Pot.",
       step3Badge: "Bid",
       step4Title: "Settle & Distribute",
-      step4Desc: "Winner's bid is distributed as dividends equally among members who haven't taken the pot.",
+      step4Desc: "Losing bids are shared among contributing members who have not won or been kicked; the winner receives their own bid back.",
       step4Badge: "Payout",
-      safetyTitle: "Default-proof — Smart Fund Protection",
-      safetyDesc: "Smart contract automatically kicks defaulting members from subsequent rounds, retaining prior funds to offset club risk. All payouts are pull-based directly to your wallet.",
+      safetyTitle: "Settlement and overdue contributions",
+      safetyDesc: "Anyone may settle when its conditions are met. After the deadline, anyone may kick a member who has not contributed and has not won; settlement still applies its own default rules. Manual kick only marks the member and does not slash collateral.",
     },
     createClubModal: {
       title: "Create New Savings Club",
@@ -1221,7 +1224,7 @@ export const translations: Record<Language, Translations> = {
       step4Title: "Settlement & Payout Claim",
       step4Desc: "Anyone can settle the completed round. The winner clicks \"Claim Payout\" to withdraw the full pot directly to their wallet safely and instantly.",
       pillar4Title: "4. Automatic Default Protection (Auto-kick)",
-      pillar4Desc: "If a member fails to contribute before the round deadline, the smart contract automatically flags them as Kicked and revokes their eligibility for future rounds, safeguarding the remaining savers.",
+      pillar4Desc: "Anyone may settle when its conditions are met. After the deadline, anyone may kick a member who has not contributed and has not won; settlement still applies its own default rules. Manual kick only marks the member and does not slash collateral.",
       pillar5Title: "5. Groundbreaking Advantages of Arc Network",
       pillar5Desc: "Arc Testnet natively utilizes USDC as the gas token, removing the need for native ETH tokens. Sub-second block finality and near-zero transaction fees (≈ $0) deliver a smooth Web2-like user experience.",
     },

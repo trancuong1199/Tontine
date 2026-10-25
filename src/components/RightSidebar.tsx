@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { BrowserProvider, Contract, formatUnits, Interface } from 'ethers';
+import { readArcBalances, formatArcBalance, formatApproximateQuote } from "../lib/arcBalances";
+import { ARC_EXPLORER, ARC_CHAIN_ID_HEX as ARC_CHAIN_ID, ARC_SWAP_ROUTER as ROUTER_ADDRESS, WUSDC_ADDRESS, EURC_ADDRESS, TOKEN_ADDRESSES, TOKEN_DECIMALS } from "../config/arc-constants";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { BrowserProvider, Contract, Interface } from 'ethers';
 import { getTransactionHistory, saveTransaction } from '../lib/TransactionHistory';
 import type { Transaction } from '../lib/TransactionHistory';
 import { ArrowUpDown, ChevronDown, RefreshCw, Send, ArrowDown, Code2, FileText } from 'lucide-react';
-import { switchOrAddArcNetwork, globalRpcProvider } from '../utils/arcChain';
+import { switchOrAddArcNetwork } from '../utils/arcChain';
 
 interface RightSidebarProps {
   connectedAccount: string | null;
@@ -11,9 +13,6 @@ interface RightSidebarProps {
   navigateTo: (view: any) => void;
 }
 
-const ROUTER_ADDRESS = '0x509cF58CdA08C7aee83a2BdBb4A1Eac907343D01';
-const WUSDC_ADDRESS = '0x911b4000D3422F482F4062a913885f7b035382Df';
-const EURC_ADDRESS = '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a';
 
 const ERC20_INTERFACE = new Interface([
   "function approve(address spender, uint256 amount) returns (bool)",
@@ -55,23 +54,14 @@ const ROUTER_INTERFACE = new Interface([
 ]);
 
 // Arc USDC ERC-20 = 6 decimals. 18 is the native gas view only — never use 18 for ERC-20 calls.
-const DECIMALS = {
-  USDC: 6,
-  EURC: 6,
-  cirBTC: 8
-};
-const ADDRESSES = {
-  USDC: '0x911b4000D3422F482F4062a913885f7b035382Df', // WUSDC
-  EURC: '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a',
-  cirBTC: '0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF'
-};
+const DECIMALS = TOKEN_DECIMALS;
+const ADDRESSES = { USDC: WUSDC_ADDRESS, EURC: TOKEN_ADDRESSES.EURC, cirBTC: TOKEN_ADDRESSES.cirBTC }; // Router uses wrapped USDC.
 const TOKEN_PRICES: Record<string, number> = {
   USDC: 1.0,
   EURC: 1.08,
   cirBTC: 60000.0
 };
 
-const ARC_CHAIN_ID = '0x4CEF52';
 
 export const RightSidebar: React.FC<RightSidebarProps> = ({ connectedAccount, getProvider, navigateTo }) => {
   const [txs, setTxs] = useState<Transaction[]>([]);
@@ -82,46 +72,24 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ connectedAccount, ge
   const [statusMsg, setStatusMsg] = useState('');
   const [isDropdownInOpen, setIsDropdownInOpen] = useState(false);
   const [isDropdownOutOpen, setIsDropdownOutOpen] = useState(false);
-  const [balances, setBalances] = useState({ usdc: '0.00', eurc: '0.00', cirbtc: '0.0000' });
+  const [balances, setBalances] = useState({ usdc: '—', eurc: '—', cirbtc: '—' });
 
   const fetchTxs = useCallback(() => {
     const history = getTransactionHistory();
     setTxs(history.slice(0, 5));
   }, []);
 
+  const balanceRequest = useRef(0);
+  const balanceAccount = useRef(connectedAccount);
+  balanceAccount.current = connectedAccount;
   const fetchBalances = useCallback(async () => {
+    const request = ++balanceRequest.current;
+    setBalances({ usdc: '—', eurc: '—', cirbtc: '—' });
     if (!connectedAccount) return;
-    try {
-      const eth = getProvider();
-      let provider = globalRpcProvider;
-      try {
-        if (eth) {
-          const chainId = await eth.request({ method: 'eth_chainId' });
-          if (chainId && chainId.toLowerCase() === ARC_CHAIN_ID.toLowerCase()) {
-            provider = new BrowserProvider(eth) as any;
-          }
-        }
-      } catch (e) {}
-
-      // USDC Native Gas Balance
-      const nativeBalance = await provider.getBalance(connectedAccount);
-      const usdcVal = parseFloat(formatUnits(nativeBalance, 18)).toFixed(2);
-
-      // EURC Balance
-      const eurcContract = new Contract(EURC_ADDRESS, ERC20_INTERFACE, provider);
-      const eurcBalance = await eurcContract.balanceOf(connectedAccount);
-      const eurcVal = parseFloat(formatUnits(eurcBalance, 6)).toFixed(2);
-
-      // cirBTC Balance
-      const cirbtcContract = new Contract(ADDRESSES.cirBTC, ERC20_INTERFACE, provider);
-      const cirbtcBalance = await cirbtcContract.balanceOf(connectedAccount);
-      const cirbtcVal = parseFloat(formatUnits(cirbtcBalance, 8)).toFixed(4);
-
-      setBalances({ usdc: usdcVal, eurc: eurcVal, cirbtc: cirbtcVal });
-    } catch (e) {
-      console.warn("Failed to fetch balances for RightSidebar", e);
-    }
-  }, [connectedAccount, getProvider]);
+    const raw = await readArcBalances(connectedAccount);
+    if (request !== balanceRequest.current || connectedAccount !== balanceAccount.current) return;
+    setBalances({ usdc: formatArcBalance(raw.usdc, 'USDC'), eurc: formatArcBalance(raw.eurc, 'EURC'), cirbtc: formatArcBalance(raw.cirbtc, 'cirBTC') });
+  }, [connectedAccount]);
 
   useEffect(() => {
     fetchTxs();
@@ -150,9 +118,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ connectedAccount, ge
   const displayOutBalance = tokenOut === 'USDC' ? balances.usdc : tokenOut === 'EURC' ? balances.eurc : balances.cirbtc;
   const exchangeRate = TOKEN_PRICES[tokenIn] / TOKEN_PRICES[tokenOut];
 
-  const receiveAmount = swapAmount && !isNaN(Number(swapAmount))
-    ? (Number(swapAmount) * exchangeRate).toFixed(tokenOut === 'cirBTC' ? 8 : 4)
-    : '0.00';
+  const receiveAmount = formatApproximateQuote(swapAmount, exchangeRate, tokenOut === 'cirBTC' ? 8 : 4);
 
   const handleSwap = async () => {
     setStatusMsg('');
@@ -317,7 +283,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ connectedAccount, ge
         to: from,
         txHash,
         status: 'COMPLETE',
-        explorerUrl: `https://testnet.arcscan.app/tx/${txHash}`,
+        explorerUrl: `${ARC_EXPLORER}/tx/${txHash}`,
         timestamp: Date.now(),
         tokenSymbol: tokenIn
       });

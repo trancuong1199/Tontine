@@ -1,8 +1,11 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { readArcTokenBalance, formatArcBalance, toApproximateChartValue } from '../lib/arcBalances';
+import { buildTokenHoldings, normalizeExplorerTransaction, normalizeLocalTransaction, formatAnalyticsValue, formatNativeFee, sumKnownFees, usdcVolumeByDay, type AnalyticsTx } from '../lib/arcAnalytics';
+import { ARC_EXPLORER, USDC_NATIVE_DECIMALS, USDC_ADDRESS } from '../config/arc-constants';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Wallet, ArrowUpRight, ArrowDownLeft, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
 
-const ARC_API = 'https://testnet.arcscan.app/api/v2';
+const ARC_API = `${ARC_EXPLORER}/api/v2`;
 
 const shortenAddress = (addr: string) =>
   addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '—';
@@ -18,141 +21,72 @@ interface AnalyticsProps {
   address: string | null;
 }
 
-interface WalletTx {
-  hash: string;
-  timestamp: string;
-  from: { hash: string };
-  to: { hash: string } | null;
-  value: string;
-  status: string;
-  method: string | null;
-  fee: { value: string };
-  gas_used: string;
-}
-
-interface TokenBalance {
-  token: {
-    symbol: string;
-    name: string;
-    decimals: string;
-    icon_url: string | null;
-  };
-  value: string;
-}
-
 export const Analytics: React.FC<AnalyticsProps> = ({ address }) => {
-  const [walletTxs, setWalletTxs] = useState<WalletTx[]>([]);
-  const [tokenBalances, setTokenBalances] = useState<TokenBalance[]>([]);
-  const [nativeBalance, setNativeBalance] = useState<string>('0');
+  const [walletTxs, setWalletTxs] = useState<AnalyticsTx[]>([]);
+  const [tokenBalances, setTokenBalances] = useState<unknown[]>([]);
+  const [usdcBalance, setUsdcBalance] = useState<bigint | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletError, setWalletError] = useState('');
-  const [totalGasSpent, setTotalGasSpent] = useState(0);
-  const [successCount, setSuccessCount] = useState(0);
-  const [failCount, setFailCount] = useState(0);
+  const requestRef = useRef(0);
+  const accountRef = useRef(address);
+  accountRef.current = address;
 
   const fetchWalletData = async () => {
-    if (!address) return;
-    setWalletLoading(true);
+    const request = ++requestRef.current;
+    setWalletTxs([]);
+    setTokenBalances([]);
+    setUsdcBalance(null);
     setWalletError('');
+    setWalletLoading(Boolean(address));
+    if (!address) return;
     try {
-      const [addrRes, txRes, tokRes] = await Promise.all([
-        fetch(`${ARC_API}/addresses/${address}`),
+      const [rawUsdc, txRes, tokRes] = await Promise.all([
+        readArcTokenBalance(address, 'USDC'),
         fetch(`${ARC_API}/addresses/${address}/transactions`),
-        fetch(`${ARC_API}/addresses/${address}/tokens`)
+        fetch(`${ARC_API}/addresses/${address}/tokens`),
       ]);
-
-      if (addrRes.ok) {
-        const d = await addrRes.json();
-        setNativeBalance(d.coin_balance || '0');
-      }
-
-      if (txRes.ok) {
-        const d = await txRes.json();
-        const items: WalletTx[] = d.items || [];
-        
-        let merged: any[] = [...items];
-        try {
-          const { getTransactionHistory } = await import('../lib/TransactionHistory');
-          const history = getTransactionHistory();
-          const localUserTxs = history.filter(tx => 
-            tx.from?.toLowerCase() === address.toLowerCase() || 
-            tx.to?.toLowerCase() === address.toLowerCase()
-          );
-
-          const formattedLocal: WalletTx[] = localUserTxs.map(tx => ({
-            hash: tx.txHash || tx.id,
-            timestamp: new Date(tx.timestamp).toISOString(),
-            from: { hash: tx.from },
-            to: tx.to ? { hash: tx.to } : null,
-            value: tx.amount && !isNaN(parseFloat(tx.amount)) ? (parseFloat(tx.amount) * 1e18).toString() : '0',
-            status: tx.status === 'COMPLETE' ? 'ok' : 'error',
-            method: tx.action,
-            fee: { value: '10000000000000' },
-            gas_used: '21000'
-          }));
-
-          for (const lTx of formattedLocal) {
-            if (!merged.find(m => m.hash && lTx.hash && m.hash.toLowerCase() === lTx.hash.toLowerCase())) {
-              merged.push(lTx);
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to load local tx history', e);
+      if (!txRes.ok || !tokRes.ok) throw new Error('Explorer data unavailable');
+      const [txData, tokenData] = await Promise.all([txRes.json(), tokRes.json()]);
+      const items: unknown[] = Array.isArray(txData.items) ? txData.items : [];
+      const merged = items.map(normalizeExplorerTransaction).filter((tx): tx is AnalyticsTx => tx !== null);
+      try {
+        const { getTransactionHistory } = await import('../lib/TransactionHistory');
+        const history = getTransactionHistory();
+        for (const tx of Array.isArray(history) ? history : []) {
+          if (typeof tx?.from !== 'string' && typeof tx?.to !== 'string') continue;
+          const from = typeof tx.from === 'string' ? tx.from.toLowerCase() : '';
+          const to = typeof tx.to === 'string' ? tx.to.toLowerCase() : '';
+          if (from !== address.toLowerCase() && to !== address.toLowerCase()) continue;
+          const local = normalizeLocalTransaction(tx);
+          if (local && !merged.some(item => item.hash.toLowerCase() === local.hash.toLowerCase())) merged.push(local);
         }
-
-        merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        setWalletTxs(merged);
-
-        let gas = 0, ok = 0, fail = 0;
-        for (const tx of merged) {
-          gas += parseFloat(tx.fee?.value || '0') / 1e18;
-          if (tx.status === 'ok') ok++;
-          else fail++;
-        }
-        setTotalGasSpent(gas);
-        setSuccessCount(ok);
-        setFailCount(fail);
-      }
-
-      if (tokRes.ok) {
-        const d = await tokRes.json();
-        setTokenBalances(d.items || []);
-      }
+      } catch (error) { console.warn('Local transaction history unavailable', error); }
+      merged.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+      if (request !== requestRef.current || address !== accountRef.current) return;
+      setUsdcBalance(rawUsdc);
+      setWalletTxs(merged);
+      setTokenBalances(Array.isArray(tokenData.items) ? tokenData.items : []);
     } catch {
-      setWalletError('Failed to fetch wallet data. Please check your connection.');
+      if (request === requestRef.current && address === accountRef.current) setWalletError('Arc wallet data is unavailable. Please retry.');
     } finally {
-      setWalletLoading(false);
+      if (request === requestRef.current && address === accountRef.current) setWalletLoading(false);
     }
   };
 
-  useEffect(() => { fetchWalletData(); }, [address]);
-
-  // Volume chart — aggregate value sent per day
-  const volumeChartData = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const tx of walletTxs) {
-      const d = new Date(tx.timestamp);
-      const key = `${d.getDate()}/${d.getMonth() + 1}`;
-      const val = parseFloat(tx.value || '0') / 1e18;
-      map[key] = (map[key] || 0) + val;
-    }
-    return Object.entries(map)
-      .map(([date, value]) => ({ date, value: parseFloat(value.toFixed(4)) }))
-      .reverse();
-  }, [walletTxs]);
-
-  // Pie chart — top tokens with meaningful balance only
-  const pieData = useMemo(() => {
-    const result: { name: string; value: number }[] = [];
-    const native = parseFloat(nativeBalance) / 1e18;
-    if (native >= 0.0001) result.push({ name: 'USDC (Native)', value: parseFloat(native.toFixed(4)) });
-    for (const t of tokenBalances) {
-      const decimals = parseInt(t.token.decimals || '18');
-      const val = parseFloat(t.value || '0') / Math.pow(10, decimals);
-      if (val >= 0.0001) result.push({ name: t.token.symbol, value: parseFloat(val.toFixed(6)) });
-    }
-    return result.sort((a, b) => b.value - a.value).slice(0, 8);
-  }, [nativeBalance, tokenBalances]);
+  useEffect(() => { void fetchWalletData(); return () => { requestRef.current++; }; }, [address]);
+  const totalGasSpent = useMemo(() => sumKnownFees(walletTxs), [walletTxs]);
+  const successCount = walletTxs.filter(tx => tx.status === 'ok').length;
+  const failCount = walletTxs.filter(tx => tx.status === 'error').length;
+  const holdings = useMemo(() => buildTokenHoldings(usdcBalance, tokenBalances), [usdcBalance, tokenBalances]);
+  // Approximate chart boundaries only; transaction rows and fee totals stay bigint.
+  const volumeChartData = useMemo(() => usdcVolumeByDay(walletTxs, address ?? '').map(row => ({
+    date: row.date, value: toApproximateChartValue(row.raw, USDC_NATIVE_DECIMALS),
+  })), [walletTxs, address]);
+  const pieData = useMemo(() => holdings.map(token => ({
+    name: token.address.toLowerCase() === USDC_ADDRESS.toLowerCase()
+      ? token.symbol : `${token.symbol} (${shortenAddress(token.address)})`,
+    value: toApproximateChartValue(token.raw, token.decimals),
+  })).filter(token => token.value >= 0.0001).sort((a, b) => b.value - a.value).slice(0, 8), [holdings]);
 
   return (
     <div className="page-container animate-fade-in" style={{ maxWidth: '100%', paddingBottom: '4rem' }}>
@@ -196,11 +130,11 @@ export const Analytics: React.FC<AnalyticsProps> = ({ address }) => {
         <>
           {/* KPI Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-            <WalletStatCard label="USDC Balance (Native)" value={`${(parseFloat(nativeBalance) / 1e18).toFixed(4)} USDC`} loading={walletLoading} color="#60a5fa" />
+            <WalletStatCard label="USDC Balance" value={`${formatArcBalance(usdcBalance, 'USDC')} USDC`} loading={walletLoading} color="#60a5fa" />
             <WalletStatCard label="Total Transactions" value={walletTxs.length.toString() + (walletTxs.length === 50 ? '+' : '')} loading={walletLoading} color="#a78bfa" />
             <WalletStatCard label="Success / Failed" value={`${successCount} / ${failCount}`} loading={walletLoading} color="#34d399" />
-            <WalletStatCard label="Gas Spent (recent 50)" value={`${totalGasSpent.toFixed(6)} USDC`} loading={walletLoading} color="#f59e0b" />
-            <WalletStatCard label="Token Holdings" value={tokenBalances.length.toString()} loading={walletLoading} color="#38bdf8" />
+            <WalletStatCard label="Known Gas Fees (loaded transactions)" value={formatNativeFee(totalGasSpent)} loading={walletLoading} color="#f59e0b" />
+            <WalletStatCard label="Token Holdings" value={holdings.length.toString()} loading={walletLoading} color="#38bdf8" />
           </div>
 
           {/* Charts Row */}
@@ -208,7 +142,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ address }) => {
 
             {/* Volume Chart */}
             <div style={{ background: 'var(--stat-card-bg)', border: '1px solid var(--stat-card-border)', borderRadius: '14px', padding: '1.5rem', boxShadow: 'var(--shadow-card)' }}>
-              <h4 style={{ margin: '0 0 1rem', color: '#0ea5e9', fontSize: '1rem', fontWeight: 700 }}>Transaction Volume (USDC sent)</h4>
+              <h4 style={{ margin: '0 0 1rem', color: '#0ea5e9', fontSize: '1rem', fontWeight: 700 }}>Transaction Volume (USDC sent, approximate)</h4>
               {walletLoading ? (
                 <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Loading...</div>
               ) : volumeChartData.length === 0 ? (
@@ -234,7 +168,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ address }) => {
 
             {/* Token Pie */}
             <div style={{ background: 'var(--stat-card-bg)', border: '1px solid var(--stat-card-border)', borderRadius: '14px', padding: '1.5rem', boxShadow: 'var(--shadow-card)' }}>
-              <h4 style={{ margin: '0 0 1rem', color: '#8b5cf6', fontSize: '1rem', fontWeight: 700 }}>Token Portfolio Distribution</h4>
+              <h4 style={{ margin: '0 0 1rem', color: '#8b5cf6', fontSize: '1rem', fontWeight: 700 }}>Token Units (approximate, not USD value)</h4>
               {walletLoading ? (
                 <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Loading...</div>
               ) : pieData.length === 0 ? (
@@ -268,7 +202,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ address }) => {
             <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 700 }}>Recent Transactions</h4>
               <a
-                href={`https://testnet.arcscan.app/address/${address}`}
+                href={`${ARC_EXPLORER}/address/${address}`}
                 target="_blank"
                 rel="noreferrer"
                 style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#0ea5e9', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 600 }}
@@ -285,7 +219,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ address }) => {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
                   <thead>
                     <tr style={{ background: 'var(--bg-tertiary)' }}>
-                      {['Type', 'Hash', 'From', 'To', 'Value (USDC)', 'Gas Fee', 'Time', 'Status'].map(h => (
+                      {['Type', 'Hash', 'From', 'To', 'Value (token)', 'Gas Fee', 'Time', 'Status'].map(h => (
                         <th key={h} style={{ padding: '0.7rem 1rem', textAlign: 'left', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', borderBottom: '1px solid var(--border-color)' }}>{h}</th>
                       ))}
                     </tr>
@@ -293,8 +227,8 @@ export const Analytics: React.FC<AnalyticsProps> = ({ address }) => {
                   <tbody>
                     {walletTxs.slice(0, 20).map((tx, i) => {
                       const isOut = tx.from?.hash?.toLowerCase() === address?.toLowerCase();
-                      const val = (parseFloat(tx.value || '0') / 1e18).toFixed(4);
-                      const fee = (parseFloat(tx.fee?.value || '0') / 1e18).toFixed(6);
+                      const val = formatAnalyticsValue(tx);
+                      const fee = formatNativeFee(tx.feeRaw);
                       return (
                         <tr key={i} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.15s' }}>
                           <td style={{ padding: '0.65rem 1rem' }}>
@@ -304,7 +238,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ address }) => {
                             </span>
                           </td>
                           <td style={{ padding: '0.65rem 1rem' }}>
-                            <a href={`https://testnet.arcscan.app/tx/${tx.hash}`} target="_blank" rel="noreferrer" style={{ color: '#0ea5e9', textDecoration: 'none', fontFamily: 'monospace', fontWeight: 600 }}>
+                            <a href={`${ARC_EXPLORER}/tx/${tx.hash}`} target="_blank" rel="noreferrer" style={{ color: '#0ea5e9', textDecoration: 'none', fontFamily: 'monospace', fontWeight: 600 }}>
                               {tx.hash.slice(0, 8)}...{tx.hash.slice(-4)}
                             </a>
                           </td>

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "--experimental-strip-types",
+    "tests/arc-review-v3.test.ts"
+  ],
+  "started": "2026-10-25T13:07:14.095217+00:00",
+  "finished": "2026-10-25T13:07:16.835480+00:00",
+  "exitCode": 0
+}

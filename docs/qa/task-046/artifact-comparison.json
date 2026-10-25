@@ -1,0 +1,7 @@
+{
+  "tracked": "contracts/out/RotatingSavings.sol/RotatingSavings.json",
+  "compiled": "/tmp/task046-qa-out/RotatingSavings.sol/RotatingSavings.json",
+  "abiEqual": true,
+  "creationBytecodeEqual": true,
+  "deployedBytecodeEqual": true
+}

@@ -396,7 +396,9 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         }
     }
 
-    /// @dev Distributes `distributableBonus` equally among non-winner contributors.
+    /// @dev Distributes `distributableBonus` equally among eligible non-winner contributors.
+    /// The current winner is excluded explicitly; hasWon also excludes earlier winners in the current cycle.
+    /// Setting hasWon[winner] before this call does not change the recipient pool.
     /// Returns any dust remainder (from integer division) to be added to winner payout.
     function _distributeBonuses(
         uint256 roundId,
@@ -430,6 +432,8 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         remainder = distributableBonus - distributed;
     }
 
+    /// @notice Anyone may mark an unpaid, non-winning member as kicked after the deadline.
+    /// @dev This manual path does not slash collateral; settlement skips already kicked members.
     function kickDefaulter(uint256 roundId, address member) external {
         if (state != GroupState.ACTIVE) revert GroupNotActive();
         if (roundId != currentRound) revert RoundNotCurrent();

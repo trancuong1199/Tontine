@@ -211,7 +211,8 @@ test("TC-GUARD-07 (AC-03.1): Hàm parseContractError trong src/contract.ts ánh 
 
   // 3. alreadywon
   const alreadyWonErr = parseContractError({ message: "Contract revert: AlreadyWon()" });
-  assert.equal(alreadyWonErr, "Phòng hụi này được tạo trên phiên bản hợp đồng cũ trước Task-018 không hỗ trợ đóng hụi chết. Vui lòng tạo hoặc tham gia phòng mới.");
+  // Task046 AC04c: this error means a current-cycle bid/kick restriction.
+  assert.equal(alreadyWonErr, "Thành viên này đã nhận hụi trong chu kỳ hiện tại; không thể đặt bid hoặc bị loại bằng thao tác này.");
 
   // 4. notmember
   const notMemberErr = parseContractError({ message: "Execution reverted: NotMember()" });

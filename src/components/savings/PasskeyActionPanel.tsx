@@ -1,4 +1,4 @@
-import { getRaisedBidInput } from "../../lib/bidPresets";
+import { BID_PRESETS, getRaisedBidInput } from "../../lib/bidPresets";
 /**
  * PasskeyActionPanel — Phiên bản ActionPanel dùng Circle Modular Wallet.
  * Gửi user operations (ERC-4337) thay vì EOA transactions.
@@ -408,6 +408,12 @@ export function PasskeyActionPanel({
             </button>
           </div>
         </div>
+      )}
+
+      {state === GROUP_STATE.ACTIVE && (
+        <p className="mx-5 my-3 rounded-xl border border-slate-700 p-3 text-xs text-slate-300">
+          {t("actionPanel.permissionlessNotice", language)}
+        </p>
       )}
 
       {state === GROUP_STATE.ACTIVE && isMember && !isKicked && lockedCollateral === 0n && (
@@ -880,7 +886,7 @@ export function PasskeyActionPanel({
 
                       {/* Quick preset chips for raise */}
                       <div className="flex items-center gap-2">
-                        {["1", "2", "5", "10"].map((preset) => {
+                        {BID_PRESETS.map((preset) => {
                           const presetValue = getRaisedBidInput(userBid, preset);
                           return (
                             <button
@@ -938,7 +944,7 @@ export function PasskeyActionPanel({
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {["1", "2", "5", "10"].map((preset) => (
+                    {BID_PRESETS.map((preset) => (
                       <button
                         key={preset}
                         type="button"
