@@ -1,0 +1,82 @@
+--- baseline/src/config/arc-constants.ts
++++ src/config/arc-constants.ts
+@@ -28,6 +28,10 @@
+ /** USDC on Arc — acts as BOTH the native gas token AND an ERC-20. */
+ export const USDC_ADDRESS = usdc.address as `0x${string}`;
+ // Project deployment defaults: EURC and CirBTC are not present in the facts registry.
++// Legacy swap/payment/router/vault deployments bind these addresses, so a partial
++// global env override could show balances for a different token than transactions use.
++// VITE_CIRBTC_ADDRESS_TESTNET only selects collateral for newly deployed savings
++// clubs; existing clubs continue reading their own collateral-token getter.
+ export const EURC_ADDRESS = '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a';
+ export const CIRBTC_ADDRESS = '0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF';
+ 
+--- baseline/src/lib/swapSafety.ts
++++ src/lib/swapSafety.ts
+@@ -4,6 +4,14 @@
+   const value = parseUnits(amount, decimals);
+   if (value <= 0n) throw new Error('Swap amount must be greater than zero.');
+   return value;
++}
++/** Render-safe positive-amount check with the transaction parser's exact semantics. */
++export function isPositiveAmount(amount: string, decimals: number): boolean {
++  try {
++    return parseSwapAmount(amount, decimals) > 0n;
++  } catch {
++    return false;
++  }
+ }
+ export function minimumOutput(quote: bigint, slippageBps = 50): bigint {
+   if (!Number.isInteger(slippageBps) || slippageBps < 0 || slippageBps > 500) {
+--- baseline/src/components/savings/ArcAppKitModal.tsx
++++ src/components/savings/ArcAppKitModal.tsx
+@@ -1,5 +1,6 @@
++import { isPositiveAmount } from "../../lib/swapSafety";
+ import { readArcBalances, formatArcBalance, formatApproximateQuote } from "../../lib/arcBalances";
+-import { ARC_RPC } from "../../config/arc-constants";
++import { ARC_RPC, USDC_NATIVE_DECIMALS, EURC_DECIMALS, CIRBTC_DECIMALS } from "../../config/arc-constants";
+ import React, { useState, useEffect } from "react";
+ import {
+   X,
+@@ -446,7 +447,7 @@
+ 
+                 <button
+                   type="submit"
+-                  disabled={isSwapping || !connectedAccount || parseFloat(amount || "0") <= 0}
++                  disabled={isSwapping || !connectedAccount || !isPositiveAmount(amount, fromToken === "USDC" ? USDC_NATIVE_DECIMALS : fromToken === "EURC" ? EURC_DECIMALS : CIRBTC_DECIMALS)}
+                   className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 disabled:opacity-50 text-slate-950 font-extrabold rounded-2xl text-sm transition-all shadow-md shadow-amber-500/20 cursor-pointer"
+                 >
+                   {isSwapping
+--- baseline/src/components/MerchantTreasury.tsx
++++ src/components/MerchantTreasury.tsx
+@@ -1,5 +1,5 @@
+ import { TOKEN_ADDRESSES, TOKEN_DECIMALS, ARC_CHAIN_ID, ARC_CHAIN_ID_HEX, ARC_EXPLORER } from '../config/arc-constants';
+-import { confirmTransaction } from '../lib/swapSafety';
++import { confirmTransaction, isPositiveAmount } from '../lib/swapSafety';
+ import React, { useState, useEffect } from 'react';
+ import { createPortal } from 'react-dom';
+ import { CheckCircle, Play, FileCode2, Copy, Activity, Send, User, Coins, RefreshCw, ArrowDownLeft, ArrowUpRight, ExternalLink, Landmark } from 'lucide-react';
+@@ -1059,7 +1059,7 @@
+                   </h4>
+                   <button
+                     onClick={handleWithdraw}
+-                    disabled={loading || parseFloat(vaultBalance) <= 0}
++                    disabled={loading || !isPositiveAmount(vaultBalance, TOKEN_CONFIGS[selectedToken].decimals)}
+                     className="kit-action-btn"
+                     style={{ width: '100%', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.08)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.25)', marginTop: 0, fontWeight: 600 }}
+                   >
+--- baseline/src/lib/arcAnalytics.ts
++++ src/lib/arcAnalytics.ts
+@@ -80,7 +80,11 @@
+   const known = txs.filter(tx => tx.feeRaw !== null);
+   return known.length ? known.reduce((sum, tx) => sum + tx.feeRaw!, 0n) : null;
+ }
+-/** Aggregate only successful outgoing USDC, normalized to native 18 decimals. */
++/**
++ * Aggregate successful outgoing USDC at an internal chart scale of 18 decimals,
++ * so ERC-20 USDC6 and native USDC18 history can be added with bigint arithmetic.
++ * This is not the decimal scale for ERC-20 inputs or token-transfer amounts.
++ */
+ export function usdcVolumeByDay(txs: AnalyticsTx[], account: string): { date: string; raw: bigint }[] {
+   const totals = new Map<string, bigint>();
+   for (const tx of txs) {

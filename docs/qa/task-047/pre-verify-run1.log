@@ -1,0 +1,8 @@
+[Verify] Verifying manifest for Task: task-047 (Frozen at: 2026-10-25T14:32:39.399Z)
+[MATCH] src/config/arc-constants.ts (fcc4ce5adc2e73e6...)
+[MATCH] src/lib/swapSafety.ts (cbb2d392fa920562...)
+[MATCH] src/components/savings/ArcAppKitModal.tsx (0f70972eee6b8afe...)
+[MATCH] src/components/MerchantTreasury.tsx (851da53dbf88e14e...)
+[MATCH] src/lib/arcAnalytics.ts (b9437bf33c23b9da...)
+
+ All files verified successfully! Integrity confirmed.

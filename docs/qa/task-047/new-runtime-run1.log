@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: T047 positive-amount wrapper matches strict existing parser without floating conversion
+ok 1 - T047 positive-amount wrapper matches strict existing parser without floating conversion
+  ---
+  duration_ms: 39.910267
+  type: 'test'
+  ...
+# Subtest: T047 chart volume combines USDC6 and native18 without including non-USDC, failed or incoming
+ok 2 - T047 chart volume combines USDC6 and native18 without including non-USDC, failed or incoming
+  ---
+  duration_ms: 20.688438
+  type: 'test'
+  ...
+# Subtest: T047 actual swap submit guard uses selected token precision and preserves wallet/busy guards
+ok 3 - T047 actual swap submit guard uses selected token precision and preserves wallet/busy guards
+  ---
+  duration_ms: 1159.088017
+  type: 'test'
+  ...
+# Subtest: T047 actual Merchant withdraw-all guard rejects malformed/zero balances using ERC20 token precision
+ok 4 - T047 actual Merchant withdraw-all guard rejects malformed/zero balances using ERC20 token precision
+  ---
+  duration_ms: 308.913902
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1597.30066

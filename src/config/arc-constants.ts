@@ -28,6 +28,10 @@ export const ARC_NATIVE_SYMBOL = arc.nativeCurrency.symbol;
 /** USDC on Arc — acts as BOTH the native gas token AND an ERC-20. */
 export const USDC_ADDRESS = usdc.address as `0x${string}`;
 // Project deployment defaults: EURC and CirBTC are not present in the facts registry.
+// Legacy swap/payment/router/vault deployments bind these addresses, so a partial
+// global env override could show balances for a different token than transactions use.
+// VITE_CIRBTC_ADDRESS_TESTNET only selects collateral for newly deployed savings
+// clubs; existing clubs continue reading their own collateral-token getter.
 export const EURC_ADDRESS = '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a';
 export const CIRBTC_ADDRESS = '0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF';
 

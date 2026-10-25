@@ -1,0 +1,32 @@
+{
+  "taskId": "task-047",
+  "frozenAt": "2026-10-25T14:32:39.399Z",
+  "status": "FROZEN",
+  "files": {
+    "src/config/arc-constants.ts": {
+      "sha256": "fcc4ce5adc2e73e676b82081fd3eb1dfdb8d719a518fffb2f4f194b079110bde",
+      "baselineSha256": "46efebc224bab6e4e44ac61b871767d65ae01c55c192aac0563c793d8b0cf061",
+      "isNew": false
+    },
+    "src/lib/swapSafety.ts": {
+      "sha256": "cbb2d392fa9205622fae87c4ae2c98b8fc9467695bb10606acbd93118863695a",
+      "baselineSha256": "053153deeb5e0ea51414ad3bde71ff219735c9a1a5d76ddf9b13a507bad244ce",
+      "isNew": false
+    },
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "sha256": "0f70972eee6b8afe5cc9a2eaa613564084ee2671d8071f65fe336e0e31584227",
+      "baselineSha256": "1f76b25f50b62e9a97e19098c619c9d991fe241b86ac9ef7b244f831f4c0ca86",
+      "isNew": false
+    },
+    "src/components/MerchantTreasury.tsx": {
+      "sha256": "851da53dbf88e14ec4406543ca8353dfe2816a8a799db51a2f511664ddeadfec",
+      "baselineSha256": "40e8865e1e4af70335c2adea5408b59022fc3707463d6b5a40599744ad44c624",
+      "isNew": false
+    },
+    "src/lib/arcAnalytics.ts": {
+      "sha256": "b9437bf33c23b9daa4de93ac0cd4bc1155a66902431c83cfb9596a9e59a7d928",
+      "baselineSha256": "772522fae37f2d26d456d17728123bd4bf616fb027dfb85c7b398e30efd4f8b9",
+      "isNew": false
+    }
+  }
+}

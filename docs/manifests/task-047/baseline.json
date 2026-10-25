@@ -1,0 +1,31 @@
+{
+  "taskId": "task-047",
+  "createdAt": "2026-10-25T14:32:25.643Z",
+  "files": {
+    "src/config/arc-constants.ts": {
+      "exists": true,
+      "sha256": "46efebc224bab6e4e44ac61b871767d65ae01c55c192aac0563c793d8b0cf061",
+      "snapshot": "docs/manifests/task-047/baseline/src_config_arc-constants.ts"
+    },
+    "src/lib/swapSafety.ts": {
+      "exists": true,
+      "sha256": "053153deeb5e0ea51414ad3bde71ff219735c9a1a5d76ddf9b13a507bad244ce",
+      "snapshot": "docs/manifests/task-047/baseline/src_lib_swapSafety.ts"
+    },
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "exists": true,
+      "sha256": "1f76b25f50b62e9a97e19098c619c9d991fe241b86ac9ef7b244f831f4c0ca86",
+      "snapshot": "docs/manifests/task-047/baseline/src_components_savings_ArcAppKitModal.tsx"
+    },
+    "src/components/MerchantTreasury.tsx": {
+      "exists": true,
+      "sha256": "40e8865e1e4af70335c2adea5408b59022fc3707463d6b5a40599744ad44c624",
+      "snapshot": "docs/manifests/task-047/baseline/src_components_MerchantTreasury.tsx"
+    },
+    "src/lib/arcAnalytics.ts": {
+      "exists": true,
+      "sha256": "772522fae37f2d26d456d17728123bd4bf616fb027dfb85c7b398e30efd4f8b9",
+      "snapshot": "docs/manifests/task-047/baseline/src_lib_arcAnalytics.ts"
+    }
+  }
+}

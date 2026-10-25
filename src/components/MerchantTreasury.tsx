@@ -1,5 +1,5 @@
 import { TOKEN_ADDRESSES, TOKEN_DECIMALS, ARC_CHAIN_ID, ARC_CHAIN_ID_HEX, ARC_EXPLORER } from '../config/arc-constants';
-import { confirmTransaction } from '../lib/swapSafety';
+import { confirmTransaction, isPositiveAmount } from '../lib/swapSafety';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle, Play, FileCode2, Copy, Activity, Send, User, Coins, RefreshCw, ArrowDownLeft, ArrowUpRight, ExternalLink, Landmark } from 'lucide-react';
@@ -1059,7 +1059,7 @@ export const MerchantTreasury: React.FC<MerchantTreasuryProps> = ({ connectedAcc
                   </h4>
                   <button
                     onClick={handleWithdraw}
-                    disabled={loading || parseFloat(vaultBalance) <= 0}
+                    disabled={loading || !isPositiveAmount(vaultBalance, TOKEN_CONFIGS[selectedToken].decimals)}
                     className="kit-action-btn"
                     style={{ width: '100%', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.08)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.25)', marginTop: 0, fontWeight: 600 }}
                   >

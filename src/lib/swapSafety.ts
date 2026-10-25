@@ -5,6 +5,14 @@ export function parseSwapAmount(amount: string, decimals: number): bigint {
   if (value <= 0n) throw new Error('Swap amount must be greater than zero.');
   return value;
 }
+/** Render-safe positive-amount check with the transaction parser's exact semantics. */
+export function isPositiveAmount(amount: string, decimals: number): boolean {
+  try {
+    return parseSwapAmount(amount, decimals) > 0n;
+  } catch {
+    return false;
+  }
+}
 export function minimumOutput(quote: bigint, slippageBps = 50): bigint {
   if (!Number.isInteger(slippageBps) || slippageBps < 0 || slippageBps > 500) {
     throw new Error('Slippage must be between 0% and 5%.');

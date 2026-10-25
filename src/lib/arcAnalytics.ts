@@ -80,7 +80,11 @@ export function sumKnownFees(txs: AnalyticsTx[]): bigint | null {
   const known = txs.filter(tx => tx.feeRaw !== null);
   return known.length ? known.reduce((sum, tx) => sum + tx.feeRaw!, 0n) : null;
 }
-/** Aggregate only successful outgoing USDC, normalized to native 18 decimals. */
+/**
+ * Aggregate successful outgoing USDC at an internal chart scale of 18 decimals,
+ * so ERC-20 USDC6 and native USDC18 history can be added with bigint arithmetic.
+ * This is not the decimal scale for ERC-20 inputs or token-transfer amounts.
+ */
 export function usdcVolumeByDay(txs: AnalyticsTx[], account: string): { date: string; raw: bigint }[] {
   const totals = new Map<string, bigint>();
   for (const tx of txs) {

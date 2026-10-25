@@ -1,5 +1,6 @@
+import { isPositiveAmount } from "../../lib/swapSafety";
 import { readArcBalances, formatArcBalance, formatApproximateQuote } from "../../lib/arcBalances";
-import { ARC_RPC } from "../../config/arc-constants";
+import { ARC_RPC, USDC_NATIVE_DECIMALS, EURC_DECIMALS, CIRBTC_DECIMALS } from "../../config/arc-constants";
 import React, { useState, useEffect } from "react";
 import {
   X,
@@ -446,7 +447,7 @@ export function ArcAppKitModal({
 
                 <button
                   type="submit"
-                  disabled={isSwapping || !connectedAccount || parseFloat(amount || "0") <= 0}
+                  disabled={isSwapping || !connectedAccount || !isPositiveAmount(amount, fromToken === "USDC" ? USDC_NATIVE_DECIMALS : fromToken === "EURC" ? EURC_DECIMALS : CIRBTC_DECIMALS)}
                   className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 disabled:opacity-50 text-slate-950 font-extrabold rounded-2xl text-sm transition-all shadow-md shadow-amber-500/20 cursor-pointer"
                 >
                   {isSwapping
