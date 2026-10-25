@@ -1,4 +1,5 @@
 import { historyRoundIds } from "../lib/roundHistory";
+import { classifyCycleCapability } from "../lib/cycleCapabilities";
 import { useReadContract, useReadContracts } from "wagmi";
 import { erc20Abi, type Abi } from "viem";
 import {
@@ -7,6 +8,19 @@ import {
   USDC_ADDRESS,
   ARC_TESTNET_CHAIN_ID,
 } from "../contract";
+
+/** A separate query keeps legacy getter failures isolated from club/claim reads. */
+export function useCycleCapability(contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS) {
+  const read = useReadContract({
+    address: contractAddress,
+    abi: ROTATING_SAVINGS_ABI,
+    functionName: "cycleStartRound",
+    chainId: ARC_TESTNET_CHAIN_ID,
+    // Query identity includes address+chain; never borrow the previous club's data.
+    query: { retry: false, placeholderData: () => undefined },
+  });
+  return { capability: classifyCycleCapability(read), refetch: read.refetch };
+}
 
 export function useClubInfo(contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS) {
   const { data, isLoading, refetch } = useReadContracts({

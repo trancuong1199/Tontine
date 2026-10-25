@@ -1,0 +1,226 @@
+{
+  "timestamp": "2026-10-25T15:04:08.825Z",
+  "contract": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+  "sender": "0xb59b2c4efdae4a9d9eb497e435cf25b65001d224",
+  "labels": {
+    "1": "state",
+    "2": "owner",
+    "3": "isMember",
+    "4": "maxMembers",
+    "5": "currentRound",
+    "6": "activeMembers",
+    "7": "cycleStartRound",
+    "8": "cirBtcToken",
+    "9": "members(0)",
+    "10": "members(1)",
+    "11": "members(2)",
+    "12": "restartSimulation",
+    "13": "restartEstimate",
+    "14": "nativeBalance",
+    "15": "nonceLatest",
+    "16": "noncePending",
+    "17": "deployedCode",
+    "18": "chainId"
+  },
+  "calls": [
+    {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "eth_call",
+      "params": [
+        {
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0xc19d93fb"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "method": "eth_call",
+      "params": [
+        {
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0x8da5cb5b"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "method": "eth_call",
+      "params": [
+        {
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0xa230c524000000000000000000000000b59b2c4efdae4a9d9eb497e435cf25b65001d224"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "method": "eth_call",
+      "params": [
+        {
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0xbf4386a0"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 5,
+      "method": "eth_call",
+      "params": [
+        {
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0x8a19c8bc"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 6,
+      "method": "eth_call",
+      "params": [
+        {
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0x1084e76d"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 7,
+      "method": "eth_call",
+      "params": [
+        {
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0xa2c19e65"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 8,
+      "method": "eth_call",
+      "params": [
+        {
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0x3866c146"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 9,
+      "method": "eth_call",
+      "params": [
+        {
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0x5daf08ca0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 10,
+      "method": "eth_call",
+      "params": [
+        {
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0x5daf08ca0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 11,
+      "method": "eth_call",
+      "params": [
+        {
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0x5daf08ca0000000000000000000000000000000000000000000000000000000000000002"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 12,
+      "method": "eth_call",
+      "params": [
+        {
+          "from": "0xb59b2c4efdae4a9d9eb497e435cf25b65001d224",
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0x7f2736d1"
+        },
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 13,
+      "method": "eth_estimateGas",
+      "params": [
+        {
+          "from": "0xb59b2c4efdae4a9d9eb497e435cf25b65001d224",
+          "to": "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+          "data": "0x7f2736d1"
+        }
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 14,
+      "method": "eth_getBalance",
+      "params": [
+        "0xb59b2c4efdae4a9d9eb497e435cf25b65001d224",
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 15,
+      "method": "eth_getTransactionCount",
+      "params": [
+        "0xb59b2c4efdae4a9d9eb497e435cf25b65001d224",
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 16,
+      "method": "eth_getTransactionCount",
+      "params": [
+        "0xb59b2c4efdae4a9d9eb497e435cf25b65001d224",
+        "pending"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 17,
+      "method": "eth_getCode",
+      "params": [
+        "0xc5064f3963761eef64ece72f853e90871ff1e1e9",
+        "latest"
+      ]
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 18,
+      "method": "eth_chainId",
+      "params": []
+    }
+  ]
+}

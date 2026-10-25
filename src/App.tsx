@@ -23,6 +23,7 @@ import { getKnownGroups, getRemovedGroups, saveKnownGroup, updateKnownGroupName,
 import { usePasskeyWallet } from "./hooks/usePasskeyWallet";
 import {
   useClubInfo,
+  useCycleCapability,
   useRoundInfo,
   useMemberStatus,
   useRoundMemberStatus,
@@ -303,6 +304,7 @@ export default function App() {
 
   // Contract reads (keyed by active contract address and user address)
   const clubInfo = useClubInfo(contractAddress);
+  const cycleSupport = useCycleCapability(contractAddress);
   const roundInfo = useRoundInfo(clubInfo.currentRound, contractAddress);
   const memberStatus = useMemberStatus(address, contractAddress);
   const roundMemberStatus = useRoundMemberStatus(clubInfo.currentRound, address, contractAddress);
@@ -1289,6 +1291,8 @@ export default function App() {
               {/* Action panel — passkey or wagmi (Action-First: Primary user actions positioned at top eye-level) */}
               {passkeyAddress && passkeyAccount && bundler ? (
                 <PasskeyActionPanel
+                  cycleCapability={cycleSupport.capability}
+                  onRetryCycleCapability={() => { void cycleSupport.refetch(); }}
                   contractAddress={contractAddress}
                   bundler={bundler}
                   account={passkeyAccount}
@@ -1324,6 +1328,8 @@ export default function App() {
                 />
               ) : (
                 <ActionPanel
+                  cycleCapability={cycleSupport.capability}
+                  onRetryCycleCapability={() => { void cycleSupport.refetch(); }}
                   contractAddress={contractAddress}
                   state={clubInfo.state ?? 0}
                   currentRound={clubInfo.currentRound ?? 1n}

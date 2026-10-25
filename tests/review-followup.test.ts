@@ -75,6 +75,7 @@ function harness(component: (props: any) => any, props: any) {
   };
 }
 const baseProps = {
+  cycleCapability: "supported",
   state: 1, currentRound: 2n, contributionAmount: 10_000_000n,
   isMember: true, hasWon: false, isKicked: false, hasContributed: true,
   allowance: 10n ** 40n, onSuccess() {}, language: "en", userBid: 1000000000n,

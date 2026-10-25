@@ -1,0 +1,41 @@
+{
+  "taskId": "task-048",
+  "createdAt": "2026-10-25T15:04:36.188Z",
+  "files": {
+    "src/hooks/useSavingsClub.ts": {
+      "exists": true,
+      "sha256": "56b3998359473414858c30724a2a5b756d3fbfeef26d71223cf0c4ebd1839518",
+      "snapshot": "docs/manifests/task-048/baseline/src_hooks_useSavingsClub.ts"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "b7db19cd2397109af73fbd9cc1c5fa43fc73968248455266255c2bdf2ce6453e",
+      "snapshot": "docs/manifests/task-048/baseline/src_App.tsx"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "5fc9fbda72e305bb6d1989a4353d32a638ec7442786bf0e7a15e54a39dbe8bf7",
+      "snapshot": "docs/manifests/task-048/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "ca5b38a666a3fd12e9968ff50e9d188b6a046551f33b837f3de81632737a0fc9",
+      "snapshot": "docs/manifests/task-048/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    },
+    "src/hooks/useArcWriteContract.ts": {
+      "exists": true,
+      "sha256": "6e4456ba52ef389b240410122c850fc526f8787b06854e4757730cc662b31653",
+      "snapshot": "docs/manifests/task-048/baseline/src_hooks_useArcWriteContract.ts"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "464e9c0da321291eb77907a2c6958342fa08a73a955ad88aaaea477672d7e489",
+      "snapshot": "docs/manifests/task-048/baseline/src_lib_i18n.ts"
+    },
+    "src/lib/cycleCapabilities.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    }
+  }
+}

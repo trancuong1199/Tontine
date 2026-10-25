@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-10-25T15:04:13.555Z",
+  "rpc": "https://rpc.testnet.arc.io",
+  "exitCode": 0,
+  "results": {
+    "state": {
+      "result": "0x0000000000000000000000000000000000000000000000000000000000000002"
+    },
+    "owner": {
+      "result": "0x000000000000000000000000b59b2c4efdae4a9d9eb497e435cf25b65001d224"
+    },
+    "isMember": {
+      "result": "0x0000000000000000000000000000000000000000000000000000000000000001"
+    },
+    "maxMembers": {
+      "result": "0x0000000000000000000000000000000000000000000000000000000000000002"
+    },
+    "currentRound": {
+      "result": "0x0000000000000000000000000000000000000000000000000000000000000002"
+    },
+    "activeMembers": {
+      "result": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "cycleStartRound": {
+      "error": {
+        "code": 3,
+        "message": "execution reverted"
+      }
+    },
+    "cirBtcToken": {
+      "result": "0x000000000000000000000000f0c4a4ce82a5746abaad9425360ab04fbba432bf"
+    },
+    "members(0)": {
+      "result": "0x000000000000000000000000db773cd554870d351e06c1430ff5811b273abaf0"
+    },
+    "members(1)": {
+      "result": "0x000000000000000000000000b59b2c4efdae4a9d9eb497e435cf25b65001d224"
+    },
+    "members(2)": {
+      "error": {
+        "code": 3,
+        "message": "execution reverted"
+      }
+    },
+    "restartSimulation": {
+      "error": {
+        "code": 3,
+        "message": "execution reverted"
+      }
+    },
+    "restartEstimate": {
+      "error": {
+        "code": 3,
+        "message": "execution reverted"
+      }
+    },
+    "nativeBalance": {
+      "result": "0x1f676db388944d2a07"
+    },
+    "nonceLatest": {
+      "result": "0x430"
+    },
+    "noncePending": {
+      "result": "0x430"
+    },
+    "deployedCode": {
+      "bytes": 9386,
+      "sha256": "12da203c06f3eab3a1282929a43168d927e2bcd4d82dee643eaff81898bab8fa",
+      "selectors": {
+        "startNewCycle": false,
+        "cycleStartRound": false
+      }
+    },
+    "chainId": {
+      "result": "0x4cef52"
+    }
+  }
+}

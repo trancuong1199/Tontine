@@ -1,0 +1,42 @@
+{
+  "taskId": "task-048",
+  "frozenAt": "2026-10-25T15:06:25.378Z",
+  "status": "FROZEN",
+  "files": {
+    "src/hooks/useSavingsClub.ts": {
+      "sha256": "9be5b1b0411f831c1be5bb8e6f75f756584eb654314bb6f0670491a85a6a0d82",
+      "baselineSha256": "56b3998359473414858c30724a2a5b756d3fbfeef26d71223cf0c4ebd1839518",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "4db1649f53608124d42c1523d6acbe4fe6f055cf2ec126548db48cc20ca9daa0",
+      "baselineSha256": "b7db19cd2397109af73fbd9cc1c5fa43fc73968248455266255c2bdf2ce6453e",
+      "isNew": false
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "f45bd1891e71e5aca568a820806518ee43a8307e5ee507283bc843790a31de4e",
+      "baselineSha256": "5fc9fbda72e305bb6d1989a4353d32a638ec7442786bf0e7a15e54a39dbe8bf7",
+      "isNew": false
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "sha256": "654900aef9e45f56d0dab907e71ad118c78cd3828e9a52cab75053191a6e0587",
+      "baselineSha256": "ca5b38a666a3fd12e9968ff50e9d188b6a046551f33b837f3de81632737a0fc9",
+      "isNew": false
+    },
+    "src/hooks/useArcWriteContract.ts": {
+      "sha256": "6d15a41d8b3a044230eeb08243036eb06414f412f28dbb1d43d3e402761cf160",
+      "baselineSha256": "6e4456ba52ef389b240410122c850fc526f8787b06854e4757730cc662b31653",
+      "isNew": false
+    },
+    "src/lib/i18n.ts": {
+      "sha256": "af1f0a5f340f3b9cbe99664cfcfd38b1ff20b741f4a5b87811d148745a6a3da5",
+      "baselineSha256": "464e9c0da321291eb77907a2c6958342fa08a73a955ad88aaaea477672d7e489",
+      "isNew": false
+    },
+    "src/lib/cycleCapabilities.ts": {
+      "sha256": "846405e1439aec65c3a0bb17c123b11147db0983fa6e10e7fbfa53ff844c75d6",
+      "baselineSha256": null,
+      "isNew": true
+    }
+  }
+}

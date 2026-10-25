@@ -1,0 +1,12 @@
+# Task-048 — independent QA plan
+
+Spec-v1 Gate1 approved;5 independent cases prepared in tests/cycle-capability.test.ts, waiting for frozen-source dispatch. Root read-only diagnosis points to selected deployed legacy club lacking cycleStartRound/startNewCycle; that diagnosis is provided context, not an independently executed Tester observation. No wallet/browser session or transaction permitted.
+
+- Probe actual production helper/hook: successful positive getter -> supported, definitive missing/reverted method -> unsupported, in-progress -> loading, network/transport failure -> error (never legacy). Pin reads Arc and target selected club; no write simulation during probing.
+- Lifecycle target changes: club/account changes cannot carry previous supported status into another club. Pending results for old targets must not overwrite current capability. Handle refetch/error/success transitions and cache/key semantics.
+- Actual ActionPanel and PasskeyActionPanel rendering for statuses in VI/EN: legacy clearly directed to create new club, loading/error distinguish unavailable check from legacy. Only supported injected panel exposes enabled restart; passkey has no new restart execution. Claims/collateral/history remain accessible.
+- Actual injected guarded hook: ensure correct chain, then simulate startNewCycle for selected account/club, then wallet mutation only on success. Revert/RPC failure/switch rejection -> no write; pending simulation -> no mutation yet; other contract operations retain normal behavior. Duplicate submission guard tested.
+- Integration review App propagates same selected-target capability to both panels; successful restart refreshes relevant status/data; no forced gas/fees or contract deployment change.
+- After official frozen dispatch: pre/post SHA,focused runtime,full npm,typecheck/build with actual logs/exit; contract/artifact unchanged proof (no Foundry if no Solidity change). Preserve3reviewdocs. Mocked RPC/hooks tests do not claim real wallet confirmation or browser E2E.
+
+Independent read-only RPC batch recorded in live-readonly-request.json and live-readonly-response.json: getter/startNewCycle eth_call+estimate code3 revert, code9,386bytes lacks both selectors, state2/member-owner context, members0/1 valid and members2 revert. No eth_sendTransaction/eth_sendRawTransaction or wallet/browser call. Bytecode SHA256 hashes the returned hex string.

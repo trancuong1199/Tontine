@@ -179,7 +179,7 @@ test("T044-GUARDED-HOOK: production wrapper waits, reports rejected switch and r
     const mod = await productionModule("src/hooks/useArcWriteContract.ts", {
       react: "export const useRef = value => ({current:value}); export const useState = value => [value, () => {}]; export const useEffect = effect => effect();",
       wagmi: "export const useConfig=()=>({}); export const useWriteContract=()=>({writeContract:(...a)=>globalThis.__task044Wallet.writeContract(...a), reset(){}});",
-      "@wagmi/core": "export const getAccount=(...a)=>globalThis.__task044Wallet.getAccount(...a); export const switchChain=(...a)=>globalThis.__task044Wallet.switchChain(...a);",
+      "@wagmi/core": "export const getAccount=(...a)=>globalThis.__task044Wallet.getAccount(...a); export const switchChain=(...a)=>globalThis.__task044Wallet.switchChain(...a); export const simulateContract=()=>{throw Error('unexpected restart simulation in non-restart regression')};",
       sonner: "export const toast={error:(...a)=>globalThis.__task044Wallet.toast(...a)};",
     });
     const hook = mod.useArcWriteContract();

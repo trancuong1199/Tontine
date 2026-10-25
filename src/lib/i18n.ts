@@ -165,6 +165,11 @@ export interface Translations {
     kickedNoticeDesc: string;
     completedNotice: string;
     permissionlessNotice: string;
+    cycleUnsupportedNotice: string;
+    cycleCheckingNotice: string;
+    cycleErrorNotice: string;
+    cycleRetry: string;
+    cycleCreateClub: string;
     cycleEndNotice: string;
     cycleRestartNotice: string;
     cycleNoCollateralNotice: string;
@@ -592,6 +597,11 @@ export const translations: Record<Language, Translations> = {
       kickedNoticeDesc: "Do không đóng góp đúng hạn theo chu kỳ của vòng.",
       completedNotice: "Chu kỳ hụi đã kết thúc.",
       permissionlessNotice: "Bất kỳ ai cũng có thể quyết toán khi đủ điều kiện. Sau hạn đóng tiền, bất kỳ ai có thể loại thành viên chưa đóng và chưa hốt; quyết toán vẫn áp dụng quy tắc vỡ hụi hiện có. Lệnh loại riêng chỉ đánh dấu bị loại, không tịch thu ký quỹ.",
+      cycleUnsupportedNotice: "Hợp đồng của nhóm này không hỗ trợ mở chu kỳ mới. Để chơi tiếp, hãy tạo nhóm mới. Bạn vẫn có thể nhận hoặc rút các khoản đủ điều kiện từ nhóm cũ.",
+      cycleCheckingNotice: "Đang kiểm tra khả năng mở chu kỳ mới của nhóm này. Vui lòng chờ trước khi thử lại.",
+      cycleErrorNotice: "Chưa xác minh được khả năng mở chu kỳ mới do lỗi kết nối hoặc RPC. Hãy thử kiểm tra lại; bạn vẫn có thể nhận hoặc rút các khoản đủ điều kiện.",
+      cycleRetry: "Kiểm tra lại",
+      cycleCreateClub: "Tạo nhóm hụi mới",
       cycleEndNotice: "Chu kỳ kết thúc khi đủ số vòng dự kiến hoặc sớm hơn nếu không còn người đủ điều kiện nhận pot.",
       cycleRestartNotice: "Chu kỳ mới đặt lại trạng thái đã hốt và bị loại, cho phép thành viên bị loại tham gia lại. Ký quỹ đã bị phạt hoặc đã rút không tự phục hồi và không được nộp lại tự động. Bổ sung ký quỹ cần một giao dịch nộp riêng.",
       cycleNoCollateralNotice: "Bạn hiện không có ký quỹ đang khóa. Mở chu kỳ mới không tự phục hồi ký quỹ đã bị phạt hoặc đã rút, cũng không tự nộp lại. Bổ sung ký quỹ cần một giao dịch nộp riêng.",
@@ -1022,6 +1032,11 @@ export const translations: Record<Language, Translations> = {
       kickedNoticeDesc: "Due to defaulting on round contribution deadline.",
       completedNotice: "The savings cycle has ended.",
       permissionlessNotice: "Anyone may settle when its conditions are met. After the deadline, anyone may kick a member who has not contributed and has not won; settlement still applies its own default rules. Manual kick only marks the member and does not slash collateral.",
+      cycleUnsupportedNotice: "This club's contract does not support starting a new cycle. Create a new club to continue. You can still claim or withdraw eligible amounts from the old club.",
+      cycleCheckingNotice: "Checking whether this club supports a new cycle. Please wait before retrying.",
+      cycleErrorNotice: "New-cycle support could not be verified because of a connection or RPC error. Retry the check; eligible claims and withdrawals remain available.",
+      cycleRetry: "Check again",
+      cycleCreateClub: "Create a new club",
       cycleEndNotice: "A cycle ends after its allotted rounds or earlier when no eligible pot recipients remain.",
       cycleRestartNotice: "A new cycle resets winner and kicked status, allowing kicked members to participate again. Collateral already slashed or withdrawn is not restored or deposited automatically. Adding collateral requires a separate deposit transaction.",
       cycleNoCollateralNotice: "You currently have no locked collateral. Starting a new cycle does not restore slashed or withdrawn collateral or deposit it automatically. Adding collateral requires a separate deposit transaction.",

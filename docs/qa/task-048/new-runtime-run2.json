@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "--experimental-strip-types",
+    "tests/cycle-capability.test.ts"
+  ],
+  "started": "2026-10-25T15:07:23.416461+00:00",
+  "finished": "2026-10-25T15:07:23.894136+00:00",
+  "exitCode": 0
+}

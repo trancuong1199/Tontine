@@ -1,3 +1,4 @@
+import type { CycleCapability } from "../../lib/cycleCapabilities";
 import { BID_PRESETS, getRaisedBidInput } from "../../lib/bidPresets";
 import { useArcWriteContract } from "../../hooks/useArcWriteContract";
 import { useEffect, useState } from "react";
@@ -28,6 +29,8 @@ import { ClubMemberInfo } from "../../hooks/useSavingsClub";
 
 interface ActionPanelProps {
   contractAddress?: `0x${string}`;
+  cycleCapability?: CycleCapability;
+  onRetryCycleCapability?: () => void;
   state: number;
   currentRound: bigint;
   contributionAmount: bigint;
@@ -104,6 +107,8 @@ export function formatDigitalCountdown(
 
 export function ActionPanel({
   contractAddress,
+  cycleCapability = "checking",
+  onRetryCycleCapability,
   state,
   currentRound,
   contributionAmount,
@@ -503,7 +508,7 @@ export function ActionPanel({
   };
 
   const handleStartNewCycle = () => {
-    if (!address) return;
+    if (!address || !isMember || state !== GROUP_STATE.COMPLETED || cycleCapability !== "supported" || isPending || isConfirming) return;
     try {
       writeContract({
         address: targetContract,
@@ -1562,13 +1567,20 @@ export function ActionPanel({
             <div className="flex items-start gap-2 text-amber-200">
               <Info size={16} className="text-amber-400 shrink-0 mt-0.5" />
               <p className="leading-relaxed">
-                {t("actionPanel.cycleEndNotice", language)}
-                <span className="block mt-2 text-amber-200">{t("actionPanel.cycleRestartNotice", language)}</span>
+                {cycleCapability === "supported" ? <>
+                  {t("actionPanel.cycleEndNotice", language)}
+                  <span className="block mt-2 text-amber-200">{t("actionPanel.cycleRestartNotice", language)}</span>
+                </> : t(cycleCapability === "unsupported" ? "actionPanel.cycleUnsupportedNotice" : cycleCapability === "error" ? "actionPanel.cycleErrorNotice" : "actionPanel.cycleCheckingNotice", language)}
               </p>
             </div>
 
             <div className="grid grid-cols-1 gap-2">
-              {isMember && (
+              {(cycleCapability === "error" || cycleCapability === "checking") && onRetryCycleCapability && (
+                <button type="button" onClick={onRetryCycleCapability} disabled={cycleCapability === "checking"} className="py-2 text-amber-200 underline disabled:opacity-50">
+                  {t("actionPanel.cycleRetry", language)}
+                </button>
+              )}
+              {isMember && cycleCapability === "supported" && (
                 <button
                   type="button"
                   onClick={handleStartNewCycle}
@@ -1594,9 +1606,7 @@ export function ActionPanel({
                 >
                   <Coins size={15} className="text-amber-400" />
                   <span>
-                    {isEn
-                      ? "+ Or Create a New Club (Custom Members & Amount)"
-                      : "+ Hoặc Tạo Nhóm Hụi Mới (Tùy chỉnh số người & số vòng)"}
+                    {t("actionPanel.cycleCreateClub", language)}
                   </span>
                 </button>
               )}

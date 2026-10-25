@@ -1,0 +1,322 @@
+--- baseline/src/hooks/useSavingsClub.ts
++++ src/hooks/useSavingsClub.ts
+@@ -1,4 +1,5 @@
+ import { historyRoundIds } from "../lib/roundHistory";
++import { classifyCycleCapability } from "../lib/cycleCapabilities";
+ import { useReadContract, useReadContracts } from "wagmi";
+ import { erc20Abi, type Abi } from "viem";
+ import {
+@@ -7,6 +8,19 @@
+   USDC_ADDRESS,
+   ARC_TESTNET_CHAIN_ID,
+ } from "../contract";
++
++/** A separate query keeps legacy getter failures isolated from club/claim reads. */
++export function useCycleCapability(contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS) {
++  const read = useReadContract({
++    address: contractAddress,
++    abi: ROTATING_SAVINGS_ABI,
++    functionName: "cycleStartRound",
++    chainId: ARC_TESTNET_CHAIN_ID,
++    // Query identity includes address+chain; never borrow the previous club's data.
++    query: { retry: false, placeholderData: () => undefined },
++  });
++  return { capability: classifyCycleCapability(read), refetch: read.refetch };
++}
+ 
+ export function useClubInfo(contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS) {
+   const { data, isLoading, refetch } = useReadContracts({
+--- baseline/src/App.tsx
++++ src/App.tsx
+@@ -23,6 +23,7 @@
+ import { usePasskeyWallet } from "./hooks/usePasskeyWallet";
+ import {
+   useClubInfo,
++  useCycleCapability,
+   useRoundInfo,
+   useMemberStatus,
+   useRoundMemberStatus,
+@@ -303,6 +304,7 @@
+ 
+   // Contract reads (keyed by active contract address and user address)
+   const clubInfo = useClubInfo(contractAddress);
++  const cycleSupport = useCycleCapability(contractAddress);
+   const roundInfo = useRoundInfo(clubInfo.currentRound, contractAddress);
+   const memberStatus = useMemberStatus(address, contractAddress);
+   const roundMemberStatus = useRoundMemberStatus(clubInfo.currentRound, address, contractAddress);
+@@ -1289,6 +1291,8 @@
+               {/* Action panel — passkey or wagmi (Action-First: Primary user actions positioned at top eye-level) */}
+               {passkeyAddress && passkeyAccount && bundler ? (
+                 <PasskeyActionPanel
++                  cycleCapability={cycleSupport.capability}
++                  onRetryCycleCapability={() => { void cycleSupport.refetch(); }}
+                   contractAddress={contractAddress}
+                   bundler={bundler}
+                   account={passkeyAccount}
+@@ -1324,6 +1328,8 @@
+                 />
+               ) : (
+                 <ActionPanel
++                  cycleCapability={cycleSupport.capability}
++                  onRetryCycleCapability={() => { void cycleSupport.refetch(); }}
+                   contractAddress={contractAddress}
+                   state={clubInfo.state ?? 0}
+                   currentRound={clubInfo.currentRound ?? 1n}
+--- baseline/src/components/savings/ActionPanel.tsx
++++ src/components/savings/ActionPanel.tsx
+@@ -1,3 +1,4 @@
++import type { CycleCapability } from "../../lib/cycleCapabilities";
+ import { BID_PRESETS, getRaisedBidInput } from "../../lib/bidPresets";
+ import { useArcWriteContract } from "../../hooks/useArcWriteContract";
+ import { useEffect, useState } from "react";
+@@ -28,6 +29,8 @@
+ 
+ interface ActionPanelProps {
+   contractAddress?: `0x${string}`;
++  cycleCapability?: CycleCapability;
++  onRetryCycleCapability?: () => void;
+   state: number;
+   currentRound: bigint;
+   contributionAmount: bigint;
+@@ -104,6 +107,8 @@
+ 
+ export function ActionPanel({
+   contractAddress,
++  cycleCapability = "checking",
++  onRetryCycleCapability,
+   state,
+   currentRound,
+   contributionAmount,
+@@ -503,7 +508,7 @@
+   };
+ 
+   const handleStartNewCycle = () => {
+-    if (!address) return;
++    if (!address || !isMember || state !== GROUP_STATE.COMPLETED || cycleCapability !== "supported" || isPending || isConfirming) return;
+     try {
+       writeContract({
+         address: targetContract,
+@@ -1562,13 +1567,20 @@
+             <div className="flex items-start gap-2 text-amber-200">
+               <Info size={16} className="text-amber-400 shrink-0 mt-0.5" />
+               <p className="leading-relaxed">
+-                {t("actionPanel.cycleEndNotice", language)}
+-                <span className="block mt-2 text-amber-200">{t("actionPanel.cycleRestartNotice", language)}</span>
++                {cycleCapability === "supported" ? <>
++                  {t("actionPanel.cycleEndNotice", language)}
++                  <span className="block mt-2 text-amber-200">{t("actionPanel.cycleRestartNotice", language)}</span>
++                </> : t(cycleCapability === "unsupported" ? "actionPanel.cycleUnsupportedNotice" : cycleCapability === "error" ? "actionPanel.cycleErrorNotice" : "actionPanel.cycleCheckingNotice", language)}
+               </p>
+             </div>
+ 
+             <div className="grid grid-cols-1 gap-2">
+-              {isMember && (
++              {(cycleCapability === "error" || cycleCapability === "checking") && onRetryCycleCapability && (
++                <button type="button" onClick={onRetryCycleCapability} disabled={cycleCapability === "checking"} className="py-2 text-amber-200 underline disabled:opacity-50">
++                  {t("actionPanel.cycleRetry", language)}
++                </button>
++              )}
++              {isMember && cycleCapability === "supported" && (
+                 <button
+                   type="button"
+                   onClick={handleStartNewCycle}
+@@ -1594,9 +1606,7 @@
+                 >
+                   <Coins size={15} className="text-amber-400" />
+                   <span>
+-                    {isEn
+-                      ? "+ Or Create a New Club (Custom Members & Amount)"
+-                      : "+ Hoặc Tạo Nhóm Hụi Mới (Tùy chỉnh số người & số vòng)"}
++                    {t("actionPanel.cycleCreateClub", language)}
+                   </span>
+                 </button>
+               )}
+--- baseline/src/components/savings/PasskeyActionPanel.tsx
++++ src/components/savings/PasskeyActionPanel.tsx
+@@ -1,3 +1,4 @@
++import type { CycleCapability } from "../../lib/cycleCapabilities";
+ import { BID_PRESETS, getRaisedBidInput } from "../../lib/bidPresets";
+ /**
+  * PasskeyActionPanel — Phiên bản ActionPanel dùng Circle Modular Wallet.
+@@ -25,6 +26,8 @@
+ 
+ interface PasskeyActionPanelProps {
+   contractAddress?: `0x${string}`;
++  cycleCapability?: CycleCapability;
++  onRetryCycleCapability?: () => void;
+   bundler: BundlerClient;
+   account: SmartAccount;
+   state: number;
+@@ -89,6 +92,8 @@
+ 
+ export function PasskeyActionPanel({
+   contractAddress,
++  cycleCapability = "checking",
++  onRetryCycleCapability,
+   bundler,
+   account,
+   state,
+@@ -1063,8 +1068,22 @@
+       {state === GROUP_STATE.COMPLETED && (
+         <div className="p-6 text-center text-slate-600 text-sm sm:text-base font-medium">
+           <p>{t("actionPanel.completedNotice", language)}</p>
+-          <p className="mt-2 text-xs text-slate-300">{t("actionPanel.cycleEndNotice", language)}</p>
+-          <p className="mt-3 text-xs text-amber-200">{t("actionPanel.cycleRestartNotice", language)}</p>
++          {cycleCapability === "supported" ? <>
++            <p className="mt-2 text-xs text-slate-300">{t("actionPanel.cycleEndNotice", language)}</p>
++            <p className="mt-3 text-xs text-amber-200">{t("actionPanel.cycleRestartNotice", language)}</p>
++          </> : <p className="mt-3 text-xs text-amber-200">
++            {t(cycleCapability === "unsupported" ? "actionPanel.cycleUnsupportedNotice" : cycleCapability === "error" ? "actionPanel.cycleErrorNotice" : "actionPanel.cycleCheckingNotice", language)}
++          </p>}
++          {(cycleCapability === "error" || cycleCapability === "checking") && onRetryCycleCapability && (
++            <button type="button" onClick={onRetryCycleCapability} disabled={cycleCapability === "checking"} className="mt-3 block w-full text-xs text-amber-200 underline disabled:opacity-50">
++              {t("actionPanel.cycleRetry", language)}
++            </button>
++          )}
++          {onOpenCreateModal && (
++            <button type="button" onClick={onOpenCreateModal} className="mt-3 w-full rounded-xl border border-amber-500/30 px-4 py-2 text-xs font-bold text-amber-300 hover:bg-slate-800">
++              {t("actionPanel.cycleCreateClub", language)}
++            </button>
++          )}
+         </div>
+       )}
+ 
+--- baseline/src/hooks/useArcWriteContract.ts
++++ src/hooks/useArcWriteContract.ts
+@@ -1,6 +1,6 @@
+ import { useEffect, useRef, useState } from "react";
+ import { useConfig, useWriteContract } from "wagmi";
+-import { getAccount, switchChain } from "@wagmi/core";
++import { getAccount, simulateContract, switchChain } from "@wagmi/core";
+ import { toast } from "sonner";
+ import { ARC_TESTNET_CHAIN_ID, parseContractError } from "../contract";
+ import { ensureArcChain } from "../lib/arcWallet";
+@@ -14,24 +14,49 @@
+   const [isSwitching, setIsSwitching] = useState(false);
+   const [guardError, setGuardError] = useState<Error | null>(null);
+   const writeContract = ((parameters: Parameters<typeof mutation.writeContract>[0], options?: Parameters<typeof mutation.writeContract>[1]) => {
+-    if (inFlight.current) return;
++    if (inFlight.current || (parameters.functionName === "startNewCycle" && mutation.isPending)) return;
+     inFlight.current = true;
+     setIsSwitching(true);
+     setGuardError(null);
+     void (async () => {
++      let awaitingWallet = false;
+       try {
++        const isRestart = parameters.functionName === "startNewCycle";
++        const originalSender = isRestart ? getAccount(config).address : undefined;
+         await ensureArcChain({
+           getChainId: () => getAccount(config).chainId,
+           switchChain: (chainId) => switchChain(config, { chainId }),
+           chainId: ARC_TESTNET_CHAIN_ID,
+         });
+         if (parameters.chainId !== ARC_TESTNET_CHAIN_ID) throw new Error("Savings transactions require Arc Testnet");
+-        mutation.writeContract(parameters, options);
++        if (isRestart) {
++          const current = getAccount(config);
++          if (!originalSender || current.address !== originalSender || current.chainId !== ARC_TESTNET_CHAIN_ID) {
++            throw new Error("Wallet account or network changed. Please retry starting the cycle.");
++          }
++          const requestedSender = typeof parameters.account === "string" ? parameters.account : parameters.account?.address;
++          if (requestedSender && requestedSender.toLowerCase() !== originalSender.toLowerCase()) {
++            throw new Error("Restart sender does not match the connected wallet.");
++          }
++          await simulateContract(config, { ...parameters, account: originalSender, chainId: ARC_TESTNET_CHAIN_ID });
++          const latest = getAccount(config);
++          if (latest.address !== originalSender || latest.chainId !== ARC_TESTNET_CHAIN_ID) {
++            throw new Error("Wallet account or network changed. Please retry starting the cycle.");
++          }
++          // Keep the lock through wallet submission, including the render gap.
++          mutation.writeContract(parameters, {
++            ...options,
++            onSettled: (...args) => { inFlight.current = false; options?.onSettled?.(...args); },
++          });
++          awaitingWallet = true;
++        } else {
++          mutation.writeContract(parameters, options);
++        }
+       } catch (error) {
+         setGuardError(error instanceof Error ? error : new Error(String(error)));
+         toast.error(parseContractError(error));
+       } finally {
+-        inFlight.current = false;
++        if (!awaitingWallet) inFlight.current = false;
+         setIsSwitching(false);
+       }
+     })();
+--- baseline/src/lib/i18n.ts
++++ src/lib/i18n.ts
+@@ -165,6 +165,11 @@
+     kickedNoticeDesc: string;
+     completedNotice: string;
+     permissionlessNotice: string;
++    cycleUnsupportedNotice: string;
++    cycleCheckingNotice: string;
++    cycleErrorNotice: string;
++    cycleRetry: string;
++    cycleCreateClub: string;
+     cycleEndNotice: string;
+     cycleRestartNotice: string;
+     cycleNoCollateralNotice: string;
+@@ -592,6 +597,11 @@
+       kickedNoticeDesc: "Do không đóng góp đúng hạn theo chu kỳ của vòng.",
+       completedNotice: "Chu kỳ hụi đã kết thúc.",
+       permissionlessNotice: "Bất kỳ ai cũng có thể quyết toán khi đủ điều kiện. Sau hạn đóng tiền, bất kỳ ai có thể loại thành viên chưa đóng và chưa hốt; quyết toán vẫn áp dụng quy tắc vỡ hụi hiện có. Lệnh loại riêng chỉ đánh dấu bị loại, không tịch thu ký quỹ.",
++      cycleUnsupportedNotice: "Hợp đồng của nhóm này không hỗ trợ mở chu kỳ mới. Để chơi tiếp, hãy tạo nhóm mới. Bạn vẫn có thể nhận hoặc rút các khoản đủ điều kiện từ nhóm cũ.",
++      cycleCheckingNotice: "Đang kiểm tra khả năng mở chu kỳ mới của nhóm này. Vui lòng chờ trước khi thử lại.",
++      cycleErrorNotice: "Chưa xác minh được khả năng mở chu kỳ mới do lỗi kết nối hoặc RPC. Hãy thử kiểm tra lại; bạn vẫn có thể nhận hoặc rút các khoản đủ điều kiện.",
++      cycleRetry: "Kiểm tra lại",
++      cycleCreateClub: "Tạo nhóm hụi mới",
+       cycleEndNotice: "Chu kỳ kết thúc khi đủ số vòng dự kiến hoặc sớm hơn nếu không còn người đủ điều kiện nhận pot.",
+       cycleRestartNotice: "Chu kỳ mới đặt lại trạng thái đã hốt và bị loại, cho phép thành viên bị loại tham gia lại. Ký quỹ đã bị phạt hoặc đã rút không tự phục hồi và không được nộp lại tự động. Bổ sung ký quỹ cần một giao dịch nộp riêng.",
+       cycleNoCollateralNotice: "Bạn hiện không có ký quỹ đang khóa. Mở chu kỳ mới không tự phục hồi ký quỹ đã bị phạt hoặc đã rút, cũng không tự nộp lại. Bổ sung ký quỹ cần một giao dịch nộp riêng.",
+@@ -1022,6 +1032,11 @@
+       kickedNoticeDesc: "Due to defaulting on round contribution deadline.",
+       completedNotice: "The savings cycle has ended.",
+       permissionlessNotice: "Anyone may settle when its conditions are met. After the deadline, anyone may kick a member who has not contributed and has not won; settlement still applies its own default rules. Manual kick only marks the member and does not slash collateral.",
++      cycleUnsupportedNotice: "This club's contract does not support starting a new cycle. Create a new club to continue. You can still claim or withdraw eligible amounts from the old club.",
++      cycleCheckingNotice: "Checking whether this club supports a new cycle. Please wait before retrying.",
++      cycleErrorNotice: "New-cycle support could not be verified because of a connection or RPC error. Retry the check; eligible claims and withdrawals remain available.",
++      cycleRetry: "Check again",
++      cycleCreateClub: "Create a new club",
+       cycleEndNotice: "A cycle ends after its allotted rounds or earlier when no eligible pot recipients remain.",
+       cycleRestartNotice: "A new cycle resets winner and kicked status, allowing kicked members to participate again. Collateral already slashed or withdrawn is not restored or deposited automatically. Adding collateral requires a separate deposit transaction.",
+       cycleNoCollateralNotice: "You currently have no locked collateral. Starting a new cycle does not restore slashed or withdrawn collateral or deposit it automatically. Adding collateral requires a separate deposit transaction.",
+--- baseline/src/lib/cycleCapabilities.ts
++++ src/lib/cycleCapabilities.ts
+@@ -0,0 +1,35 @@
++import {
++  ContractFunctionRevertedError,
++  ContractFunctionZeroDataError,
++  ExecutionRevertedError,
++} from "viem";
++
++export type CycleCapability = "checking" | "supported" | "unsupported" | "error";
++
++/** Only definite EVM/empty-return evidence establishes an unusable getter. */
++function isUnavailableGetter(error: unknown): boolean {
++  const visited = new Set<object>();
++  let cause = error;
++  while (typeof cause === "object" && cause !== null && !visited.has(cause)) {
++    visited.add(cause);
++    if (cause instanceof ContractFunctionZeroDataError || cause instanceof ExecutionRevertedError) return true;
++    // viem also wraps generic -32603 RPC failures as ContractFunctionRevertedError.
++    // Its class/name/message alone therefore cannot establish legacy support.
++    if (cause instanceof ContractFunctionRevertedError && cause.raw && /^0x[0-9a-fA-F]{8,}$/.test(cause.raw)) return true;
++    if ("code" in cause && cause.code === 3) return true;
++    cause = "cause" in cause ? cause.cause : undefined;
++  }
++  return false;
++}
++
++export function classifyCycleCapability({ data, error, isPending, isFetching }: {
++  data?: unknown;
++  error?: unknown;
++  isPending?: boolean;
++  isFetching?: boolean;
++}): CycleCapability {
++  if (isPending || isFetching) return "checking";
++  if (error) return isUnavailableGetter(error) ? "unsupported" : "error";
++  if (typeof data === "bigint" && data >= 0n) return "supported";
++  return "error";
++}

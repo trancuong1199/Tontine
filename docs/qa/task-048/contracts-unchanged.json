@@ -1,0 +1,10 @@
+{
+  "contracts/RotatingSavings.sol": {
+    "sha256": "259f5c857d7ff69352e6df09cc41f9e19106f407a7a005c91394b51f5ed6677b",
+    "unchangedFromHEAD": true
+  },
+  "contracts/out/RotatingSavings.sol/RotatingSavings.json": {
+    "sha256": "54e59f9ccdf1175802c3d22af6d138a40cf352e3fb943cbf43185b0c7bda7daf",
+    "unchangedFromHEAD": true
+  }
+}

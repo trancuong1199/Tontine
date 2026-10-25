@@ -1,3 +1,4 @@
+import type { CycleCapability } from "../../lib/cycleCapabilities";
 import { BID_PRESETS, getRaisedBidInput } from "../../lib/bidPresets";
 /**
  * PasskeyActionPanel — Phiên bản ActionPanel dùng Circle Modular Wallet.
@@ -25,6 +26,8 @@ import { Language, t } from "../../lib/i18n";
 
 interface PasskeyActionPanelProps {
   contractAddress?: `0x${string}`;
+  cycleCapability?: CycleCapability;
+  onRetryCycleCapability?: () => void;
   bundler: BundlerClient;
   account: SmartAccount;
   state: number;
@@ -89,6 +92,8 @@ export function formatDigitalCountdown(
 
 export function PasskeyActionPanel({
   contractAddress,
+  cycleCapability = "checking",
+  onRetryCycleCapability,
   bundler,
   account,
   state,
@@ -1063,8 +1068,22 @@ export function PasskeyActionPanel({
       {state === GROUP_STATE.COMPLETED && (
         <div className="p-6 text-center text-slate-600 text-sm sm:text-base font-medium">
           <p>{t("actionPanel.completedNotice", language)}</p>
-          <p className="mt-2 text-xs text-slate-300">{t("actionPanel.cycleEndNotice", language)}</p>
-          <p className="mt-3 text-xs text-amber-200">{t("actionPanel.cycleRestartNotice", language)}</p>
+          {cycleCapability === "supported" ? <>
+            <p className="mt-2 text-xs text-slate-300">{t("actionPanel.cycleEndNotice", language)}</p>
+            <p className="mt-3 text-xs text-amber-200">{t("actionPanel.cycleRestartNotice", language)}</p>
+          </> : <p className="mt-3 text-xs text-amber-200">
+            {t(cycleCapability === "unsupported" ? "actionPanel.cycleUnsupportedNotice" : cycleCapability === "error" ? "actionPanel.cycleErrorNotice" : "actionPanel.cycleCheckingNotice", language)}
+          </p>}
+          {(cycleCapability === "error" || cycleCapability === "checking") && onRetryCycleCapability && (
+            <button type="button" onClick={onRetryCycleCapability} disabled={cycleCapability === "checking"} className="mt-3 block w-full text-xs text-amber-200 underline disabled:opacity-50">
+              {t("actionPanel.cycleRetry", language)}
+            </button>
+          )}
+          {onOpenCreateModal && (
+            <button type="button" onClick={onOpenCreateModal} className="mt-3 w-full rounded-xl border border-amber-500/30 px-4 py-2 text-xs font-bold text-amber-300 hover:bg-slate-800">
+              {t("actionPanel.cycleCreateClub", language)}
+            </button>
+          )}
         </div>
       )}
 
