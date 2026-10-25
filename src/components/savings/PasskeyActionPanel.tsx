@@ -1,3 +1,4 @@
+import { getRaisedBidInput } from "../../lib/bidPresets";
 /**
  * PasskeyActionPanel — Phiên bản ActionPanel dùng Circle Modular Wallet.
  * Gửi user operations (ERC-4337) thay vì EOA transactions.
@@ -407,6 +408,12 @@ export function PasskeyActionPanel({
             </button>
           </div>
         </div>
+      )}
+
+      {state === GROUP_STATE.ACTIVE && isMember && !isKicked && lockedCollateral === 0n && (
+        <p role="status" className="mx-5 my-3 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-xs text-amber-200">
+          {t("actionPanel.cycleNoCollateralNotice", language)}
+        </p>
       )}
 
       {/* CirBTC Collateral Vault Card (TASK-043) */}
@@ -874,7 +881,7 @@ export function PasskeyActionPanel({
                       {/* Quick preset chips for raise */}
                       <div className="flex items-center gap-2">
                         {["1", "2", "5", "10"].map((preset) => {
-                          const presetValue = (Number(formatUsdc(userBid)) + Number(preset)).toFixed(2);
+                          const presetValue = getRaisedBidInput(userBid, preset);
                           return (
                             <button
                               key={preset}
@@ -1049,7 +1056,9 @@ export function PasskeyActionPanel({
       {/* COMPLETED */}
       {state === GROUP_STATE.COMPLETED && (
         <div className="p-6 text-center text-slate-600 text-sm sm:text-base font-medium">
-          {isEn ? "The savings club has completed all rounds." : "Nhóm hụi đã hoàn thành tất cả các vòng."}
+          <p>{t("actionPanel.completedNotice", language)}</p>
+          <p className="mt-2 text-xs text-slate-300">{t("actionPanel.cycleEndNotice", language)}</p>
+          <p className="mt-3 text-xs text-amber-200">{t("actionPanel.cycleRestartNotice", language)}</p>
         </div>
       )}
 

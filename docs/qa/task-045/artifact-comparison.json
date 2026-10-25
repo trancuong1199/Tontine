@@ -1,0 +1,10 @@
+{
+  "checks": {
+    "abi": true,
+    "creationBytecode": true,
+    "runtimeBytecode": true
+  },
+  "compiler": "0.8.28",
+  "independentBuild": "/tmp/task045-qa-out/RotatingSavings.sol/RotatingSavings.json",
+  "exitCode": 0
+}

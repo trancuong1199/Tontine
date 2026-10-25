@@ -1,3 +1,4 @@
+import { getRaisedBidInput } from "../../lib/bidPresets";
 import { useArcWriteContract } from "../../hooks/useArcWriteContract";
 import { useEffect, useState } from "react";
 import { erc20Abi } from "viem";
@@ -631,6 +632,12 @@ export function ActionPanel({
         </div>
       )}
 
+      {state === GROUP_STATE.ACTIVE && isMember && !isKicked && lockedCollateral === 0n && (
+        <p role="status" className="mx-5 my-3 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-xs text-amber-200">
+          {t("actionPanel.cycleNoCollateralNotice", language)}
+        </p>
+      )}
+
       {/* --- CirBTC Collateral Vault Card (TASK-043) --- */}
       {((collateralAmount !== undefined && collateralAmount > 0n) ||
         (lockedCollateral !== undefined && lockedCollateral > 0n) ||
@@ -657,7 +664,7 @@ export function ActionPanel({
               </div>
               <div className="text-right">
                 <span className="text-lg sm:text-xl font-black text-amber-300 tabular-nums">
-                  {formatCirBtc((lockedCollateral && lockedCollateral > 0n ? lockedCollateral : collateralAmount ?? 0n) + (claimableCirBtc ?? 0n))}
+                  {formatCirBtc((lockedCollateral ?? collateralAmount ?? 0n) + (claimableCirBtc ?? 0n))}
                 </span>
                 <span className="text-xs font-bold text-amber-400 ml-1">CirBTC</span>
                 {cirBtcBalance !== undefined && (
@@ -1198,7 +1205,7 @@ export function ActionPanel({
                       {/* Quick preset chips for raise */}
                       <div className="flex items-center gap-2">
                         {["1", "2", "5", "10"].map((preset) => {
-                          const presetValue = (Number(formatUsdc(userBid)) + Number(preset)).toFixed(2);
+                          const presetValue = getRaisedBidInput(userBid, preset);
                           return (
                             <button
                               key={preset}
@@ -1382,7 +1389,7 @@ export function ActionPanel({
               <CheckCircle2 size={24} />
             </div>
             <p className="text-slate-100 text-base sm:text-lg font-extrabold">
-              {isEn ? "The savings club has completed all rounds." : "Nhóm hụi đã hoàn thành tất cả các vòng."}
+              {t("actionPanel.completedNotice", language)}
             </p>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
               <Coins size={13} className="text-amber-400" />
@@ -1544,20 +1551,13 @@ export function ActionPanel({
             </div>
           )}
 
-          {/* Giải thích quy tắc 1 chu kỳ = N vòng & Nút Mở Chu Kỳ Hụi Mới (Đóng hụi tiếp) */}
+          {/* Cycle rules and collateral notice before starting another cycle */}
           <div className="rounded-2xl p-4 bg-amber-950/25 border border-amber-500/30 space-y-3 text-xs">
             <div className="flex items-start gap-2 text-amber-200">
               <Info size={16} className="text-amber-400 shrink-0 mt-0.5" />
               <p className="leading-relaxed">
-                {isEn ? (
-                  <>
-                    <strong>Why did this cycle finish after {members.length || 2} rounds?</strong> In a Rotating Savings Club (Tontine), <strong>1 cycle = {members.length || 2} members = {members.length || 2} rounds</strong> so that every member wins the Pot exactly once. You can start a <strong>New Cycle</strong> right below to continue contributing with the same members!
-                  </>
-                ) : (
-                  <>
-                    <strong>Vì sao dây hụi dừng sau {members.length || 2} vòng?</strong> Theo nguyên tắc Hụi xoay vòng (Tontine), <strong>1 dây hụi (1 chu kỳ) có Số vòng = Số thành viên ({members.length || 2} người = {members.length || 2} vòng)</strong> để mỗi thành viên đều được hốt Pot đúng 1 lần. Để <strong>tiếp tục đóng hụi chu kỳ tiếp theo</strong> ngay trên nhóm này, hãy bấm nút dưới đây:
-                  </>
-                )}
+                {t("actionPanel.cycleEndNotice", language)}
+                <span className="block mt-2 text-amber-200">{t("actionPanel.cycleRestartNotice", language)}</span>
               </p>
             </div>
 

@@ -1,0 +1,11 @@
+[Verify] Verifying manifest for Task: task-045 (Frozen at: 2026-10-25T12:30:21.792Z)
+[MATCH] src/onchain-money.ts (8405ce18d622a273...)
+[MATCH] src/contract.ts (ad3d97f1416ce3a1...)
+[MATCH] src/components/savings/ActionPanel.tsx (84ca12a379e6096e...)
+[MATCH] src/components/savings/PasskeyActionPanel.tsx (0843760d616c1613...)
+[MATCH] src/lib/i18n.ts (8138862745f19f24...)
+[MATCH] src/lib/bidPresets.ts (d9df3af2c9a25fbb...)
+[MATCH] contracts/RotatingSavings.sol (768f9d228c5cff2b...)
+[MATCH] contracts/out/RotatingSavings.sol/RotatingSavings.json (094a6400326b64f9...)
+
+ All files verified successfully! Integrity confirmed.

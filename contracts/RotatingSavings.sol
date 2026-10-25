@@ -301,7 +301,7 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         emit BidPlaced(roundId, msg.sender, bidAmount);
     }
 
-    /// @notice Settle the current round, awarding the pot to the highest bidder (or refunding if no bids).
+    /// @notice Settle the current round, awarding the pot to the highest eligible bidder (or refunding if no eligible winner).
     /// @dev Permissionless: anyone may settle after the deadline or when early settlement conditions hold.
     /// Cycle completion check `(currentRound - cycleStartRound) >= members.length` tracks the number of
     /// rounds elapsed within the current cycle (since `cycleStartRound` is set to the previous cycle's last round).
@@ -388,7 +388,9 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
             claimable[winner] += winnerPayout;
             emit RoundSettled(roundId, winner, totalPot, winnerBid);
         } else {
-            // Credit no-winner refunds without growing the settlement stack.
+            // Preserve settled contribution/bid history for public getters. The outstanding
+            // refund lives in claimable; state/currentRound/settled guards prevent re-crediting.
+            // Claiming a refund clears claimable, not these historical records.
             _refundRound(roundId, false);
             emit RoundSettled(roundId, address(0), 0, 0);
         }
@@ -496,6 +498,8 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
     /// @dev Refunds current contributions/bids exactly once on ACTIVE cancellation.
     function _refundCurrentRoundIfActive() internal {
         if (state != GroupState.ACTIVE || rounds[currentRound].settled) return;
+        // Cancellation clears only the current unsettled balances after crediting them;
+        // prior settled rounds remain historical records and are never refunded again here.
         _refundRound(currentRound, true);
     }
 

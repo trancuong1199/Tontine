@@ -163,12 +163,7 @@ export const GROUP_STATE = {
 
 export type GroupStateKey = keyof typeof GROUP_STATE;
 
-export function formatUsdc(raw: bigint): string {
-  const fixed = formatUnitsFixed(raw, USDC_DECIMALS, 2, "half-up");
-  const [intPart, fracPart] = fixed.split(".");
-  const groupedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return fracPart !== undefined ? `${groupedInt}.${fracPart}` : groupedInt;
-}
+export { formatUsdc } from "./onchain-money.ts";
 
 export function parseUsdc(amount: string): bigint {
   if (typeof amount !== "string") return 0n;

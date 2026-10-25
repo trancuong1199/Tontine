@@ -164,6 +164,9 @@ export interface Translations {
     kickedNoticeTitle: string;
     kickedNoticeDesc: string;
     completedNotice: string;
+    cycleEndNotice: string;
+    cycleRestartNotice: string;
+    cycleNoCollateralNotice: string;
     activeNotMemberNotice: string;
     loadingSign: string;
     loadingProcess: string;
@@ -586,7 +589,10 @@ export const translations: Record<Language, Translations> = {
       wonNoticeDesc: "Vui lòng kiểm tra số tiền thưởng có thể nhận trong phần Trạng thái thành viên.",
       kickedNoticeTitle: "Bạn đã bị loại khỏi nhóm",
       kickedNoticeDesc: "Do không đóng góp đúng hạn theo chu kỳ của vòng.",
-      completedNotice: "Nhóm hụi đã hoàn thành tất cả các vòng.",
+      completedNotice: "Chu kỳ hụi đã kết thúc.",
+      cycleEndNotice: "Chu kỳ kết thúc khi đủ số vòng dự kiến hoặc sớm hơn nếu không còn người đủ điều kiện nhận pot.",
+      cycleRestartNotice: "Chu kỳ mới đặt lại trạng thái đã hốt và bị loại, cho phép thành viên bị loại tham gia lại. Ký quỹ đã bị phạt hoặc đã rút không tự phục hồi và không được nộp lại tự động. Bổ sung ký quỹ cần một giao dịch nộp riêng.",
+      cycleNoCollateralNotice: "Bạn hiện không có ký quỹ đang khóa. Mở chu kỳ mới không tự phục hồi ký quỹ đã bị phạt hoặc đã rút, cũng không tự nộp lại. Bổ sung ký quỹ cần một giao dịch nộp riêng.",
       activeNotMemberNotice: "Nhóm đang diễn ra các vòng, không nhận thêm thành viên mới.",
       loadingSign: "Xác nhận trong ví...",
       loadingProcess: "Đang xử lý...",
@@ -1012,7 +1018,10 @@ export const translations: Record<Language, Translations> = {
       wonNoticeDesc: "Please check your claimable payout under Your Status.",
       kickedNoticeTitle: "You have been kicked from the club",
       kickedNoticeDesc: "Due to defaulting on round contribution deadline.",
-      completedNotice: "The savings club has completed all rounds.",
+      completedNotice: "The savings cycle has ended.",
+      cycleEndNotice: "A cycle ends after its allotted rounds or earlier when no eligible pot recipients remain.",
+      cycleRestartNotice: "A new cycle resets winner and kicked status, allowing kicked members to participate again. Collateral already slashed or withdrawn is not restored or deposited automatically. Adding collateral requires a separate deposit transaction.",
+      cycleNoCollateralNotice: "You currently have no locked collateral. Starting a new cycle does not restore slashed or withdrawn collateral or deposit it automatically. Adding collateral requires a separate deposit transaction.",
       activeNotMemberNotice: "The club is active and not accepting new members.",
       loadingSign: "Sign in wallet...",
       loadingProcess: "Processing on-chain...",

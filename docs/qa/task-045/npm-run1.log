@@ -1,0 +1,2463 @@
+
+> studio-app@0.0.0 test
+> node --experimental-strip-types --test tests/*.test.ts
+
+TAP version 13
+# Subtest: TC-PRESERVE-01 (AC-01.1): ClubCard.tsx tính potSize = contributionAmount * effectiveTotalJoined xuyên suốt các vòng
+ok 1 - TC-PRESERVE-01 (AC-01.1): ClubCard.tsx tính potSize = contributionAmount * effectiveTotalJoined xuyên suốt các vòng
+  ---
+  duration_ms: 2.769378
+  type: 'test'
+  ...
+# Subtest: TC-PRESERVE-02 (AC-01.2): Nhóm 2 thành viên ở Vòng 1 có potSize = 20.00 USDC
+ok 2 - TC-PRESERVE-02 (AC-01.2): Nhóm 2 thành viên ở Vòng 1 có potSize = 20.00 USDC
+  ---
+  duration_ms: 1.228514
+  type: 'test'
+  ...
+# Subtest: TC-PRESERVE-03 (AC-01.3): Khắc phục lỗi báo cáo người dùng (R7c516ywmKML) — Vòng 2 sau khi có người claim pot vẫn hiển thị đủ 20.00 USDC
+ok 3 - TC-PRESERVE-03 (AC-01.3): Khắc phục lỗi báo cáo người dùng (R7c516ywmKML) — Vòng 2 sau khi có người claim pot vẫn hiển thị đủ 20.00 USDC
+  ---
+  duration_ms: 1.326442
+  type: 'test'
+  ...
+# Subtest: TC-PRESERVE-04 (AC-01.4): Nhóm 10 thành viên tại Vòng 5 (4 người đã thắng nộp hụi chết, 6 người chờ hốt) hiển thị đủ 100.00 USDC
+ok 4 - TC-PRESERVE-04 (AC-01.4): Nhóm 10 thành viên tại Vòng 5 (4 người đã thắng nộp hụi chết, 6 người chờ hốt) hiển thị đủ 100.00 USDC
+  ---
+  duration_ms: 0.467918
+  type: 'test'
+  ...
+# Subtest: TC-PRESERVE-05 (AC-02.1): Smart Contract RotatingSavings.sol bảo đảm vòng 2 thu đủ 100% pot từ mọi thành viên
+ok 5 - TC-PRESERVE-05 (AC-02.1): Smart Contract RotatingSavings.sol bảo đảm vòng 2 thu đủ 100% pot từ mọi thành viên
+  ---
+  duration_ms: 0.67837
+  type: 'test'
+  ...
+# Subtest: TC-GUARD-01 (AC-01.1): ActionPanel.tsx nhận diện needsApproval trong handleContribute, kích hoạt giao dịch approve USDC và hiển thị nhãn approve tương ứng
+ok 6 - TC-GUARD-01 (AC-01.1): ActionPanel.tsx nhận diện needsApproval trong handleContribute, kích hoạt giao dịch approve USDC và hiển thị nhãn approve tương ứng
+  ---
+  duration_ms: 32.4359
+  type: 'test'
+  ...
+# Subtest: TC-GUARD-02 (AC-01.2): PasskeyActionPanel.tsx tự động gom lệnh approve và contribute vào cùng một UserOperation khi needsApproval
+ok 7 - TC-GUARD-02 (AC-01.2): PasskeyActionPanel.tsx tự động gom lệnh approve và contribute vào cùng một UserOperation khi needsApproval
+  ---
+  duration_ms: 20.20005
+  type: 'test'
+  ...
+# Subtest: TC-GUARD-03 (AC-01.3): Khi allowance >= contributionAmount (needsApproval = false), gọi trực tiếp contribute mà không gọi thừa approve
+ok 8 - TC-GUARD-03 (AC-01.3): Khi allowance >= contributionAmount (needsApproval = false), gọi trực tiếp contribute mà không gọi thừa approve
+  ---
+  duration_ms: 1.748373
+  type: 'test'
+  ...
+# Subtest: TC-GUARD-04 (AC-02.1): Nút đóng tiền và đóng hụi chết bị vô hiệu hóa khi thời gian vòng đã kết thúc (isTimeEnded === true)
+ok 9 - TC-GUARD-04 (AC-02.1): Nút đóng tiền và đóng hụi chết bị vô hiệu hóa khi thời gian vòng đã kết thúc (isTimeEnded === true)
+  ---
+  duration_ms: 19.99455
+  type: 'test'
+  ...
+# Subtest: TC-GUARD-05 (AC-02.2): Giao diện hiển thị Banner cảnh báo hết hạn nộp tiền kèm hướng dẫn tất toán
+ok 10 - TC-GUARD-05 (AC-02.2): Giao diện hiển thị Banner cảnh báo hết hạn nộp tiền kèm hướng dẫn tất toán
+  ---
+  duration_ms: 22.57493
+  type: 'test'
+  ...
+# Subtest: TC-GUARD-06 (AC-02.3): Nút kết thúc vòng (Settle Round) được kích hoạt và làm nổi bật khi vòng hết hạn
+ok 11 - TC-GUARD-06 (AC-02.3): Nút kết thúc vòng (Settle Round) được kích hoạt và làm nổi bật khi vòng hết hạn
+  ---
+  duration_ms: 28.338554
+  type: 'test'
+  ...
+# Subtest: TC-GUARD-07 (AC-03.1): Hàm parseContractError trong src/contract.ts ánh xạ chính xác các lỗi on-chain
+ok 12 - TC-GUARD-07 (AC-03.1): Hàm parseContractError trong src/contract.ts ánh xạ chính xác các lỗi on-chain
+  ---
+  duration_ms: 0.760972
+  type: 'test'
+  ...
+# Subtest: TC-GUARD-08 (AC-03.2): Từ điển src/lib/i18n.ts cung cấp đầy đủ 7 khóa song ngữ mới cho cả vi và en
+ok 13 - TC-GUARD-08 (AC-03.2): Từ điển src/lib/i18n.ts cung cấp đầy đủ 7 khóa song ngữ mới cho cả vi và en
+  ---
+  duration_ms: 0.830087
+  type: 'test'
+  ...
+# Subtest: TC-GUARD-09 (AC-03.3): Backward compatibility and invariant checks for legacy tests
+ok 14 - TC-GUARD-09 (AC-03.3): Backward compatibility and invariant checks for legacy tests
+  ---
+  duration_ms: 28.139468
+  type: 'test'
+  ...
+# Subtest: TC-KIT-01 (AC-01.1, AC-01.2): Từ điển song ngữ i18n cho arcAppKit với 100% key parity
+ok 15 - TC-KIT-01 (AC-01.1, AC-01.2): Từ điển song ngữ i18n cho arcAppKit với 100% key parity
+  ---
+  duration_ms: 3.75669
+  type: 'test'
+  ...
+# Subtest: TC-KIT-02 (AC-02.1, AC-02.2): ArcAppKitModal.tsx cấu trúc 4 Tabs & On-chain Swap
+ok 16 - TC-KIT-02 (AC-02.1, AC-02.2): ArcAppKitModal.tsx cấu trúc 4 Tabs & On-chain Swap
+  ---
+  duration_ms: 0.882273
+  type: 'test'
+  ...
+# Subtest: TC-KIT-03 (AC-02.3, AC-02.4): Circle Passkey Smart Account, CCTP Bridge & Circle Faucet
+ok 17 - TC-KIT-03 (AC-02.3, AC-02.4): Circle Passkey Smart Account, CCTP Bridge & Circle Faucet
+  ---
+  duration_ms: 0.950945
+  type: 'test'
+  ...
+# Subtest: TC-KIT-04 (AC-03.1, AC-03.2): Header & App.tsx tích hợp Arc AppKit Button và Modal
+ok 18 - TC-KIT-04 (AC-03.1, AC-03.2): Header & App.tsx tích hợp Arc AppKit Button và Modal
+  ---
+  duration_ms: 1.275894
+  type: 'test'
+  ...
+# Subtest: TC-KIT-05 (AC-03.3): GroupSwitcher.tsx cung cấp Arc AppKit shortcut bar
+ok 19 - TC-KIT-05 (AC-03.3): GroupSwitcher.tsx cung cấp Arc AppKit shortcut bar
+  ---
+  duration_ms: 1.175199
+  type: 'test'
+  ...
+# Subtest: TC-REGRESSION-01 (AC-04.1..04.3): Không chứa cỡ chữ cấm sub-12px (text-[10px], text-[11px])
+ok 20 - TC-REGRESSION-01 (AC-04.1..04.3): Không chứa cỡ chữ cấm sub-12px (text-[10px], text-[11px])
+  ---
+  duration_ms: 1.229935
+  type: 'test'
+  ...
+# Subtest: T044-MONEY: actual bigint parsing and half-up formatting preserve large values
+ok 21 - T044-MONEY: actual bigint parsing and half-up formatting preserve large values
+  ---
+  duration_ms: 4.335047
+  type: 'test'
+  ...
+# Subtest: T044-ERROR-FACTS: error semantics and registry constants
+ok 22 - T044-ERROR-FACTS: error semantics and registry constants
+  ---
+  duration_ms: 1.041594
+  type: 'test'
+  ...
+# Subtest: T044-DEPLOY: six-argument artifact encodes configured collateral token and rejects invalid override
+ok 23 - T044-DEPLOY: six-argument artifact encodes configured collateral token and rejects invalid override
+  ---
+  duration_ms: 10.344176
+  type: 'test'
+  ...
+# Subtest: T044-CHAIN: switching must resolve before continuation; reject and wrong result block continuation
+ok 24 - T044-CHAIN: switching must resolve before continuation; reject and wrong result block continuation
+  ---
+  duration_ms: 1.709359
+  type: 'test'
+  ...
+# Subtest: T044-HISTORY: real hook caps calls and maps sparse results to original round IDs
+ok 25 - T044-HISTORY: real hook caps calls and maps sparse results to original round IDs
+  ---
+  duration_ms: 1195.42337
+  type: 'test'
+  ...
+# Subtest: T044-SESSION: fresh restore reads valid public metadata, purges legacy, tolerates storage failures
+ok 26 - T044-SESSION: fresh restore reads valid public metadata, purges legacy, tolerates storage failures
+  ---
+  duration_ms: 36.542754
+  type: 'test'
+  ...
+# Subtest: T044-EXISTING-CLUB: collateral reads use selected contract token instead of deployment default
+ok 27 - T044-EXISTING-CLUB: collateral reads use selected contract token instead of deployment default
+  ---
+  duration_ms: 113.356901
+  type: 'test'
+  ...
+# Subtest: T044-GUARDED-HOOK: production wrapper waits, reports rejected switch and rechecks approval follow-up
+ok 28 - T044-GUARDED-HOOK: production wrapper waits, reports rejected switch and rechecks approval follow-up
+  ---
+  duration_ms: 142.36769
+  type: 'test'
+  ...
+# Subtest: T044-INTEGRATION: guarded write hook and registry transport are wired into savings entry points
+ok 29 - T044-INTEGRATION: guarded write hook and registry transport are wired into savings entry points
+  ---
+  duration_ms: 21.37344
+  type: 'test'
+  ...
+# Subtest: TC-REFUND-01 (AC-01.1): No-winner settlement delegates to shared refund helper and emits settlement
+ok 30 - TC-REFUND-01 (AC-01.1): No-winner settlement delegates to shared refund helper and emits settlement
+  ---
+  duration_ms: 2.71863
+  type: 'test'
+  ...
+# Subtest: TC-REFUND-02 (AC-01.2): Shared refund helper credits contributions plus bids; actual transfer covered by Foundry
+ok 31 - TC-REFUND-02 (AC-01.2): Shared refund helper credits contributions plus bids; actual transfer covered by Foundry
+  ---
+  duration_ms: 4.602332
+  type: 'test'
+  ...
+# Subtest: TC-REFUND-03 (AC-01.3): Foundry Test RotatingSavings.t.sol chứng minh thành viên nhận hoàn tiền và rút tiền thành công qua claimPayout
+ok 32 - TC-REFUND-03 (AC-01.3): Foundry Test RotatingSavings.t.sol chứng minh thành viên nhận hoàn tiền và rút tiền thành công qua claimPayout
+  ---
+  duration_ms: 5.849203
+  type: 'test'
+  ...
+# Subtest: TC-UI-01 (AC-02.1): RoundHistory.tsx nhận diện vòng không có người thắng (address 0), hiển thị Huy hiệu hoàn trả 100% kèm icon RotateCcw thay vì 0x0000...0000
+ok 33 - TC-UI-01 (AC-02.1): RoundHistory.tsx nhận diện vòng không có người thắng (address 0), hiển thị Huy hiệu hoàn trả 100% kèm icon RotateCcw thay vì 0x0000...0000
+  ---
+  duration_ms: 4.485729
+  type: 'test'
+  ...
+# Subtest: TC-UI-02 (AC-02.2): RoundHistory.tsx duy trì hiển thị bình thường cho vòng có người thắng (Bạn! hoặc formatAddress)
+ok 34 - TC-UI-02 (AC-02.2): RoundHistory.tsx duy trì hiển thị bình thường cho vòng có người thắng (Bạn! hoặc formatAddress)
+  ---
+  duration_ms: 0.6378
+  type: 'test'
+  ...
+# Subtest: TC-UI-03 (AC-03.1): ActionPanel và PasskeyActionPanel tự động hiển thị Thẻ Rút Tiền Thưởng Nổi Bật khi claimable > 0n sau khi nhận tiền hoàn trả
+ok 35 - TC-UI-03 (AC-03.1): ActionPanel và PasskeyActionPanel tự động hiển thị Thẻ Rút Tiền Thưởng Nổi Bật khi claimable > 0n sau khi nhận tiền hoàn trả
+  ---
+  duration_ms: 14.299948
+  type: 'test'
+  ...
+# Subtest: TC-I18N-01 (AC-03.2): Bộ từ điển song ngữ i18n cung cấp đầy đủ các khóa cho vòng không có người thắng trong cả vi và en
+ok 36 - TC-I18N-01 (AC-03.2): Bộ từ điển song ngữ i18n cung cấp đầy đủ các khóa cho vòng không có người thắng trong cả vi và en
+  ---
+  duration_ms: 1.702353
+  type: 'test'
+  ...
+# Subtest: TC-REGRESSION-01 (AC-03.3): Toàn bộ cấu trúc hệ thống và tính toàn vẹn kinh tế được bảo toàn (Zero Regression)
+ok 37 - TC-REGRESSION-01 (AC-03.3): Toàn bộ cấu trúc hệ thống và tính toàn vẹn kinh tế được bảo toàn (Zero Regression)
+  ---
+  duration_ms: 4.285811
+  type: 'test'
+  ...
+# Subtest: TC-I18N-01 (AC-01.1): Khởi tạo mặc định ngôn ngữ 'vi', lưu trữ và đọc an toàn từ localStorage key 'hui_language'
+ok 38 - TC-I18N-01 (AC-01.1): Khởi tạo mặc định ngôn ngữ 'vi', lưu trữ và đọc an toàn từ localStorage key 'hui_language'
+  ---
+  duration_ms: 4.950633
+  type: 'test'
+  ...
+# Subtest: TC-I18N-02 (AC-01.2): Nút toggle ngôn ngữ trên Header (cả 2 header) hỗ trợ chuyển đổi giữa 'vi' và 'en', cập nhật state và localStorage
+ok 39 - TC-I18N-02 (AC-01.2): Nút toggle ngôn ngữ trên Header (cả 2 header) hỗ trợ chuyển đổi giữa 'vi' và 'en', cập nhật state và localStorage
+  ---
+  duration_ms: 1.361296
+  type: 'test'
+  ...
+# Subtest: TC-I18N-03 (AC-01.3): Độ bao phủ từ điển song ngữ: kiểm tra đầy đủ các keys trong Translations cho 10 component
+ok 40 - TC-I18N-03 (AC-01.3): Độ bao phủ từ điển song ngữ: kiểm tra đầy đủ các keys trong Translations cho 10 component
+  ---
+  duration_ms: 5.473297
+  type: 'test'
+  ...
+# Subtest: TC-I18N-04 (AC-01.4): Thông báo Toast và helper feedback song ngữ chuẩn theo ngôn ngữ được chọn
+ok 41 - TC-I18N-04 (AC-01.4): Thông báo Toast và helper feedback song ngữ chuẩn theo ngôn ngữ được chọn
+  ---
+  duration_ms: 3.572637
+  type: 'test'
+  ...
+# Subtest: TC-LAYOUT-01 (AC-02.1): GroupSwitcher áp dụng lưới 2x2 grid (grid-cols-2) thoáng đãng, không ép 4 nút vào 1 hàng hẹp
+ok 42 - TC-LAYOUT-01 (AC-02.1): GroupSwitcher áp dụng lưới 2x2 grid (grid-cols-2) thoáng đãng, không ép 4 nút vào 1 hàng hẹp
+  ---
+  duration_ms: 0.822462
+  type: 'test'
+  ...
+# Subtest: TC-LAYOUT-02 (AC-02.2): Các nút trong GroupSwitcher chứa thuộc tính whitespace-nowrap, không bị ngắt chữ vụn thành 2-3 hàng
+ok 43 - TC-LAYOUT-02 (AC-02.2): Các nút trong GroupSwitcher chứa thuộc tính whitespace-nowrap, không bị ngắt chữ vụn thành 2-3 hàng
+  ---
+  duration_ms: 0.566412
+  type: 'test'
+  ...
+# Subtest: TC-LAYOUT-03 (AC-02.3): Nâng kích thước icon (15-16px) và vùng chạm padding tối thiểu py-2.5 px-3
+ok 44 - TC-LAYOUT-03 (AC-02.3): Nâng kích thước icon (15-16px) và vùng chạm padding tối thiểu py-2.5 px-3
+  ---
+  duration_ms: 0.697814
+  type: 'test'
+  ...
+# Subtest: TC-LAYOUT-04 (AC-02.4): Tiêu đề HỢP ĐỒNG NHÓM HỤI và thông tin contract/balance hiển thị rõ nét, tương phản cao
+ok 45 - TC-LAYOUT-04 (AC-02.4): Tiêu đề HỢP ĐỒNG NHÓM HỤI và thông tin contract/balance hiển thị rõ nét, tương phản cao
+  ---
+  duration_ms: 1.29423
+  type: 'test'
+  ...
+# Subtest: TC-TYPO-01 (AC-03.1): ActionPanel & PasskeyActionPanel khối giải thích và 3 bước quy trình nâng cỡ chữ lên text-sm / text-base, số thứ tự w-6 h-6 text-sm font-bold
+ok 46 - TC-TYPO-01 (AC-03.1): ActionPanel & PasskeyActionPanel khối giải thích và 3 bước quy trình nâng cỡ chữ lên text-sm / text-base, số thứ tự w-6 h-6 text-sm font-bold
+  ---
+  duration_ms: 2.55608
+  type: 'test'
+  ...
+# Subtest: TC-TYPO-02 (AC-03.2): ClubCard Pot hero hiển thị to nổi bật (text-3xl sm:text-4xl), mô tả mức đóng và 3 ô thống kê rõ nét
+ok 47 - TC-TYPO-02 (AC-03.2): ClubCard Pot hero hiển thị to nổi bật (text-3xl sm:text-4xl), mô tả mức đóng và 3 ô thống kê rõ nét
+  ---
+  duration_ms: 2.089631
+  type: 'test'
+  ...
+# Subtest: TC-TYPO-03 (AC-03.3): MemberStatus tiêu đề text-base, trạng thái text-sm; RoundHistory tiêu đề text-lg
+ok 48 - TC-TYPO-03 (AC-03.3): MemberStatus tiêu đề text-base, trạng thái text-sm; RoundHistory tiêu đề text-lg
+  ---
+  duration_ms: 1.580342
+  type: 'test'
+  ...
+# Subtest: TC-TYPO-04 (AC-03.4): HowItWorksCard, CreateClubModal & ClubDirectoryModal tiêu đề và nhãn rõ nét (text-base / text-xl / text-sm)
+ok 49 - TC-TYPO-04 (AC-03.4): HowItWorksCard, CreateClubModal & ClubDirectoryModal tiêu đề và nhãn rõ nét (text-base / text-xl / text-sm)
+  ---
+  duration_ms: 0.945444
+  type: 'test'
+  ...
+# Subtest: TC-CANCEL-01 (AC-01.1): MemberStatus khi state === GROUP_STATE.CANCELLED và isMember === false: KHÔNG render 'Join club to view your status', hiển thị thông báo giải tán an toàn
+ok 50 - TC-CANCEL-01 (AC-01.1): MemberStatus khi state === GROUP_STATE.CANCELLED và isMember === false: KHÔNG render 'Join club to view your status', hiển thị thông báo giải tán an toàn
+  ---
+  duration_ms: 31.345994
+  type: 'test'
+  ...
+# Subtest: TC-CANCEL-02 (AC-01.2): MemberStatus khi state === GROUP_STATE.CANCELLED và isMember === true: hiển thị tiêu đề và nội dung giải tán an toàn, không có cảnh báo nợ ('Chưa đóng')
+ok 51 - TC-CANCEL-02 (AC-01.2): MemberStatus khi state === GROUP_STATE.CANCELLED và isMember === true: hiển thị tiêu đề và nội dung giải tán an toàn, không có cảnh báo nợ ('Chưa đóng')
+  ---
+  duration_ms: 0.656067
+  type: 'test'
+  ...
+# Subtest: TC-CANCEL-03 (AC-01.3): MemberStatus hỗ trợ song ngữ vi/en chuẩn theo prop language
+ok 52 - TC-CANCEL-03 (AC-01.3): MemberStatus hỗ trợ song ngữ vi/en chuẩn theo prop language
+  ---
+  duration_ms: 16.811058
+  type: 'test'
+  ...
+# Subtest: TC-CANCEL-04 (AC-02.1): ActionPanel hiển thị thẻ Cancelled khi state === GROUP_STATE.CANCELLED (icon XCircle, tiêu đề, thông điệp an tâm tài sản, lời nhắc điều hướng)
+ok 53 - TC-CANCEL-04 (AC-02.1): ActionPanel hiển thị thẻ Cancelled khi state === GROUP_STATE.CANCELLED (icon XCircle, tiêu đề, thông điệp an tâm tài sản, lời nhắc điều hướng)
+  ---
+  duration_ms: 1.788136
+  type: 'test'
+  ...
+# Subtest: TC-CANCEL-05 (AC-02.2): PasskeyActionPanel hiển thị thẻ Cancelled đồng bộ 100% với ActionPanel khi state === GROUP_STATE.CANCELLED
+ok 54 - TC-CANCEL-05 (AC-02.2): PasskeyActionPanel hiển thị thẻ Cancelled đồng bộ 100% với ActionPanel khi state === GROUP_STATE.CANCELLED
+  ---
+  duration_ms: 17.81526
+  type: 'test'
+  ...
+# Subtest: TC-CANCEL-06 (Task-044 AC-02b): Cancellation wording explains pull refunds and preserves earlier payouts
+ok 55 - TC-CANCEL-06 (Task-044 AC-02b): Cancellation wording explains pull refunds and preserves earlier payouts
+  ---
+  duration_ms: 12.293221
+  type: 'test'
+  ...
+# Subtest: TC-CANCEL-07 (AC-03.1): BẤT BIẾN CẤM NÚT DƯ THỪA - Thẻ Cancelled trong cả ActionPanel và PasskeyActionPanel KHÔNG chứa bất kỳ thẻ <button> nào (buttonCount === 0)
+ok 56 - TC-CANCEL-07 (AC-03.1): BẤT BIẾN CẤM NÚT DƯ THỪA - Thẻ Cancelled trong cả ActionPanel và PasskeyActionPanel KHÔNG chứa bất kỳ thẻ <button> nào (buttonCount === 0)
+  ---
+  duration_ms: 2.546009
+  type: 'test'
+  ...
+# Subtest: TC-CANCEL-08 (AC-03.2): Từ điển src/lib/i18n.ts có đầy đủ 5 keys song ngữ cho cả vi và en
+ok 57 - TC-CANCEL-08 (AC-03.2): Từ điển src/lib/i18n.ts có đầy đủ 5 keys song ngữ cho cả vi và en
+  ---
+  duration_ms: 27.186047
+  type: 'test'
+  ...
+# Subtest: TC-CANCEL-09: GROUP_STATE enum có giá trị CANCELLED === 3 chuẩn theo smart contract
+ok 58 - TC-CANCEL-09: GROUP_STATE enum có giá trị CANCELLED === 3 chuẩn theo smart contract
+  ---
+  duration_ms: 0.828985
+  type: 'test'
+  ...
+# Subtest: TC-VAULT-01 (AC-01.1..01.3): Smart Contract RotatingSavings.sol tích hợp CirBTC Collateral Vault và setCollateralAmount
+ok 59 - TC-VAULT-01 (AC-01.1..01.3): Smart Contract RotatingSavings.sol tích hợp CirBTC Collateral Vault và setCollateralAmount
+  ---
+  duration_ms: 2.316665
+  type: 'test'
+  ...
+# Subtest: TC-VAULT-02 (AC-01.4, AC-01.5): Cơ chế Slashing kẻ bùng hụi, chia thưởng CirBTC cho thành viên chân chính và rút cọc qua claimCollateral
+ok 60 - TC-VAULT-02 (AC-01.4, AC-01.5): Cơ chế Slashing kẻ bùng hụi, chia thưởng CirBTC cho thành viên chân chính và rút cọc qua claimCollateral
+  ---
+  duration_ms: 1.877604
+  type: 'test'
+  ...
+# Subtest: TC-VAULT-03 (AC-02.1, AC-02.2): Cấu hình CIRBTC_ADDRESS (8 decimals) và hàm formatCirBtc / parseCirBtc chuẩn xác
+ok 61 - TC-VAULT-03 (AC-02.1, AC-02.2): Cấu hình CIRBTC_ADDRESS (8 decimals) và hàm formatCirBtc / parseCirBtc chuẩn xác
+  ---
+  duration_ms: 1.672673
+  type: 'test'
+  ...
+# Subtest: TC-VAULT-04 (AC-03.1..03.3): ClubCard.tsx, ActionPanel.tsx, PasskeyActionPanel.tsx và CreateClubModal.tsx tích hợp UI Ký quỹ CirBTC
+ok 62 - TC-VAULT-04 (AC-03.1..03.3): ClubCard.tsx, ActionPanel.tsx, PasskeyActionPanel.tsx và CreateClubModal.tsx tích hợp UI Ký quỹ CirBTC
+  ---
+  duration_ms: 2.37598
+  type: 'test'
+  ...
+# Subtest: TC-VAULT-05 (AC-04.1): Từ điển song ngữ i18n cung cấp đầy đủ khóa collateral với 100% key parity giữa vi và en
+ok 63 - TC-VAULT-05 (AC-04.1): Từ điển song ngữ i18n cung cấp đầy đủ khóa collateral với 100% key parity giữa vi và en
+  ---
+  duration_ms: 1.801669
+  type: 'test'
+  ...
+# Subtest: TC-URL-01 (AC-01.1): Khi chọn tab 'home' (handleSelectTab('home')), App.tsx xóa bỏ triệt để query parameters 'view' và 'group', đưa URL về pathname gốc sạch sẽ
+ok 64 - TC-URL-01 (AC-01.1): Khi chọn tab 'home' (handleSelectTab('home')), App.tsx xóa bỏ triệt để query parameters 'view' và 'group', đưa URL về pathname gốc sạch sẽ
+  ---
+  duration_ms: 3.414225
+  type: 'test'
+  ...
+# Subtest: TC-URL-02 (AC-01.2): Khi chọn tab 'app' (handleSelectTab('app')), App.tsx xóa tham số 'view', chỉ giữ lại tham số định danh nhóm '?group=0x...' và pushState sạch
+ok 65 - TC-URL-02 (AC-01.2): Khi chọn tab 'app' (handleSelectTab('app')), App.tsx xóa tham số 'view', chỉ giữ lại tham số định danh nhóm '?group=0x...' và pushState sạch
+  ---
+  duration_ms: 1.211836
+  type: 'test'
+  ...
+# Subtest: TC-URL-03 (AC-02.1): Khi đổi nhóm (handleSwitchGroup), App.tsx xóa tham số 'view', gán url.searchParams.set('group', newAddress) và cập nhật pushState
+ok 66 - TC-URL-03 (AC-02.1): Khi đổi nhóm (handleSwitchGroup), App.tsx xóa tham số 'view', gán url.searchParams.set('group', newAddress) và cập nhật pushState
+  ---
+  duration_ms: 1.399951
+  type: 'test'
+  ...
+# Subtest: TC-URL-04 (AC-02.2): Bất biến URL sạch: URL tuyệt đối không bao giờ chứa chuỗi rườm rà '&view=home' hoặc '&view=app' khi điều hướng giữa các tab
+ok 67 - TC-URL-04 (AC-02.2): Bất biến URL sạch: URL tuyệt đối không bao giờ chứa chuỗi rườm rà '&view=home' hoặc '&view=app' khi điều hướng giữa các tab
+  ---
+  duration_ms: 1.964144
+  type: 'test'
+  ...
+# Subtest: TC-URL-05 (AC-03.1): Cơ chế tự động thanh lọc (Auto-sanitization) URL cũ bằng replaceState: Khi truy cập với view=home đưa về '/', khi có view=app gỡ bỏ 'view'
+ok 68 - TC-URL-05 (AC-03.1): Cơ chế tự động thanh lọc (Auto-sanitization) URL cũ bằng replaceState: Khi truy cập với view=home đưa về '/', khi có view=app gỡ bỏ 'view'
+  ---
+  duration_ms: 1.935981
+  type: 'test'
+  ...
+# Subtest: TC-URL-06 (AC-03.2): Điều hướng Back/Forward (popstate listener): Xử lý đúng khi URL không có query params (chuyển về home) và khi có group hợp lệ (chuyển về app)
+ok 69 - TC-URL-06 (AC-03.2): Điều hướng Back/Forward (popstate listener): Xử lý đúng khi URL không có query params (chuyển về home) và khi có group hợp lệ (chuyển về app)
+  ---
+  duration_ms: 1.136614
+  type: 'test'
+  ...
+# Subtest: TC-REG-01: Bảo toàn hồi quy: Cấu trúc state activeTab và conditional rendering của App.tsx tiếp tục tương thích 100% với các test trước
+ok 70 - TC-REG-01: Bảo toàn hồi quy: Cấu trúc state activeTab và conditional rendering của App.tsx tiếp tục tương thích 100% với các test trước
+  ---
+  duration_ms: 1.067897
+  type: 'test'
+  ...
+# Subtest: TC-ROSTER-01 (AC-01.1): Hook useClubMembers reads members array dynamically up to max count
+ok 71 - TC-ROSTER-01 (AC-01.1): Hook useClubMembers reads members array dynamically up to max count
+  ---
+  duration_ms: 2.432028
+  type: 'test'
+  ...
+# Subtest: TC-ROSTER-02 (AC-01.2, AC-01.3, AC-01.4): useClubMembers queries live contributions, bids, and identifies highest bidder
+ok 72 - TC-ROSTER-02 (AC-01.2, AC-01.3, AC-01.4): useClubMembers queries live contributions, bids, and identifies highest bidder
+  ---
+  duration_ms: 0.611287
+  type: 'test'
+  ...
+# Subtest: TC-ROSTER-03 (AC-02.1, AC-02.2): ClubMembersRoster component renders header, member count, and Pitch-Black styling
+ok 73 - TC-ROSTER-03 (AC-02.1, AC-02.2): ClubMembersRoster component renders header, member count, and Pitch-Black styling
+  ---
+  duration_ms: 0.480967
+  type: 'test'
+  ...
+# Subtest: TC-ROSTER-04 (AC-02.3, AC-02.4): User row highlight (isUser), youBadge, and contribution status display
+ok 74 - TC-ROSTER-04 (AC-02.3, AC-02.4): User row highlight (isUser), youBadge, and contribution status display
+  ---
+  duration_ms: 0.504453
+  type: 'test'
+  ...
+# Subtest: TC-ROSTER-05 (AC-02.5, AC-02.6): Live bid display, top bidder crown badge, and win/kicked state icons
+ok 75 - TC-ROSTER-05 (AC-02.5, AC-02.6): Live bid display, top bidder crown badge, and win/kicked state icons
+  ---
+  duration_ms: 0.633837
+  type: 'test'
+  ...
+# Subtest: TC-ROSTER-06 (AC-03.1): App.tsx imports and integrates ClubMembersRoster in Left Column
+ok 76 - TC-ROSTER-06 (AC-03.1): App.tsx imports and integrates ClubMembersRoster in Left Column
+  ---
+  duration_ms: 1.137816
+  type: 'test'
+  ...
+# Subtest: TC-ROSTER-07 (AC-03.2): Dictionary coverage in src/lib/i18n.ts for roster translations
+ok 77 - TC-ROSTER-07 (AC-03.2): Dictionary coverage in src/lib/i18n.ts for roster translations
+  ---
+  duration_ms: 0.931636
+  type: 'test'
+  ...
+# Subtest: TC-ROSTER-08 (AC-03.3): Verification of no forbidden sub-12px text size classes in ClubMembersRoster
+ok 78 - TC-ROSTER-08 (AC-03.3): Verification of no forbidden sub-12px text size classes in ClubMembersRoster
+  ---
+  duration_ms: 0.490802
+  type: 'test'
+  ...
+# Subtest: TC-FIXED-01 (AC-01.1): Viewport-Fixed Companion Layer Wrapping Left & Right Orbital Wings at z-20
+ok 79 - TC-FIXED-01 (AC-01.1): Viewport-Fixed Companion Layer Wrapping Left & Right Orbital Wings at z-20
+  ---
+  duration_ms: 6.562744
+  type: 'test'
+  ...
+# Subtest: TC-FIXED-02 (AC-01.2): Preservation of SVG Vector viewBox, Dashed Arcs, and Ecosystem ForeignObjects
+ok 80 - TC-FIXED-02 (AC-01.2): Preservation of SVG Vector viewBox, Dashed Arcs, and Ecosystem ForeignObjects
+  ---
+  duration_ms: 6.690982
+  type: 'test'
+  ...
+# Subtest: TC-FIXED-03 (AC-01.3): Backward Compatibility Anchor Preserved Inside Hero Section
+ok 81 - TC-FIXED-03 (AC-01.3): Backward Compatibility Anchor Preserved Inside Hero Section
+  ---
+  duration_ms: 0.690976
+  type: 'test'
+  ...
+# Subtest: TC-FIXED-04 (AC-01.4): Unimpeded Interaction via pointer-events-none and Outside-Center Framing
+ok 82 - TC-FIXED-04 (AC-01.4): Unimpeded Interaction via pointer-events-none and Outside-Center Framing
+  ---
+  duration_ms: 0.789817
+  type: 'test'
+  ...
+# Subtest: TC-GLIDE-01 (AC-02.1): Full-Page Scroll Dynamic Delta Formula
+ok 83 - TC-GLIDE-01 (AC-02.1): Full-Page Scroll Dynamic Delta Formula
+  ---
+  duration_ms: 3.816295
+  type: 'test'
+  ...
+# Subtest: TC-GLIDE-02 (AC-02.2): Dynamic Coordinates for All 8 Ecosystem Icons Incorporating Scroll Progress
+ok 84 - TC-GLIDE-02 (AC-02.2): Dynamic Coordinates for All 8 Ecosystem Icons Incorporating Scroll Progress
+  ---
+  duration_ms: 0.745341
+  type: 'test'
+  ...
+# Subtest: TC-GLIDE-03 (AC-02.3): Mathematical Smooth Movement Simulation Along Bezier Curves
+ok 85 - TC-GLIDE-03 (AC-02.3): Mathematical Smooth Movement Simulation Along Bezier Curves
+  ---
+  duration_ms: 0.733974
+  type: 'test'
+  ...
+# Subtest: TC-GLIDE-04 (AC-02.4): Strict Clamping Within [0.04, 0.96] Safe Bezier Bounds
+ok 86 - TC-GLIDE-04 (AC-02.4): Strict Clamping Within [0.04, 0.96] Safe Bezier Bounds
+  ---
+  duration_ms: 7.876464
+  type: 'test'
+  ...
+# Subtest: TC-MANIFEST-01 (AC-04.2): Manifest Verification for task-029 Frozen State and SHA-256 Record
+ok 87 - TC-MANIFEST-01 (AC-04.2): Manifest Verification for task-029 Frozen State and SHA-256 Record
+  ---
+  duration_ms: 5.198075
+  type: 'test'
+  ...
+# Subtest: TC-CONTRIB-01 (AC-01.1): Action-First layout in App.tsx places ActionPanel before MemberStatus and Round Details
+ok 88 - TC-CONTRIB-01 (AC-01.1): Action-First layout in App.tsx places ActionPanel before MemberStatus and Round Details
+  ---
+  duration_ms: 30.374244
+  type: 'test'
+  ...
+# Subtest: TC-CONTRIB-02 (AC-01.2, AC-01.3): App.tsx right column contains sticky container and Action-First hierarchy
+ok 89 - TC-CONTRIB-02 (AC-01.2, AC-01.3): App.tsx right column contains sticky container and Action-First hierarchy
+  ---
+  duration_ms: 16.636326
+  type: 'test'
+  ...
+# Subtest: TC-CONTRIB-03 (AC-02.1): ActionPanel.tsx prominent Contribute card styling with Royal Sand Gold theme
+ok 90 - TC-CONTRIB-03 (AC-02.1): ActionPanel.tsx prominent Contribute card styling with Royal Sand Gold theme
+  ---
+  duration_ms: 19.390009
+  type: 'test'
+  ...
+# Subtest: TC-CONTRIB-04 (AC-02.2, AC-02.3): ActionPanel.tsx priority badge and fixed amount typography
+ok 91 - TC-CONTRIB-04 (AC-02.2, AC-02.3): ActionPanel.tsx priority badge and fixed amount typography
+  ---
+  duration_ms: 1.38638
+  type: 'test'
+  ...
+# Subtest: TC-CONTRIB-05 (AC-02.4, AC-02.5): ActionPanel.tsx prominent CTA button and confirmed emerald state
+ok 92 - TC-CONTRIB-05 (AC-02.4, AC-02.5): ActionPanel.tsx prominent CTA button and confirmed emerald state
+  ---
+  duration_ms: 25.088888
+  type: 'test'
+  ...
+# Subtest: TC-CONTRIB-06 (AC-03.1): PasskeyActionPanel.tsx synchronized prominent Contribute card
+ok 93 - TC-CONTRIB-06 (AC-03.1): PasskeyActionPanel.tsx synchronized prominent Contribute card
+  ---
+  duration_ms: 0.933732
+  type: 'test'
+  ...
+# Subtest: TC-CONTRIB-07 (AC-03.2): Dictionary coverage in src/lib/i18n.ts for contribute prominence keys
+ok 94 - TC-CONTRIB-07 (AC-03.2): Dictionary coverage in src/lib/i18n.ts for contribute prominence keys
+  ---
+  duration_ms: 0.895114
+  type: 'test'
+  ...
+# Subtest: TC-CONTRIB-08 (AC-03.3): Verification of imports and components compile-readiness
+ok 95 - TC-CONTRIB-08 (AC-03.3): Verification of imports and components compile-readiness
+  ---
+  duration_ms: 20.379841
+  type: 'test'
+  ...
+# Subtest: TC-CREATE-01 (AC-01.1): Form fields (Tên nhóm, Mức đóng, Số thành viên, Chu kỳ) hiển thị đầy đủ với default và presets
+ok 96 - TC-CREATE-01 (AC-01.1): Form fields (Tên nhóm, Mức đóng, Số thành viên, Chu kỳ) hiển thị đầy đủ với default và presets
+  ---
+  duration_ms: 8.200718
+  type: 'test'
+  ...
+# Subtest: TC-CREATE-02 (AC-01.2): Quỹ Pot tối đa được tính toán chính xác = contributionAmount * maxMembers USDC
+ok 97 - TC-CREATE-02 (AC-01.2): Quỹ Pot tối đa được tính toán chính xác = contributionAmount * maxMembers USDC
+  ---
+  duration_ms: 5.734989
+  type: 'test'
+  ...
+# Subtest: TC-CREATE-03 (AC-01.3): Validation form (vô hiệu hóa submit khi tên rỗng, amount <= 0, maxMembers ngoài [2, 20])
+ok 98 - TC-CREATE-03 (AC-01.3): Validation form (vô hiệu hóa submit khi tên rỗng, amount <= 0, maxMembers ngoài [2, 20])
+  ---
+  duration_ms: 4.888547
+  type: 'test'
+  ...
+# Subtest: TC-CREATE-04 (AC-02.1): ROTATING_SAVINGS_BYTECODE được export và là hex string bắt đầu bằng '0x' với độ dài bytecode hợp lệ (> 1000 ký tự)
+ok 99 - TC-CREATE-04 (AC-02.1): ROTATING_SAVINGS_BYTECODE được export và là hex string bắt đầu bằng '0x' với độ dài bytecode hợp lệ (> 1000 ký tự)
+  ---
+  duration_ms: 3.904511
+  type: 'test'
+  ...
+# Subtest: TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng thứ tự và định dạng: [USDC_ADDRESS, parseUsdc(contributionAmount), BigInt(maxMembers), BigInt(roundDuration), groupName, collateralToken]
+ok 100 - TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng thứ tự và định dạng: [USDC_ADDRESS, parseUsdc(contributionAmount), BigInt(maxMembers), BigInt(roundDuration), groupName, collateralToken]
+  ---
+  duration_ms: 1.358467
+  type: 'test'
+  ...
+# Subtest: TC-CREATE-06 (AC-02.3): Quản lý trạng thái pending ký ví và confirming trên blockchain, disabled form và nút bấm trong quá trình deploy
+ok 101 - TC-CREATE-06 (AC-02.3): Quản lý trạng thái pending ký ví và confirming trên blockchain, disabled form và nút bấm trong quá trình deploy
+  ---
+  duration_ms: 2.532064
+  type: 'test'
+  ...
+# Subtest: TC-CREATE-07 (AC-03.1): Callback onSuccess(contractAddress) được kích hoạt khi transaction receipt trả về contractAddress
+ok 102 - TC-CREATE-07 (AC-03.1): Callback onSuccess(contractAddress) được kích hoạt khi transaction receipt trả về contractAddress
+  ---
+  duration_ms: 0.971829
+  type: 'test'
+  ...
+# Subtest: TC-CREATE-08 (AC-03.2): App.tsx chuyển sang địa chỉ mới khi tạo thành công và cập nhật URL (?group=0x...)
+ok 103 - TC-CREATE-08 (AC-03.2): App.tsx chuyển sang địa chỉ mới khi tạo thành công và cập nhật URL (?group=0x...)
+  ---
+  duration_ms: 1.340842
+  type: 'test'
+  ...
+# Subtest: TC-CREATE-09 (AC-04.1): GroupSwitcher cung cấp nút '+ Tạo nhóm mới' gọi callback onOpenCreateModal
+ok 104 - TC-CREATE-09 (AC-04.1): GroupSwitcher cung cấp nút '+ Tạo nhóm mới' gọi callback onOpenCreateModal
+  ---
+  duration_ms: 1.843539
+  type: 'test'
+  ...
+# Subtest: TC-CREATE-10 (AC-04.2): Header cung cấp nút '+ Tạo nhóm' gọi callback onOpenCreateModal
+ok 105 - TC-CREATE-10 (AC-04.2): Header cung cấp nút '+ Tạo nhóm' gọi callback onOpenCreateModal
+  ---
+  duration_ms: 1.872013
+  type: 'test'
+  ...
+# Subtest: TC-URL-01 (AC-01.1): URL sạch cho tab 'app' khi ở nhóm mặc định ROTATING_SAVINGS_ADDRESS (xóa group, pathname /)
+ok 106 - TC-URL-01 (AC-01.1): URL sạch cho tab 'app' khi ở nhóm mặc định ROTATING_SAVINGS_ADDRESS (xóa group, pathname /)
+  ---
+  duration_ms: 3.959069
+  type: 'test'
+  ...
+# Subtest: TC-URL-02 (AC-01.2): URL giữ ?group=0x... khi chuyển sang nhóm tùy chỉnh (ví dụ Arc Alpha)
+ok 107 - TC-URL-02 (AC-01.2): URL giữ ?group=0x... khi chuyển sang nhóm tùy chỉnh (ví dụ Arc Alpha)
+  ---
+  duration_ms: 1.323525
+  type: 'test'
+  ...
+# Subtest: TC-URL-03 (AC-01.3 & AC-01.4): Tự động thanh lọc URL cũ chứa nhóm mặc định khi Mount và chuyển từ nhóm tùy chỉnh về nhóm mặc định qua handleSwitchGroup
+ok 108 - TC-URL-03 (AC-01.3 & AC-01.4): Tự động thanh lọc URL cũ chứa nhóm mặc định khi Mount và chuyển từ nhóm tùy chỉnh về nhóm mặc định qua handleSwitchGroup
+  ---
+  duration_ms: 1.84638
+  type: 'test'
+  ...
+# Subtest: TC-NAV-01 (AC-02.1 & AC-02.3): Nút 'Danh sách nhóm' được giấu trực quan trên Header navbar (className hidden) nhưng vẫn giữ interface onOpenDirectoryModal và chuỗi tương thích TC-DIR-06
+ok 109 - TC-NAV-01 (AC-02.1 & AC-02.3): Nút 'Danh sách nhóm' được giấu trực quan trên Header navbar (className hidden) nhưng vẫn giữ interface onOpenDirectoryModal và chuỗi tương thích TC-DIR-06
+  ---
+  duration_ms: 0.605592
+  type: 'test'
+  ...
+# Subtest: TC-NAV-02 (AC-03.1): Header navbar có chiều cao h-18 sm:h-20 (72px - 80px) tạo không gian thoáng đãng theo e8G1x9zU8vIG.png trên cả Header chính và Topbar Passkey
+ok 110 - TC-NAV-02 (AC-03.1): Header navbar có chiều cao h-18 sm:h-20 (72px - 80px) tạo không gian thoáng đãng theo e8G1x9zU8vIG.png trên cả Header chính và Topbar Passkey
+  ---
+  duration_ms: 1.338404
+  type: 'test'
+  ...
+# Subtest: TC-NAV-03 (AC-03.2 & AC-03.3): Header container mở rộng lên max-w-[1400px] và khoảng cách gap-3 sm:gap-6 tạo breathing room
+ok 111 - TC-NAV-03 (AC-03.2 & AC-03.3): Header container mở rộng lên max-w-[1400px] và khoảng cách gap-3 sm:gap-6 tạo breathing room
+  ---
+  duration_ms: 1.296764
+  type: 'test'
+  ...
+# Subtest: TC-LOGO-01 (AC-04.1): Cụm logo trên Header có onClick gọi callback về tab 'home', con trỏ cursor-pointer và hover effect
+ok 112 - TC-LOGO-01 (AC-04.1): Cụm logo trên Header có onClick gọi callback về tab 'home', con trỏ cursor-pointer và hover effect
+  ---
+  duration_ms: 0.542753
+  type: 'test'
+  ...
+# Subtest: TC-LOGO-02 (AC-04.2): Cụm logo trên Passkey topbar có onClick gọi handleSelectTab('home'), cursor-pointer và hover effect
+ok 113 - TC-LOGO-02 (AC-04.2): Cụm logo trên Passkey topbar có onClick gọi handleSelectTab('home'), cursor-pointer và hover effect
+  ---
+  duration_ms: 1.067637
+  type: 'test'
+  ...
+# Subtest: TC-DARK-01 (AC-05.1): src/index.css cấu hình color-scheme: dark, nền \#0b0f19, chữ sáng \#f8fafc
+ok 114 - TC-DARK-01 (AC-05.1): src/index.css cấu hình color-scheme: dark, nền \#0b0f19, chữ sáng \#f8fafc
+  ---
+  duration_ms: 0.984067
+  type: 'test'
+  ...
+# Subtest: TC-DARK-02 (AC-05.2): src/main.tsx cấu hình ConnectKitProvider mode='dark' và Toaster theme='dark'
+ok 115 - TC-DARK-02 (AC-05.2): src/main.tsx cấu hình ConnectKitProvider mode='dark' và Toaster theme='dark'
+  ---
+  duration_ms: 1.0694
+  type: 'test'
+  ...
+# Subtest: TC-DARK-03 (AC-05.3): Canvas toàn trang trong src/App.tsx và Header.tsx sử dụng Dark Theme palette (\#0b0f19)
+ok 116 - TC-DARK-03 (AC-05.3): Canvas toàn trang trong src/App.tsx và Header.tsx sử dụng Dark Theme palette (\#0b0f19)
+  ---
+  duration_ms: 1.25136
+  type: 'test'
+  ...
+# Subtest: TC-REG-01 (AC-05.4): Bảo toàn hồi quy: Tab active duy trì chuỗi 'bg-white text-blue-600', cấu trúc Header tiếp tục thỏa mãn TC-NAV-01
+ok 117 - TC-REG-01 (AC-05.4): Bảo toàn hồi quy: Tab active duy trì chuỗi 'bg-white text-blue-600', cấu trúc Header tiếp tục thỏa mãn TC-NAV-01
+  ---
+  duration_ms: 0.511684
+  type: 'test'
+  ...
+# Subtest: TC-CONFIRM-01 (AC-01.1): Bấm icon thùng rác thiết lập confirmingClub, mở popup xác nhận và KHÔNG xóa ngay
+ok 118 - TC-CONFIRM-01 (AC-01.1): Bấm icon thùng rác thiết lập confirmingClub, mở popup xác nhận và KHÔNG xóa ngay
+  ---
+  duration_ms: 2.630488
+  type: 'test'
+  ...
+# Subtest: TC-CONFIRM-02 (AC-01.2): Popup xác nhận hiển thị AlertTriangle, tiêu đề, tên nhóm, địa chỉ, nút Hủy bỏ và Xác nhận xóa
+ok 119 - TC-CONFIRM-02 (AC-01.2): Popup xác nhận hiển thị AlertTriangle, tiêu đề, tên nhóm, địa chỉ, nút Hủy bỏ và Xác nhận xóa
+  ---
+  duration_ms: 0.829326
+  type: 'test'
+  ...
+# Subtest: TC-CONFIRM-03 (AC-01.3): Nút Hủy bỏ và click backdrop của popup xác nhận đóng popup mà không xóa
+ok 120 - TC-CONFIRM-03 (AC-01.3): Nút Hủy bỏ và click backdrop của popup xác nhận đóng popup mà không xóa
+  ---
+  duration_ms: 0.512374
+  type: 'test'
+  ...
+# Subtest: TC-CONFIRM-04 (AC-01.4): Phím Escape đóng popup xác nhận trước mà không đóng toàn bộ modal danh bạ
+ok 121 - TC-CONFIRM-04 (AC-01.4): Phím Escape đóng popup xác nhận trước mà không đóng toàn bộ modal danh bạ
+  ---
+  duration_ms: 0.65567
+  type: 'test'
+  ...
+# Subtest: TC-CONFIRM-05 (AC-01.5): Nút Xác nhận xóa kích hoạt handleConfirmDelete, xóa nhóm, cập nhật UI và đóng popup
+ok 122 - TC-CONFIRM-05 (AC-01.5): Nút Xác nhận xóa kích hoạt handleConfirmDelete, xóa nhóm, cập nhật UI và đóng popup
+  ---
+  duration_ms: 0.51709
+  type: 'test'
+  ...
+# Subtest: TC-TOAST-01 (AC-02.1 & AC-02.2): Toast thông báo xóa nhóm thông thường có định dạng song ngữ chuẩn
+ok 123 - TC-TOAST-01 (AC-02.1 & AC-02.2): Toast thông báo xóa nhóm thông thường có định dạng song ngữ chuẩn
+  ---
+  duration_ms: 0.279942
+  type: 'test'
+  ...
+# Subtest: TC-TOAST-02 (AC-02.3 & AC-02.4): Toast thông báo xóa nhóm đang xem có thông báo chuyển nhóm song ngữ chuẩn
+ok 124 - TC-TOAST-02 (AC-02.3 & AC-02.4): Toast thông báo xóa nhóm đang xem có thông báo chuyển nhóm song ngữ chuẩn
+  ---
+  duration_ms: 0.439241
+  type: 'test'
+  ...
+# Subtest: TC-I18N-01 (AC-03.1, AC-03.2, AC-03.3): Từ điển song ngữ i18n cung cấp đầy đủ các khóa confirmDelete cho vi và en
+ok 125 - TC-I18N-01 (AC-03.1, AC-03.2, AC-03.3): Từ điển song ngữ i18n cung cấp đầy đủ các khóa confirmDelete cho vi và en
+  ---
+  duration_ms: 0.381377
+  type: 'test'
+  ...
+# Subtest: TC-MANIFEST-01 (AC-04.2): Manifest task-033 tồn tại và ghi nhận các tệp hợp lệ
+ok 126 - TC-MANIFEST-01 (AC-04.2): Manifest task-033 tồn tại và ghi nhận các tệp hợp lệ
+  ---
+  duration_ms: 5.189656
+  type: 'test'
+  ...
+# Subtest: TC-TIMER-01 (AC-01.1): countdownSec >= 3600 định dạng chuẩn hh:mm:ss, loại bỏ hoàn toàn lỗi tràn phút 1437:25
+ok 127 - TC-TIMER-01 (AC-01.1): countdownSec >= 3600 định dạng chuẩn hh:mm:ss, loại bỏ hoàn toàn lỗi tràn phút 1437:25
+  ---
+  duration_ms: 5.027985
+  type: 'test'
+  ...
+# Subtest: TC-TIMER-02 (AC-01.2): countdownSec < 3600 định dạng chuẩn mm:ss (hỗ trợ phòng siêu tốc 2 phút 120s)
+ok 128 - TC-TIMER-02 (AC-01.2): countdownSec < 3600 định dạng chuẩn mm:ss (hỗ trợ phòng siêu tốc 2 phút 120s)
+  ---
+  duration_ms: 1.594826
+  type: 'test'
+  ...
+# Subtest: TC-TIMER-03 (AC-01.3): Trạng thái hết giờ (countdownSec <= 0 hoặc isTimeEnded = true) trả về Ended (en) / Hết giờ (vi)
+ok 129 - TC-TIMER-03 (AC-01.3): Trạng thái hết giờ (countdownSec <= 0 hoặc isTimeEnded = true) trả về Ended (en) / Hết giờ (vi)
+  ---
+  duration_ms: 1.345959
+  type: 'test'
+  ...
+# Subtest: TC-TIMER-04 (AC-01.4): Tính nhất quán tuyệt đối (Cross-Panel Parity) giữa ActionPanel.tsx và PasskeyActionPanel.tsx
+ok 130 - TC-TIMER-04 (AC-01.4): Tính nhất quán tuyệt đối (Cross-Panel Parity) giữa ActionPanel.tsx và PasskeyActionPanel.tsx
+  ---
+  duration_ms: 1.962272
+  type: 'test'
+  ...
+# Subtest: TC-DIR-01 (AC-02.1): clearCustomKnownGroups gỡ sạch nhóm tùy chỉnh trong LocalStorage, đưa về đúng 2 nhóm mặc định
+ok 131 - TC-DIR-01 (AC-02.1): clearCustomKnownGroups gỡ sạch nhóm tùy chỉnh trong LocalStorage, đưa về đúng 2 nhóm mặc định
+  ---
+  duration_ms: 3.342443
+  type: 'test'
+  ...
+# Subtest: TC-DIR-02 (AC-02.1): removeKnownGroup xóa chính xác 1 nhóm cụ thể theo địa chỉ (không phân biệt chữ hoa/thường)
+ok 132 - TC-DIR-02 (AC-02.1): removeKnownGroup xóa chính xác 1 nhóm cụ thể theo địa chỉ (không phân biệt chữ hoa/thường)
+  ---
+  duration_ms: 1.203445
+  type: 'test'
+  ...
+# Subtest: TC-DIR-03 (AC-02.2, AC-02.3): ClubDirectoryModal.tsx tích hợp nút dọn dẹp nhóm cũ với biểu tượng Trash2, cập nhật state tức thì và thông báo toast
+ok 133 - TC-DIR-03 (AC-02.2, AC-02.3): ClubDirectoryModal.tsx tích hợp nút dọn dẹp nhóm cũ với biểu tượng Trash2, cập nhật state tức thì và thông báo toast
+  ---
+  duration_ms: 0.808285
+  type: 'test'
+  ...
+# Subtest: TC-DIR-04 (AC-02.4): Xử lý ngoại lệ an toàn khi danh sách đã sạch và bảo vệ SSR / window undefined
+ok 134 - TC-DIR-04 (AC-02.4): Xử lý ngoại lệ an toàn khi danh sách đã sạch và bảo vệ SSR / window undefined
+  ---
+  duration_ms: 2.047439
+  type: 'test'
+  ...
+# Subtest: TC-I18N-01: Bộ từ điển song ngữ i18n đầy đủ khóa dọn dẹp danh bạ cho cả Tiếng Việt và Tiếng Anh
+ok 135 - TC-I18N-01: Bộ từ điển song ngữ i18n đầy đủ khóa dọn dẹp danh bạ cho cả Tiếng Việt và Tiếng Anh
+  ---
+  duration_ms: 2.089428
+  type: 'test'
+  ...
+# Subtest: TC-ARENA-01 (AC-03.1, AC-03.2, AC-03.3): Phòng siêu tốc 120s cấu hình roundDuration linh hoạt và đồng hồ hiển thị 02:00 -> 00:00
+ok 136 - TC-ARENA-01 (AC-03.1, AC-03.2, AC-03.3): Phòng siêu tốc 120s cấu hình roundDuration linh hoạt và đồng hồ hiển thị 02:00 -> 00:00
+  ---
+  duration_ms: 2.01077
+  type: 'test'
+  ...
+# Subtest: TC-REGRESSION-01 (AC-03.4): Bảo toàn cấu trúc dự án và danh bạ mặc định hệ thống
+ok 137 - TC-REGRESSION-01 (AC-03.4): Bảo toàn cấu trúc dự án và danh bạ mặc định hệ thống
+  ---
+  duration_ms: 0.457308
+  type: 'test'
+  ...
+# Subtest: TC-FIX-01 (AC-01.1): EditClubNameModal.tsx sử dụng prevIsOpenRef và prevAddressRef để chống reset input khi component cha re-render
+ok 138 - TC-FIX-01 (AC-01.1): EditClubNameModal.tsx sử dụng prevIsOpenRef và prevAddressRef để chống reset input khi component cha re-render
+  ---
+  duration_ms: 6.530765
+  type: 'test'
+  ...
+# Subtest: TC-FIX-02 (AC-01.2): Dependency array của useEffect bảo vệ an toàn cho người dùng khi đang gõ
+ok 139 - TC-FIX-02 (AC-01.2): Dependency array của useEffect bảo vệ an toàn cho người dùng khi đang gõ
+  ---
+  duration_ms: 0.946197
+  type: 'test'
+  ...
+# Subtest: TC-FIX-03 (AC-01.3): EditClubNameModal.tsx chặn nổi bọt sự kiện click backdrop để bảo vệ modal cha
+ok 140 - TC-FIX-03 (AC-01.3): EditClubNameModal.tsx chặn nổi bọt sự kiện click backdrop để bảo vệ modal cha
+  ---
+  duration_ms: 2.519565
+  type: 'test'
+  ...
+# Subtest: TC-FIX-04 (AC-02.1): saveKnownGroup không ghi đè tên nhóm tùy chỉnh khi nhận tên on-chain từ sync hook
+ok 141 - TC-FIX-04 (AC-02.1): saveKnownGroup không ghi đè tên nhóm tùy chỉnh khi nhận tên on-chain từ sync hook
+  ---
+  duration_ms: 3.974705
+  type: 'test'
+  ...
+# Subtest: TC-FIX-05 (AC-02.2): saveKnownGroup bảo toàn tên tùy chỉnh của nhóm mặc định (DEFAULT_SAVINGS_CLUBS)
+ok 142 - TC-FIX-05 (AC-02.2): saveKnownGroup bảo toàn tên tùy chỉnh của nhóm mặc định (DEFAULT_SAVINGS_CLUBS)
+  ---
+  duration_ms: 3.902061
+  type: 'test'
+  ...
+# Subtest: TC-FIX-06 (AC-02.3): saveKnownGroup nâng cấp tên placeholder (Nhóm Hụi 0x...) khi nhận được tên on-chain thật
+ok 143 - TC-FIX-06 (AC-02.3): saveKnownGroup nâng cấp tên placeholder (Nhóm Hụi 0x...) khi nhận được tên on-chain thật
+  ---
+  duration_ms: 0.805774
+  type: 'test'
+  ...
+# Subtest: TC-FIX-07 (AC-03.1): App.tsx memoize currentClubForModal bằng useMemo
+ok 144 - TC-FIX-07 (AC-03.1): App.tsx memoize currentClubForModal bằng useMemo
+  ---
+  duration_ms: 3.058901
+  type: 'test'
+  ...
+# Subtest: TC-FIX-08 (AC-03.2): App.tsx truyền currentClubForModal vào EditClubNameModal
+ok 145 - TC-FIX-08 (AC-03.2): App.tsx truyền currentClubForModal vào EditClubNameModal
+  ---
+  duration_ms: 1.112448
+  type: 'test'
+  ...
+# Subtest: TC-FIX-09 (AC-03.3): displayedGroupName trong App.tsx tính toán ưu tiên tên tùy chỉnh từ danh bạ
+ok 146 - TC-FIX-09 (AC-03.3): displayedGroupName trong App.tsx tính toán ưu tiên tên tùy chỉnh từ danh bạ
+  ---
+  duration_ms: 3.646561
+  type: 'test'
+  ...
+# Subtest: TC-EDIT-01 (AC-01.1, AC-01.2 & AC-01.3): updateKnownGroupName cập nhật tên nhóm bền vững vào localStorage và kiểm tra validation
+ok 147 - TC-EDIT-01 (AC-01.1, AC-01.2 & AC-01.3): updateKnownGroupName cập nhật tên nhóm bền vững vào localStorage và kiểm tra validation
+  ---
+  duration_ms: 6.533361
+  type: 'test'
+  ...
+# Subtest: TC-EDIT-02 (AC-01.4): getKnownGroups ưu tiên trả về tên đã tùy chỉnh cho câu lạc bộ
+ok 148 - TC-EDIT-02 (AC-01.4): getKnownGroups ưu tiên trả về tên đã tùy chỉnh cho câu lạc bộ
+  ---
+  duration_ms: 0.999617
+  type: 'test'
+  ...
+# Subtest: TC-EDIT-03 (AC-02.1, AC-02.2, AC-02.3 & AC-02.4): EditClubNameModal.tsx cấu hình đầy đủ trường input, đếm ký tự, phím Enter/Escape và nút Lưu/Hủy
+ok 149 - TC-EDIT-03 (AC-02.1, AC-02.2, AC-02.3 & AC-02.4): EditClubNameModal.tsx cấu hình đầy đủ trường input, đếm ký tự, phím Enter/Escape và nút Lưu/Hủy
+  ---
+  duration_ms: 0.563562
+  type: 'test'
+  ...
+# Subtest: TC-EDIT-04 (AC-03.1 & AC-03.2): ClubDirectoryModal.tsx render nút icon Pencil cho từng thẻ nhóm và kích hoạt modal sửa tên
+ok 150 - TC-EDIT-04 (AC-03.1 & AC-03.2): ClubDirectoryModal.tsx render nút icon Pencil cho từng thẻ nhóm và kích hoạt modal sửa tên
+  ---
+  duration_ms: 4.064201
+  type: 'test'
+  ...
+# Subtest: TC-EDIT-05 (AC-03.3 & AC-03.4): ClubCard.tsx render nút icon Pencil cạnh groupName và App.tsx đồng bộ tức thì
+ok 151 - TC-EDIT-05 (AC-03.3 & AC-03.4): ClubCard.tsx render nút icon Pencil cạnh groupName và App.tsx đồng bộ tức thì
+  ---
+  duration_ms: 1.480236
+  type: 'test'
+  ...
+# Subtest: TC-EDIT-06 (AC-04.1 & AC-04.2): Từ điển song ngữ i18n cung cấp đầy đủ các khóa cho editClubModal
+ok 152 - TC-EDIT-06 (AC-04.1 & AC-04.2): Từ điển song ngữ i18n cung cấp đầy đủ các khóa cho editClubModal
+  ---
+  duration_ms: 0.38199
+  type: 'test'
+  ...
+# Subtest: TC-MANIFEST-01 (AC-05.2): Manifest task-034 tồn tại và ghi nhận đầy đủ 6 file implementation
+ok 153 - TC-MANIFEST-01 (AC-05.2): Manifest task-034 tồn tại và ghi nhận đầy đủ 6 file implementation
+  ---
+  duration_ms: 5.989945
+  type: 'test'
+  ...
+# Subtest: TC-LOGO-01 (AC-01.1): Wagmi Header Logo Container & Icon — Enlarged badge, golden gradient, size 28 stroke 2.5, and backward compatibility bridge
+ok 154 - TC-LOGO-01 (AC-01.1): Wagmi Header Logo Container & Icon — Enlarged badge, golden gradient, size 28 stroke 2.5, and backward compatibility bridge
+  ---
+  duration_ms: 7.488674
+  type: 'test'
+  ...
+# Subtest: TC-LOGO-02 (AC-01.2): Passkey Topbar Mascot — Replaced 'HC' with enlarged Golden PiggyBank emblem size 26 and preserved hidden bridge
+ok 155 - TC-LOGO-02 (AC-01.2): Passkey Topbar Mascot — Replaced 'HC' with enlarged Golden PiggyBank emblem size 26 and preserved hidden bridge
+  ---
+  duration_ms: 1.211289
+  type: 'test'
+  ...
+# Subtest: TC-LOGO-03 (AC-01.3): Browser Tab Favicon SVG Enlargement & Visuals — Scale 1.45, stroke-width 2.2, and 4 core brand colors
+ok 156 - TC-LOGO-03 (AC-01.3): Browser Tab Favicon SVG Enlargement & Visuals — Scale 1.45, stroke-width 2.2, and 4 core brand colors
+  ---
+  duration_ms: 0.682074
+  type: 'test'
+  ...
+# Subtest: TC-BG-01 (AC-02.1): LandingPage Hero Grand Mascot Emblem & Glowing Halo — Container w-16 h-16 sm:w-20 sm:h-20, halo blur-xl animate-pulse, PiggyBank size 38/44 stroke 2.5
+ok 157 - TC-BG-01 (AC-02.1): LandingPage Hero Grand Mascot Emblem & Glowing Halo — Container w-16 h-16 sm:w-20 sm:h-20, halo blur-xl animate-pulse, PiggyBank size 38/44 stroke 2.5
+  ---
+  duration_ms: 5.4684
+  type: 'test'
+  ...
+# Subtest: TC-BG-02 (AC-02.2): Multi-Layer Atmospheric Background Across Lower 5 Sections — Global cyber grid, cosmic gold dust, and section-specific glow orbs
+ok 158 - TC-BG-02 (AC-02.2): Multi-Layer Atmospheric Background Across Lower 5 Sections — Global cyber grid, cosmic gold dust, and section-specific glow orbs
+  ---
+  duration_ms: 1.740149
+  type: 'test'
+  ...
+# Subtest: TC-BG-03 (AC-02.3): LandingPage Footer Golden Mascot Emblem — Elevated w-10 h-10 with PiggyBank size 24 stroke 2.5 and preserved hidden bridge
+ok 159 - TC-BG-03 (AC-02.3): LandingPage Footer Golden Mascot Emblem — Elevated w-10 h-10 with PiggyBank size 24 stroke 2.5 and preserved hidden bridge
+  ---
+  duration_ms: 0.744981
+  type: 'test'
+  ...
+# Subtest: TC-REGRESSION-01 (AC-03.1): Preservation of Essential Test Tokens and Structural Bridges
+ok 160 - TC-REGRESSION-01 (AC-03.1): Preservation of Essential Test Tokens and Structural Bridges
+  ---
+  duration_ms: 2.009598
+  type: 'test'
+  ...
+# Subtest: TC-REGRESSION-02 (AC-03.2): SHA256 Manifest Integrity — All modified files match frozen manifest exactly
+ok 161 - TC-REGRESSION-02 (AC-03.2): SHA256 Manifest Integrity — All modified files match frozen manifest exactly
+  ---
+  duration_ms: 0.936658
+  type: 'test'
+  ...
+# Subtest: TC-FAIR-01 (AC-01.1 & AC-01.5): ActionPanel.tsx and PasskeyActionPanel.tsx integrate Auction Countdown Timer with Clock icon and countdownLabel
+ok 162 - TC-FAIR-01 (AC-01.1 & AC-01.5): ActionPanel.tsx and PasskeyActionPanel.tsx integrate Auction Countdown Timer with Clock icon and countdownLabel
+  ---
+  duration_ms: 4.333418
+  type: 'test'
+  ...
+# Subtest: TC-FAIR-02 (AC-01.2 & AC-01.5): Guarded settle state when currentTime <= endTime and bidders pending
+ok 163 - TC-FAIR-02 (AC-01.2 & AC-01.5): Guarded settle state when currentTime <= endTime and bidders pending
+  ---
+  duration_ms: 2.210724
+  type: 'test'
+  ...
+# Subtest: TC-FAIR-03 (AC-01.3 & AC-01.5): Early settle unlocked when 100% unawarded members placed bids
+ok 164 - TC-FAIR-03 (AC-01.3 & AC-01.5): Early settle unlocked when 100% unawarded members placed bids
+  ---
+  duration_ms: 2.203013
+  type: 'test'
+  ...
+# Subtest: TC-FAIR-04 (AC-01.4 & AC-01.5): Full settle unlocked when auction round time has ended
+ok 165 - TC-FAIR-04 (AC-01.4 & AC-01.5): Full settle unlocked when auction round time has ended
+  ---
+  duration_ms: 3.380449
+  type: 'test'
+  ...
+# Subtest: TC-CAPACITY-01 (AC-02.1 & AC-02.4): ClubCard receives totalJoined and shows fixed capacity (10/10) regardless of winners
+ok 166 - TC-CAPACITY-01 (AC-02.1 & AC-02.4): ClubCard receives totalJoined and shows fixed capacity (10/10) regardless of winners
+  ---
+  duration_ms: 1.333002
+  type: 'test'
+  ...
+# Subtest: TC-CAPACITY-02 (AC-02.2): Capacity fillPercent progress bar maintains 100% when 10/10 members joined
+ok 167 - TC-CAPACITY-02 (AC-02.2): Capacity fillPercent progress bar maintains 100% when 10/10 members joined
+  ---
+  duration_ms: 0.515829
+  type: 'test'
+  ...
+# Subtest: TC-CAPACITY-03 (AC-02.3): ClubCard first stat card clearly distinguishes Unawarded Members in ACTIVE state
+ok 168 - TC-CAPACITY-03 (AC-02.3): ClubCard first stat card clearly distinguishes Unawarded Members in ACTIVE state
+  ---
+  duration_ms: 0.72953
+  type: 'test'
+  ...
+# Subtest: TC-WINNER-01 (AC-03.1): ActionPanel and PasskeyActionPanel display Luxury Honored Winner Card confirming official member status
+ok 169 - TC-WINNER-01 (AC-03.1): ActionPanel and PasskeyActionPanel display Luxury Honored Winner Card confirming official member status
+  ---
+  duration_ms: 1.762203
+  type: 'test'
+  ...
+# Subtest: TC-WINNER-02 (AC-03.2): Winner card provides Explore Other Clubs and Create New Club navigation shortcuts
+ok 170 - TC-WINNER-02 (AC-03.2): Winner card provides Explore Other Clubs and Create New Club navigation shortcuts
+  ---
+  duration_ms: 2.130152
+  type: 'test'
+  ...
+# Subtest: TC-WINNER-03 (AC-03.3): ClubMembersRoster attaches round-specific winner badge
+ok 171 - TC-WINNER-03 (AC-03.3): ClubMembersRoster attaches round-specific winner badge
+  ---
+  duration_ms: 1.335687
+  type: 'test'
+  ...
+# Subtest: TC-REGRESSION-01 (AC-04.1): Complete bilingual coverage in src/lib/i18n.ts for all Task-017 keys
+ok 172 - TC-REGRESSION-01 (AC-04.1): Complete bilingual coverage in src/lib/i18n.ts for all Task-017 keys
+  ---
+  duration_ms: 0.696527
+  type: 'test'
+  ...
+# Subtest: TC-REGRESSION-02 (AC-04.2 & AC-04.3): Backward compatibility bridges and test invariant preserved
+ok 173 - TC-REGRESSION-02 (AC-04.2 & AC-04.3): Backward compatibility bridges and test invariant preserved
+  ---
+  duration_ms: 1.838625
+  type: 'test'
+  ...
+# Subtest: TC-GUIDE-01 (AC-01.1): GuideModal là popup nổi overlay có backdrop mờ, không unmount app, hỗ trợ đóng bằng nút 'X' và phím Escape
+ok 174 - TC-GUIDE-01 (AC-01.1): GuideModal là popup nổi overlay có backdrop mờ, không unmount app, hỗ trợ đóng bằng nút 'X' và phím Escape
+  ---
+  duration_ms: 8.471899
+  type: 'test'
+  ...
+# Subtest: TC-GUIDE-02 (AC-01.2): Bảng so sánh Hụi truyền thống vs HụiChain Smart Contract hiển thị rõ ràng với icon và phân biệt rủi ro
+ok 175 - TC-GUIDE-02 (AC-01.2): Bảng so sánh Hụi truyền thống vs HụiChain Smart Contract hiển thị rõ ràng với icon và phân biệt rủi ro
+  ---
+  duration_ms: 0.624044
+  type: 'test'
+  ...
+# Subtest: TC-GUIDE-03 (AC-01.3): Quy trình 4 bước, cơ chế phạt tự động (auto-kick) và ưu thế mạng Arc Network (< 1s, gas USDC)
+ok 176 - TC-GUIDE-03 (AC-01.3): Quy trình 4 bước, cơ chế phạt tự động (auto-kick) và ưu thế mạng Arc Network (< 1s, gas USDC)
+  ---
+  duration_ms: 3.820428
+  type: 'test'
+  ...
+# Subtest: TC-GUIDE-04 (AC-01.4): GuideModal hỗ trợ song ngữ 100% qua prop language
+ok 177 - TC-GUIDE-04 (AC-01.4): GuideModal hỗ trợ song ngữ 100% qua prop language
+  ---
+  duration_ms: 1.010359
+  type: 'test'
+  ...
+# Subtest: TC-HOME-01 (AC-02.1): Hero Section trên LandingPage hiển thị tiêu đề lớn, 3 chỉ số ấn tượng và 3 nút CTA
+ok 178 - TC-HOME-01 (AC-02.1): Hero Section trên LandingPage hiển thị tiêu đề lớn, 3 chỉ số ấn tượng và 3 nút CTA
+  ---
+  duration_ms: 4.072691
+  type: 'test'
+  ...
+# Subtest: TC-HOME-02 (AC-02.2): Phân khu Bài toán bể hụi vs Giải pháp Web3 hiển thị đầy đủ trên LandingPage
+ok 179 - TC-HOME-02 (AC-02.2): Phân khu Bài toán bể hụi vs Giải pháp Web3 hiển thị đầy đủ trên LandingPage
+  ---
+  duration_ms: 4.00744
+  type: 'test'
+  ...
+# Subtest: TC-HOME-03 (AC-02.3): Phân khu Quy trình 4 bước sinh động trên LandingPage
+ok 180 - TC-HOME-03 (AC-02.3): Phân khu Quy trình 4 bước sinh động trên LandingPage
+  ---
+  duration_ms: 3.200861
+  type: 'test'
+  ...
+# Subtest: TC-HOME-04 (AC-02.4): Phân khu Featured Savings Clubs hiển thị thẻ BAVI và Alpha với nút 1-click vào nhóm
+ok 181 - TC-HOME-04 (AC-02.4): Phân khu Featured Savings Clubs hiển thị thẻ BAVI và Alpha với nút 1-click vào nhóm
+  ---
+  duration_ms: 0.730428
+  type: 'test'
+  ...
+# Subtest: TC-HOME-05 (AC-02.5): Phân khu Bảo mật Arc & FAQ trả lời 5+ câu hỏi cốt lõi trên LandingPage
+ok 182 - TC-HOME-05 (AC-02.5): Phân khu Bảo mật Arc & FAQ trả lời 5+ câu hỏi cốt lõi trên LandingPage
+  ---
+  duration_ms: 1.247501
+  type: 'test'
+  ...
+# Subtest: TC-NAV-01 (AC-03.1): Header cung cấp tabs điều hướng 'Trang chủ' (Home) và 'Ứng dụng' (App / Savings Clubs) với highlight active
+ok 183 - TC-NAV-01 (AC-03.1): Header cung cấp tabs điều hướng 'Trang chủ' (Home) và 'Ứng dụng' (App / Savings Clubs) với highlight active
+  ---
+  duration_ms: 4.722153
+  type: 'test'
+  ...
+# Subtest: TC-NAV-02 (AC-03.2): App.tsx quản lý state activeTab, tự động mở app khi có URL ?group=0x... và chuyển tab mượt mà
+ok 184 - TC-NAV-02 (AC-03.2): App.tsx quản lý state activeTab, tự động mở app khi có URL ?group=0x... và chuyển tab mượt mà
+  ---
+  duration_ms: 3.644774
+  type: 'test'
+  ...
+# Subtest: TC-REG-01 (AC-04.1): Toàn bộ 93 bài kiểm thử trước đó tiếp tục PASS 100% (Zero Regression)
+ok 185 - TC-REG-01 (AC-04.1): Toàn bộ 93 bài kiểm thử trước đó tiếp tục PASS 100% (Zero Regression)
+  ---
+  duration_ms: 0.360642
+  type: 'test'
+  ...
+# Subtest: TC-REG-02 (AC-04.2): Tệp OnboardingScreen.tsx được bảo toàn nguyên vẹn trong codebase
+ok 186 - TC-REG-02 (AC-04.2): Tệp OnboardingScreen.tsx được bảo toàn nguyên vẹn trong codebase
+  ---
+  duration_ms: 2.243848
+  type: 'test'
+  ...
+# Subtest: TC-ORBIT-01 (AC-01.1): SVG Vector Elements for Left & Right Concentric Orbital Arcs with Dashed Pattern
+ok 187 - TC-ORBIT-01 (AC-01.1): SVG Vector Elements for Left & Right Concentric Orbital Arcs with Dashed Pattern
+  ---
+  duration_ms: 9.104007
+  type: 'test'
+  ...
+# Subtest: TC-ORBIT-02 (AC-01.2): Orbital Stroke Colors, Width, and Responsive Adaptation
+ok 188 - TC-ORBIT-02 (AC-01.2): Orbital Stroke Colors, Width, and Responsive Adaptation
+  ---
+  duration_ms: 8.587241
+  type: 'test'
+  ...
+# Subtest: TC-CONSTELLATION-01 (AC-02.1): Left Wing Displays 4 Ecosystem Icons in Strict Order: PiggyBank -> Users -> RefreshCw -> Calendar
+ok 189 - TC-CONSTELLATION-01 (AC-02.1): Left Wing Displays 4 Ecosystem Icons in Strict Order: PiggyBank -> Users -> RefreshCw -> Calendar
+  ---
+  duration_ms: 6.786076
+  type: 'test'
+  ...
+# Subtest: TC-CONSTELLATION-02 (AC-02.2): Right Wing Displays 4 Ecosystem Icons in Strict Order: RefreshCw -> Calendar -> Users -> PiggyBank
+ok 190 - TC-CONSTELLATION-02 (AC-02.2): Right Wing Displays 4 Ecosystem Icons in Strict Order: RefreshCw -> Calendar -> Users -> PiggyBank
+  ---
+  duration_ms: 0.827126
+  type: 'test'
+  ...
+# Subtest: TC-CONSTELLATION-03 (AC-02.3): Glowing Star Nodes along Orbital Curves
+ok 191 - TC-CONSTELLATION-03 (AC-02.3): Glowing Star Nodes along Orbital Curves
+  ---
+  duration_ms: 0.863098
+  type: 'test'
+  ...
+# Subtest: TC-FLOOR-01 (AC-03.1): 3D Perspective Cyber Grid Floor Position & 3D Transform Projection
+ok 192 - TC-FLOOR-01 (AC-03.1): 3D Perspective Cyber Grid Floor Position & 3D Transform Projection
+  ---
+  duration_ms: 0.649242
+  type: 'test'
+  ...
+# Subtest: TC-FLOOR-02 (AC-03.2): Floor Grid Styling, Amber Grid Lines, and Smooth Horizon Fadeout Mask
+ok 193 - TC-FLOOR-02 (AC-03.2): Floor Grid Styling, Amber Grid Lines, and Smooth Horizon Fadeout Mask
+  ---
+  duration_ms: 7.039964
+  type: 'test'
+  ...
+# Subtest: TC-MANIFEST-01 (AC-04.2): Manifest Verification for task-026 Frozen State and SHA-256 Record
+ok 194 - TC-MANIFEST-01 (AC-04.2): Manifest Verification for task-026 Frozen State and SHA-256 Record
+  ---
+  duration_ms: 4.456478
+  type: 'test'
+  ...
+# Subtest: TC-STREAMLINE-01 (AC-01.1): Khối Hero Brand Mascot Emblem được bọc trong container '<div className="hidden" aria-hidden="true" tabIndex={-1}>' chứa trọn vẹn tokens kích thước, quầng sáng và icon
+ok 195 - TC-STREAMLINE-01 (AC-01.1): Khối Hero Brand Mascot Emblem được bọc trong container '<div className="hidden" aria-hidden="true" tabIndex={-1}>' chứa trọn vẹn tokens kích thước, quầng sáng và icon
+  ---
+  duration_ms: 18.11157
+  type: 'test'
+  ...
+# Subtest: TC-STREAMLINE-02 (AC-01.2): Hero Section bắt đầu hiển thị trực quan trực tiếp bằng Badge Arc Testnet 'inline-flex items-center gap-2 ... bg-amber-950/40 text-amber-300 border border-amber-500/30' với Sparkles size={14}
+ok 196 - TC-STREAMLINE-02 (AC-01.2): Hero Section bắt đầu hiển thị trực quan trực tiếp bằng Badge Arc Testnet 'inline-flex items-center gap-2 ... bg-amber-950/40 text-amber-300 border border-amber-500/30' với Sparkles size={14}
+  ---
+  duration_ms: 9.171055
+  type: 'test'
+  ...
+# Subtest: TC-BG-VIVID-01 (AC-02.1): Lớp High-Visibility Web3 Atmospheric Canvas chứa lưới tọa độ vàng kim sắc nét: linear-gradient, bg-[size:48px_48px], opacity-85
+ok 197 - TC-BG-VIVID-01 (AC-02.1): Lớp High-Visibility Web3 Atmospheric Canvas chứa lưới tọa độ vàng kim sắc nét: linear-gradient, bg-[size:48px_48px], opacity-85
+  ---
+  duration_ms: 0.774773
+  type: 'test'
+  ...
+# Subtest: TC-BG-VIVID-02 (AC-02.2 & AC-02.3): Ma trận chòm sao và hạt bụi sao vàng: radial-gradient(circle_at_center,rgba(251,191,36,0.22)_1.5px,transparent_1.5px) với opacity-90
+ok 198 - TC-BG-VIVID-02 (AC-02.2 & AC-02.3): Ma trận chòm sao và hạt bụi sao vàng: radial-gradient(circle_at_center,rgba(251,191,36,0.22)_1.5px,transparent_1.5px) với opacity-90
+  ---
+  duration_ms: 0.630199
+  type: 'test'
+  ...
+# Subtest: TC-BG-VIVID-03 (AC-02.2): Các vạt sáng cực quang rực rỡ vàng hổ phách và vàng nắng (w-[900px], blur-90px đến blur-110px) và quầng sáng công nghệ Cyan Security
+ok 199 - TC-BG-VIVID-03 (AC-02.2): Các vạt sáng cực quang rực rỡ vàng hổ phách và vàng nắng (w-[900px], blur-90px đến blur-110px) và quầng sáng công nghệ Cyan Security
+  ---
+  duration_ms: 0.842189
+  type: 'test'
+  ...
+# Subtest: TC-BG-LEGACY-01 (AC-02.1 & AC-02.2): Lớp background legacy cũ và các section token được bảo tồn 100% cho zero regression
+ok 200 - TC-BG-LEGACY-01 (AC-02.1 & AC-02.2): Lớp background legacy cũ và các section token được bảo tồn 100% cho zero regression
+  ---
+  duration_ms: 6.693805
+  type: 'test'
+  ...
+# Subtest: TC-WCAG-01 (AC-02.4): Thẻ card cách ly quang học bảo vệ độ tương phản WCAG AAA: bg-[\#0c0d14], border-amber-500/20
+ok 201 - TC-WCAG-01 (AC-02.4): Thẻ card cách ly quang học bảo vệ độ tương phản WCAG AAA: bg-[\#0c0d14], border-amber-500/20
+  ---
+  duration_ms: 0.999738
+  type: 'test'
+  ...
+# Subtest: TC-MANIFEST-01 (AC-03.2): Đọc và đối chiếu tệp docs/manifests/task-025/manifest.json, xác nhận taskId === 'task-025', status === 'FROZEN', SHA-256 khớp 100%
+ok 202 - TC-MANIFEST-01 (AC-03.2): Đọc và đối chiếu tệp docs/manifests/task-025/manifest.json, xác nhận taskId === 'task-025', status === 'FROZEN', SHA-256 khớp 100%
+  ---
+  duration_ms: 4.974012
+  type: 'test'
+  ...
+# Subtest: TC-DEL-01 (AC-01.1 & AC-01.2): removeKnownGroup(address) đưa địa chỉ vào danh sách đã xóa và loại bỏ khỏi hui_known_groups
+ok 203 - TC-DEL-01 (AC-01.1 & AC-01.2): removeKnownGroup(address) đưa địa chỉ vào danh sách đã xóa và loại bỏ khỏi hui_known_groups
+  ---
+  duration_ms: 3.553273
+  type: 'test'
+  ...
+# Subtest: TC-DEL-02 (AC-01.3): getKnownGroups() loại bỏ các địa chỉ trong danh sách đã xóa, kể cả nhóm mặc định
+ok 204 - TC-DEL-02 (AC-01.3): getKnownGroups() loại bỏ các địa chỉ trong danh sách đã xóa, kể cả nhóm mặc định
+  ---
+  duration_ms: 0.619175
+  type: 'test'
+  ...
+# Subtest: TC-DEL-03 (AC-01.4): saveKnownGroup khôi phục nhóm nếu người dùng cố ý thêm lại
+ok 205 - TC-DEL-03 (AC-01.4): saveKnownGroup khôi phục nhóm nếu người dùng cố ý thêm lại
+  ---
+  duration_ms: 0.736531
+  type: 'test'
+  ...
+# Subtest: TC-DEL-04 (AC-02.1 & AC-02.2): ClubDirectoryModal.tsx render nút icon Trash2 cho từng thẻ club với tooltip và aria-label
+ok 206 - TC-DEL-04 (AC-02.1 & AC-02.2): ClubDirectoryModal.tsx render nút icon Trash2 cho từng thẻ club với tooltip và aria-label
+  ---
+  duration_ms: 0.836916
+  type: 'test'
+  ...
+# Subtest: TC-DEL-05 (AC-02.3, AC-02.4 & AC-02.5): handleDeleteGroup chặn nổi bọt, gọi removeKnownGroup, cập nhật state và xử lý chuyển nhóm an toàn
+ok 207 - TC-DEL-05 (AC-02.3, AC-02.4 & AC-02.5): handleDeleteGroup chặn nổi bọt, gọi removeKnownGroup, cập nhật state và xử lý chuyển nhóm an toàn
+  ---
+  duration_ms: 0.574709
+  type: 'test'
+  ...
+# Subtest: TC-DEL-06 (AC-03.1 & AC-03.2): Từ điển i18n hỗ trợ song ngữ cho các thông báo xóa nhóm
+ok 208 - TC-DEL-06 (AC-03.1 & AC-03.2): Từ điển i18n hỗ trợ song ngữ cho các thông báo xóa nhóm
+  ---
+  duration_ms: 0.324523
+  type: 'test'
+  ...
+# Subtest: TC-MANIFEST-01: File manifest docs/manifests/task-032/manifest.json tồn tại và chứa mã băm hợp lệ
+ok 209 - TC-MANIFEST-01: File manifest docs/manifests/task-032/manifest.json tồn tại và chứa mã băm hợp lệ
+  ---
+  duration_ms: 0.787208
+  type: 'test'
+  ...
+# Subtest: TC-ZINDEX-01 (AC-01.1): tailwind.config.js cấu hình đầy đủ thang đo zIndex mở rộng ('60' đến '100')
+ok 210 - TC-ZINDEX-01 (AC-01.1): tailwind.config.js cấu hình đầy đủ thang đo zIndex mở rộng ('60' đến '100')
+  ---
+  duration_ms: 6.722672
+  type: 'test'
+  ...
+# Subtest: TC-ZINDEX-02 (AC-01.2): File CSS production chứa định nghĩa class .z-100 với z-index: 100
+ok 211 - TC-ZINDEX-02 (AC-01.2): File CSS production chứa định nghĩa class .z-100 với z-index: 100
+  ---
+  duration_ms: 4.07563
+  type: 'test'
+  ...
+# Subtest: TC-ZINDEX-03 (AC-02.1): EditClubNameModal.tsx áp dụng z-100 và style={{ zIndex: 100 }} trên container fixed để nổi lên trên cùng
+ok 212 - TC-ZINDEX-03 (AC-02.1): EditClubNameModal.tsx áp dụng z-100 và style={{ zIndex: 100 }} trên container fixed để nổi lên trên cùng
+  ---
+  duration_ms: 0.581683
+  type: 'test'
+  ...
+# Subtest: TC-ZINDEX-04 (AC-02.2): EditClubNameModal.tsx áp dụng backdrop bg-black/80 backdrop-blur-sm chuẩn
+ok 213 - TC-ZINDEX-04 (AC-02.2): EditClubNameModal.tsx áp dụng backdrop bg-black/80 backdrop-blur-sm chuẩn
+  ---
+  duration_ms: 0.39782
+  type: 'test'
+  ...
+# Subtest: TC-ZINDEX-05 (AC-02.3): Dialog box trong EditClubNameModal.tsx được định vị chính giữa màn hình với flex items-center justify-center
+ok 214 - TC-ZINDEX-05 (AC-02.3): Dialog box trong EditClubNameModal.tsx được định vị chính giữa màn hình với flex items-center justify-center
+  ---
+  duration_ms: 0.607343
+  type: 'test'
+  ...
+# Subtest: TC-ZINDEX-06 (AC-03.1): Modal xác nhận xóa nhóm áp dụng z-100 và style={{ zIndex: 100 }} nổi trên danh bạ nhóm z-50
+ok 215 - TC-ZINDEX-06 (AC-03.1): Modal xác nhận xóa nhóm áp dụng z-100 và style={{ zIndex: 100 }} nổi trên danh bạ nhóm z-50
+  ---
+  duration_ms: 0.512834
+  type: 'test'
+  ...
+# Subtest: TC-ZINDEX-07 (AC-03.2): Modal xác nhận xóa chặn nổi bọt sự kiện click backdrop và hộp thoại
+ok 216 - TC-ZINDEX-07 (AC-03.2): Modal xác nhận xóa chặn nổi bọt sự kiện click backdrop và hộp thoại
+  ---
+  duration_ms: 0.665255
+  type: 'test'
+  ...
+# Subtest: TC-POT-01 (AC-01.1): Translations.clubCard chứa heroPotEstimatedPrefix và contribStartsNotice
+ok 217 - TC-POT-01 (AC-01.1): Translations.clubCard chứa heroPotEstimatedPrefix và contribStartsNotice
+  ---
+  duration_ms: 4.675141
+  type: 'test'
+  ...
+# Subtest: TC-POT-02 (AC-01.2): Từ điển tiếng Việt translations.vi.clubCard có chuỗi bản địa hóa chuẩn
+ok 218 - TC-POT-02 (AC-01.2): Từ điển tiếng Việt translations.vi.clubCard có chuỗi bản địa hóa chuẩn
+  ---
+  duration_ms: 0.738601
+  type: 'test'
+  ...
+# Subtest: TC-POT-03 (AC-01.3): Từ điển tiếng Anh translations.en.clubCard có chuỗi bản địa hóa chuẩn
+ok 219 - TC-POT-03 (AC-01.3): Từ điển tiếng Anh translations.en.clubCard có chuỗi bản địa hóa chuẩn
+  ---
+  duration_ms: 0.34748
+  type: 'test'
+  ...
+# Subtest: TC-POT-04 (AC-01.4): Key parity 100% giữa 'vi' và 'en' cho các trường mới trong clubCard
+ok 220 - TC-POT-04 (AC-01.4): Key parity 100% giữa 'vi' và 'en' cho các trường mới trong clubCard
+  ---
+  duration_ms: 0.324851
+  type: 'test'
+  ...
+# Subtest: TC-POT-05 (AC-02.1): ClubCard.tsx tính potSize = contributionAmount * effectiveTotalJoined bảo toàn 100% quy mô pot
+ok 221 - TC-POT-05 (AC-02.1): ClubCard.tsx tính potSize = contributionAmount * effectiveTotalJoined bảo toàn 100% quy mô pot
+  ---
+  duration_ms: 0.489556
+  type: 'test'
+  ...
+# Subtest: TC-POT-06 (AC-02.2): Khi state === GROUP_STATE.OPEN, potSize phản ánh đúng số thành viên đã tham gia (Option A)
+ok 222 - TC-POT-06 (AC-02.2): Khi state === GROUP_STATE.OPEN, potSize phản ánh đúng số thành viên đã tham gia (Option A)
+  ---
+  duration_ms: 1.037168
+  type: 'test'
+  ...
+# Subtest: TC-POT-07 (AC-02.3 & AC-02.4): ClubCard.tsx hiển thị heroPotEstimatedPrefix và contribStartsNotice khi state === GROUP_STATE.OPEN
+ok 223 - TC-POT-07 (AC-02.3 & AC-02.4): ClubCard.tsx hiển thị heroPotEstimatedPrefix và contribStartsNotice khi state === GROUP_STATE.OPEN
+  ---
+  duration_ms: 0.520183
+  type: 'test'
+  ...
+# Subtest: TC-POT-08 (AC-02.5): Khi state === GROUP_STATE.ACTIVE, potSize bảo toàn 100% quy mô pot theo toàn bộ thành viên (kể cả người đã thắng nộp hụi chết)
+ok 224 - TC-POT-08 (AC-02.5): Khi state === GROUP_STATE.ACTIVE, potSize bảo toàn 100% quy mô pot theo toàn bộ thành viên (kể cả người đã thắng nộp hụi chết)
+  ---
+  duration_ms: 0.427006
+  type: 'test'
+  ...
+# Subtest: TC-POT-09: Smart Contract RotatingSavings.sol bảo đảm chủ nhóm bình đẳng nghĩa vụ đóng tiền, không miễn phí và bị Kick nếu không nộp
+ok 225 - TC-POT-09: Smart Contract RotatingSavings.sol bảo đảm chủ nhóm bình đẳng nghĩa vụ đóng tiền, không miễn phí và bị Kick nếu không nộp
+  ---
+  duration_ms: 1.455926
+  type: 'test'
+  ...
+# Subtest: TC-OPEN-01: MemberStatus renders 'Chờ mở vòng 1' with Clock icon in OPEN state (AC-01.1)
+ok 226 - TC-OPEN-01: MemberStatus renders 'Chờ mở vòng 1' with Clock icon in OPEN state (AC-01.1)
+  ---
+  duration_ms: 7.01694
+  type: 'test'
+  ...
+# Subtest: TC-OPEN-02: MemberStatus conditionally displays 'Đã đóng' vs 'Chưa đóng' when state != OPEN (AC-01.2)
+ok 227 - TC-OPEN-02: MemberStatus conditionally displays 'Đã đóng' vs 'Chưa đóng' when state != OPEN (AC-01.2)
+  ---
+  duration_ms: 0.750393
+  type: 'test'
+  ...
+# Subtest: TC-OPEN-03: MemberStatusProps declares state prop and App.tsx passes it (AC-01.3)
+ok 228 - TC-OPEN-03: MemberStatusProps declares state prop and App.tsx passes it (AC-01.3)
+  ---
+  duration_ms: 1.14541
+  type: 'test'
+  ...
+# Subtest: TC-OPEN-04: ActionPanel renders clear member confirmation badge in OPEN state (AC-02.1)
+ok 229 - TC-OPEN-04: ActionPanel renders clear member confirmation badge in OPEN state (AC-02.1)
+  ---
+  duration_ms: 1.629817
+  type: 'test'
+  ...
+# Subtest: TC-OPEN-05: ActionPanel explains why contribution button is not yet present (AC-02.2)
+ok 230 - TC-OPEN-05: ActionPanel explains why contribution button is not yet present (AC-02.2)
+  ---
+  duration_ms: 3.658165
+  type: 'test'
+  ...
+# Subtest: TC-OPEN-06: ActionPanel renders 3-step lifecycle progress roadmap (AC-02.3)
+ok 231 - TC-OPEN-06: ActionPanel renders 3-step lifecycle progress roadmap (AC-02.3)
+  ---
+  duration_ms: 1.307569
+  type: 'test'
+  ...
+# Subtest: TC-OPEN-07: ActionPanel provides invite friends copy link button with feedback (AC-02.4)
+ok 232 - TC-OPEN-07: ActionPanel provides invite friends copy link button with feedback (AC-02.4)
+  ---
+  duration_ms: 1.14681
+  type: 'test'
+  ...
+# Subtest: TC-OPEN-08: PasskeyActionPanel provides matching explanation, stepper & invite (AC-03.1)
+ok 233 - TC-OPEN-08: PasskeyActionPanel provides matching explanation, stepper & invite (AC-03.1)
+  ---
+  duration_ms: 1.058577
+  type: 'test'
+  ...
+# Subtest: TC-OPEN-09: ClubCard displays capacity condition in OPEN state (AC-04.1)
+ok 234 - TC-OPEN-09: ClubCard displays capacity condition in OPEN state (AC-04.1)
+  ---
+  duration_ms: 9.315078
+  type: 'test'
+  ...
+# Subtest: TC-ALIGN-01 (AC-01.1): Embedding Ecosystem Icons Directly Inside SVG Using <foreignObject>
+ok 235 - TC-ALIGN-01 (AC-01.1): Embedding Ecosystem Icons Directly Inside SVG Using <foreignObject>
+  ---
+  duration_ms: 21.681154
+  type: 'test'
+  ...
+# Subtest: TC-ALIGN-02 (AC-01.2): Parametric Center Lock for ForeignObjects & Star Nodes on Dashed Arcs
+ok 236 - TC-ALIGN-02 (AC-01.2): Parametric Center Lock for ForeignObjects & Star Nodes on Dashed Arcs
+  ---
+  duration_ms: 54.635216
+  type: 'test'
+  ...
+# Subtest: TC-ALIGN-03 (AC-01.3): Icon Sequence & Visual Token Integrity
+ok 237 - TC-ALIGN-03 (AC-01.3): Icon Sequence & Visual Token Integrity
+  ---
+  duration_ms: 0.876811
+  type: 'test'
+  ...
+# Subtest: TC-SCROLL-01 (AC-02.1): Continuous Full-Page Side Orbital Arcs Layer in LandingPage.tsx
+ok 238 - TC-SCROLL-01 (AC-02.1): Continuous Full-Page Side Orbital Arcs Layer in LandingPage.tsx
+  ---
+  duration_ms: 0.876315
+  type: 'test'
+  ...
+# Subtest: TC-SCROLL-02 (AC-02.2): Full-Page Ambient Aurora Beams & Cyber Matrix Grid Coverage
+ok 239 - TC-SCROLL-02 (AC-02.2): Full-Page Ambient Aurora Beams & Cyber Matrix Grid Coverage
+  ---
+  duration_ms: 10.85925
+  type: 'test'
+  ...
+# Subtest: TC-SCROLL-03 (AC-02.3): Optical Isolation & WCAG AAA Contrast for Lower Section Cards
+ok 240 - TC-SCROLL-03 (AC-02.3): Optical Isolation & WCAG AAA Contrast for Lower Section Cards
+  ---
+  duration_ms: 0.820446
+  type: 'test'
+  ...
+# Subtest: TC-DAPP-SYNC-01 (AC-03.1): DApp Web3 Atmospheric Canvas Layer in src/App.tsx
+ok 241 - TC-DAPP-SYNC-01 (AC-03.1): DApp Web3 Atmospheric Canvas Layer in src/App.tsx
+  ---
+  duration_ms: 9.342507
+  type: 'test'
+  ...
+# Subtest: TC-DAPP-SYNC-02 (AC-03.2): DApp Subtle Side Orbital Arcs in src/App.tsx
+ok 242 - TC-DAPP-SYNC-02 (AC-03.2): DApp Subtle Side Orbital Arcs in src/App.tsx
+  ---
+  duration_ms: 1.18942
+  type: 'test'
+  ...
+# Subtest: TC-DAPP-SYNC-03 (AC-03.3): Non-Interference Safety Attributes pointer-events-none & aria-hidden
+ok 243 - TC-DAPP-SYNC-03 (AC-03.3): Non-Interference Safety Attributes pointer-events-none & aria-hidden
+  ---
+  duration_ms: 6.974909
+  type: 'test'
+  ...
+# Subtest: TC-MANIFEST-01 (AC-04.2): Manifest Verification for task-027 Frozen State and SHA-256 Records
+ok 244 - TC-MANIFEST-01 (AC-04.2): Manifest Verification for task-027 Frozen State and SHA-256 Records
+  ---
+  duration_ms: 12.071629
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-01 (AC-01.1): Nền LandingPage đen tuyền (\#050508 / \#000000), Hero Section có glow vàng cát, nút CTA chính 'Launch App' gradient vàng cát (from-amber-400 via-amber-500 to-yellow-600 text-slate-950 font-bold)
+ok 245 - TC-BLACK-01 (AC-01.1): Nền LandingPage đen tuyền (\#050508 / \#000000), Hero Section có glow vàng cát, nút CTA chính 'Launch App' gradient vàng cát (from-amber-400 via-amber-500 to-yellow-600 text-slate-950 font-bold)
+  ---
+  duration_ms: 3.399462
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-02 (AC-01.2): 3 thẻ chỉ số chính trên LandingPage mang nền đen obsidian (\#0c0d14 / \#11131c), viền vàng cát border-amber-500/20, con số màu vàng cát text-amber-400
+ok 246 - TC-BLACK-02 (AC-01.2): 3 thẻ chỉ số chính trên LandingPage mang nền đen obsidian (\#0c0d14 / \#11131c), viền vàng cát border-amber-500/20, con số màu vàng cát text-amber-400
+  ---
+  duration_ms: 2.32197
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-03 (AC-01.3): Các phân khu So sánh, Quy trình 4 bước và Featured Clubs mang nền đen obsidian viền vàng cát, nút CTA gradient vàng cát
+ok 247 - TC-BLACK-03 (AC-01.3): Các phân khu So sánh, Quy trình 4 bước và Featured Clubs mang nền đen obsidian viền vàng cát, nút CTA gradient vàng cát
+  ---
+  duration_ms: 0.803615
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-04 (AC-01.4): Phân khu FAQ Accordion mang nền đen obsidian viền vàng cát, tiêu đề câu hỏi sáng rõ, icon vàng cát
+ok 248 - TC-BLACK-04 (AC-01.4): Phân khu FAQ Accordion mang nền đen obsidian viền vàng cát, tiêu đề câu hỏi sáng rõ, icon vàng cát
+  ---
+  duration_ms: 0.724246
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-05 (AC-02.1): Thẻ GroupSwitcher mang nền đen obsidian (\#0c0d14 / \#11131c) viền border-amber-500/20, không còn bg-white
+ok 249 - TC-BLACK-05 (AC-02.1): Thẻ GroupSwitcher mang nền đen obsidian (\#0c0d14 / \#11131c) viền border-amber-500/20, không còn bg-white
+  ---
+  duration_ms: 0.707636
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-06 (AC-02.2): Thẻ MemberStatus mang nền đen obsidian (\#0c0d14 / \#11131c) viền border-amber-500/20, không còn bg-white
+ok 250 - TC-BLACK-06 (AC-02.2): Thẻ MemberStatus mang nền đen obsidian (\#0c0d14 / \#11131c) viền border-amber-500/20, không còn bg-white
+  ---
+  duration_ms: 0.551267
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-07 (AC-02.3): ActionPanel & PasskeyActionPanel mang nền đen obsidian viền vàng cát, nút hành động chính (Tham gia, Đóng hụi, Bid) mang gradient vàng cát text-slate-950 font-bold, không còn bg-white
+ok 251 - TC-BLACK-07 (AC-02.3): ActionPanel & PasskeyActionPanel mang nền đen obsidian viền vàng cát, nút hành động chính (Tham gia, Đóng hụi, Bid) mang gradient vàng cát text-slate-950 font-bold, không còn bg-white
+  ---
+  duration_ms: 1.776189
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-08 (AC-02.4): RoundHistory & HowItWorksCard mang nền đen obsidian viền vàng cát, không còn bg-white
+ok 252 - TC-BLACK-08 (AC-02.4): RoundHistory & HowItWorksCard mang nền đen obsidian viền vàng cát, không còn bg-white
+  ---
+  duration_ms: 0.693761
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-09 (AC-03.1): ClubCard xóa bỏ hoàn toàn gradient tím neon (from-blue-600 via-indigo-600 to-violet-700), áp dụng nền đen obsidian metallic (from-[\#161722] via-[\#0e0f18] to-[\#07080d]) viền vàng cát border-amber-500/30
+ok 253 - TC-BLACK-09 (AC-03.1): ClubCard xóa bỏ hoàn toàn gradient tím neon (from-blue-600 via-indigo-600 to-violet-700), áp dụng nền đen obsidian metallic (from-[\#161722] via-[\#0e0f18] to-[\#07080d]) viền vàng cát border-amber-500/30
+  ---
+  duration_ms: 0.958138
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-10 (AC-03.2): Hero Pot trong ClubCard hiển thị con số và đơn vị to rõ trong khối ambient gold/amber (Coins text-amber-400, text-amber-300, border-amber-500/20, bg-black/40 backdrop-blur-md)
+ok 254 - TC-BLACK-10 (AC-03.2): Hero Pot trong ClubCard hiển thị con số và đơn vị to rõ trong khối ambient gold/amber (Coins text-amber-400, text-amber-300, border-amber-500/20, bg-black/40 backdrop-blur-md)
+  ---
+  duration_ms: 1.081368
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-11 (AC-03.3): Thanh tiến độ sức chứa thành viên mang dải gradient vàng cát from-amber-400 to-yellow-500
+ok 255 - TC-BLACK-11 (AC-03.3): Thanh tiến độ sức chứa thành viên mang dải gradient vàng cát from-amber-400 to-yellow-500
+  ---
+  duration_ms: 0.601771
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-12 (AC-03.4): Toàn bộ 8 ràng buộc Typography trong ClubCard (TC-TYPO-02) được bảo toàn nguyên vẹn 100%
+ok 256 - TC-BLACK-12 (AC-03.4): Toàn bộ 8 ràng buộc Typography trong ClubCard (TC-TYPO-02) được bảo toàn nguyên vẹn 100%
+  ---
+  duration_ms: 0.461233
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-13 (AC-04.1): Nút '+ Tạo nhóm' trên Header và thanh Passkey mang gradient vàng cát text-slate-950 font-bold
+ok 257 - TC-BLACK-13 (AC-04.1): Nút '+ Tạo nhóm' trên Header và thanh Passkey mang gradient vàng cát text-slate-950 font-bold
+  ---
+  duration_ms: 1.01684
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-14 (AC-04.2): ConnectKit theme & Toaster đồng bộ dark mode và accent vàng cát
+ok 258 - TC-BLACK-14 (AC-04.2): ConnectKit theme & Toaster đồng bộ dark mode và accent vàng cát
+  ---
+  duration_ms: 0.303218
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-15 (AC-04.3): Header active tab class invariant ('bg-white text-blue-600 shadow-2xs') được bảo toàn 100%
+ok 259 - TC-BLACK-15 (AC-04.3): Header active tab class invariant ('bg-white text-blue-600 shadow-2xs') được bảo toàn 100%
+  ---
+  duration_ms: 2.042976
+  type: 'test'
+  ...
+# Subtest: TC-BLACK-16 (AC-04.4): Toàn bộ 125 test cũ + bộ test mới PASS 100% (Zero Regression) và cấu trúc ứng dụng an toàn
+ok 260 - TC-BLACK-16 (AC-04.4): Toàn bộ 125 test cũ + bộ test mới PASS 100% (Zero Regression) và cấu trúc ứng dụng an toàn
+  ---
+  duration_ms: 1.020476
+  type: 'test'
+  ...
+# Subtest: TC-CLAIM-01 (AC-01.1): Khi claimable > 0n, ActionPanel và PasskeyActionPanel hiển thị Thẻ Rút Tiền Thưởng Nổi Bật với số tiền formatUsdc và nút CTA lớn
+ok 261 - TC-CLAIM-01 (AC-01.1): Khi claimable > 0n, ActionPanel và PasskeyActionPanel hiển thị Thẻ Rút Tiền Thưởng Nổi Bật với số tiền formatUsdc và nút CTA lớn
+  ---
+  duration_ms: 40.164023
+  type: 'test'
+  ...
+# Subtest: TC-CLAIM-02 (AC-01.2): Nút rút tiền trong ActionPanel gọi trực tiếp hàm rút tiền và kích hoạt trạng thái loading
+ok 262 - TC-CLAIM-02 (AC-01.2): Nút rút tiền trong ActionPanel gọi trực tiếp hàm rút tiền và kích hoạt trạng thái loading
+  ---
+  duration_ms: 18.023094
+  type: 'test'
+  ...
+# Subtest: TC-CLAIM-03 (AC-01.3, AC-01.4): Không render Thẻ Rút tiền khi claimable === 0n hoặc claimable === undefined
+ok 263 - TC-CLAIM-03 (AC-01.3, AC-01.4): Không render Thẻ Rút tiền khi claimable === 0n hoặc claimable === undefined
+  ---
+  duration_ms: 1.970776
+  type: 'test'
+  ...
+# Subtest: TC-BID-01 (AC-02.1): Khi userBid > 0n, ẩn form nhập trống mặc định, render Thẻ Đã Đặt Bid hiển thị mức giá và huy hiệu xác nhận
+ok 264 - TC-BID-01 (AC-02.1): Khi userBid > 0n, ẩn form nhập trống mặc định, render Thẻ Đã Đặt Bid hiển thị mức giá và huy hiệu xác nhận
+  ---
+  duration_ms: 2.492412
+  type: 'test'
+  ...
+# Subtest: TC-BID-02 (AC-02.2): Khi userBid >= highestBid && highestBid > 0n, hiển thị huy hiệu cúp vàng 🏆 Đang dẫn đầu Pot!
+ok 265 - TC-BID-02 (AC-02.2): Khi userBid >= highestBid && highestBid > 0n, hiển thị huy hiệu cúp vàng 🏆 Đang dẫn đầu Pot!
+  ---
+  duration_ms: 2.290178
+  type: 'test'
+  ...
+# Subtest: TC-BID-03 (AC-02.3): Khi userBid < highestBid, hiển thị huy hiệu cảnh báo bị vượt giá với mức cao nhất hiện tại
+ok 266 - TC-BID-03 (AC-02.3): Khi userBid < highestBid, hiển thị huy hiệu cảnh báo bị vượt giá với mức cao nhất hiện tại
+  ---
+  duration_ms: 1.817979
+  type: 'test'
+  ...
+# Subtest: TC-RAISE-01 (AC-03.1): Mặc định gập khung nâng bid, hiển thị nút toggle + Nâng mức giá (Nâng bid)
+ok 267 - TC-RAISE-01 (AC-03.1): Mặc định gập khung nâng bid, hiển thị nút toggle + Nâng mức giá (Nâng bid)
+  ---
+  duration_ms: 2.109927
+  type: 'test'
+  ...
+# Subtest: TC-RAISE-02 (AC-03.2): Mở rộng form nâng bid, kiểm tra ràng buộc newBid > userBid, vô hiệu hóa submit khi <= userBid
+ok 268 - TC-RAISE-02 (AC-03.2): Mở rộng form nâng bid, kiểm tra ràng buộc newBid > userBid, vô hiệu hóa submit khi <= userBid
+  ---
+  duration_ms: 2.042386
+  type: 'test'
+  ...
+# Subtest: TC-RAISE-03 (AC-03.3): App.tsx đồng bộ đầy đủ các props claimable, onClaimPayout, isClaiming, userBid, highestBid vào ActionPanel và PasskeyActionPanel
+ok 269 - TC-RAISE-03 (AC-03.3): App.tsx đồng bộ đầy đủ các props claimable, onClaimPayout, isClaiming, userBid, highestBid vào ActionPanel và PasskeyActionPanel
+  ---
+  duration_ms: 1.671809
+  type: 'test'
+  ...
+# Subtest: TC-I18N-01: Bộ từ điển song ngữ i18n cung cấp đầy đủ 13 khóa mới cho tính năng nhận thưởng và trạng thái bid
+ok 270 - TC-I18N-01: Bộ từ điển song ngữ i18n cung cấp đầy đủ 13 khóa mới cho tính năng nhận thưởng và trạng thái bid
+  ---
+  duration_ms: 2.617031
+  type: 'test'
+  ...
+# Subtest: TC-REGRESSION-01 (AC-03.4): Toàn bộ cấu trúc hệ thống và các hàm cốt lõi được bảo toàn (Zero Regression)
+ok 271 - TC-REGRESSION-01 (AC-03.4): Toàn bộ cấu trúc hệ thống và các hàm cốt lõi được bảo toàn (Zero Regression)
+  ---
+  duration_ms: 1.185825
+  type: 'test'
+  ...
+# Subtest: T045 canonical display formatter shares function and preserves exact machine conversion
+ok 272 - T045 canonical display formatter shares function and preserves exact machine conversion
+  ---
+  duration_ms: 7.149934
+  type: 'test'
+  ...
+# Subtest: T045 bid preset helper adds exact deltas without grouping, NaN or precision loss
+ok 273 - T045 bid preset helper adds exact deltas without grouping, NaN or precision loss
+  ---
+  duration_ms: 7.703254
+  type: 'test'
+  ...
+# Subtest: T045 both real panel preset buttons preserve exact bigint input
+ok 274 - T045 both real panel preset buttons preserve exact bigint input
+  ---
+  duration_ms: 2376.897475
+  type: 'test'
+  ...
+# Subtest: T045 completed and zero-collateral notices are rendered in both languages and wallet panels
+ok 275 - T045 completed and zero-collateral notices are rendered in both languages and wallet panels
+  ---
+  duration_ms: 284.604033
+  type: 'test'
+  ...
+# Subtest: TC-APP-BG-01 (AC-01.1): Root container có bg-[\#050508] và Global Ambient Cyber Grid (32px matrix, cosmic gold dust radial orbs)
+ok 276 - TC-APP-BG-01 (AC-01.1): Root container có bg-[\#050508] và Global Ambient Cyber Grid (32px matrix, cosmic gold dust radial orbs)
+  ---
+  duration_ms: 3.449073
+  type: 'test'
+  ...
+# Subtest: TC-APP-BG-02 (AC-01.2): High-Visibility Atmospheric Canvas (48px matrix grid, constellation nodes, aurora beams) trong Saving Clubs
+ok 277 - TC-APP-BG-02 (AC-01.2): High-Visibility Atmospheric Canvas (48px matrix grid, constellation nodes, aurora beams) trong Saving Clubs
+  ---
+  duration_ms: 1.252419
+  type: 'test'
+  ...
+# Subtest: TC-APP-BG-03 (AC-01.3): Left & Right Concentric Orbital Dashed Arcs với các icon hệ sinh thái (PiggyBank, Users, RefreshCw, Calendar)
+ok 278 - TC-APP-BG-03 (AC-01.3): Left & Right Concentric Orbital Dashed Arcs với các icon hệ sinh thái (PiggyBank, Users, RefreshCw, Calendar)
+  ---
+  duration_ms: 1.179345
+  type: 'test'
+  ...
+# Subtest: TC-APP-URL-01 (AC-02.1): handleSelectTab('app') thiết lập query param 'tab=app' và pushState chuẩn xác
+ok 279 - TC-APP-URL-01 (AC-02.1): handleSelectTab('app') thiết lập query param 'tab=app' và pushState chuẩn xác
+  ---
+  duration_ms: 1.956169
+  type: 'test'
+  ...
+# Subtest: TC-APP-URL-02 (AC-02.2): handleSelectTab('home') xóa bỏ triệt để 'view', 'tab', 'group' đưa về root '/'
+ok 280 - TC-APP-URL-02 (AC-02.2): handleSelectTab('home') xóa bỏ triệt để 'view', 'tab', 'group' đưa về root '/'
+  ---
+  duration_ms: 1.285895
+  type: 'test'
+  ...
+# Subtest: TC-APP-URL-03 (AC-03.1): Deep Linking: Khởi tạo activeTab nhận diện 'tab=app' hoặc 'group=0x...'
+ok 281 - TC-APP-URL-03 (AC-03.1): Deep Linking: Khởi tạo activeTab nhận diện 'tab=app' hoặc 'group=0x...'
+  ---
+  duration_ms: 1.027247
+  type: 'test'
+  ...
+# Subtest: TC-APP-URL-04 (AC-03.2): handleSwitchGroup cập nhật cả 'tab=app' và 'group=newAddress' trên URL
+ok 282 - TC-APP-URL-04 (AC-03.2): handleSwitchGroup cập nhật cả 'tab=app' và 'group=newAddress' trên URL
+  ---
+  duration_ms: 1.393125
+  type: 'test'
+  ...
+# Subtest: TC-REG-01 (AC-04.1): Bảo toàn các token kiểm thử của dark-theme-and-navbar-ux.test.ts và orbital-alignment
+ok 283 - TC-REG-01 (AC-04.1): Bảo toàn các token kiểm thử của dark-theme-and-navbar-ux.test.ts và orbital-alignment
+  ---
+  duration_ms: 2.849965
+  type: 'test'
+  ...
+# Subtest: TC-MANIFEST-01: File manifest docs/manifests/task-030/manifest.json tồn tại và chứa mã băm hợp lệ
+ok 284 - TC-MANIFEST-01: File manifest docs/manifests/task-030/manifest.json tồn tại và chứa mã băm hợp lệ
+  ---
+  duration_ms: 1.575238
+  type: 'test'
+  ...
+# Subtest: TC-MOTION-01 (AC-01.1): src/App.tsx khai báo scrollY state và đăng ký scroll listener an toàn với requestAnimationFrame
+ok 285 - TC-MOTION-01 (AC-01.1): src/App.tsx khai báo scrollY state và đăng ký scroll listener an toàn với requestAnimationFrame
+  ---
+  duration_ms: 14.47446
+  type: 'test'
+  ...
+# Subtest: TC-MOTION-02 (AC-01.2 & AC-01.3): src/App.tsx tính toán scrollOffset, continuousScrollDelta và 8 tọa độ động khóa đường cong Bezier
+ok 286 - TC-MOTION-02 (AC-01.2 & AC-01.3): src/App.tsx tính toán scrollOffset, continuousScrollDelta và 8 tọa độ động khóa đường cong Bezier
+  ---
+  duration_ms: 4.564227
+  type: 'test'
+  ...
+# Subtest: TC-MOTION-03 (AC-02.1 & AC-02.2): Các thẻ foreignObject trong App.tsx sử dụng tọa độ động và class transition-all duration-75 ease-out
+ok 287 - TC-MOTION-03 (AC-02.1 & AC-02.2): Các thẻ foreignObject trong App.tsx sử dụng tọa độ động và class transition-all duration-75 ease-out
+  ---
+  duration_ms: 27.266511
+  type: 'test'
+  ...
+# Subtest: TC-MOTION-04 (AC-02.3): Cấu trúc cánh trang trí duy trì pointer-events-none và animate-pulse
+ok 288 - TC-MOTION-04 (AC-02.3): Cấu trúc cánh trang trí duy trì pointer-events-none và animate-pulse
+  ---
+  duration_ms: 1.297263
+  type: 'test'
+  ...
+# Subtest: TC-MOTION-05 (AC-04.1): Toán học chuyển động Bezier: Tọa độ di chuyển mượt mà khi scrollY thay đổi
+ok 289 - TC-MOTION-05 (AC-04.1): Toán học chuyển động Bezier: Tọa độ di chuyển mượt mà khi scrollY thay đổi
+  ---
+  duration_ms: 11.196547
+  type: 'test'
+  ...
+# Subtest: TC-MANIFEST-01: File manifest docs/manifests/task-031/manifest.json tồn tại và chứa mã băm hợp lệ
+ok 290 - TC-MANIFEST-01: File manifest docs/manifests/task-031/manifest.json tồn tại và chứa mã băm hợp lệ
+  ---
+  duration_ms: 4.572653
+  type: 'test'
+  ...
+# Subtest: TC-DIR-01 (AC-01.1): Khởi tạo nhóm mặc định - trả về ít nhất 2 nhóm mặc định
+ok 291 - TC-DIR-01 (AC-01.1): Khởi tạo nhóm mặc định - trả về ít nhất 2 nhóm mặc định
+  ---
+  duration_ms: 26.009474
+  type: 'test'
+  ...
+# Subtest: TC-DIR-02 (AC-01.2): Lưu trữ và khử trùng lặp - chuẩn hóa chữ thường toLowerCase()
+ok 292 - TC-DIR-02 (AC-01.2): Lưu trữ và khử trùng lặp - chuẩn hóa chữ thường toLowerCase()
+  ---
+  duration_ms: 1.49505
+  type: 'test'
+  ...
+# Subtest: TC-DIR-03 (AC-01.3): Tự động ghi nhận khi tạo nhóm mới thành công
+ok 293 - TC-DIR-03 (AC-01.3): Tự động ghi nhận khi tạo nhóm mới thành công
+  ---
+  duration_ms: 15.225256
+  type: 'test'
+  ...
+# Subtest: TC-DIR-04 (AC-01.4): Tự động ghi nhận khi nhập địa chỉ đổi nhóm thủ công
+ok 294 - TC-DIR-04 (AC-01.4): Tự động ghi nhận khi nhập địa chỉ đổi nhóm thủ công
+  ---
+  duration_ms: 0.602305
+  type: 'test'
+  ...
+# Subtest: TC-DIR-05 (AC-01.5): Chịu lỗi dữ liệu hỏng / Edge Case - không crash và fallback về default
+ok 295 - TC-DIR-05 (AC-01.5): Chịu lỗi dữ liệu hỏng / Edge Case - không crash và fallback về default
+  ---
+  duration_ms: 21.51024
+  type: 'test'
+  ...
+# Subtest: TC-DIR-06 (AC-02.1): Nút mở Danh sách nhóm trên Header & GroupSwitcher
+ok 296 - TC-DIR-06 (AC-02.1): Nút mở Danh sách nhóm trên Header & GroupSwitcher
+  ---
+  duration_ms: 10.572535
+  type: 'test'
+  ...
+# Subtest: TC-DIR-07 (AC-02.2): Hiển thị Modal Danh Sách Nhóm Hụi đầy đủ thông tin
+ok 297 - TC-DIR-07 (AC-02.2): Hiển thị Modal Danh Sách Nhóm Hụi đầy đủ thông tin
+  ---
+  duration_ms: 6.79261
+  type: 'test'
+  ...
+# Subtest: TC-DIR-08 (AC-02.3): Thao tác Chuyển nhóm 1-Click đóng modal & toast
+ok 298 - TC-DIR-08 (AC-02.3): Thao tác Chuyển nhóm 1-Click đóng modal & toast
+  ---
+  duration_ms: 0.573054
+  type: 'test'
+  ...
+# Subtest: TC-DIR-09 (AC-02.4): Nhận diện nhóm hiện tại - Disabled redundant action
+ok 299 - TC-DIR-09 (AC-02.4): Nhận diện nhóm hiện tại - Disabled redundant action
+  ---
+  duration_ms: 1.010818
+  type: 'test'
+  ...
+# Subtest: TC-DIR-10 (AC-02.5): Lối tắt Tạo nhóm mới từ Danh mục
+ok 300 - TC-DIR-10 (AC-02.5): Lối tắt Tạo nhóm mới từ Danh mục
+  ---
+  duration_ms: 10.234854
+  type: 'test'
+  ...
+# Subtest: TC-TYPO-01 (AC-03.1): Tích hợp Font Plus Jakarta Sans & Inter với Vietnamese Subset
+ok 301 - TC-TYPO-01 (AC-03.1): Tích hợp Font Plus Jakarta Sans & Inter với Vietnamese Subset
+  ---
+  duration_ms: 0.655945
+  type: 'test'
+  ...
+# Subtest: TC-TYPO-02 (AC-03.2): Cấu hình Font Family chuẩn trong CSS & Tailwind
+ok 302 - TC-TYPO-02 (AC-03.2): Cấu hình Font Family chuẩn trong CSS & Tailwind
+  ---
+  duration_ms: 0.353705
+  type: 'test'
+  ...
+# Subtest: TC-TYPO-03 (AC-03.3): Dọn sạch Inline Styles ép cứng Font cũ
+ok 303 - TC-TYPO-03 (AC-03.3): Dọn sạch Inline Styles ép cứng Font cũ
+  ---
+  duration_ms: 24.62735
+  type: 'test'
+  ...
+# Subtest: TC-TYPO-04 (AC-03.4): Xóa bỏ triệt để Class Cỡ chữ Siêu nhỏ text-[10px] và text-[11px]
+ok 304 - TC-TYPO-04 (AC-03.4): Xóa bỏ triệt để Class Cỡ chữ Siêu nhỏ text-[10px] và text-[11px]
+  ---
+  duration_ms: 148.049301
+  type: 'test'
+  ...
+# Subtest: TC-TYPO-05 (AC-03.5): Độ tương phản và thang đo cỡ chữ đạt chuẩn >= 12px
+ok 305 - TC-TYPO-05 (AC-03.5): Độ tương phản và thang đo cỡ chữ đạt chuẩn >= 12px
+  ---
+  duration_ms: 73.988484
+  type: 'test'
+  ...
+# Subtest: TC-LOCK-01 (AC-01.1): Exported Bezier Calculation Functions in LandingPage.tsx
+ok 306 - TC-LOCK-01 (AC-01.1): Exported Bezier Calculation Functions in LandingPage.tsx
+  ---
+  duration_ms: 6.938987
+  type: 'test'
+  ...
+# Subtest: TC-LOCK-02 (AC-01.2): Dynamic Parametric Coordinates Bound to All 8 Ecosystem Icons
+ok 307 - TC-LOCK-02 (AC-01.2): Dynamic Parametric Coordinates Bound to All 8 Ecosystem Icons
+  ---
+  duration_ms: 3.265584
+  type: 'test'
+  ...
+# Subtest: TC-SCROLL-MOTION-01 (AC-02.1): Scroll Listener and Dynamic Scroll Offset Calculation
+ok 308 - TC-SCROLL-MOTION-01 (AC-02.1): Scroll Listener and Dynamic Scroll Offset Calculation
+  ---
+  duration_ms: 0.816673
+  type: 'test'
+  ...
+# Subtest: TC-SCROLL-MOTION-02 (AC-02.2): Parametric t Offset Along Bezier Trajectory During Scroll
+ok 309 - TC-SCROLL-MOTION-02 (AC-02.2): Parametric t Offset Along Bezier Trajectory During Scroll
+  ---
+  duration_ms: 0.584682
+  type: 'test'
+  ...
+# Subtest: TC-SCROLL-MOTION-03 (AC-02.3): Visual Transition Class for Smooth Gliding
+ok 310 - TC-SCROLL-MOTION-03 (AC-02.3): Visual Transition Class for Smooth Gliding
+  ---
+  duration_ms: 5.391817
+  type: 'test'
+  ...
+# Subtest: TC-MANIFEST-01 (AC-04.2): Manifest Verification for task-028 Frozen State and SHA-256 Record
+ok 311 - TC-MANIFEST-01 (AC-04.2): Manifest Verification for task-028 Frozen State and SHA-256 Record
+  ---
+  duration_ms: 2.829233
+  type: 'test'
+  ...
+# Subtest: TC-JOIN-01 (AC-01.1): ActionPanel.tsx gọi trực tiếp joinGroup trong handleApproveAndJoin mà không gọi USDC.approve hoặc kiểm tra if (needsApproval)
+ok 312 - TC-JOIN-01 (AC-01.1): ActionPanel.tsx gọi trực tiếp joinGroup trong handleApproveAndJoin mà không gọi USDC.approve hoặc kiểm tra if (needsApproval)
+  ---
+  duration_ms: 26.420974
+  type: 'test'
+  ...
+# Subtest: TC-JOIN-02 (AC-01.2): Nút tham gia nhóm trong ActionPanel.tsx hiển thị trực tiếp 'Join Savings Club' / 'Tham gia nhóm' mà không kiểm tra needsApproval
+ok 313 - TC-JOIN-02 (AC-01.2): Nút tham gia nhóm trong ActionPanel.tsx hiển thị trực tiếp 'Join Savings Club' / 'Tham gia nhóm' mà không kiểm tra needsApproval
+  ---
+  duration_ms: 17.923478
+  type: 'test'
+  ...
+# Subtest: TC-JOIN-03 (AC-01.3): ActionPanel.tsx không còn chứa thông báo toast 'Approve USDC trước, rồi join nhóm'
+ok 314 - TC-JOIN-03 (AC-01.3): ActionPanel.tsx không còn chứa thông báo toast 'Approve USDC trước, rồi join nhóm'
+  ---
+  duration_ms: 1.458603
+  type: 'test'
+  ...
+# Subtest: TC-JOIN-04 (AC-02.1): PasskeyActionPanel.tsx trong handleApproveAndJoin chỉ thêm duy nhất lệnh joinGroup vào batch calls, không thêm lệnh approve
+ok 315 - TC-JOIN-04 (AC-02.1): PasskeyActionPanel.tsx trong handleApproveAndJoin chỉ thêm duy nhất lệnh joinGroup vào batch calls, không thêm lệnh approve
+  ---
+  duration_ms: 13.791446
+  type: 'test'
+  ...
+# Subtest: TC-JOIN-05 (AC-02.2): Nút tham gia nhóm trong PasskeyActionPanel.tsx ở trạng thái OPEN hiển thị trực tiếp 'Join Savings Club' / 'Tham gia nhóm'
+ok 316 - TC-JOIN-05 (AC-02.2): Nút tham gia nhóm trong PasskeyActionPanel.tsx ở trạng thái OPEN hiển thị trực tiếp 'Join Savings Club' / 'Tham gia nhóm'
+  ---
+  duration_ms: 1.230125
+  type: 'test'
+  ...
+# Subtest: TC-JOIN-06 (AC-03.1): Hàm handleContribute và handleApproveForContribute trong cả ActionPanel.tsx và PasskeyActionPanel.tsx giữ nguyên 100% cơ chế kiểm tra needsApproval
+ok 317 - TC-JOIN-06 (AC-03.1): Hàm handleContribute và handleApproveForContribute trong cả ActionPanel.tsx và PasskeyActionPanel.tsx giữ nguyên 100% cơ chế kiểm tra needsApproval
+  ---
+  duration_ms: 34.708454
+  type: 'test'
+  ...
+# Subtest: TC-JOIN-07 (AC-03.2): Hàm handlePlaceBid và handleApproveForBid giữ nguyên 100% cơ chế kiểm tra needsApprovalForBid / needsBidApproval
+ok 318 - TC-JOIN-07 (AC-03.2): Hàm handlePlaceBid và handleApproveForBid giữ nguyên 100% cơ chế kiểm tra needsApprovalForBid / needsBidApproval
+  ---
+  duration_ms: 20.048868
+  type: 'test'
+  ...
+# Subtest: TC-JOIN-08 (AC-04.1 & AC-04.2): Bất biến Zero-Regression và Single-Signature Join được đảm bảo trọn vẹn
+ok 319 - TC-JOIN-08 (AC-04.1 & AC-04.2): Bất biến Zero-Regression và Single-Signature Join được đảm bảo trọn vẹn
+  ---
+  duration_ms: 15.647166
+  type: 'test'
+  ...
+# Subtest: TC-STREAMLINE-01 (AC-01.1): MemberStatus container trong src/App.tsx chứa class 'hidden' và thuộc tính 'aria-hidden="true"' để ẩn hoàn toàn khỏi mắt nhìn người dùng trên giao diện
+ok 320 - TC-STREAMLINE-01 (AC-01.1): MemberStatus container trong src/App.tsx chứa class 'hidden' và thuộc tính 'aria-hidden="true"' để ẩn hoàn toàn khỏi mắt nhìn người dùng trên giao diện
+  ---
+  duration_ms: 6.22309
+  type: 'test'
+  ...
+# Subtest: TC-STREAMLINE-02 (AC-01.2): Cấu trúc <MemberStatus, đầy đủ props và vị trí DOM (sau ActionPanel, trước Round Details) trong src/App.tsx được bảo toàn nguyên vẹn
+ok 321 - TC-STREAMLINE-02 (AC-01.2): Cấu trúc <MemberStatus, đầy đủ props và vị trí DOM (sau ActionPanel, trước Round Details) trong src/App.tsx được bảo toàn nguyên vẹn
+  ---
+  duration_ms: 7.472413
+  type: 'test'
+  ...
+# Subtest: TC-STREAMLINE-03 (AC-02.1): Nút '+ Tạo nhóm' trên Wagmi Header (src/components/savings/Header.tsx) chứa class 'hidden' và thuộc tính 'aria-hidden="true"'
+ok 322 - TC-STREAMLINE-03 (AC-02.1): Nút '+ Tạo nhóm' trên Wagmi Header (src/components/savings/Header.tsx) chứa class 'hidden' và thuộc tính 'aria-hidden="true"'
+  ---
+  duration_ms: 4.065356
+  type: 'test'
+  ...
+# Subtest: TC-STREAMLINE-04 (AC-02.2): Nút '+ Tạo nhóm' trên Passkey topbar (src/App.tsx) chứa class 'hidden' và thuộc tính 'aria-hidden="true"'
+ok 323 - TC-STREAMLINE-04 (AC-02.2): Nút '+ Tạo nhóm' trên Passkey topbar (src/App.tsx) chứa class 'hidden' và thuộc tính 'aria-hidden="true"'
+  ---
+  duration_ms: 1.484037
+  type: 'test'
+  ...
+# Subtest: TC-STREAMLINE-05 (AC-02.3): Toàn bộ title, callbacks, chuỗi nhãn và styling gradient vàng cát của nút Tạo nhóm trên cả 2 Header được bảo toàn nguyên vẹn trong DOM/code
+ok 324 - TC-STREAMLINE-05 (AC-02.3): Toàn bộ title, callbacks, chuỗi nhãn và styling gradient vàng cát của nút Tạo nhóm trên cả 2 Header được bảo toàn nguyên vẹn trong DOM/code
+  ---
+  duration_ms: 1.526436
+  type: 'test'
+  ...
+# Subtest: TC-STREAMLINE-06 (AC-03.1): Các lối tắt tạo nhóm chuyên trách trong GroupSwitcher.tsx và ClubDirectoryModal.tsx duy trì đầy đủ và hoạt động hoàn hảo
+ok 325 - TC-STREAMLINE-06 (AC-03.1): Các lối tắt tạo nhóm chuyên trách trong GroupSwitcher.tsx và ClubDirectoryModal.tsx duy trì đầy đủ và hoạt động hoàn hảo
+  ---
+  duration_ms: 4.97266
+  type: 'test'
+  ...
+# Subtest: TC-STREAMLINE-07 (AC-03.2): Tính toán băm SHA256 xác thực cả 2 tệp App.tsx và Header.tsx khớp chuẩn xác với manifest
+ok 326 - TC-STREAMLINE-07 (AC-03.2): Tính toán băm SHA256 xác thực cả 2 tệp App.tsx và Header.tsx khớp chuẩn xác với manifest
+  ---
+  duration_ms: 1.049694
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-01 (AC-01.1): Script CLI hỗ trợ đầy đủ các cờ --help, --dry-run, --funder-key, --amount, --bid, --group
+ok 327 - TC-10MEM-01 (AC-01.1): Script CLI hỗ trợ đầy đủ các cờ --help, --dry-run, --funder-key, --amount, --bid, --group
+  ---
+  duration_ms: 774.432346
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-02 (AC-01.2): Cơ chế kiểm tra số dư Pre-flight check và logic sinh ngẫu nhiên 9 ví phụ
+ok 328 - TC-10MEM-02 (AC-01.2): Cơ chế kiểm tra số dư Pre-flight check và logic sinh ngẫu nhiên 9 ví phụ
+  ---
+  duration_ms: 555.373933
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-03 (AC-01.3): Công thức tính toán tài trợ gas native và ERC-20 USDC cho 9 ví phụ chính xác, không lãng phí
+ok 329 - TC-10MEM-03 (AC-01.3): Công thức tính toán tài trợ gas native và ERC-20 USDC cho 9 ví phụ chính xác, không lãng phí
+  ---
+  duration_ms: 0.960496
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-04 (AC-02.1): Logic triển khai nhóm mới 10 người và quy trình đăng ký đủ 10/10 thành viên on-chain
+ok 330 - TC-10MEM-04 (AC-02.1): Logic triển khai nhóm mới 10 người và quy trình đăng ký đủ 10/10 thành viên on-chain
+  ---
+  duration_ms: 1.408729
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-05 (AC-02.2): Chuyển đổi trạng thái từ OPEN sang ACTIVE Vòng 1 qua hàm startRounds()
+ok 331 - TC-10MEM-05 (AC-02.2): Chuyển đổi trạng thái từ OPEN sang ACTIVE Vòng 1 qua hàm startRounds()
+  ---
+  duration_ms: 0.70605
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-06 (AC-02.3): Logic đóng tiền đủ 10 ví và đặt bid đấu giá hợp lệ
+ok 332 - TC-10MEM-06 (AC-02.3): Logic đóng tiền đủ 10 ví và đặt bid đấu giá hợp lệ
+  ---
+  duration_ms: 0.656205
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-07 (AC-02.4): Thỏa mãn điều kiện tất toán sớm canEarlySettle và công thức tính toán claimable cho người thắng
+ok 333 - TC-10MEM-07 (AC-02.4): Thỏa mãn điều kiện tất toán sớm canEarlySettle và công thức tính toán claimable cho người thắng
+  ---
+  duration_ms: 0.631511
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-08 (AC-03.1): Định dạng xuất kết quả CLI cung cấp URL trực tiếp: http://localhost:5173/?group=0x...
+ok 334 - TC-10MEM-08 (AC-03.1): Định dạng xuất kết quả CLI cung cấp URL trực tiếp: http://localhost:5173/?group=0x...
+  ---
+  duration_ms: 0.559842
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-09 (AC-03.2): Giao diện web MemberStatus.tsx liên kết prop claimable > 0n và hiển thị khối rút tiền kèm nút bấm 'Rút tiền (Claim Payout)'
+ok 335 - TC-10MEM-09 (AC-03.2): Giao diện web MemberStatus.tsx liên kết prop claimable > 0n và hiển thị khối rút tiền kèm nút bấm 'Rút tiền (Claim Payout)'
+  ---
+  duration_ms: 1.300433
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-10 (AC-03.3): App.tsx xử lý hàm handleClaimPayout() gọi hàm hợp đồng claimPayout() và lắng nghe receipt
+ok 336 - TC-10MEM-10 (AC-03.3): App.tsx xử lý hàm handleClaimPayout() gọi hàm hợp đồng claimPayout() và lắng nghe receipt
+  ---
+  duration_ms: 1.944719
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-11 (AC-03.4): package.json chứa lệnh script 'setup:10-members': 'node scripts/setup-10-members.mjs'
+ok 337 - TC-10MEM-11 (AC-03.4): package.json chứa lệnh script 'setup:10-members': 'node scripts/setup-10-members.mjs'
+  ---
+  duration_ms: 0.76766
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-12: Chạy thử nghiệm thực tế --dry-run của script trả về mã thoát exit code 0
+ok 338 - TC-10MEM-12: Chạy thử nghiệm thực tế --dry-run của script trả về mã thoát exit code 0
+  ---
+  duration_ms: 2568.636085
+  type: 'test'
+  ...
+# Subtest: TC-10MEM-13: Toàn bộ 157 bài kiểm thử cũ tiếp tục PASS 100% (Zero Regression) và build production thành công
+ok 339 - TC-10MEM-13: Toàn bộ 157 bài kiểm thử cũ tiếp tục PASS 100% (Zero Regression) và build production thành công
+  ---
+  duration_ms: 0.537119
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-01 (AC-01.1): Nút tab active trên Header.tsx mang class gradient Vàng Cát 'bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 text-slate-950 font-bold', không còn class viên thuốc trắng trên button hiển thị
+ok 340 - TC-TONTINE-01 (AC-01.1): Nút tab active trên Header.tsx mang class gradient Vàng Cát 'bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 text-slate-950 font-bold', không còn class viên thuốc trắng trên button hiển thị
+  ---
+  duration_ms: 8.923517
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-02 (AC-01.2): Nút tab active trên thanh Passkey topbar trong App.tsx mang class gradient Vàng Cát đồng bộ
+ok 341 - TC-TONTINE-02 (AC-01.2): Nút tab active trên thanh Passkey topbar trong App.tsx mang class gradient Vàng Cát đồng bộ
+  ---
+  duration_ms: 4.260217
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-03 (AC-01.3): Cầu nối ẩn trong Header.tsx và App.tsx bảo toàn các regex kiểm thử cũ (TC-NAV-01 & TC-BLACK-15)
+ok 342 - TC-TONTINE-03 (AC-01.3): Cầu nối ẩn trong Header.tsx và App.tsx bảo toàn các regex kiểm thử cũ (TC-NAV-01 & TC-BLACK-15)
+  ---
+  duration_ms: 1.23801
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-04 (AC-02.1): Tiêu đề 'Tham gia nhóm' / 'Join Club' trong ActionPanel.tsx mang text-white font-bold, không dùng text-slate-900 trên giao diện hiển thị
+ok 343 - TC-TONTINE-04 (AC-02.1): Tiêu đề 'Tham gia nhóm' / 'Join Club' trong ActionPanel.tsx mang text-white font-bold, không dùng text-slate-900 trên giao diện hiển thị
+  ---
+  duration_ms: 4.453285
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-05 (AC-02.2): Khối thẻ giải thích 'Vì sao chưa thấy chỗ đóng tiền?' trong ActionPanel.tsx mang nền đen obsidian bg-[\#0a0b12]/80 border-amber-500/20, icon Info text-amber-400, nội dung text-slate-300, không còn thẻ trắng hiển thị
+ok 344 - TC-TONTINE-05 (AC-02.2): Khối thẻ giải thích 'Vì sao chưa thấy chỗ đóng tiền?' trong ActionPanel.tsx mang nền đen obsidian bg-[\#0a0b12]/80 border-amber-500/20, icon Info text-amber-400, nội dung text-slate-300, không còn thẻ trắng hiển thị
+  ---
+  duration_ms: 1.339257
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-06 (AC-02.3): 3 số bước lộ trình mang badge vàng cát bg-amber-500/20 text-amber-300 border-amber-500/30, nút mời bạn bè mang style vàng cát bg-amber-500/10 text-amber-300 border-amber-500/30, khối xác nhận thành viên mang style emerald tối sang trọng
+ok 345 - TC-TONTINE-06 (AC-02.3): 3 số bước lộ trình mang badge vàng cát bg-amber-500/20 text-amber-300 border-amber-500/30, nút mời bạn bè mang style vàng cát bg-amber-500/10 text-amber-300 border-amber-500/30, khối xác nhận thành viên mang style emerald tối sang trọng
+  ---
+  duration_ms: 4.328788
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-07 (AC-02.4): PasskeyActionPanel.tsx đồng bộ toàn diện tiêu đề trắng, khối giải thích đen obsidian, lộ trình vàng cát và nút mời bạn bè như ActionPanel.tsx
+ok 346 - TC-TONTINE-07 (AC-02.4): PasskeyActionPanel.tsx đồng bộ toàn diện tiêu đề trắng, khối giải thích đen obsidian, lộ trình vàng cát và nút mời bạn bè như ActionPanel.tsx
+  ---
+  duration_ms: 0.895732
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-08 (AC-02.5): Cầu nối ẩn trong ActionPanel.tsx và PasskeyActionPanel.tsx bảo toàn chuỗi kiểm thử TC-TYPO-01
+ok 347 - TC-TONTINE-08 (AC-02.5): Cầu nối ẩn trong ActionPanel.tsx và PasskeyActionPanel.tsx bảo toàn chuỗi kiểm thử TC-TYPO-01
+  ---
+  duration_ms: 3.285801
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-09 (AC-03.1): Tệp public/favicon.svg tồn tại, là SVG hợp lệ với gradient vàng cát (\#fbbf24, \#f59e0b, \#d97706) và hình bóng Chú Heo Vàng Kim (\#090d16)
+ok 348 - TC-TONTINE-09 (AC-03.1): Tệp public/favicon.svg tồn tại, là SVG hợp lệ với gradient vàng cát (\#fbbf24, \#f59e0b, \#d97706) và hình bóng Chú Heo Vàng Kim (\#090d16)
+  ---
+  duration_ms: 1.079426
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-10 (AC-03.2): Các tệp favicon (public/favicon.png, public/favicon.ico, public/logo-badge.png) tồn tại và có kích thước hợp lệ (> 0 bytes)
+ok 349 - TC-TONTINE-10 (AC-03.2): Các tệp favicon (public/favicon.png, public/favicon.ico, public/logo-badge.png) tồn tại và có kích thước hợp lệ (> 0 bytes)
+  ---
+  duration_ms: 7.537711
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-11 (AC-03.3): Tệp index.html cấu hình thẻ <link rel='icon'> liên kết tới /favicon.svg?v=4 và /favicon.png?v=4
+ok 350 - TC-TONTINE-11 (AC-03.3): Tệp index.html cấu hình thẻ <link rel='icon'> liên kết tới /favicon.svg?v=4 và /favicon.png?v=4
+  ---
+  duration_ms: 0.516465
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-12 (AC-04.1): Tiêu đề <title> trong index.html được đổi thành 'Tontine — Trustless Rotating Savings Club on Arc Network'
+ok 351 - TC-TONTINE-12 (AC-04.1): Tiêu đề <title> trong index.html được đổi thành 'Tontine — Trustless Rotating Savings Club on Arc Network'
+  ---
+  duration_ms: 0.289718
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-13 (AC-04.2): Header.tsx hiển thị tên thương hiệu 'Tontine' cạnh logo Chú Heo Vàng Kim
+ok 352 - TC-TONTINE-13 (AC-04.2): Header.tsx hiển thị tên thương hiệu 'Tontine' cạnh logo Chú Heo Vàng Kim
+  ---
+  duration_ms: 0.314287
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-14 (AC-04.3): App.tsx passkey topbar hiển thị tên thương hiệu 'Tontine'
+ok 353 - TC-TONTINE-14 (AC-04.3): App.tsx passkey topbar hiển thị tên thương hiệu 'Tontine'
+  ---
+  duration_ms: 2.960857
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-15 (AC-04.4): Từ điển src/lib/i18n.ts tiếp tục duy trì khóa appName: 'HụiChain' để 4 unit tests kiểm tra dictionary tiếp tục PASS 100%
+ok 354 - TC-TONTINE-15 (AC-04.4): Từ điển src/lib/i18n.ts tiếp tục duy trì khóa appName: 'HụiChain' để 4 unit tests kiểm tra dictionary tiếp tục PASS 100%
+  ---
+  duration_ms: 0.302636
+  type: 'test'
+  ...
+# Subtest: TC-TONTINE-16: Toàn bộ 141 bài kiểm thử cũ tiếp tục PASS 100% (Zero Regression) và cấu trúc ứng dụng an toàn
+ok 355 - TC-TONTINE-16: Toàn bộ 141 bài kiểm thử cũ tiếp tục PASS 100% (Zero Regression) và cấu trúc ứng dụng an toàn
+  ---
+  duration_ms: 5.85094
+  type: 'test'
+  ...
+# Subtest: AC-01.1: Safe execution in useEffect (Render loop fix in ActionPanel.tsx)
+ok 356 - AC-01.1: Safe execution in useEffect (Render loop fix in ActionPanel.tsx)
+  ---
+  duration_ms: 24.530733
+  type: 'test'
+  ...
+# Subtest: AC-01.2: No duplicate trigger on state reset
+ok 357 - AC-01.2: No duplicate trigger on state reset
+  ---
+  duration_ms: 7.282199
+  type: 'test'
+  ...
+# Subtest: AC-02.1: parseUsdc parses valid integer strings to 6-decimal raw BigInt
+ok 358 - AC-02.1: parseUsdc parses valid integer strings to 6-decimal raw BigInt
+  ---
+  duration_ms: 3.514021
+  type: 'test'
+  ...
+# Subtest: AC-02.2: parseUsdc parses valid decimal strings accurately without floating-point error
+ok 359 - AC-02.2: parseUsdc parses valid decimal strings accurately without floating-point error
+  ---
+  duration_ms: 3.025127
+  type: 'test'
+  ...
+# Subtest: AC-02.3: parseUsdc handles minimum precision decimal (0.000001 = 1 micro-USDC)
+ok 360 - AC-02.3: parseUsdc handles minimum precision decimal (0.000001 = 1 micro-USDC)
+  ---
+  duration_ms: 0.64596
+  type: 'test'
+  ...
+# Subtest: AC-02.4: parseUsdc safely rejects negative numbers returning 0n without throwing
+ok 361 - AC-02.4: parseUsdc safely rejects negative numbers returning 0n without throwing
+  ---
+  duration_ms: 0.321836
+  type: 'test'
+  ...
+# Subtest: AC-02.5: parseUsdc safely rejects empty and whitespace-only strings returning 0n
+ok 362 - AC-02.5: parseUsdc safely rejects empty and whitespace-only strings returning 0n
+  ---
+  duration_ms: 0.453853
+  type: 'test'
+  ...
+# Subtest: AC-02.6: parseUsdc safely rejects non-numeric and malformed strings returning 0n
+ok 363 - AC-02.6: parseUsdc safely rejects non-numeric and malformed strings returning 0n
+  ---
+  duration_ms: 0.304996
+  type: 'test'
+  ...
+# Subtest: AC-02.7: parseUsdc safely truncates excessive decimals (> 6 decimals) without crashing
+ok 364 - AC-02.7: parseUsdc safely truncates excessive decimals (> 6 decimals) without crashing
+  ---
+  duration_ms: 4.925297
+  type: 'test'
+  ...
+# Subtest: AC-02.8: Passkey & Regular ActionPanel bid input safety mechanism
+ok 365 - AC-02.8: Passkey & Regular ActionPanel bid input safety mechanism
+  ---
+  duration_ms: 15.14118
+  type: 'test'
+  ...
+# Subtest: AC-03.1: Owner identification logic in App.tsx
+ok 366 - AC-03.1: Owner identification logic in App.tsx
+  ---
+  duration_ms: 5.899742
+  type: 'test'
+  ...
+# Subtest: AC-03.2: Start button disabled when members < 2
+ok 367 - AC-03.2: Start button disabled when members < 2
+  ---
+  duration_ms: 1.17649
+  type: 'test'
+  ...
+# Subtest: AC-03.3: Start button enabled when members >= 2
+ok 368 - AC-03.3: Start button enabled when members >= 2
+  ---
+  duration_ms: 1.062028
+  type: 'test'
+  ...
+# Subtest: AC-03.4: Cancel group button available in OPEN state
+ok 369 - AC-03.4: Cancel group button available in OPEN state
+  ---
+  duration_ms: 1.038125
+  type: 'test'
+  ...
+# Subtest: AC-03.5: Non-owner cannot see Owner Controls
+ok 370 - AC-03.5: Non-owner cannot see Owner Controls
+  ---
+  duration_ms: 1.233577
+  type: 'test'
+  ...
+# Subtest: AC-03.6: Controls hidden when state != OPEN
+ok 371 - AC-03.6: Controls hidden when state != OPEN
+  ---
+  duration_ms: 7.038234
+  type: 'test'
+  ...
+# Subtest: AC-04.1: Render settled rounds with roundId, winner, totalPot, and totalBids
+ok 372 - AC-04.1: Render settled rounds with roundId, winner, totalPot, and totalBids
+  ---
+  duration_ms: 1.196382
+  type: 'test'
+  ...
+# Subtest: AC-04.2: Highlight connected user as winner with 'Bạn!' badge
+ok 373 - AC-04.2: Highlight connected user as winner with 'Bạn!' badge
+  ---
+  duration_ms: 0.408644
+  type: 'test'
+  ...
+# Subtest: AC-04.3: Empty history state displays friendly message when no rounds settled
+ok 374 - AC-04.3: Empty history state displays friendly message when no rounds settled
+  ---
+  duration_ms: 0.478371
+  type: 'test'
+  ...
+# Subtest: AC-05.1: Load group from valid URL query param (?group=0x...)
+ok 375 - AC-05.1: Load group from valid URL query param (?group=0x...)
+  ---
+  duration_ms: 1.256855
+  type: 'test'
+  ...
+# Subtest: AC-05.2: Fallback to ROTATING_SAVINGS_ADDRESS on invalid or missing URL param
+ok 376 - AC-05.2: Fallback to ROTATING_SAVINGS_ADDRESS on invalid or missing URL param
+  ---
+  duration_ms: 1.120318
+  type: 'test'
+  ...
+# Subtest: AC-05.3: Switch group dynamically updates state and URL without page reload
+ok 377 - AC-05.3: Switch group dynamically updates state and URL without page reload
+  ---
+  duration_ms: 1.097681
+  type: 'test'
+  ...
+# Subtest: AC-05.4: Copy share link to clipboard with correct format and toast notification
+ok 378 - AC-05.4: Copy share link to clipboard with correct format and toast notification
+  ---
+  duration_ms: 0.707307
+  type: 'test'
+  ...
+# Subtest: AC-06.1: Non-blocking public layout when unauthenticated (!address)
+ok 379 - AC-06.1: Non-blocking public layout when unauthenticated (!address)
+  ---
+  duration_ms: 2.215254
+  type: 'test'
+  ...
+# Subtest: AC-06.2: Onboarding guide is non-blocking, on-demand with dismissible onClose
+ok 380 - AC-06.2: Onboarding guide is non-blocking, on-demand with dismissible onClose
+  ---
+  duration_ms: 1.755566
+  type: 'test'
+  ...
+# Subtest: AC-06.3: No alarming developer missing-config alert in unauthenticated user view
+ok 381 - AC-06.3: No alarming developer missing-config alert in unauthenticated user view
+  ---
+  duration_ms: 0.419822
+  type: 'test'
+  ...
+# Subtest: TC-TOAST-01 (AC-01.1): Toaster trong src/main.tsx cấu hình duration={2000}
+ok 382 - TC-TOAST-01 (AC-01.1): Toaster trong src/main.tsx cấu hình duration={2000}
+  ---
+  duration_ms: 9.02638
+  type: 'test'
+  ...
+# Subtest: TC-TOAST-02 (AC-01.2): Toaster trong src/main.tsx kích hoạt closeButton
+ok 383 - TC-TOAST-02 (AC-01.2): Toaster trong src/main.tsx kích hoạt closeButton
+  ---
+  duration_ms: 0.595955
+  type: 'test'
+  ...
+# Subtest: TC-TOAST-03 (AC-01.3): Toaster trong src/main.tsx duy trì vị trí top-center và richColors
+ok 384 - TC-TOAST-03 (AC-01.3): Toaster trong src/main.tsx duy trì vị trí top-center và richColors
+  ---
+  duration_ms: 0.697896
+  type: 'test'
+  ...
+# Subtest: TC-NAME-01 (AC-02.1): App.tsx tính toán displayedGroupName ưu tiên tên danh bạ knownGroups thay vì chỉ đọc on-chain
+ok 385 - TC-NAME-01 (AC-02.1): App.tsx tính toán displayedGroupName ưu tiên tên danh bạ knownGroups thay vì chỉ đọc on-chain
+  ---
+  duration_ms: 3.166143
+  type: 'test'
+  ...
+# Subtest: TC-NAME-02 (AC-02.2): ClubCard được gán key={contractAddress} và groupName={displayedGroupName} giúp giao diện đổi tên tức thì
+ok 386 - TC-NAME-02 (AC-02.2): ClubCard được gán key={contractAddress} và groupName={displayedGroupName} giúp giao diện đổi tên tức thì
+  ---
+  duration_ms: 1.637175
+  type: 'test'
+  ...
+# Subtest: TC-NAME-03 (AC-02.3): Đổi sang nhóm tùy chỉnh đã lưu trong knownGroups hiển thị chính xác tức thì
+ok 387 - TC-NAME-03 (AC-02.3): Đổi sang nhóm tùy chỉnh đã lưu trong knownGroups hiển thị chính xác tức thì
+  ---
+  duration_ms: 1.290264
+  type: 'test'
+  ...
+# Subtest: TC-NAME-04 (AC-02.4): Nhóm mới chưa có trong danh bạ hiển thị fallback an toàn và sync on-chain qua saveKnownGroup
+ok 388 - TC-NAME-04 (AC-02.4): Nhóm mới chưa có trong danh bạ hiển thị fallback an toàn và sync on-chain qua saveKnownGroup
+  ---
+  duration_ms: 4.342844
+  type: 'test'
+  ...
+# Subtest: TC-NAME-05 (AC-02.5): Tạo nhóm mới thành công gọi saveKnownGroup và cập nhật tức thì
+ok 389 - TC-NAME-05 (AC-02.5): Tạo nhóm mới thành công gọi saveKnownGroup và cập nhật tức thì
+  ---
+  duration_ms: 1.3158
+  type: 'test'
+  ...
+# Subtest: TC-PLUS-01 (AC-03.1): Nút tạo nhóm trên Header.tsx tuân thủ bất biến Single Plus, không còn lỗi hiển thị 2 dấu cộng (+ +)
+ok 390 - TC-PLUS-01 (AC-03.1): Nút tạo nhóm trên Header.tsx tuân thủ bất biến Single Plus, không còn lỗi hiển thị 2 dấu cộng (+ +)
+  ---
+  duration_ms: 1.129381
+  type: 'test'
+  ...
+# Subtest: TC-PLUS-02 (AC-03.2): Nút tạo nhóm trên GroupSwitcher.tsx tuân thủ bất biến Single Plus, không còn lỗi hiển thị 2 dấu cộng
+ok 391 - TC-PLUS-02 (AC-03.2): Nút tạo nhóm trên GroupSwitcher.tsx tuân thủ bất biến Single Plus, không còn lỗi hiển thị 2 dấu cộng
+  ---
+  duration_ms: 1.57304
+  type: 'test'
+  ...
+# Subtest: TC-PLUS-03 (AC-03.3): Nút tạo nhóm trên ClubDirectoryModal.tsx và thanh Passkey Header tuân thủ bất biến Single Plus
+ok 392 - TC-PLUS-03 (AC-03.3): Nút tạo nhóm trên ClubDirectoryModal.tsx và thanh Passkey Header tuân thủ bất biến Single Plus
+  ---
+  duration_ms: 1.773746
+  type: 'test'
+  ...
+# Subtest: TC-PLUS-04 (AC-03.4): Chuỗi createBtn trong src/lib/i18n.ts (header, groupSwitcher, clubDirectoryModal) được chuẩn hóa sạch, không có dấu '+' thừa phía trước
+ok 393 - TC-PLUS-04 (AC-03.4): Chuỗi createBtn trong src/lib/i18n.ts (header, groupSwitcher, clubDirectoryModal) được chuẩn hóa sạch, không có dấu '+' thừa phía trước
+  ---
+  duration_ms: 0.757596
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-01 (AC-01.1): Hàm contribute(roundId) trong contracts/RotatingSavings.sol cho phép người đã thắng đóng tiền, không bị revert AlreadyWon()
+ok 394 - TC-DEADHUI-01 (AC-01.1): Hàm contribute(roundId) trong contracts/RotatingSavings.sol cho phép người đã thắng đóng tiền, không bị revert AlreadyWon()
+  ---
+  duration_ms: 3.031869
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-02 (AC-01.2): Ràng buộc đóng tiền: mỗi vòng chỉ đóng 1 lần, đúng roundId == currentRound, vòng ACTIVE, !isKicked, block.timestamp <= endTime
+ok 395 - TC-DEADHUI-02 (AC-01.2): Ràng buộc đóng tiền: mỗi vòng chỉ đóng 1 lần, đúng roundId == currentRound, vòng ACTIVE, !isKicked, block.timestamp <= endTime
+  ---
+  duration_ms: 0.533435
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-03 (AC-01.3): Hàm settleRound(roundId) cộng dồn đóng góp của toàn bộ thành viên hợp lệ (kể cả người đã thắng hụi chết) vào totalPot
+ok 396 - TC-DEADHUI-03 (AC-01.3): Hàm settleRound(roundId) cộng dồn đóng góp của toàn bộ thành viên hợp lệ (kể cả người đã thắng hụi chết) vào totalPot
+  ---
+  duration_ms: 0.407389
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-04 (AC-01.4): Quy mô quỹ Pot được bảo toàn 100% cố định qua mọi vòng (totalPot = N * contributionAmount)
+ok 397 - TC-DEADHUI-04 (AC-01.4): Quy mô quỹ Pot được bảo toàn 100% cố định qua mọi vòng (totalPot = N * contributionAmount)
+  ---
+  duration_ms: 0.903913
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-05 (AC-02.1): Hàm placeBid(roundId, bidAmount) cấm tuyệt đối người đã thắng đặt bid, duy trì revert AlreadyWon()
+ok 398 - TC-DEADHUI-05 (AC-02.1): Hàm placeBid(roundId, bidAmount) cấm tuyệt đối người đã thắng đặt bid, duy trì revert AlreadyWon()
+  ---
+  duration_ms: 0.544375
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-06 (AC-02.2): Hàm settleRound(roundId) chỉ chọn winner mới trong danh sách thành viên CHƯA TỪNG THẮNG (!hasWon[member])
+ok 399 - TC-DEADHUI-06 (AC-02.2): Hàm settleRound(roundId) chỉ chọn winner mới trong danh sách thành viên CHƯA TỪNG THẮNG (!hasWon[member])
+  ---
+  duration_ms: 0.362853
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-07 (AC-02.3): Hàm _distributeBonuses() chỉ chia tiền thưởng bonus từ bids cho thành viên CHƯA TỪNG THẮNG (!hasWon[member] && !isKicked[member] && member != winner)
+ok 400 - TC-DEADHUI-07 (AC-02.3): Hàm _distributeBonuses() chỉ chia tiền thưởng bonus từ bids cho thành viên CHƯA TỪNG THẮNG (!hasWon[member] && !isKicked[member] && member != winner)
+  ---
+  duration_ms: 0.568882
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-08 (AC-02.4): Điều kiện tất toán sớm canEarlySettle: _allRemainingContributedOrKicked() yêu cầu TẤT CẢ thành viên chưa kicked (kể cả người đã thắng) đều phải đóng tiền
+ok 401 - TC-DEADHUI-08 (AC-02.4): Điều kiện tất toán sớm canEarlySettle: _allRemainingContributedOrKicked() yêu cầu TẤT CẢ thành viên chưa kicked (kể cả người đã thắng) đều phải đóng tiền
+  ---
+  duration_ms: 0.394511
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-09 (AC-02.5): Cơ chế phạt: Nếu người đã thắng không đóng hụi chết khi vòng kết thúc, hợp đồng kick người này (isKicked = true)
+ok 402 - TC-DEADHUI-09 (AC-02.5): Cơ chế phạt: Nếu người đã thắng không đóng hụi chết khi vòng kết thúc, hợp đồng kick người này (isKicked = true)
+  ---
+  duration_ms: 0.966943
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-10 (AC-03.1): ActionPanel.tsx và PasskeyActionPanel.tsx hiển thị Thẻ Đóng Hụi Chết với nhãn bắt buộc khi hasWon == true
+ok 403 - TC-DEADHUI-10 (AC-03.1): ActionPanel.tsx và PasskeyActionPanel.tsx hiển thị Thẻ Đóng Hụi Chết với nhãn bắt buộc khi hasWon == true
+  ---
+  duration_ms: 3.807264
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-11 (AC-03.2): Giao diện cung cấp nút bấm nộp tiền hụi chết và cập nhật trạng thái 'Đã đóng hụi chết vòng này' on-chain kèm CheckCircle2
+ok 404 - TC-DEADHUI-11 (AC-03.2): Giao diện cung cấp nút bấm nộp tiền hụi chết và cập nhật trạng thái 'Đã đóng hụi chết vòng này' on-chain kèm CheckCircle2
+  ---
+  duration_ms: 1.930626
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-12 (AC-03.3): Khóa/ẩn form đặt bid cho người đã thắng, hiển thị Banner Độc quyền đấu giá cho người chưa hốt và duy trì nút lối tắt
+ok 405 - TC-DEADHUI-12 (AC-03.3): Khóa/ẩn form đặt bid cho người đã thắng, hiển thị Banner Độc quyền đấu giá cho người chưa hốt và duy trì nút lối tắt
+  ---
+  duration_ms: 2.008945
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-13 (AC-04.1): MemberStatus.tsx phản ánh đúng tiến độ đóng tiền của người đã thắng ở vòng hiện tại (Đã đóng / Chưa đóng)
+ok 406 - TC-DEADHUI-13 (AC-04.1): MemberStatus.tsx phản ánh đúng tiến độ đóng tiền của người đã thắng ở vòng hiện tại (Đã đóng / Chưa đóng)
+  ---
+  duration_ms: 0.373181
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-14 (AC-04.2): ClubMembersRoster.tsx hiển thị cả huy hiệu 🏆 Đã hốt vòng X, tiến độ đóng hụi chết vòng hiện tại, và cột Bid hiển thị 'Đã hốt (Không bid)' / 'No bid (Awarded)'
+ok 407 - TC-DEADHUI-14 (AC-04.2): ClubMembersRoster.tsx hiển thị cả huy hiệu 🏆 Đã hốt vòng X, tiến độ đóng hụi chết vòng hiện tại, và cột Bid hiển thị 'Đã hốt (Không bid)' / 'No bid (Awarded)'
+  ---
+  duration_ms: 0.381748
+  type: 'test'
+  ...
+# Subtest: TC-DEADHUI-15 (AC-04.3): Từ điển song ngữ src/lib/i18n.ts cung cấp đầy đủ chuỗi vi và en cho Hụi chết và Độc quyền đấu giá
+ok 408 - TC-DEADHUI-15 (AC-04.3): Từ điển song ngữ src/lib/i18n.ts cung cấp đầy đủ chuỗi vi và en cho Hụi chết và Độc quyền đấu giá
+  ---
+  duration_ms: 0.452315
+  type: 'test'
+  ...
+1..408
+# tests 408
+# suites 0
+# pass 408
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10332.437203
+
