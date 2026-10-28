@@ -16,3 +16,4 @@ scripts/launch-*.mjs
 scripts/wait-*.mjs
 scripts/watch-*.mjs
 contracts/cache/
+.vercel
