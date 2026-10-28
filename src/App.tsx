@@ -47,7 +47,7 @@ import {
   parseContractError,
 } from "./contract";
 import { buildTxExplorerUrl, buildAddressExplorerUrl } from "@/onchain-facts";
-import { ExternalLink, RefreshCw, Info, Shield, Crown, Layers, Globe, Plus, BookOpen, PiggyBank, Users, Calendar, Zap } from "lucide-react";
+import { ExternalLink, RefreshCw, Info, Shield, Crown, Layers, Globe, Plus, BookOpen, PiggyBank, Users, Calendar, Zap, Wallet } from "lucide-react";
 import { Language, getStoredLanguage, setStoredLanguage, t } from "./lib/i18n";
 
 export default function App() {
@@ -91,6 +91,16 @@ export default function App() {
     return ROTATING_SAVINGS_ADDRESS;
   });
 
+  // Tracks if the user intentionally navigated via invite link (?group=...) or selected from directory
+  const [hasExplicitGroup, setHasExplicitGroup] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const group = params.get("group");
+      return Boolean(isValidAddress(group));
+    }
+    return false;
+  });
+
   // Navigation active tab: 'home' | 'app'
   const [activeTab, setActiveTab] = useState<"home" | "app">(() => {
     if (typeof window !== "undefined") {
@@ -121,6 +131,7 @@ export default function App() {
         url.searchParams.delete("group");
         const cleanPath = url.pathname + (url.search ? url.search : "");
         window.history.pushState({}, "", cleanPath);
+        setHasExplicitGroup(false);
       } else {
         url.searchParams.delete("view");
         url.searchParams.set("tab", "app");
@@ -138,6 +149,7 @@ export default function App() {
 
   const handleSwitchGroup = (newAddress: `0x${string}`) => {
     setContractAddress(newAddress);
+    setHasExplicitGroup(true);
     setNameUpdateTrigger((prev) => prev + 1);
     setActiveTab("app");
     const url = new URL(window.location.href);
@@ -186,6 +198,7 @@ export default function App() {
       const group = params.get("group");
       const view = params.get("view");
       const tab = params.get("tab");
+      setHasExplicitGroup(Boolean(isValidAddress(group)));
       if (tab === "app") {
         if (isValidAddress(group)) {
           setContractAddress(group.toLowerCase() as `0x${string}`);
@@ -263,7 +276,9 @@ export default function App() {
     saveKnownGroup({
       address: newAddress,
       name: isEn ? `Savings Club ${formatAddress(newAddress)}` : `Nhóm Hụi ${formatAddress(newAddress)}`,
+      creator: address?.toLowerCase(),
     });
+    setHasExplicitGroup(true);
     handleSwitchGroup(newAddress);
     setShowCreateModal(false);
     if (isEn) {
@@ -380,6 +395,22 @@ export default function App() {
     clubInfo.pendingOwner &&
     address.toLowerCase() === clubInfo.pendingOwner.toLowerCase()
   );
+
+  const isUserAffiliated = Boolean(isOwner || memberStatus.isMember);
+
+  // Auto-switch to user-owned club if connected and current club is not affiliated
+  useEffect(() => {
+    if (address && !hasExplicitGroup && !isUserAffiliated) {
+      const known = getKnownGroups();
+      const myClub = known.find(
+        (g) => g.creator && g.creator.toLowerCase() === address.toLowerCase()
+      );
+      if (myClub && myClub.address.toLowerCase() !== contractAddress.toLowerCase()) {
+        setContractAddress(myClub.address);
+        setNameUpdateTrigger((prev) => prev + 1);
+      }
+    }
+  }, [address, hasExplicitGroup, isUserAffiliated, contractAddress]);
 
   const {
     writeContract: ownerWrite,
@@ -1022,8 +1053,80 @@ export default function App() {
           </div>
         )}
 
+        {/* Unauthenticated View: User opened app directly without logging in and without explicit invite link */}
+        {!isLoading && !hasNoActiveClub && !address && !hasExplicitGroup && (
+          <div className="bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] rounded-3xl p-10 sm:p-14 text-center border border-amber-500/30 shadow-xl max-w-2xl mx-auto my-8 space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400 shadow-lg shadow-amber-500/10">
+              <Wallet size={34} />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                {isEn ? "Connect Wallet to View Your Clubs" : "Vui lòng kết nối ví để xem Nhóm Hụi"}
+              </h2>
+              <p className="text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+                {isEn
+                  ? "Connect your wallet to manage savings clubs you've created or joined, or create a new rotating savings club on Arc Testnet."
+                  : "Bạn chưa kết nối ví. Vui lòng kết nối ví để xem các nhóm hụi do bạn tạo hoặc đã tham gia, hoặc tạo nhóm mới."}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => openConnectModal?.(true)}
+                className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center gap-2"
+              >
+                <Wallet size={18} />
+                <span>{isEn ? "Connect Wallet" : "Kết nối ví ngay"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDirectoryModal(true)}
+                className="px-5 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-sm border border-amber-500/30 transition-all cursor-pointer"
+              >
+                {isEn ? "Open Club Directory" : "Mở Danh sách nhóm"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Connected but Not Affiliated: Wallet is connected, but hasn't created or joined this club and didn't open via invite link */}
+        {!isLoading && !hasNoActiveClub && address && !isUserAffiliated && !hasExplicitGroup && (
+          <div className="bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] rounded-3xl p-10 sm:p-14 text-center border border-amber-500/30 shadow-xl max-w-2xl mx-auto my-8 space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400 shadow-lg shadow-amber-500/10">
+              <PiggyBank size={34} />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                {isEn ? "No Savings Clubs Yet" : "Bạn chưa tham gia nhóm Hụi nào"}
+              </h2>
+              <p className="text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+                {isEn
+                  ? "Your connected wallet hasn't created or joined any savings clubs yet. Create a new club or choose one from the directory to participate."
+                  : "Ví của bạn hiện chưa tạo hoặc tham gia nhóm hụi nào. Hãy tạo nhóm mới để làm Chủ nhóm hoặc mở danh sách nhóm để tham gia!"}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center gap-2"
+              >
+                <Plus size={18} />
+                <span>{isEn ? "+ Create Savings Club" : "+ Tạo nhóm Hụi mới"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDirectoryModal(true)}
+                className="px-5 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-sm border border-amber-500/30 transition-all cursor-pointer"
+              >
+                {isEn ? "Open Club Directory" : "Mở Danh sách nhóm"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Main Content: 2-column layout on desktop, stacked on mobile */}
-        {!isLoading && !hasNoActiveClub && (clubInfo.groupName || displayedGroupName) && (
+        {!isLoading && !hasNoActiveClub && (hasExplicitGroup || isUserAffiliated) && (clubInfo.groupName || displayedGroupName) && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* LEFT COLUMN: Overview, History, Rules (col-span-7 / 8) */}
             <div className="lg:col-span-7 xl:col-span-8 space-y-6">

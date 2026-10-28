@@ -13,6 +13,7 @@ export interface SavingsClubItem {
   isDefault?: boolean;
   createdAt?: number;
   initialCollateral?: string; // Deployment snapshot only; never current financial authority.
+  creator?: string;
 }
 
 export const SAVINGS_CLUBS_STORAGE_KEY = "hui_known_groups";
@@ -128,6 +129,7 @@ export function getKnownGroups(): SavingsClubItem[] {
               : defaultMatch.name,
           address: defaultMatch.address.toLowerCase() as `0x${string}`,
           createdAt: typeof item.createdAt === "number" ? item.createdAt : undefined,
+          creator: typeof item.creator === "string" ? item.creator : undefined,
         });
       } else {
         result.push({
@@ -138,6 +140,7 @@ export function getKnownGroups(): SavingsClubItem[] {
               : `Nhóm Hụi ${formatAddress(lower)}`,
           isDefault: false,
           createdAt: typeof item.createdAt === "number" ? item.createdAt : undefined,
+          creator: typeof item.creator === "string" ? item.creator : undefined,
         });
       }
     }
@@ -158,7 +161,7 @@ export function getKnownGroups(): SavingsClubItem[] {
   }
 }
 
-export function saveKnownGroup(item: { address: string; name: string; initialCollateral?: string }): void {
+export function saveKnownGroup(item: { address: string; name: string; initialCollateral?: string; creator?: string }): void {
   if (!item || !isValidAddress(item.address)) return;
   if (typeof window === "undefined" || !window.localStorage) return;
 
@@ -167,7 +170,7 @@ export function saveKnownGroup(item: { address: string; name: string; initialCol
     (d) => d.address.toLowerCase() === normalized
   );
 
-  let rawList: Array<{ address: string; name: string; createdAt?: number; initialCollateral?: string }> = [];
+  let rawList: Array<{ address: string; name: string; createdAt?: number; initialCollateral?: string; creator?: string }> = [];
   try {
     const raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
     if (raw) {
@@ -223,6 +226,7 @@ export function saveKnownGroup(item: { address: string; name: string; initialCol
     name: resolvedName,
     createdAt: existing?.createdAt || Date.now(),
     initialCollateral: item.initialCollateral ?? existing?.initialCollateral,
+    creator: item.creator ?? existing?.creator,
   };
 
   const updated = [newItem, ...filtered];
