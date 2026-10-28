@@ -500,6 +500,14 @@ export function ActionPanel({
 
   const handleVoteCancelGroup = () => {
     if (!address) return;
+    if (requiredCancelVotes === undefined) {
+      toast.error(
+        isEn
+          ? "This legacy demo club does not support on-chain cancel voting. Please create a new club to use this feature!"
+          : "Nhóm mẫu cũ này chưa hỗ trợ tính năng biểu quyết huỷ nhóm on-chain. Vui lòng tạo nhóm mới để trải nghiệm đầy đủ!"
+      );
+      return;
+    }
     try {
       writeContract({
         address: targetContract,
