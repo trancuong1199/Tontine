@@ -55,16 +55,16 @@ test("T044-ERROR-FACTS: error semantics and registry constants", () => {
   assert.equal(ARC_TESTNET_CHAIN_ID, requireChain(5042002).chainId);
 });
 
-test("T044-DEPLOY: six-argument artifact encodes configured collateral token and rejects invalid override", () => {
+test("T044-DEPLOY: seven-argument artifact encodes configured collateral token and rejects invalid override", () => {
   const token = "0x1111111111111111111111111111111111111111";
   assert.equal(getCirBtcDeploymentAddress(token), token);
   for (const value of ["", "garbage", "0x1234", "0x0000000000000000000000000000000000000000"]) {
     assert.throws(() => getCirBtcDeploymentAddress(value), /nonzero token address/);
   }
   const ctor = ROTATING_SAVINGS_ABI.find((x: any) => x.type === "constructor")!;
-  assert.equal(ctor.inputs.length, 6);
+  assert.equal(ctor.inputs.length, 7);
   assert.equal(ctor.inputs[5].name, "cirBtcToken_");
-  const args = [USDC_ADDRESS, 10_000_000n, 3n, 86400n, "QA club", token] as const;
+  const args = [USDC_ADDRESS, 10_000_000n, 3n, 86400n, "QA club", token, 0n] as const;
   const encoded = encodeDeployData({ abi: ROTATING_SAVINGS_ABI, bytecode: ROTATING_SAVINGS_BYTECODE, args });
   const decoded = decodeAbiParameters(ctor.inputs, `0x${encoded.slice(ROTATING_SAVINGS_BYTECODE.length)}`);
   assert.deepEqual(decoded, args);

@@ -23,7 +23,7 @@ export function useCycleCapability(contractAddress: `0x${string}` = ROTATING_SAV
 }
 
 export function useClubInfo(contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS) {
-  const { data, isLoading, refetch } = useReadContracts({
+  const { data, isLoading, isFetching, error, refetch } = useReadContracts({
     contracts: [
       { address: contractAddress, abi: ROTATING_SAVINGS_ABI, functionName: "groupName", chainId: ARC_TESTNET_CHAIN_ID },
       { address: contractAddress, abi: ROTATING_SAVINGS_ABI, functionName: "state", chainId: ARC_TESTNET_CHAIN_ID },
@@ -39,8 +39,10 @@ export function useClubInfo(contractAddress: `0x${string}` = ROTATING_SAVINGS_AD
       { address: contractAddress, abi: ROTATING_SAVINGS_ABI, functionName: "cancelVoteCount", chainId: ARC_TESTNET_CHAIN_ID },
       { address: contractAddress, abi: ROTATING_SAVINGS_ABI, functionName: "requiredCancelVotes", chainId: ARC_TESTNET_CHAIN_ID },
     ],
+    query: { placeholderData: () => undefined },
   });
 
+  const membershipKnown = !error && !isFetching && !!data && [data[7], data[8]].every(item => item?.status === 'success' || classifyCycleCapability({ error: item?.error }) === 'unsupported');
   const member0 = data?.[7]?.result as string | undefined;
   const member1 = data?.[8]?.result as string | undefined;
   const hasMinMembers = Boolean(member1);
@@ -55,11 +57,12 @@ export function useClubInfo(contractAddress: `0x${string}` = ROTATING_SAVINGS_AD
     maxMembers: data?.[5]?.result as bigint | undefined,
     owner: data?.[6]?.result as string | undefined,
     pendingOwner: data?.[9]?.result as string | undefined,
-    collateralAmount: data?.[10]?.result as bigint | undefined,
+    collateralAmount: !error && !isFetching ? data?.[10]?.result as bigint | undefined : undefined,
     cancelVoteCount: data?.[11]?.result as bigint | undefined,
     requiredCancelVotes: data?.[12]?.result as bigint | undefined,
     hasMinMembers,
     memberCount,
+    membershipKnown,
     isLoading,
     refetch,
   };
@@ -189,7 +192,7 @@ export function useMemberStatus(
     cirBtcAllowance: collateralToken ? data?.[7]?.result as bigint | undefined : undefined,
     hasVotedCancel: data?.[8]?.result as boolean | undefined,
     isLoading,
-    refetch,
+    refetch: async () => { await tokenRead.refetch(); return refetch(); },
   };
 }
 

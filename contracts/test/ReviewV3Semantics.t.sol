@@ -16,7 +16,7 @@ contract ReviewV3SemanticsTest is Test {
     function setUp() public {
         usdc = new MockERC20("USDC", "USDC", 6);
         btc = new MockERC20("BTC", "BTC", 8);
-        club = new RotatingSavings(address(usdc), 10e6, 3, 1 days, "V3", address(btc));
+        club = new RotatingSavings(address(usdc), 10e6, 3, 1 days, "V3", address(btc), 0);
         club.setCollateralAmount(100000);
         address[3] memory actors = [alice, bob, carol];
         for (uint256 i; i < actors.length; i++) {

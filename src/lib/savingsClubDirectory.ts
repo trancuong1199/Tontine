@@ -12,6 +12,7 @@ export interface SavingsClubItem {
   name: string;
   isDefault?: boolean;
   createdAt?: number;
+  initialCollateral?: string; // Deployment snapshot only; never current financial authority.
 }
 
 export const SAVINGS_CLUBS_STORAGE_KEY = "hui_known_groups";
@@ -30,16 +31,17 @@ export function saveGroupCollateral(address: string, collateralSatoshis: bigint)
   }
 }
 
-export function getGroupCollateralAmount(address: string): bigint {
-  if (!address || typeof window === "undefined" || !window.localStorage) return 100_000n;
+/** @deprecated Historical local preference only. Never use for amounts or authorization. */
+export function getGroupCollateralAmount(address: string): bigint | undefined {
+  if (!address || typeof window === "undefined" || !window.localStorage) return undefined;
   try {
     const raw = window.localStorage.getItem(CLUB_COLLATERAL_STORAGE_KEY);
-    if (!raw) return 100_000n;
+    if (!raw) return undefined;
     const map: Record<string, string> = JSON.parse(raw);
     const val = map[address.toLowerCase()];
-    return val !== undefined ? BigInt(val) : 100_000n;
+    return val !== undefined ? BigInt(val) : undefined;
   } catch (_err) {
-    return 100_000n;
+    return undefined;
   }
 }
 
@@ -156,7 +158,7 @@ export function getKnownGroups(): SavingsClubItem[] {
   }
 }
 
-export function saveKnownGroup(item: { address: string; name: string }): void {
+export function saveKnownGroup(item: { address: string; name: string; initialCollateral?: string }): void {
   if (!item || !isValidAddress(item.address)) return;
   if (typeof window === "undefined" || !window.localStorage) return;
 
@@ -165,7 +167,7 @@ export function saveKnownGroup(item: { address: string; name: string }): void {
     (d) => d.address.toLowerCase() === normalized
   );
 
-  let rawList: Array<{ address: string; name: string; createdAt?: number }> = [];
+  let rawList: Array<{ address: string; name: string; createdAt?: number; initialCollateral?: string }> = [];
   try {
     const raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
     if (raw) {
@@ -220,6 +222,7 @@ export function saveKnownGroup(item: { address: string; name: string }): void {
     address: normalized,
     name: resolvedName,
     createdAt: existing?.createdAt || Date.now(),
+    initialCollateral: item.initialCollateral ?? existing?.initialCollateral,
   };
 
   const updated = [newItem, ...filtered];
@@ -297,7 +300,7 @@ export function updateKnownGroupName(address: string, newName: string): void {
 
   const normalized = address.toLowerCase() as `0x${string}`;
 
-  let rawList: Array<{ address: string; name: string; createdAt?: number }> = [];
+  let rawList: Array<{ address: string; name: string; createdAt?: number; initialCollateral?: string }> = [];
   try {
     const raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
     if (raw) {

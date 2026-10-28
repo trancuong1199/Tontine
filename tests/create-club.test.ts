@@ -193,7 +193,7 @@ test("TC-CREATE-03 (AC-01.3): Validation form (vô hiệu hóa submit khi tên r
     "CreateClubModal must validate maxMembers between 2 and 20"
   );
   assert.ok(
-    modalSrc.includes("const isFormValid = isNameValid && isAmountValid && isMembersValid && isDurationValid;"),
+    modalSrc.includes("const isFormValid = isNameValid && isAmountValid && isMembersValid && isDurationValid && requiredCollateral !== undefined;"),
     "CreateClubModal must aggregate all validations into isFormValid"
   );
   assert.ok(
@@ -281,7 +281,7 @@ test("TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng th�
     (item: { type?: string }) => item.type === "constructor"
   );
   assert.ok(constructorAbi, "ROTATING_SAVINGS_ABI must contain constructor definition");
-  assert.equal(constructorAbi.inputs.length, 6, "Task-044 constructor must require exactly 6 arguments");
+  assert.equal(constructorAbi.inputs.length, 7, "Task049 constructor includes required collateral as argument7");
   assert.equal(constructorAbi.inputs[0].name, "usdcToken_");
   assert.equal(constructorAbi.inputs[0].type, "address");
   assert.equal(constructorAbi.inputs[1].name, "contributionAmount_");
@@ -294,6 +294,8 @@ test("TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng th�
   assert.equal(constructorAbi.inputs[4].type, "string");
   assert.equal(constructorAbi.inputs[5].name, "cirBtcToken_");
   assert.equal(constructorAbi.inputs[5].type, "address");
+  assert.equal(constructorAbi.inputs[6].name, "requiredCollateral");
+  assert.equal(constructorAbi.inputs[6].type, "uint256");
 
   // Structural check in CreateClubModal.tsx
   assert.ok(
@@ -314,7 +316,7 @@ test("TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng th�
   );
 
   // Check exact args mapping in source
-  const argsPattern = /args:\s*\[\s*USDC_ADDRESS,\s*parsedAmount,\s*BigInt\(maxMembers\),\s*BigInt\(roundDuration\),\s*groupName\.trim\(\),\s*collateralToken,?\s*\]/;
+  const argsPattern = /args:\s*\[\s*USDC_ADDRESS,\s*parsedAmount,\s*BigInt\(maxMembers\),\s*BigInt\(roundDuration\),\s*snapshot\.name,\s*collateralToken,\s*snapshot\.requiredCollateral,?\s*\]/;
   assert.ok(
     argsPattern.test(modalSrc),
     "deployContract args must exactly be [USDC_ADDRESS, parsedAmount, BigInt(maxMembers), BigInt(roundDuration), groupName.trim(), collateralToken]"
@@ -333,6 +335,7 @@ test("TC-CREATE-05 (AC-02.2): Tham số deploy contract truyền vào đúng th�
     BigInt(sampleDuration),
     sampleGroupName.trim(),
     CIRBTC_ADDRESS,
+    100000n,
   ];
 
   assert.equal(builtArgs[0], "0x3600000000000000000000000000000000000000", "Arg 0 must be USDC_ADDRESS");
@@ -381,7 +384,7 @@ test("TC-CREATE-06 (AC-02.3): Quản lý trạng thái pending ký ví và confi
 
   // Submission handler guard
   assert.ok(
-    modalSrc.includes("if (!isFormValid || isDeployPending || isConfirming) return;"),
+    modalSrc.includes("if (!isFormValid || requiredCollateral === undefined || deploying.current || isDeployPending || isConfirming) return;"),
     "handleDeploy must abort if deploy is already pending or confirming"
   );
 
@@ -401,7 +404,7 @@ test("TC-CREATE-07 (AC-03.1): Callback onSuccess(contractAddress) được kích
 
   // Structural check: success effect triggers onSuccess, onClose, and resetDeploy
   assert.ok(
-    modalSrc.includes("if (isSuccess && receipt?.contractAddress) {"),
+    modalSrc.includes('if (isSuccess && receipt?.status === "success" && receipt.contractAddress && submitted.current) {'),
     "CreateClubModal must guard success with isSuccess && receipt?.contractAddress"
   );
   assert.ok(
@@ -424,12 +427,12 @@ test("TC-CREATE-07 (AC-03.1): Callback onSuccess(contractAddress) được kích
 
   function simulateSuccessEffect(
     isSuccess: boolean,
-    receipt: { contractAddress?: `0x${string}` } | undefined,
+    receipt: { contractAddress?: `0x${string}`; status?: string } | undefined,
     onSuccess: (addr: `0x${string}`) => void,
     onClose: () => void,
     resetDeploy: () => void
   ) {
-    if (isSuccess && receipt?.contractAddress) {
+    if (isSuccess && receipt?.status === "success" && receipt.contractAddress) {
       onSuccess(receipt.contractAddress);
       onClose();
       resetDeploy();
@@ -452,7 +455,7 @@ test("TC-CREATE-07 (AC-03.1): Callback onSuccess(contractAddress) được kích
   const sampleNewContract = "0x7777777777777777777777777777777777777777" as `0x${string}`;
   simulateSuccessEffect(
     true,
-    { contractAddress: sampleNewContract },
+    { contractAddress: sampleNewContract, status: "success" },
     (addr) => { calledSuccessWith = addr; },
     () => { closedModal = true; },
     () => { resetDeployCalled = true; }

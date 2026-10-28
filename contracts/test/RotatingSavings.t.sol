@@ -179,7 +179,8 @@ contract RotatingSavingsTest is Test {
             MAX_MEMBERS,
             ROUND_DURATION,
             "Test Hui",
-            address(0xCB7C)
+            address(0xCB7C),
+            0
         );
 
         // Seed USDC for participants and give unlimited approval.
@@ -251,31 +252,31 @@ contract RotatingSavingsTest is Test {
     function test_Constructor_RevertsOnZeroUsdcAddress() public {
         vm.prank(owner);
         vm.expectRevert(RotatingSavings.InvalidAddress.selector);
-        new RotatingSavings(address(0), CONTRIBUTION, MAX_MEMBERS, ROUND_DURATION, "x", address(0xCB7C));
+        new RotatingSavings(address(0), CONTRIBUTION, MAX_MEMBERS, ROUND_DURATION, "x", address(0xCB7C), 0);
     }
 
     function test_Constructor_RevertsOnZeroContribution() public {
         vm.prank(owner);
         vm.expectRevert(RotatingSavings.InvalidConfiguration.selector);
-        new RotatingSavings(address(usdc), 0, MAX_MEMBERS, ROUND_DURATION, "x", address(0xCB7C));
+        new RotatingSavings(address(usdc), 0, MAX_MEMBERS, ROUND_DURATION, "x", address(0xCB7C), 0);
     }
 
     function test_Constructor_RevertsOnZeroRoundDuration() public {
         vm.prank(owner);
         vm.expectRevert(RotatingSavings.InvalidConfiguration.selector);
-        new RotatingSavings(address(usdc), CONTRIBUTION, MAX_MEMBERS, 0, "x", address(0xCB7C));
+        new RotatingSavings(address(usdc), CONTRIBUTION, MAX_MEMBERS, 0, "x", address(0xCB7C), 0);
     }
 
     function test_Constructor_RevertsWhenMaxMembersLessThan2() public {
         vm.prank(owner);
         vm.expectRevert(RotatingSavings.InvalidConfiguration.selector);
-        new RotatingSavings(address(usdc), CONTRIBUTION, 1, ROUND_DURATION, "x", address(0xCB7C));
+        new RotatingSavings(address(usdc), CONTRIBUTION, 1, ROUND_DURATION, "x", address(0xCB7C), 0);
     }
 
     function test_Constructor_RevertsWhenMaxMembersExceeds20() public {
         vm.prank(owner);
         vm.expectRevert(RotatingSavings.InvalidConfiguration.selector);
-        new RotatingSavings(address(usdc), CONTRIBUTION, 21, ROUND_DURATION, "x", address(0xCB7C));
+        new RotatingSavings(address(usdc), CONTRIBUTION, 21, ROUND_DURATION, "x", address(0xCB7C), 0);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -686,7 +687,8 @@ contract RotatingSavingsTest is Test {
         // Then a second settleRound(1) call hits the `round.settled` check.
         vm.prank(owner);
         RotatingSavings s2 = new RotatingSavings(
-            address(usdc), CONTRIBUTION, 2, ROUND_DURATION, "Double", address(0xCB7C)
+            address(usdc), CONTRIBUTION, 2, ROUND_DURATION, "Double", address(0xCB7C),
+            0
         );
         vm.prank(alice); s2.joinGroup();
         vm.prank(bob);   s2.joinGroup();
@@ -737,7 +739,8 @@ contract RotatingSavingsTest is Test {
         // 2-member group → 2 rounds → complete
         vm.prank(owner);
         RotatingSavings twoMember = new RotatingSavings(
-            address(usdc), CONTRIBUTION, 2, ROUND_DURATION, "Mini Hui", address(0xCB7C)
+            address(usdc), CONTRIBUTION, 2, ROUND_DURATION, "Mini Hui", address(0xCB7C),
+            0
         );
         vm.prank(alice); twoMember.joinGroup();
         vm.prank(bob);   twoMember.joinGroup();
@@ -1181,7 +1184,8 @@ contract RotatingSavingsInvariantTest is Test {
             3,               // 3 members
             ROUND_DURATION,
             "Invariant Hui",
-            address(0xCB7C)
+            address(0xCB7C),
+            0
         );
 
         // Create 3 actor addresses and join

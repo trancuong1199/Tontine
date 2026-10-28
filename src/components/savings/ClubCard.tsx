@@ -1,3 +1,4 @@
+import { formatCollateral } from "../../lib/collateralPolicy";
 import { Users, Clock, Trophy, Coins, ShieldCheck, Pencil } from "lucide-react";
 import { formatUsdc, formatCirBtc, GROUP_STATE, formatAddress } from "../../contract";
 import { Language, t } from "../../lib/i18n";
@@ -104,11 +105,11 @@ export function ClubCard({
                 title={t("collateral.securityNotice", language)}
               >
                 <ShieldCheck size={12} className="text-amber-400" />
-                <span>{t("collateral.badgeTitle", language)}: {formatCirBtc(collateralAmount)} CirBTC</span>
+                <span>{t("collateral.badgeTitle", language)}: {formatCollateral(collateralAmount)} CirBTC</span>
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 bg-slate-900/60 px-2.5 py-0.5 rounded-full border border-slate-700/40">
-                {t("collateral.noCollateral", language)}
+                {collateralAmount === undefined ? (language === "en" ? "Collateral unavailable" : "Chưa đọc được ký quỹ") : t("collateral.noCollateral", language)}
               </span>
             )}
             {contractAddress && (

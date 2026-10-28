@@ -20,7 +20,7 @@ contract ArcReviewFixesTest is Test {
     function setUp() public {
         usdc = new MockERC20("Review USDC", "RUSD", 6);
         btc = new MockERC20("Review BTC", "RBTC", 8);
-        club = new RotatingSavings(address(usdc), C, 3, D, "Review club", address(btc));
+        club = new RotatingSavings(address(usdc), C, 3, D, "Review club", address(btc), 0);
         address[3] memory actors = [alice, bob, carol];
         for (uint256 i; i < actors.length; ++i) {
             usdc.mint(actors[i], 1000e6);
@@ -150,12 +150,13 @@ contract ArcReviewFixesTest is Test {
         club.setCollateralAmount(100_000);
         _start();
         assertEq(btc.balanceOf(address(club)), 300_000);
-        vm.prank(alice); club.depositCollateral(200_000);
+        // Task049: already fully funded members cannot overdeposit.
+        vm.prank(alice); vm.expectRevert(RotatingSavings.InvalidConfiguration.selector); club.depositCollateral(200_000);
         _contribute(alice, 1);
         _vote(alice); _vote(bob);
         uint256 btcBefore = btc.balanceOf(alice);
         vm.prank(alice); club.claimCollateral();
-        assertEq(btc.balanceOf(alice), btcBefore + 300_000);
+        assertEq(btc.balanceOf(alice), btcBefore + 100_000);
         assertEq(club.cirBtcCollateral(alice), 0);
         assertEq(club.claimable(alice), C, "USDC liability is independent from BTC claim");
         vm.prank(alice); vm.expectRevert(RotatingSavings.NoPayout.selector); club.claimCollateral();
@@ -163,10 +164,10 @@ contract ArcReviewFixesTest is Test {
 
     function test_Collateral_SecondConfiguredTokenIsUsed() public {
         MockERC20 tokenB = new MockERC20("Second BTC", "B", 8);
-        RotatingSavings other = new RotatingSavings(address(usdc), C, 2, D, "B club", address(tokenB));
+        RotatingSavings other = new RotatingSavings(address(usdc), C, 2, D, "B club", address(tokenB), 500_000);
         tokenB.mint(alice, 500_000);
         vm.startPrank(alice);
-        other.joinGroup(); tokenB.approve(address(other), 500_000); other.depositCollateral(500_000);
+        tokenB.approve(address(other), 500_000); other.joinGroupWithCollateral(500_000);
         vm.stopPrank();
         other.cancelGroup();
         vm.prank(alice); other.claimCollateral();
@@ -178,7 +179,7 @@ contract ArcReviewFixesTest is Test {
 
     function test_Collateral_ZeroConstructorTokenRejected() public {
         vm.expectRevert(RotatingSavings.InvalidAddress.selector);
-        new RotatingSavings(address(usdc), C, 2, D, "Invalid", address(0));
+        new RotatingSavings(address(usdc), C, 2, D, "Invalid", address(0), 0);
     }
 
     function test_Cancel_EligibleCollateralRewardsRemainClaimable() public {

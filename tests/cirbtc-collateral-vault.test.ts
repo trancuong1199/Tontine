@@ -24,7 +24,7 @@ test("TC-VAULT-01 (AC-01.1..01.3): Smart Contract RotatingSavings.sol tích hợ
   assert.ok(sol.includes("mapping(address => uint256) public claimableCirBtc;"), "Must declare claimableCirBtc mapping");
   assert.ok(sol.includes("cirBtcToken = cirBtcToken_;"), "Task-044 must use the constructor token instead of a hardcoded network token");
   assert.ok(sol.includes("function setCollateralAmount(uint256 collateralAmount_) external onlyGroupOwner"), "Must allow owner to configure collateral amount");
-  assert.ok(sol.includes("emit CollateralDeposited(member, cirBtcCollateralAmount);"), "Must emit CollateralDeposited when member joins with collateral");
+  assert.ok(sol.includes("emit CollateralDeposited(member, shortfall);"), "Must emit CollateralDeposited when member joins with collateral");
 });
 
 test("TC-VAULT-02 (AC-01.4, AC-01.5): Cơ chế Slashing kẻ bùng hụi, chia thưởng CirBTC cho thành viên chân chính và rút cọc qua claimCollateral", () => {
@@ -57,7 +57,7 @@ test("TC-VAULT-04 (AC-03.1..03.3): ClubCard.tsx, ActionPanel.tsx, PasskeyActionP
   assert.ok(clubCard.includes("collateral.badgeTitle") && clubCard.includes("formatCirBtc"), "ClubCard must render CirBTC collateral badge");
   assert.ok(actionPanel.includes("claimCollateral") && actionPanel.includes("collateral.claimBtn"), "ActionPanel must support claiming CirBTC collateral");
   assert.ok(passkeyPanel.includes("claimCollateral") && passkeyPanel.includes("collateral.claimBtn"), "PasskeyActionPanel must support claiming CirBTC collateral");
-  assert.ok(createModal.includes("collateral.createFieldLabel") && createModal.includes("collateral.presetStandard"), "CreateClubModal must render CirBTC collateral presets");
+  assert.ok(createModal.includes("collateral.createFieldLabel") && createModal.includes("parseCollateralInput") && createModal.includes('name="collateralPolicy"'), "Task049 CreateClubModal must require explicit none/custom CirBTC policy");
 });
 
 test("TC-VAULT-05 (AC-04.1): Từ điển song ngữ i18n cung cấp đầy đủ khóa collateral với 100% key parity giữa vi và en", () => {

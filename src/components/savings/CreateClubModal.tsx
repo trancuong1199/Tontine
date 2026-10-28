@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
-import { useAccount, useDeployContract, useWaitForTransactionReceipt, useSwitchChain } from "wagmi";
+import { getAccount } from "@wagmi/core";
+import { parseCollateralInput, formatCollateral } from "../../lib/collateralPolicy";
+import { useState, useEffect, useRef } from "react";
+import { useAccount, useConfig, useDeployContract, useWaitForTransactionReceipt, useSwitchChain } from "wagmi";
 import { useModal } from "connectkit";
 import { toast } from "sonner";
 import {
@@ -22,12 +24,10 @@ import {
   ARC_TESTNET_CHAIN_ID,
   parseUsdc,
   formatUsdc,
-  parseCirBtc,
-  formatCirBtc,
   parseContractError,
   formatAddress,
 } from "../../contract";
-import { saveKnownGroup, saveGroupCollateral } from "../../lib/savingsClubDirectory";
+import { saveKnownGroup } from "../../lib/savingsClubDirectory";
 import { Language, t } from "../../lib/i18n";
 
 interface CreateClubModalProps {
@@ -52,7 +52,8 @@ export function CreateClubModal({
   onSuccess,
   language = "vi",
 }: CreateClubModalProps) {
-  const { isConnected, chainId } = useAccount();
+  const { isConnected, chainId, address } = useAccount();
+  const config = useConfig();
   const { setOpen: openConnectModal } = useModal();
   const { switchChainAsync } = useSwitchChain();
   const isEn = language === "en";
@@ -61,7 +62,11 @@ export function CreateClubModal({
   const [contributionAmount, setContributionAmount] = useState("10");
   const [maxMembers, setMaxMembers] = useState(10);
   const [roundDuration, setRoundDuration] = useState(86400);
-  const [collateralPreset, setCollateralPreset] = useState<"0" | "0.001" | "0.005">("0.001");
+  const [collateralMode, setCollateralMode] = useState<'' | 'none' | 'custom'>('');
+  const [customCollateral, setCustomCollateral] = useState('');
+  const requiredCollateral = parseCollateralInput(collateralMode, customCollateral);
+  const submitted = useRef<{ name: string; requiredCollateral: bigint } | null>(null);
+  const deploying = useRef(false);
 
   const toLocalDateTimeInput = (secondsFromNow: number): string => {
     const target = new Date(Date.now() + Math.max(60, secondsFromNow) * 1000);
@@ -119,26 +124,40 @@ export function CreateClubModal({
     data: receipt,
     isLoading: isConfirming,
     isSuccess,
+    error: receiptError,
   } = useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID, hash: deployHash });
 
   // Handle deploy success
   useEffect(() => {
-    if (isSuccess && receipt?.contractAddress) {
+    if (isSuccess && receipt?.status === "success" && receipt.contractAddress && submitted.current) {
       const newAddress = receipt.contractAddress as `0x${string}`;
       saveKnownGroup({
         address: newAddress,
-        name: groupName.trim() || (isEn ? `Savings Club ${formatAddress(newAddress)}` : `Nhóm Hụi ${formatAddress(newAddress)}`),
+        name: submitted.current.name,
+        initialCollateral: submitted.current.requiredCollateral.toString(),
       });
-      saveGroupCollateral(newAddress, parseCirBtc(collateralPreset));
+      setCollateralMode('');
+      setCustomCollateral('');
+      submitted.current = null;
+      deploying.current = false;
       onSuccess(receipt.contractAddress as `0x${string}`);
       onClose();
       resetDeploy();
     }
   }, [isSuccess, receipt, onSuccess, onClose, resetDeploy]);
 
+  useEffect(() => {
+    if (receiptError) {
+      deploying.current = false;
+      resetDeploy();
+      toast.error(parseContractError(receiptError));
+    }
+  }, [receiptError, resetDeploy]);
+
   // Handle deploy error
   useEffect(() => {
     if (deployError) {
+      deploying.current = false;
       toast.error(parseContractError(deployError));
     }
   }, [deployError]);
@@ -151,7 +170,7 @@ export function CreateClubModal({
   const isAmountValid = parsedAmount > 0n;
   const isMembersValid = Number.isInteger(maxMembers) && maxMembers >= 2 && maxMembers <= 20;
   const isDurationValid = roundDuration > 0;
-  const isFormValid = isNameValid && isAmountValid && isMembersValid && isDurationValid;
+  const isFormValid = isNameValid && isAmountValid && isMembersValid && isDurationValid && requiredCollateral !== undefined;
 
   // Visual calculations (AC-01.2)
   const totalPotUsdc = isAmountValid && isMembersValid ? parsedAmount * BigInt(maxMembers) : 0n;
@@ -185,18 +204,23 @@ export function CreateClubModal({
 
   const handleDeploy = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!isFormValid || isDeployPending || isConfirming) return;
+    if (!isFormValid || requiredCollateral === undefined || deploying.current || isDeployPending || isConfirming) return;
 
     if (!isConnected) {
       openConnectModal(true);
       return;
     }
 
+    deploying.current = true;
+    const snapshot = { name: groupName.trim(), requiredCollateral };
     try {
       const collateralToken = getCirBtcDeploymentAddress();
       if (chainId !== ARC_TESTNET_CHAIN_ID) {
         await switchChainAsync({ chainId: ARC_TESTNET_CHAIN_ID });
       }
+      const connected = getAccount(config);
+      if (!address || connected.address !== address || connected.chainId !== ARC_TESTNET_CHAIN_ID) throw new Error("Wallet changed. Review the club configuration and retry.");
+      submitted.current = snapshot;
       deployContract({
         abi: ROTATING_SAVINGS_ABI,
         bytecode: ROTATING_SAVINGS_BYTECODE,
@@ -205,12 +229,14 @@ export function CreateClubModal({
           parsedAmount,
           BigInt(maxMembers),
           BigInt(roundDuration),
-          groupName.trim(),
+          snapshot.name,
           collateralToken,
+          snapshot.requiredCollateral,
         ],
         chainId: ARC_TESTNET_CHAIN_ID,
       });
     } catch (err) {
+      deploying.current = false;
       toast.error(parseContractError(err));
     }
   };
@@ -496,26 +522,12 @@ export function CreateClubModal({
             <p className="text-xs text-slate-400 leading-relaxed">
               {t("collateral.createFieldDesc", language)}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {([
-                { value: "0", label: t("collateral.presetNone", language) },
-                { value: "0.001", label: t("collateral.presetStandard", language) },
-                { value: "0.005", label: t("collateral.presetHigh", language) },
-              ] as const).map((preset) => (
-                <button
-                  key={preset.value}
-                  type="button"
-                  onClick={() => setCollateralPreset(preset.value)}
-                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    collateralPreset === preset.value
-                      ? "bg-amber-950/60 border-amber-500 text-amber-300 shadow-2xs ring-1 ring-amber-500"
-                      : "bg-black/40 border-slate-800 text-slate-300 hover:bg-slate-800"
-                  }`}
-                >
-                  <p className="font-bold text-xs">{preset.label}</p>
-                </button>
-              ))}
+            <div className="flex gap-3">
+              <label><input type="radio" name="collateralPolicy" checked={collateralMode === 'none'} onChange={() => setCollateralMode('none')} /> {isEn ? 'No collateral' : 'Không ký quỹ'}</label>
+              <label><input type="radio" name="collateralPolicy" checked={collateralMode === 'custom'} onChange={() => setCollateralMode('custom')} /> {isEn ? 'Custom amount' : 'Tự nhập mức ký quỹ'}</label>
             </div>
+            {collateralMode === 'custom' && <input aria-label={isEn ? 'Custom CirBTC collateral' : 'Mức ký quỹ CirBTC'} inputMode="decimal" value={customCollateral} onChange={e => setCustomCollateral(e.target.value)} className="w-full rounded-xl bg-slate-900 p-3 text-white" placeholder="0.00000001" />}
+            {requiredCollateral === undefined && <p className="text-xs text-amber-200">{isEn ? 'Choose no collateral or enter a positive exact CirBTC amount (up to 8 decimals).' : 'Chọn không ký quỹ hoặc nhập số CirBTC dương chính xác (tối đa 8 chữ số thập phân).'}</p>}
           </div>
 
           {/* Visual Summary Card (AC-01.2) */}
@@ -556,14 +568,14 @@ export function CreateClubModal({
               </div>
             </div>
 
-            {collateralPreset !== "0" && (
+            {requiredCollateral !== undefined && (
               <div className="bg-amber-950/30 rounded-xl p-3 border border-amber-500/30 flex items-center justify-between text-xs">
                 <span className="text-amber-200 font-semibold flex items-center gap-1.5">
                   <Shield size={14} className="text-amber-400" />
                   {t("collateral.badgeTitle", language)}
                 </span>
                 <span className="font-bold text-amber-300 font-mono">
-                  {formatCirBtc(parseCirBtc(collateralPreset))} CirBTC / {isEn ? "member" : "thành viên"}
+                  {formatCollateral(requiredCollateral)} CirBTC / {isEn ? "member" : "thành viên"}
                 </span>
               </div>
             )}

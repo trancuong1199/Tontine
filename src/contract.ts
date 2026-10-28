@@ -227,8 +227,14 @@ export function parseContractError(error: unknown): string {
   if (msg.includes("failed to fetch")) {
     return "Lỗi kết nối RPC Arc Testnet trên ví. Vui lòng mở Arc AppKit -> Đồng bộ RPC, hoặc kiểm tra RPC URL ví là https://rpc.testnet.arc.io.";
   }
+  if (msg.includes("collateralquotechanged") || msg.includes("collateral amounts changed")) return "Mức ký quỹ đã thay đổi. Xem lại số tiền và bấm xác nhận lần nữa.";
+  if (msg.includes("insufficientcollateral") || msg.includes("top up collateral")) return "Chưa đủ ký quỹ đang khóa. Nộp bổ sung trước khi góp tiền hoặc đặt bid.";
+  if (msg.includes("insufficient cirbtc")) return "Không đủ CirBTC để nộp phần ký quỹ còn thiếu.";
+  if (msg.includes("collateralnotrequired")) return "Nhóm này không yêu cầu nộp ký quỹ.";
+  if (msg.includes("collateral") && (msg.includes("unavailable") || msg.includes("review") || msg.includes("changed"))) return "Dữ liệu hoặc tài khoản ký quỹ đã thay đổi/chưa đọc được. Đọc lại và xem trước số tiền trước khi ký.";
+  if (msg.includes("wallet changed") || msg.includes("wallet or club changed")) return "Ví hoặc nhóm đã thay đổi. Xem lại thông tin và thử lại.";
   if (msg.includes("erc20insufficientallowance") || msg.includes("insufficient allowance")) {
-    return "Chưa cấp quyền (Approve) đủ USDC. Vui lòng bấm Cấp quyền trước khi đóng tiền.";
+    return "Chưa cấp quyền (Approve) đủ token. Vui lòng xem lại token và số tiền cần cấp quyền trước khi nộp.";
   }
   if (msg.includes("notmember")) return "Địa chỉ ví của bạn không phải là thành viên của nhóm hụi này.";
   if (msg.includes("alreadymember")) return "Bạn đã là thành viên rồi.";

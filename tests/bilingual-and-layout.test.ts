@@ -411,7 +411,7 @@ test("TC-I18N-04 (AC-01.4): Thông báo Toast và helper feedback song ngữ chu
     "PasskeyActionPanel.tsx phải dùng toast mời nhóm song ngữ"
   );
   assert.ok(
-    pkActionSrc.includes('isEn ? "Successfully joined the savings club!" : "Đã tham gia nhóm thành công!"'),
+    pkActionSrc.includes("isEn ? 'Joined the club.' : 'Đã tham gia nhóm.'"),
     "PasskeyActionPanel.tsx phải có toast join nhóm song ngữ"
   );
 

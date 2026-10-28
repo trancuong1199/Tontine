@@ -17,7 +17,7 @@ contract ReviewFollowupTest is Test {
     function setUp() public {
         usdc = new MockERC20("USDC", "USDC", 6);
         btc = new MockERC20("BTC", "BTC", 8);
-        club = new RotatingSavings(address(usdc), C, 3, 1 days, "Follow-up", address(btc));
+        club = new RotatingSavings(address(usdc), C, 3, 1 days, "Follow-up", address(btc), 0);
         club.setCollateralAmount(100_000);
         address[3] memory actors = [alice, bob, carol];
         for (uint256 i; i < actors.length; i++) {
@@ -66,6 +66,8 @@ contract ReviewFollowupTest is Test {
         club.startNewCycle();
         assertEq(club.currentRound(), 3);
         vm.expectRevert(RotatingSavings.RoundNotCurrent.selector); club.settleRound(2);
+        // Task049: restart preserves the slash; explicit ACTIVE top-up precedes contribution.
+        vm.prank(bob); club.depositCollateral(100_000);
         vm.prank(bob); club.contribute(3);
         vm.prank(alice); club.voteCancelGroup();
         vm.prank(bob); club.voteCancelGroup();

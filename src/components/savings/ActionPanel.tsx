@@ -1,7 +1,10 @@
+import { CollateralPreview } from "./CollateralPreview";
+import type { CollateralView } from "../../hooks/useCollateralPolicy";
+import { formatCollateral } from "../../lib/collateralPolicy";
 import type { CycleCapability } from "../../lib/cycleCapabilities";
 import { BID_PRESETS, getRaisedBidInput } from "../../lib/bidPresets";
 import { useArcWriteContract } from "../../hooks/useArcWriteContract";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { erc20Abi } from "viem";
 import {
   useAccount,
@@ -29,6 +32,7 @@ import { ClubMemberInfo } from "../../hooks/useSavingsClub";
 
 interface ActionPanelProps {
   contractAddress?: `0x${string}`;
+  collateralView?: CollateralView;
   cycleCapability?: CycleCapability;
   onRetryCycleCapability?: () => void;
   state: number;
@@ -107,6 +111,7 @@ export function formatDigitalCountdown(
 
 export function ActionPanel({
   contractAddress,
+  collateralView,
   cycleCapability = "checking",
   onRetryCycleCapability,
   state,
@@ -147,15 +152,40 @@ export function ActionPanel({
   isHistoryLimited = false,
 }: ActionPanelProps) {
   const targetContract = contractAddress ?? ROTATING_SAVINGS_ADDRESS;
+  const collateralActionLock = useRef(false);
+  const [isReviewingCollateral, setIsReviewingCollateral] = useState(false);
+  const quote = collateralView?.quote;
+  const collateralReady = !!quote && (collateralView?.policy === 'enforced' || collateralView?.policy === 'legacy') && quote.deficit === 0n;
+  const participationReady = !!quote && (quote.policy === 'legacy' || quote.shortfall === 0n);
+  const canTopUp = !!quote && quote.member && !quote.kicked && (quote.state === GROUP_STATE.OPEN || quote.state === GROUP_STATE.ACTIVE) && quote.shortfall > 0n;
+  const needsCirBtcApproval = !!quote && quote.allowance < quote.shortfall;
   const { address, chainId } = useAccount();
   const { setOpen: openConnectModal } = useModal();
   const { switchChain } = useSwitchChain();
   const [bidAmount, setBidAmount] = useState("");
   const [isRaiseExpanded, setIsRaiseExpanded] = useState(false);
   const [copiedInvite, setCopiedInvite] = useState(false);
-  const [pendingFollowUp, setPendingFollowUp] = useState<"collateral" | "contribute" | "bid" | null>(null);
+  const [pendingFollowUp, setPendingFollowUp] = useState<"contribute" | "bid" | null>(null);
   const isWrongChain = chainId !== ARC_TESTNET_CHAIN_ID;
   const isEn = language === "en";
+  const vaultStatus = isKicked
+    ? (isEn ? 'Kicked — collateral withdrawal unavailable' : 'Đã bị loại — không đủ điều kiện rút ký quỹ')
+    : lockedCollateral === undefined || collateralAmount === undefined
+    ? (isEn ? 'Collateral status unavailable' : 'Chưa đọc được trạng thái ký quỹ')
+    : state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED
+    ? (lockedCollateral > 0n || (claimableCirBtc !== undefined && claimableCirBtc > 0n)
+      ? (isEn ? 'Eligible amounts can be withdrawn' : 'Có thể rút các khoản đủ điều kiện')
+      : claimableCirBtc === undefined
+      ? (isEn ? 'Withdrawal amount unavailable' : 'Chưa đọc được khoản có thể rút')
+      : (isEn ? 'No collateral or rewards to withdraw' : 'Không có ký quỹ hoặc phần thưởng để rút'))
+    : collateralAmount === 0n
+    ? (isEn ? 'No collateral required' : 'Không yêu cầu ký quỹ')
+    : lockedCollateral === 0n
+    ? (isEn ? 'Collateral not deposited' : 'Chưa nộp ký quỹ')
+    : lockedCollateral < collateralAmount
+    ? (isEn ? 'Partially funded — collateral shortfall remains' : 'Đã nộp một phần — ký quỹ còn thiếu')
+    : (isEn ? 'Required collateral is locked' : 'Đã khóa đủ mức ký quỹ yêu cầu');
+
 
   const handleCopyInvite = () => {
     const url = `${window.location.origin}${window.location.pathname}?group=${targetContract}`;
@@ -179,53 +209,34 @@ export function ActionPanel({
     isPending,
     reset,
     error: writeError,
-  } = useArcWriteContract();
+  } = useArcWriteContract(`${targetContract}:${address}`);
 
   useEffect(() => { if (writeError) setPendingFollowUp(null); }, [writeError]);
 
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID,
+  const { isLoading: isConfirming, isSuccess, error: receiptError } = useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID,
     hash,
   });
 
-  const baseCollateralAmt = collateralAmount && collateralAmount > 0n ? collateralAmount : 100_000n;
-  const targetCollateralAmt =
-    cirBtcBalance !== undefined && cirBtcBalance > 0n && cirBtcBalance < baseCollateralAmt
-      ? cirBtcBalance
-      : baseCollateralAmt;
-  const needsCirBtcApproval = (cirBtcAllowance ?? 0n) < targetCollateralAmt;
-  const hasLockedCirBtc = (lockedCollateral ?? 0n) > 0n;
+  useEffect(() => {
+    if (receiptError) { setPendingFollowUp(null); reset(); toast.error(parseContractError(receiptError)); onSuccess(); }
+  }, [receiptError]);
+
 
   useEffect(() => {
     if (isSuccess) {
-      if (pendingFollowUp === "collateral") {
-        setPendingFollowUp(null);
-        reset();
-        onSuccess();
-        try {
-          writeContract({
-            address: targetContract,
-            abi: ROTATING_SAVINGS_ABI,
-            functionName: "depositCollateral",
-            args: [targetCollateralAmt],
-            chainId: ARC_TESTNET_CHAIN_ID,
-          });
-        } catch (e) {
-          toast.error(parseContractError(e));
-        }
-        return;
-      }
       if (pendingFollowUp === "contribute") {
         setPendingFollowUp(null);
         reset();
         onSuccess();
         try {
-          writeContract({
+          void verifyParticipation().then(ok => { if (ok) writeContract({
             address: targetContract,
             abi: ROTATING_SAVINGS_ABI,
             functionName: "contribute",
+            account: address,
             args: [currentRound],
             chainId: ARC_TESTNET_CHAIN_ID,
-          });
+          }); });
         } catch (e) {
           toast.error(parseContractError(e));
         }
@@ -237,13 +248,14 @@ export function ActionPanel({
         onSuccess();
         if (bidRaw > 0n) {
           try {
-            writeContract({
+            void verifyParticipation().then(ok => { if (ok) writeContract({
               address: targetContract,
               abi: ROTATING_SAVINGS_ABI,
               functionName: "placeBid",
+              account: address,
               args: [currentRound, bidRaw],
               chainId: ARC_TESTNET_CHAIN_ID,
-            });
+            }); });
           } catch (e) {
             toast.error(parseContractError(e));
           }
@@ -310,19 +322,40 @@ export function ActionPanel({
 
   // --- Actions ---
 
-  const handleApproveAndJoin = async () => {
-    if (!address) return;
+  const verifyParticipation = async () => {
+    if (!participationReady || !collateralView || collateralActionLock.current || isPending || isConfirming) return false;
+    collateralActionLock.current = true;
+    setIsReviewingCollateral(true);
     try {
-      writeContract({
-        address: targetContract,
-        abi: ROTATING_SAVINGS_ABI,
-        functionName: "joinGroup",
-        chainId: ARC_TESTNET_CHAIN_ID,
-      });
-    } catch (e) {
-      toast.error(parseContractError(e));
-    }
+      const fresh = await collateralView.review(false);
+      if (!fresh.member || fresh.kicked || (fresh.policy === 'enforced' && fresh.shortfall > 0n)) throw new Error('Top up collateral before contributing or bidding.');
+      return true;
+    } catch (error) { toast.error(parseContractError(error)); return false; }
+    finally { collateralActionLock.current = false; setIsReviewingCollateral(false); }
   };
+
+  const runCollateralAction = async (action: 'join' | 'deposit') => {
+    if (!address || !collateralView || !collateralReady || collateralActionLock.current || isPending || isConfirming) return;
+    collateralActionLock.current = true;
+    setIsReviewingCollateral(true);
+    try {
+      const fresh = await collateralView.review();
+      if (fresh.account.toLowerCase() !== address.toLowerCase() || fresh.group.toLowerCase() !== targetContract.toLowerCase()) throw new Error('Wallet or club changed. Review again.');
+      if (action === 'join' && (fresh.member || fresh.state !== GROUP_STATE.OPEN)) throw new Error('Club is not open for this member.');
+      if (action === 'deposit' && (!fresh.member || fresh.kicked || (fresh.state !== GROUP_STATE.OPEN && fresh.state !== GROUP_STATE.ACTIVE) || fresh.shortfall === 0n)) return;
+      if (fresh.allowance < fresh.shortfall) {
+        writeContract({ address: fresh.token, abi: erc20Abi, functionName: 'approve', args: [fresh.group, fresh.shortfall], account: fresh.account, chainId: ARC_TESTNET_CHAIN_ID });
+        toast.info(isEn ? 'Approval only. After confirmation, review and click Join or Deposit again.' : 'Chỉ cấp quyền. Sau xác nhận, xem lại và bấm Tham gia hoặc Nộp ký quỹ lần nữa.');
+      } else {
+        writeContract({ address: fresh.group, abi: ROTATING_SAVINGS_ABI,
+          functionName: action === 'deposit' ? 'depositCollateral' : fresh.policy === 'enforced' ? 'joinGroupWithCollateral' : 'joinGroup',
+          args: action === 'deposit' ? [fresh.shortfall] : fresh.policy === 'enforced' ? [fresh.required] : [],
+          account: fresh.account, chainId: ARC_TESTNET_CHAIN_ID });
+      }
+    } catch (error) { toast.error(parseContractError(error)); }
+    finally { collateralActionLock.current = false; setIsReviewingCollateral(false); }
+  };
+  const handleApproveAndJoin = () => runCollateralAction('join');
 
   const handleApproveForContribute = () => {
     if (!address) return;
@@ -332,6 +365,7 @@ export function ActionPanel({
         address: USDC_ADDRESS,
         abi: erc20Abi,
         functionName: "approve",
+        account: address,
         args: [targetContract, contributionAmount * 20n],
         chainId: ARC_TESTNET_CHAIN_ID,
       });
@@ -342,7 +376,8 @@ export function ActionPanel({
     }
   };
 
-  const handleContribute = () => {
+  const handleContribute = async () => {
+    if (!(await verifyParticipation())) return;
     if (!address) return;
     if (isTimeEnded) {
       toast.error(isEn ? "Round contribution period has ended." : "Thời gian đóng tiền của vòng này đã kết thúc.");
@@ -357,6 +392,7 @@ export function ActionPanel({
         address: targetContract,
         abi: ROTATING_SAVINGS_ABI,
         functionName: "contribute",
+        account: address,
         args: [currentRound],
         chainId: ARC_TESTNET_CHAIN_ID,
       });
@@ -369,7 +405,8 @@ export function ActionPanel({
     handleContribute();
   };
 
-  const handleApproveForBid = () => {
+  const handleApproveForBid = async () => {
+    if (!(await verifyParticipation())) return;
     if (!address) return;
     if (bidRaw <= 0n) {
       toast.error(isEn ? "Enter valid bid amount (greater than 0)." : "Nhập số tiền bid hợp lệ (lớn hơn 0).");
@@ -381,13 +418,15 @@ export function ActionPanel({
       address: USDC_ADDRESS,
       abi: erc20Abi,
       functionName: "approve",
+      account: address,
       args: [targetContract, needed * 2n],
       chainId: ARC_TESTNET_CHAIN_ID,
     });
     toast.info(isEn ? "Approval complete, submit bid again." : "Approve xong, bấm Đặt bid lại.");
   };
 
-  const handlePlaceBid = () => {
+  const handlePlaceBid = async () => {
+    if (!(await verifyParticipation())) return;
     if (!address) return;
     if (bidRaw <= 0n) {
       toast.error(isEn ? "Enter valid bid amount (greater than 0)." : "Nhập số tiền bid hợp lệ (lớn hơn 0).");
@@ -406,6 +445,7 @@ export function ActionPanel({
         address: targetContract,
         abi: ROTATING_SAVINGS_ABI,
         functionName: "placeBid",
+        account: address,
         args: [currentRound, bidRaw],
         chainId: ARC_TESTNET_CHAIN_ID,
       });
@@ -447,42 +487,7 @@ export function ActionPanel({
     }
   };
 
-  const handleDepositCollateral = () => {
-    if (!collateralToken) { toast.error(isEn ? "Collateral token is unavailable." : "Chưa đọc được token ký quỹ của nhóm."); return; }
-    if (!address) return;
-    if (needsCirBtcApproval) {
-      try {
-        setPendingFollowUp("collateral");
-        writeContract({
-          address: collateralToken!,
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [targetContract, targetCollateralAmt * 100n],
-          chainId: ARC_TESTNET_CHAIN_ID,
-        });
-        toast.info(
-          isEn
-            ? "Approving CirBTC... Deposit will open automatically right after."
-            : "Đang cấp quyền CirBTC... Ví sẽ tự bật lệnh Ký quỹ ngay sau khi hoàn tất."
-        );
-      } catch (e) {
-        setPendingFollowUp(null);
-        toast.error(parseContractError(e));
-      }
-      return;
-    }
-    try {
-      writeContract({
-        address: targetContract,
-        abi: ROTATING_SAVINGS_ABI,
-        functionName: "depositCollateral",
-        args: [targetCollateralAmt],
-        chainId: ARC_TESTNET_CHAIN_ID,
-      });
-    } catch (e) {
-      toast.error(parseContractError(e));
-    }
-  };
+  const handleDepositCollateral = () => runCollateralAction('deposit');
 
   const joinedCount = totalJoined ?? 0;
   const effectiveRequiredVotes =
@@ -643,91 +648,41 @@ export function ActionPanel({
         </p>
       )}
 
-      {state === GROUP_STATE.ACTIVE && isMember && !isKicked && lockedCollateral === 0n && (
-        <p role="status" className="mx-5 my-3 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-xs text-amber-200">
-          {t("actionPanel.cycleNoCollateralNotice", language)}
-        </p>
-      )}
-
-      {/* --- CirBTC Collateral Vault Card (TASK-043) --- */}
-      {((collateralAmount !== undefined && collateralAmount > 0n) ||
-        (lockedCollateral !== undefined && lockedCollateral > 0n) ||
-        (claimableCirBtc !== undefined && claimableCirBtc > 0n)) && (
-        <div className="p-6 border-b border-amber-500/20 bg-gradient-to-br from-amber-950/40 via-[#0c0d14] to-[#0c0d14]">
-          <div className="rounded-2xl p-4 sm:p-5 bg-amber-950/30 border border-amber-500/30 space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 border border-amber-500/30">
-                  <ShieldCheck size={22} className="text-amber-400" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm sm:text-base text-amber-200">
-                    {t("collateral.badgeTitle", language)}
-                  </h4>
-                  <p className="text-xs text-amber-300/80">
-                    {state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED
-                      ? t("collateral.statusClaimable", language)
-                      : hasLockedCirBtc
-                      ? (isEn ? "✓ Deposited & Locked On-Chain" : "✓ Đã ký quỹ bảo lãnh On-Chain")
-                      : t("collateral.statusLocked", language)}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-lg sm:text-xl font-black text-amber-300 tabular-nums">
-                  {formatCirBtc((lockedCollateral ?? collateralAmount ?? 0n) + (claimableCirBtc ?? 0n))}
-                </span>
-                <span className="text-xs font-bold text-amber-400 ml-1">CirBTC</span>
-                {cirBtcBalance !== undefined && (
-                  <p className="text-xs text-slate-400 font-mono mt-0.5">
-                    {isEn ? "Wallet:" : "Số dư ví:"} {formatCirBtc(cirBtcBalance)} CirBTC
-                  </p>
-                )}
-              </div>
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              {t("collateral.securityNotice", language)}
-            </p>
-            {(state === GROUP_STATE.OPEN || state === GROUP_STATE.ACTIVE) &&
-              isMember &&
-              !isKicked &&
-              !hasLockedCirBtc && (
-                <button
-                  type="button"
-                  onClick={handleDepositCollateral}
-                  disabled={isLoading}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold rounded-xl transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer text-sm disabled:opacity-60"
-                >
-                  <ShieldCheck size={16} className="text-slate-950" />
-                  <span>
-                    {isLoading
-                      ? loadingLabel
-                      : needsCirBtcApproval
-                      ? (isEn
-                          ? `1. Approve CirBTC (${formatCirBtc(targetCollateralAmt)} CirBTC)`
-                          : `1. Cấp quyền CirBTC (${formatCirBtc(targetCollateralAmt)} CirBTC)`)
-                      : (isEn
-                          ? `2. Deposit Collateral (${formatCirBtc(targetCollateralAmt)} CirBTC)`
-                          : `2. Ký quỹ Bảo lãnh (${formatCirBtc(targetCollateralAmt)} CirBTC)`)}
-                  </span>
-                </button>
-              )}
-            {(state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED) &&
-              !isKicked &&
-              ((lockedCollateral ?? 0n) + (claimableCirBtc ?? 0n) > 0n) && (
-                <button
-                  type="button"
-                  onClick={handleClaimCollateral}
-                  disabled={isLoading}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold rounded-xl transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer text-sm"
-                >
-                  <ShieldCheck size={16} className="text-slate-950" />
-                  <span>{t("collateral.claimBtn", language)}</span>
-                </button>
-              )}
-          </div>
-        </div>
-      )}
+      <CollateralPreview
+        view={collateralView}
+        language={language}
+        status={vaultStatus}
+        required={collateralAmount}
+        locked={lockedCollateral}
+        balance={cirBtcBalance}
+        rewards={claimableCirBtc}
+        groupAddress={targetContract}
+        tokenAddress={collateralToken}
+        accountAddress={address}
+        detailsNotice={<>
+          {state === GROUP_STATE.ACTIVE && isMember && !isKicked && quote && quote.required > 0n && quote.shortfall > 0n && <span className="block mb-2">{t("actionPanel.cycleNoCollateralNotice", language)}</span>}
+          {t("collateral.securityNotice", language)}
+        </>}
+      >
+        {canTopUp && <button type="button" onClick={handleDepositCollateral} disabled={isLoading || isReviewingCollateral || !collateralReady} className="w-full rounded-xl border border-amber-500/40 px-3 py-2.5 text-xs text-amber-200 disabled:opacity-40">
+          {needsCirBtcApproval
+            ? (isEn ? 'Approve CirBTC, then review and deposit' : 'Cấp quyền CirBTC, sau đó xem lại và nộp')
+            : (isEn ? 'Deposit collateral' : 'Nộp bổ sung ký quỹ')} ({quote ? formatCollateral(quote.shortfall) : '—'} CirBTC)
+        </button>}
+        {(state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED) &&
+          !isKicked &&
+          ((lockedCollateral ?? 0n) + (claimableCirBtc ?? 0n) > 0n) && (
+            <button
+              type="button"
+              onClick={handleClaimCollateral}
+              disabled={isLoading}
+              className="w-full py-3 px-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold rounded-xl transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer text-sm"
+            >
+              <ShieldCheck size={16} className="text-slate-950" />
+              <span>{t("collateral.claimBtn", language)}</span>
+            </button>
+          )}
+      </CollateralPreview>
 
       {/* --- OPEN state: Join --- */}
       {state === GROUP_STATE.ACTIVE && isMember && (
@@ -916,12 +871,12 @@ export function ActionPanel({
               </div>
               <button
                 onClick={handleApproveAndJoin}
-                disabled={isLoading}
+                disabled={isLoading || isReviewingCollateral || !collateralReady}
                 className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-bold rounded-2xl disabled:opacity-60 active:scale-[0.98] transition-all text-sm sm:text-base shadow-lg shadow-amber-500/20 cursor-pointer"
               >
                 {isLoading
                   ? loadingLabel
-                  : (isEn ? "Join Savings Club" : "Tham gia nhóm")}
+                  : needsCirBtcApproval ? (isEn ? "Approve exact CirBTC for joining" : "Cấp quyền đúng số CirBTC để tham gia") : (isEn ? "Join Savings Club" : "Tham gia nhóm")}
               </button>
             </>
           )}
@@ -1075,7 +1030,7 @@ export function ActionPanel({
                 {/* Prominent Golden Button */}
                 <button
                   onClick={handleContributeAction}
-                  disabled={isLoading || isTimeEnded}
+                  disabled={isLoading || isReviewingCollateral || !participationReady || isTimeEnded}
                   className={`relative z-10 w-full py-3.5 sm:py-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-bold rounded-2xl active:scale-[0.98] transition-all text-sm sm:text-base shadow-lg shadow-amber-500/25 cursor-pointer flex items-center justify-center gap-2 ${
                     isTimeEnded
                       ? "!bg-none !bg-slate-800/80 !text-slate-500 border border-slate-700/60 cursor-not-allowed !opacity-60"
@@ -1246,7 +1201,7 @@ export function ActionPanel({
 
                       <button
                         onClick={needsApprovalForBid ? handleApproveForBid : handlePlaceBid}
-                        disabled={isLoading || bidRaw <= userBid}
+                        disabled={isLoading || isReviewingCollateral || !participationReady || bidRaw <= userBid}
                         className="w-full py-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 text-slate-950 font-bold rounded-xl disabled:opacity-50 text-xs sm:text-sm shadow-md cursor-pointer"
                       >
                         {isLoading
@@ -1302,7 +1257,7 @@ export function ActionPanel({
                   </div>
                   <button
                     onClick={needsApprovalForBid ? handleApproveForBid : handlePlaceBid}
-                    disabled={isLoading || bidRaw <= 0n}
+                    disabled={isLoading || isReviewingCollateral || !participationReady || bidRaw <= 0n}
                     className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all text-sm sm:text-base shadow-lg shadow-amber-500/20 cursor-pointer"
                   >
                     {isLoading

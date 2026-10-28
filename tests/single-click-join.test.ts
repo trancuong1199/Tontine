@@ -11,34 +11,15 @@ function readSource(relativePath: string): string {
 // REQ-01: Tinh chỉnh ActionPanel.tsx cho ví Web3 tiêu chuẩn
 // ============================================================================
 
-test("TC-JOIN-01 (AC-01.1): ActionPanel.tsx gọi trực tiếp joinGroup trong handleApproveAndJoin mà không gọi USDC.approve hoặc kiểm tra if (needsApproval)", () => {
-  const src = readSource("src/components/savings/ActionPanel.tsx");
-
-  // Extract handleApproveAndJoin function body
-  const startIndex = src.indexOf("const handleApproveAndJoin = async () => {");
-  assert.ok(startIndex !== -1, "ActionPanel must define handleApproveAndJoin");
-  const endIndex = src.indexOf("};", startIndex);
-  const fnBody = src.slice(startIndex, endIndex);
-
-  // Must call joinGroup directly
-  assert.ok(
-    fnBody.includes('functionName: "joinGroup"'),
-    "handleApproveAndJoin must call joinGroup function on targetContract"
-  );
-  assert.ok(
-    fnBody.includes("address: targetContract"),
-    "handleApproveAndJoin must target targetContract"
-  );
-
-  // Must NOT check needsApproval in handleApproveAndJoin
-  assert.ok(
-    !fnBody.includes("if (needsApproval)"),
-    "handleApproveAndJoin must NOT check if (needsApproval)"
-  );
-  assert.ok(
-    !fnBody.includes('functionName: "approve"'),
-    "handleApproveAndJoin must NOT call approve on USDC"
-  );
+test("TC-JOIN-01 (Task049 REQ03): EOA join uses reviewed collateral permission without USDC approval", () => {
+  const src=readSource("src/components/savings/ActionPanel.tsx");
+  const body=src.slice(src.indexOf("const runCollateralAction = async"),src.indexOf("const handleApproveForContribute"));
+  assert.match(body,/collateralView\.review\(\)/);
+  assert.match(body,/fresh\.allowance < fresh\.shortfall/);
+  assert.match(body,/address: fresh\.token/);
+  assert.match(body,/args: \[fresh\.group, fresh\.shortfall\]/);
+  assert.match(body,/joinGroupWithCollateral/);assert.match(body,/joinGroup/);
+  assert.doesNotMatch(body,/USDC_ADDRESS|if \(needsApproval\)/);
 });
 
 test("TC-JOIN-02 (AC-01.2): Nút tham gia nhóm trong ActionPanel.tsx hiển thị trực tiếp 'Join Savings Club' / 'Tham gia nhóm' mà không kiểm tra needsApproval", () => {
@@ -78,34 +59,13 @@ test("TC-JOIN-03 (AC-01.3): ActionPanel.tsx không còn chứa thông báo toast
 // REQ-02: Tinh chỉnh PasskeyActionPanel.tsx cho ví Passkey Smart Account
 // ============================================================================
 
-test("TC-JOIN-04 (AC-02.1): PasskeyActionPanel.tsx trong handleApproveAndJoin chỉ thêm duy nhất lệnh joinGroup vào batch calls, không thêm lệnh approve", () => {
-  const src = readSource("src/components/savings/PasskeyActionPanel.tsx");
-
-  // Extract handleApproveAndJoin function body
-  const startIndex = src.indexOf("const handleApproveAndJoin = async () => {");
-  assert.ok(startIndex !== -1, "PasskeyActionPanel must define handleApproveAndJoin");
-  const endIndex = src.indexOf("await sendOp(", startIndex);
-  const fnBody = src.slice(startIndex, endIndex);
-
-  // Must push joinGroup call
-  assert.ok(
-    fnBody.includes('functionName: "joinGroup"'),
-    "Passkey handleApproveAndJoin must encode joinGroup"
-  );
-  assert.ok(
-    fnBody.includes("to: targetContract"),
-    "Passkey handleApproveAndJoin must target targetContract"
-  );
-
-  // Must NOT check needsApproval or push approve
-  assert.ok(
-    !fnBody.includes("if (needsApproval)"),
-    "Passkey handleApproveAndJoin must NOT check if (needsApproval)"
-  );
-  assert.ok(
-    !fnBody.includes('functionName: "approve"'),
-    "Passkey handleApproveAndJoin must NOT push approve call"
-  );
+test("TC-JOIN-04 (Task049 REQ04): Passkey conditionally approves CirBTC exact shortfall then one reviewed join", () => {
+  const src=readSource("src/components/savings/PasskeyActionPanel.tsx");
+  const body=src.slice(src.indexOf("const runCollateralAction = async"),src.indexOf("const handleApproveAndJoin"));
+  assert.match(body,/collateralView\.review\(\)/);assert.match(body,/fresh\.allowance < fresh\.shortfall/);
+  assert.match(body,/to: fresh\.token/);assert.match(body,/args: \[fresh\.group, fresh\.shortfall\]/);
+  assert.match(body,/to: fresh\.group/);assert.match(body,/joinGroupWithCollateral/);assert.match(body,/await sendOp\(calls/);
+  assert.doesNotMatch(body,/USDC_ADDRESS|if \(needsApproval\)/);
 });
 
 test("TC-JOIN-05 (AC-02.2): Nút tham gia nhóm trong PasskeyActionPanel.tsx ở trạng thái OPEN hiển thị trực tiếp 'Join Savings Club' / 'Tham gia nhóm'", () => {
@@ -169,7 +129,7 @@ test("TC-JOIN-07 (AC-03.2): Hàm handlePlaceBid và handleApproveForBid giữ ng
 
   // In ActionPanel.tsx
   assert.ok(
-    actionSrc.includes("const handleApproveForBid = () => {"),
+    /const handleApproveForBid = (?:async )?\(\) => \{/.test(actionSrc),
     "ActionPanel must define handleApproveForBid"
   );
   assert.ok(
@@ -196,24 +156,11 @@ test("TC-JOIN-07 (AC-03.2): Hàm handlePlaceBid và handleApproveForBid giữ ng
 // REQ-04: Đảm bảo độ tin cậy và không thoái lui (Zero Regression)
 // ============================================================================
 
-test("TC-JOIN-08 (AC-04.1 & AC-04.2): Bất biến Zero-Regression và Single-Signature Join được đảm bảo trọn vẹn", () => {
-  const contractSrc = readSource("contracts/RotatingSavings.sol");
-
-  // Verify on-chain joinGroup never touches usdc transfer
-  const joinGroupStart = contractSrc.indexOf("function joinGroup() external");
-  const joinGroupEnd = contractSrc.indexOf("}", joinGroupStart);
-  const joinGroupBody = contractSrc.slice(joinGroupStart, joinGroupEnd);
-
-  assert.ok(
-    !joinGroupBody.includes("safeTransferFrom"),
-    "On-chain joinGroup() must NOT call safeTransferFrom"
-  );
-  assert.ok(
-    !joinGroupBody.includes("transfer"),
-    "On-chain joinGroup() must NOT call transfer"
-  );
-  assert.ok(
-    joinGroupBody.includes("isMember[msg.sender] = true;"),
-    "On-chain joinGroup() marks membership directly"
-  );
+test("TC-JOIN-08 (Task049 REQ05): Both join entrypoints share guarded membership logic without pulling USDC", () => {
+  const src=readSource("contracts/RotatingSavings.sol");
+  assert.match(src,/function joinGroup\(\) external nonReentrant/);
+  assert.match(src,/function joinGroupWithCollateral\(uint256 expectedRequirement\) external nonReentrant/);
+  const body=src.slice(src.indexOf("function _joinGroup()"),src.indexOf("function startRounds()"));
+  assert.match(body,/isMember\[msg.sender\] = true/);assert.match(body,/_handleCollateralDeposit\(msg.sender\)/);
+  assert.doesNotMatch(body,/usdc\.|usdcToken/);
 });

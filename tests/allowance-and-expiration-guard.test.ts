@@ -88,7 +88,7 @@ test("TC-GUARD-03 (AC-01.3): Khi allowance >= contributionAmount (needsApproval 
 
   // In ActionPanel: when !needsApproval, it does NOT return early and proceeds to writeContract contribute
   assert.ok(
-    actionPanelSrc.includes('functionName: "contribute",\n        args: [currentRound],'),
+    /functionName: "contribute",\s*(?:account: address,\s*)?args: \[currentRound\],/.test(actionPanelSrc),
     "ActionPanel must execute contribute directly when needsApproval is false"
   );
 
@@ -113,7 +113,7 @@ test("TC-GUARD-04 (AC-02.1): Nút đóng tiền và đóng hụi chết bị vô
 
   // 1. ActionPanel button disabled
   assert.ok(
-    actionPanelSrc.includes("disabled={isLoading || isTimeEnded}"),
+    /disabled=\{[^}]*isTimeEnded[^}]*\}/.test(actionPanelSrc),
     "ActionPanel contribute button must be disabled when isTimeEnded is true"
   );
 
@@ -125,7 +125,7 @@ test("TC-GUARD-04 (AC-02.1): Nút đóng tiền và đóng hụi chết bị vô
 
   // 3. PasskeyActionPanel button disabled & guard
   assert.ok(
-    passkeySrc.includes("disabled={isTimeEnded}"),
+    /disabled=\{[^}]*isTimeEnded[^}]*\}/.test(passkeySrc),
     "PasskeyActionPanel contribute button must be disabled when isTimeEnded is true"
   );
   assert.ok(
@@ -202,7 +202,7 @@ test("TC-GUARD-06 (AC-02.3): Nút kết thúc vòng (Settle Round) được kíc
 test("TC-GUARD-07 (AC-03.1): Hàm parseContractError trong src/contract.ts ánh xạ chính xác các lỗi on-chain", () => {
   // 1. erc20insufficientallowance
   const allowanceErr = parseContractError({ message: "execution reverted: ERC20InsufficientAllowance(0x123, 0, 100)" });
-  assert.equal(allowanceErr, "Chưa cấp quyền (Approve) đủ USDC. Vui lòng bấm Cấp quyền trước khi đóng tiền.");
+  assert.equal(allowanceErr, "Chưa cấp quyền (Approve) đủ token. Vui lòng xem lại token và số tiền cần cấp quyền trước khi nộp.");
 
   // 2. roundstillopen
   const roundStillOpenErr = parseContractError({ message: "reverted with custom error 'RoundStillOpen()'" });

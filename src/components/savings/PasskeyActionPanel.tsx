@@ -1,3 +1,6 @@
+import { CollateralPreview } from "./CollateralPreview";
+import type { CollateralView } from "../../hooks/useCollateralPolicy";
+import { formatCollateral } from "../../lib/collateralPolicy";
 import type { CycleCapability } from "../../lib/cycleCapabilities";
 import { BID_PRESETS, getRaisedBidInput } from "../../lib/bidPresets";
 /**
@@ -5,7 +8,7 @@ import { BID_PRESETS, getRaisedBidInput } from "../../lib/bidPresets";
  * Gửi user operations (ERC-4337) thay vì EOA transactions.
  * Gas được sponsor bởi Circle Gas Station (paymaster: true).
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { encodeFunctionData, erc20Abi, type Hex } from "viem";
 import { type BundlerClient, type SmartAccount } from "viem/account-abstraction";
 import { toast } from "sonner";
@@ -26,6 +29,7 @@ import { Language, t } from "../../lib/i18n";
 
 interface PasskeyActionPanelProps {
   contractAddress?: `0x${string}`;
+  collateralView?: CollateralView;
   cycleCapability?: CycleCapability;
   onRetryCycleCapability?: () => void;
   bundler: BundlerClient;
@@ -92,6 +96,7 @@ export function formatDigitalCountdown(
 
 export function PasskeyActionPanel({
   contractAddress,
+  collateralView,
   cycleCapability = "checking",
   onRetryCycleCapability,
   bundler,
@@ -128,7 +133,32 @@ export function PasskeyActionPanel({
   hasVotedCancel,
 }: PasskeyActionPanelProps) {
   const targetContract = contractAddress ?? ROTATING_SAVINGS_ADDRESS;
+  const collateralActionLock = useRef(false);
+  const [isReviewingCollateral, setIsReviewingCollateral] = useState(false);
+  const quote = collateralView?.quote;
+  const collateralReady = !!quote && (collateralView?.policy === 'enforced' || collateralView?.policy === 'legacy') && quote.deficit === 0n;
+  const participationReady = !!quote && (quote.policy === 'legacy' || quote.shortfall === 0n);
+  const canTopUp = !!quote && quote.member && !quote.kicked && (quote.state === GROUP_STATE.OPEN || quote.state === GROUP_STATE.ACTIVE) && quote.shortfall > 0n;
+  const needsCirBtcApproval = !!quote && quote.allowance < quote.shortfall;
   const isEn = language === "en";
+  const vaultStatus = isKicked
+    ? (isEn ? 'Kicked — collateral withdrawal unavailable' : 'Đã bị loại — không đủ điều kiện rút ký quỹ')
+    : lockedCollateral === undefined || collateralAmount === undefined
+    ? (isEn ? 'Collateral status unavailable' : 'Chưa đọc được trạng thái ký quỹ')
+    : state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED
+    ? (lockedCollateral > 0n || (claimableCirBtc !== undefined && claimableCirBtc > 0n)
+      ? (isEn ? 'Eligible amounts can be withdrawn' : 'Có thể rút các khoản đủ điều kiện')
+      : claimableCirBtc === undefined
+      ? (isEn ? 'Withdrawal amount unavailable' : 'Chưa đọc được khoản có thể rút')
+      : (isEn ? 'No collateral or rewards to withdraw' : 'Không có ký quỹ hoặc phần thưởng để rút'))
+    : collateralAmount === 0n
+    ? (isEn ? 'No collateral required' : 'Không yêu cầu ký quỹ')
+    : lockedCollateral === 0n
+    ? (isEn ? 'Collateral not deposited' : 'Chưa nộp ký quỹ')
+    : lockedCollateral < collateralAmount
+    ? (isEn ? 'Partially funded — collateral shortfall remains' : 'Đã nộp một phần — ký quỹ còn thiếu')
+    : (isEn ? 'Required collateral is locked' : 'Đã khóa đủ mức ký quỹ yêu cầu');
+
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState("");
   const [bidAmount, setBidAmount] = useState("");
@@ -179,7 +209,11 @@ export function PasskeyActionPanel({
   const bidRaw = parseUsdc(bidAmount);
   const needsBidApproval = bidRaw > 0n && allowance < contributionAmount + bidRaw;
 
+  const operationLock = useRef(false);
+
   async function sendOp(calls: { to: Hex; data: Hex; value?: bigint }[], successMsg: string) {
+    if (operationLock.current) return;
+    operationLock.current = true;
     setIsLoading(true);
     setLoadingMsg(isEn ? "Confirming passkey..." : "Xác nhận passkey...");
     try {
@@ -189,7 +223,9 @@ export function PasskeyActionPanel({
         paymaster: true,
       });
       setLoadingMsg(isEn ? "Processing on-chain..." : "Đang xử lý trên chain...");
-      const { receipt } = await bundler.waitForUserOperationReceipt({ hash });
+      const result = await bundler.waitForUserOperationReceipt({ hash });
+      const { receipt } = result;
+      if (result.success === false || receipt.status === "reverted") throw new Error("Transaction reverted.");
       toast.success(successMsg, {
         description: (
           <a
@@ -206,25 +242,46 @@ export function PasskeyActionPanel({
     } catch (err: unknown) {
       toast.error(parseContractError(err));
     } finally {
+      operationLock.current = false;
       setIsLoading(false);
       setLoadingMsg("");
     }
   }
 
-  const handleApproveAndJoin = async () => {
-    const calls: { to: Hex; data: Hex }[] = [];
-    calls.push({
-      to: targetContract,
-      data: encodeFunctionData({
-        abi: ROTATING_SAVINGS_ABI,
-        functionName: "joinGroup",
-        args: [],
-      }),
-    });
-    await sendOp(calls, isEn ? "Successfully joined the savings club!" : "Đã tham gia nhóm thành công!");
+  const runCollateralAction = async (action: 'join' | 'deposit') => {
+    if (!collateralView || !collateralReady || collateralActionLock.current || operationLock.current || isLoading) return;
+    collateralActionLock.current = true;
+    setIsReviewingCollateral(true);
+    try {
+      const fresh = await collateralView.review();
+      if (fresh.account.toLowerCase() !== account.address.toLowerCase() || fresh.group.toLowerCase() !== targetContract.toLowerCase()) throw new Error('Wallet or club changed. Review again.');
+      if (action === 'join' && (fresh.member || fresh.state !== GROUP_STATE.OPEN)) throw new Error('Club is not open for this member.');
+      if (action === 'deposit' && (!fresh.member || fresh.kicked || (fresh.state !== GROUP_STATE.OPEN && fresh.state !== GROUP_STATE.ACTIVE) || fresh.shortfall === 0n)) return;
+      const calls: { to: Hex; data: Hex }[] = [];
+      if (fresh.allowance < fresh.shortfall) calls.push({ to: fresh.token, data: encodeFunctionData({ abi: erc20Abi, functionName: 'approve', args: [fresh.group, fresh.shortfall] }) });
+      calls.push({ to: fresh.group, data: encodeFunctionData({ abi: ROTATING_SAVINGS_ABI,
+        functionName: action === 'deposit' ? 'depositCollateral' : fresh.policy === 'enforced' ? 'joinGroupWithCollateral' : 'joinGroup',
+        args: action === 'deposit' ? [fresh.shortfall] : fresh.policy === 'enforced' ? [fresh.required] : [] }) });
+      await sendOp(calls, action === 'join' ? (isEn ? 'Joined the club.' : 'Đã tham gia nhóm.') : (isEn ? 'Collateral deposited.' : 'Đã nộp ký quỹ.'));
+    } catch (error) { toast.error(parseContractError(error)); }
+    finally { collateralActionLock.current = false; setIsReviewingCollateral(false); }
+  };
+  const handleApproveAndJoin = () => runCollateralAction('join');
+  const handleDepositCollateral = () => runCollateralAction('deposit');
+  const verifyParticipation = async () => {
+    if (!participationReady || !collateralView || collateralActionLock.current || operationLock.current) return false;
+    collateralActionLock.current = true;
+    setIsReviewingCollateral(true);
+    try {
+      const fresh = await collateralView.review(false);
+      if (!fresh.member || fresh.kicked || (fresh.policy === 'enforced' && fresh.shortfall > 0n)) throw new Error('Top up collateral before contributing or bidding.');
+      return true;
+    } catch (error) { toast.error(parseContractError(error)); return false; }
+    finally { collateralActionLock.current = false; setIsReviewingCollateral(false); }
   };
 
   const handleContribute = async () => {
+    if (!(await verifyParticipation())) return;
     if (isTimeEnded) {
       toast.error(isEn ? "Round contribution period has ended." : "Thời gian đóng tiền của vòng này đã kết thúc.");
       return;
@@ -275,6 +332,7 @@ export function PasskeyActionPanel({
   };
 
   const handleBid = async () => {
+    if (!(await verifyParticipation())) return;
     if (bidRaw <= 0n) {
       toast.error(isEn ? "Enter valid bid amount (greater than 0)." : "Nhập số tiền bid hợp lệ (lớn hơn 0).");
       return;
@@ -421,60 +479,41 @@ export function PasskeyActionPanel({
         </p>
       )}
 
-      {state === GROUP_STATE.ACTIVE && isMember && !isKicked && lockedCollateral === 0n && (
-        <p role="status" className="mx-5 my-3 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-xs text-amber-200">
-          {t("actionPanel.cycleNoCollateralNotice", language)}
-        </p>
-      )}
-
-      {/* CirBTC Collateral Vault Card (TASK-043) */}
-      {((collateralAmount !== undefined && collateralAmount > 0n) ||
-        (lockedCollateral !== undefined && lockedCollateral > 0n) ||
-        (claimableCirBtc !== undefined && claimableCirBtc > 0n)) && (
-        <div className="p-4 sm:p-5 border-b border-amber-500/20 bg-gradient-to-br from-amber-950/40 via-[#0c0d14] to-[#0c0d14]">
-          <div className="rounded-2xl p-4 sm:p-5 bg-amber-950/30 border border-amber-500/30 space-y-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 border border-amber-500/30">
-                  <ShieldCheck size={22} className="text-amber-400" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm sm:text-base text-amber-200">
-                    {t("collateral.badgeTitle", language)}
-                  </h4>
-                  <p className="text-xs text-amber-300/80">
-                    {state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED
-                      ? t("collateral.statusClaimable", language)
-                      : t("collateral.statusLocked", language)}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-lg sm:text-xl font-black text-amber-300 tabular-nums">
-                  {formatCirBtc((lockedCollateral ?? collateralAmount ?? 0n) + (claimableCirBtc ?? 0n))}
-                </span>
-                <span className="text-xs font-bold text-amber-400 ml-1">CirBTC</span>
-              </div>
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              {t("collateral.securityNotice", language)}
-            </p>
-            {(state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED) &&
-              !isKicked &&
-              ((lockedCollateral ?? 0n) + (claimableCirBtc ?? 0n) > 0n) && (
-                <button
-                  type="button"
-                  onClick={handleClaimCollateralPasskey}
-                  disabled={isLoading}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold rounded-xl transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer text-sm"
-                >
-                  <ShieldCheck size={16} className="text-slate-950" />
-                  <span>{t("collateral.claimBtn", language)}</span>
-                </button>
-              )}
-          </div>
-        </div>
-      )}
+      <CollateralPreview
+        view={collateralView}
+        language={language}
+        status={vaultStatus}
+        required={collateralAmount}
+        locked={lockedCollateral}
+        balance={quote?.balance}
+        rewards={claimableCirBtc}
+        groupAddress={targetContract}
+        tokenAddress={quote?.token}
+        accountAddress={account.address}
+        detailsNotice={<>
+          {state === GROUP_STATE.ACTIVE && isMember && !isKicked && quote && quote.required > 0n && quote.shortfall > 0n && <span className="block mb-2">{t("actionPanel.cycleNoCollateralNotice", language)}</span>}
+          {t("collateral.securityNotice", language)}
+        </>}
+      >
+        {canTopUp && <button type="button" onClick={handleDepositCollateral} disabled={isLoading || isReviewingCollateral || !collateralReady} className="w-full rounded-xl border border-amber-500/40 px-3 py-2.5 text-xs text-amber-200 disabled:opacity-40">
+          {needsCirBtcApproval
+            ? (isEn ? 'Approve + deposit CirBTC in one batch' : 'Cấp quyền + nộp CirBTC trong một giao dịch')
+            : (isEn ? 'Deposit collateral' : 'Nộp bổ sung ký quỹ')} ({quote ? formatCollateral(quote.shortfall) : '—'} CirBTC)
+        </button>}
+        {(state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED) &&
+          !isKicked &&
+          ((lockedCollateral ?? 0n) + (claimableCirBtc ?? 0n) > 0n) && (
+            <button
+              type="button"
+              onClick={handleClaimCollateralPasskey}
+              disabled={isLoading}
+              className="w-full py-3 px-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold rounded-xl transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer text-sm"
+            >
+              <ShieldCheck size={16} className="text-slate-950" />
+              <span>{t("collateral.claimBtn", language)}</span>
+            </button>
+          )}
+      </CollateralPreview>
 
       {(state === GROUP_STATE.OPEN || state === GROUP_STATE.ACTIVE) && isMember && (
         <div className="p-5 border-b border-red-500/20 space-y-3">
@@ -618,8 +657,8 @@ export function PasskeyActionPanel({
               </div>
               {loadingEl}
               {!isLoading && (
-                <button onClick={handleApproveAndJoin} disabled={isLoading} className={btnPrimary}>
-                  {isEn ? "Join Savings Club" : "Tham gia nhóm"}
+                <button onClick={handleApproveAndJoin} disabled={isLoading || isReviewingCollateral || !collateralReady} className={btnPrimary}>
+                  {needsCirBtcApproval ? (isEn ? "Approve + join in one batch" : "Cấp quyền + tham gia trong một giao dịch") : (isEn ? "Join Savings Club" : "Tham gia nhóm")}
                 </button>
               )}
             </>
@@ -765,7 +804,7 @@ export function PasskeyActionPanel({
                 {!isLoading && (
                   <button
                     onClick={handleContribute}
-                    disabled={isTimeEnded}
+                    disabled={isReviewingCollateral || !participationReady || isTimeEnded}
                     className={`relative z-10 w-full py-3.5 sm:py-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-bold rounded-2xl active:scale-[0.98] transition-all text-sm sm:text-base shadow-lg shadow-amber-500/25 cursor-pointer flex items-center justify-center gap-2 ${
                       isTimeEnded
                         ? "!bg-none !bg-slate-800/80 !text-slate-500 border border-slate-700/60 cursor-not-allowed !opacity-60"
@@ -924,7 +963,7 @@ export function PasskeyActionPanel({
                       {!isLoading && (
                         <button
                           onClick={handleBid}
-                          disabled={isLoading || bidRaw <= userBid}
+                          disabled={isLoading || isReviewingCollateral || !participationReady || bidRaw <= userBid}
                           className="w-full py-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 text-slate-950 font-bold rounded-xl disabled:opacity-50 text-xs sm:text-sm shadow-md cursor-pointer"
                         >
                           {bidRaw <= userBid
@@ -976,7 +1015,7 @@ export function PasskeyActionPanel({
                   {!isLoading && (
                     <button
                       onClick={handleBid}
-                      disabled={isLoading || bidRaw <= 0n}
+                      disabled={isLoading || isReviewingCollateral || !participationReady || bidRaw <= 0n}
                       className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all text-sm sm:text-base shadow-lg shadow-amber-500/20 cursor-pointer"
                     >
                       {isEn ? "Place Bid" : "Đặt bid"}

@@ -48,6 +48,8 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
     error MemberWasKicked();
     error GroupNotFinished();
     error CollateralNotRequired();
+    error InsufficientCollateral();
+    error CollateralQuoteChanged();
     error AlreadyVotedCancel();
     error InsufficientCancelVotes();
     error RoundEnded();
@@ -115,7 +117,8 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         uint256 maxMembers_,
         uint256 roundDuration_,
         string memory groupName_,
-        address cirBtcToken_
+        address cirBtcToken_,
+        uint256 requiredCollateral
     ) Ownable(msg.sender) {
         if (usdcToken_ == address(0) || cirBtcToken_ == address(0)) revert InvalidAddress();
         if (contributionAmount_ == 0 || roundDuration_ == 0 || maxMembers_ < 2 || maxMembers_ > 20) {
@@ -133,8 +136,10 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         // Collateral token is fixed per deployment.
         cirBtcToken = cirBtcToken_;
         cirBtc = IERC20(cirBtcToken);
-        cirBtcCollateralAmount = 0; // default 0 for backwards compatibility
+        cirBtcCollateralAmount = requiredCollateral;
     }
+
+    function collateralPolicyVersion() external pure returns (uint256) { return 1; }
 
     /// @notice Configure required CirBTC collateral before members join
     function setCollateralAmount(uint256 collateralAmount_) external onlyGroupOwner {
@@ -149,22 +154,21 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         if (state != GroupState.OPEN && state != GroupState.ACTIVE) revert GroupNotOpen();
         if (!isMember[msg.sender]) revert NotMember();
         if (isKicked[msg.sender]) revert MemberWasKicked();
-        uint256 depositAmt = amount_ > 0 ? amount_ : (cirBtcCollateralAmount > 0 ? cirBtcCollateralAmount : 100_000);
-        cirBtcCollateral[msg.sender] += depositAmt;
-        cirBtc.safeTransferFrom(msg.sender, address(this), depositAmt);
-        emit CollateralDeposited(msg.sender, depositAmt);
+        if (cirBtcCollateralAmount == 0) revert CollateralNotRequired();
+        uint256 locked = cirBtcCollateral[msg.sender];
+        if (amount_ == 0 || locked >= cirBtcCollateralAmount || amount_ > cirBtcCollateralAmount - locked) revert InvalidConfiguration();
+        cirBtcCollateral[msg.sender] = locked + amount_;
+        cirBtc.safeTransferFrom(msg.sender, address(this), amount_);
+        emit CollateralDeposited(msg.sender, amount_);
     }
 
     function _handleCollateralDeposit(address member) internal {
-        if (cirBtcCollateralAmount > 0) {
-            IERC20 token = cirBtc;
-            uint256 allowed = token.allowance(member, address(this));
-            uint256 bal = token.balanceOf(member);
-            if (allowed >= cirBtcCollateralAmount && bal >= cirBtcCollateralAmount) {
-                cirBtcCollateral[member] += cirBtcCollateralAmount;
-                token.safeTransferFrom(member, address(this), cirBtcCollateralAmount);
-                emit CollateralDeposited(member, cirBtcCollateralAmount);
-            }
+        uint256 locked = cirBtcCollateral[member];
+        if (locked < cirBtcCollateralAmount) {
+            uint256 shortfall = cirBtcCollateralAmount - locked;
+            cirBtcCollateral[member] = cirBtcCollateralAmount;
+            cirBtc.safeTransferFrom(member, address(this), shortfall);
+            emit CollateralDeposited(member, shortfall);
         }
     }
 
@@ -198,7 +202,15 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         }
     }
 
-    function joinGroup() external {
+    function joinGroup() external nonReentrant { _joinGroup(); }
+
+    /// @notice Join only at the requirement reviewed before signing, even with an old large allowance.
+    function joinGroupWithCollateral(uint256 expectedRequirement) external nonReentrant {
+        if (cirBtcCollateralAmount != expectedRequirement) revert CollateralQuoteChanged();
+        _joinGroup();
+    }
+
+    function _joinGroup() internal {
         if (state != GroupState.OPEN) revert GroupNotOpen();
         if (isMember[msg.sender]) revert AlreadyMember();
         if (members.length >= maxMembers) revert MaxMembersReached();
@@ -216,6 +228,10 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
     function startRounds() external onlyGroupOwner {
         if (state != GroupState.OPEN) revert GroupNotOpen();
         if (members.length < 2) revert InvalidConfiguration();
+
+        for (uint256 i = 0; i < members.length; i++) {
+            if (cirBtcCollateral[members[i]] < cirBtcCollateralAmount) revert InsufficientCollateral();
+        }
 
         state = GroupState.ACTIVE;
         currentRound = 1;
@@ -265,6 +281,7 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         if (roundId != currentRound) revert RoundNotCurrent();
         if (!isMember[msg.sender]) revert NotMember();
         if (isKicked[msg.sender]) revert NotMember();
+        if (cirBtcCollateral[msg.sender] < cirBtcCollateralAmount) revert InsufficientCollateral();
 
         Round storage round = rounds[roundId];
         if (block.timestamp > round.endTime) revert RoundEnded();
@@ -284,6 +301,7 @@ contract RotatingSavings is Ownable2Step, ReentrancyGuard {
         if (!isMember[msg.sender]) revert NotMember();
         if (isKicked[msg.sender]) revert NotMember();
         if (hasWon[msg.sender]) revert AlreadyWon();
+        if (cirBtcCollateral[msg.sender] < cirBtcCollateralAmount) revert InsufficientCollateral();
 
         Round storage round = rounds[roundId];
         if (block.timestamp > round.endTime) revert RoundEnded();

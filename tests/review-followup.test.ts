@@ -37,7 +37,7 @@ test("T045 bid preset helper adds exact deltas without grouping, NaN or precisio
 const require = createRequire(import.meta.url);
 async function loadPanel(file: string) {
   const mocks: Record<string, string> = {
-    react: "export const useState=(initial)=>globalThis.__task045Hooks.useState(initial); export const useEffect=()=>{};",
+    react: "export const useState=(initial)=>globalThis.__task045Hooks.useState(initial); export const useEffect=()=>{}; export const useRef=(value)=>globalThis.__task045Hooks.useState({current:value})[0];",
     wagmi: "export const useAccount=()=>({address:'0x1111111111111111111111111111111111111111',chainId:5042002}); export const useSwitchChain=()=>({switchChain(){}}); export const useWaitForTransactionReceipt=()=>({isLoading:false,isSuccess:false});",
     connectkit: "export const useModal=()=>({setOpen(){}});",
     sonner: "export const toast={success(){},error(){}};",
@@ -55,11 +55,13 @@ async function loadPanel(file: string) {
 function nodes(tree: any): any[] {
   if (Array.isArray(tree)) return tree.flatMap(nodes);
   if (!tree || typeof tree !== "object") return [];
+  if (typeof tree.type === 'function' && tree.type.name === 'CollateralPreview') return [tree, ...nodes(tree.type(tree.props))];
   return [tree, ...nodes(tree.props?.children)];
 }
 function textOf(tree: any): string {
   if (typeof tree === "string" || typeof tree === "number" || typeof tree === "bigint") return String(tree);
   if (Array.isArray(tree)) return tree.map(textOf).join("");
+  if (typeof tree?.type === 'function' && tree.type.name === 'CollateralPreview') return textOf(tree.type(tree.props));
   return tree?.props ? textOf(tree.props.children) : "";
 }
 function harness(component: (props: any) => any, props: any) {
@@ -80,7 +82,8 @@ const baseProps = {
   isMember: true, hasWon: false, isKicked: false, hasContributed: true,
   allowance: 10n ** 40n, onSuccess() {}, language: "en", userBid: 1000000000n,
   account: { address: "0x1111111111111111111111111111111111111111" }, bundler: {},
-  endTime: BigInt(Math.floor(Date.now() / 1000) + 86400), lockedCollateral: 0n,
+  endTime: BigInt(Math.floor(Date.now() / 1000) + 86400), lockedCollateral: 0n, collateralAmount: 100000n,
+  collateralView: {policy:"enforced",quote:{required:100000n,locked:0n,shortfall:100000n,balance:1000000n,after:900000n,deficit:0n,member:true,kicked:false,state:1}},
 };
 
 test("T046 shared initial presets and permissionless notices execute in both wallet panels", async () => {
@@ -146,16 +149,15 @@ test("T045 completed and zero-collateral notices are rendered in both languages 
         assert.match(completed, language === "en" ? /kicked|expelled/i : /bị loại|bị kick/i);
         assert.doesNotMatch(completed, /every member wins the Pot exactly once|has completed all rounds|hoàn thành tất cả các vòng/i);
         const activeZero = textOf(render({ state: 1, lockedCollateral: 0n }));
-        const activeUnknown = textOf(render({ state: 1, lockedCollateral: undefined }));
-        const activeFunded = textOf(render({ state: 1, lockedCollateral: 100000n }));
+        const activeUnknown = textOf(render({ state: 1, lockedCollateral: undefined, collateralView: {policy:"unknown"} }));
+        const activeFunded = textOf(render({ state: 1, lockedCollateral: 100000n, collateralView: {...baseProps.collateralView,quote:{...baseProps.collateralView.quote,locked:100000n,shortfall:0n}} }));
         assert.notEqual(activeZero, activeUnknown, `${name}/${language}: zero balance has explicit warning`);
         assert.notEqual(activeZero, activeFunded, `${name}/${language}: funded view differs from no collateral`);
-        assert.match(activeZero, language === "en" ? /no locked collateral|no collateral|zero collateral/i : /chưa có ký quỹ|không có ký quỹ/i);
+        assert.match(activeZero, language === "en" ? /below the required amount/i : /chưa đủ mức yêu cầu/i);
         const zeroVault = render({ state: 1, lockedCollateral: 0n, collateralAmount: 100000n });
-        const vaultAmount = nodes(zeroVault).find(node => node.type === "span" &&
-          node.props.className?.includes("font-black") && node.props.className?.includes("text-amber-300"));
-        assert.ok(vaultAmount, `${name}/${language}: vault amount rendered for configured collateral`);
-        assert.equal(textOf(vaultAmount), "0.0000", `${name}/${language}: explicit zero must not display configured target as locked`);
+        const lockedRow = nodes(zeroVault).find(node => node.type === "div" && nodes(node).some(child => child.type === "dt" && textOf(child) === (language === "en" ? "Locked" : "Đã khóa")) && nodes(node).filter(child=>child.type==='dd').length===1);
+        assert.ok(lockedRow, `${name}/${language}: locked amount in shared card details`);
+        assert.equal(textOf(nodes(lockedRow).find(node=>node.type==='dd')), "0.00000000 CirBTC", `${name}/${language}: explicit zero must not display configured target as locked`);
       }
     }
   } finally { delete (globalThis as any).__task045Hooks; }

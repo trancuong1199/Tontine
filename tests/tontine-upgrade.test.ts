@@ -181,12 +181,12 @@ test("AC-02.8: Passkey & Regular ActionPanel bid input safety mechanism", () => 
 
   // Verify ActionPanel uses parseUsdc for bid input
   assert.ok(actionPanelSrc.includes("const bidRaw = parseUsdc(bidAmount);"), "ActionPanel must use parseUsdc(bidAmount)");
-  assert.ok(actionPanelSrc.includes("disabled={isLoading || bidRaw <= 0n}"), "ActionPanel must disable bid button when bidRaw <= 0n");
+  assert.ok(/disabled=\{[^}]*bidRaw <= 0n[^}]*\}/.test(actionPanelSrc), "ActionPanel must disable bid button when bidRaw <= 0n");
   assert.ok(actionPanelSrc.includes("if (bidRaw <= 0n) {"), "ActionPanel must validate bidRaw > 0n before submitting");
 
   // Verify PasskeyActionPanel uses parseUsdc for bid input instead of unprotected parseUnits
   assert.ok(passkeySrc.includes("const bidRaw = parseUsdc(bidAmount);"), "PasskeyActionPanel must use parseUsdc(bidAmount)");
-  assert.ok(passkeySrc.includes("disabled={isLoading || bidRaw <= 0n}"), "PasskeyActionPanel must disable bid button when bidRaw <= 0n");
+  assert.ok(/disabled=\{[^}]*bidRaw <= 0n[^}]*\}/.test(passkeySrc), "PasskeyActionPanel must disable bid button when bidRaw <= 0n");
   assert.ok(passkeySrc.includes("if (bidRaw <= 0n) {"), "PasskeyActionPanel must validate bidRaw > 0n before submitting");
 
   // Test simulation: invalid inputs always produce bidRaw <= 0n, disabling the button safely

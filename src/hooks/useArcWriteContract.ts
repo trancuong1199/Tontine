@@ -6,15 +6,19 @@ import { ARC_TESTNET_CHAIN_ID, parseContractError } from "../contract";
 import { ensureArcChain } from "../lib/arcWallet";
 
 /** One guarded entry point for every injected savings write. */
-export function useArcWriteContract() {
+export function useArcWriteContract(contextKey?: string) {
+  const currentContext = useRef(contextKey);
+  currentContext.current = contextKey;
   const config = useConfig();
   const mutation = useWriteContract();
+  const mutationPending = useRef(mutation.isPending);
+  mutationPending.current = mutation.isPending;
   useEffect(() => { if (mutation.error) toast.error(parseContractError(mutation.error)); }, [mutation.error]);
   const inFlight = useRef(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [guardError, setGuardError] = useState<Error | null>(null);
   const writeContract = ((parameters: Parameters<typeof mutation.writeContract>[0], options?: Parameters<typeof mutation.writeContract>[1]) => {
-    if (inFlight.current || (parameters.functionName === "startNewCycle" && mutation.isPending)) return;
+    if (inFlight.current || ((parameters.functionName === "startNewCycle" || parameters.account !== undefined) && mutationPending.current)) return;
     inFlight.current = true;
     setIsSwitching(true);
     setGuardError(null);
@@ -22,26 +26,28 @@ export function useArcWriteContract() {
       let awaitingWallet = false;
       try {
         const isRestart = parameters.functionName === "startNewCycle";
-        const originalSender = isRestart ? getAccount(config).address : undefined;
+        const bindSender = isRestart || parameters.account !== undefined;
+        const originalSender = bindSender ? getAccount(config).address : undefined;
+        const originalContext = currentContext.current;
         await ensureArcChain({
           getChainId: () => getAccount(config).chainId,
           switchChain: (chainId) => switchChain(config, { chainId }),
           chainId: ARC_TESTNET_CHAIN_ID,
         });
         if (parameters.chainId !== ARC_TESTNET_CHAIN_ID) throw new Error("Savings transactions require Arc Testnet");
-        if (isRestart) {
+        if (bindSender) {
           const current = getAccount(config);
           if (!originalSender || current.address !== originalSender || current.chainId !== ARC_TESTNET_CHAIN_ID) {
-            throw new Error("Wallet account or network changed. Please retry starting the cycle.");
+            throw new Error("Wallet account or network changed. Please review and retry.");
           }
           const requestedSender = typeof parameters.account === "string" ? parameters.account : parameters.account?.address;
           if (requestedSender && requestedSender.toLowerCase() !== originalSender.toLowerCase()) {
-            throw new Error("Restart sender does not match the connected wallet.");
+            throw new Error("Transaction sender does not match the connected wallet.");
           }
-          await simulateContract(config, { ...parameters, account: originalSender, chainId: ARC_TESTNET_CHAIN_ID });
+          if (isRestart) await simulateContract(config, { ...parameters, account: originalSender, chainId: ARC_TESTNET_CHAIN_ID });
           const latest = getAccount(config);
-          if (latest.address !== originalSender || latest.chainId !== ARC_TESTNET_CHAIN_ID) {
-            throw new Error("Wallet account or network changed. Please retry starting the cycle.");
+          if (latest.address !== originalSender || latest.chainId !== ARC_TESTNET_CHAIN_ID || currentContext.current !== originalContext) {
+            throw new Error("Wallet account or network changed. Please review and retry.");
           }
           // Keep the lock through wallet submission, including the render gap.
           mutation.writeContract(parameters, {

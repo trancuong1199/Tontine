@@ -1,5 +1,8 @@
+import { classifyCycleCapability } from "./lib/cycleCapabilities";
+import { useCollateralPolicy } from "./hooks/useCollateralPolicy";
+import { parseCollateralInput, formatCollateral } from "./lib/collateralPolicy";
 import { useArcWriteContract } from "./hooks/useArcWriteContract";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { encodeFunctionData } from "viem";
 import { toast } from "sonner";
@@ -19,7 +22,7 @@ import { EditClubNameModal } from "./components/savings/EditClubNameModal";
 import { GuideModal } from "./components/savings/GuideModal";
 import { ArcAppKitModal } from "./components/savings/ArcAppKitModal";
 import { LandingPage, getLeftOuterArcPoint, getRightOuterArcPoint } from "./components/landing/LandingPage";
-import { getKnownGroups, getRemovedGroups, saveKnownGroup, updateKnownGroupName, getGroupCollateralAmount, saveGroupCollateral } from "./lib/savingsClubDirectory";
+import { getKnownGroups, getRemovedGroups, saveKnownGroup, updateKnownGroupName } from "./lib/savingsClubDirectory";
 import { usePasskeyWallet } from "./hooks/usePasskeyWallet";
 import {
   useClubInfo,
@@ -305,6 +308,15 @@ export default function App() {
   // Contract reads (keyed by active contract address and user address)
   const clubInfo = useClubInfo(contractAddress);
   const cycleSupport = useCycleCapability(contractAddress);
+  const collateralView = useCollateralPolicy(contractAddress, address as `0x${string}` | undefined);
+  const [ownerCollateralMode, setOwnerCollateralMode] = useState<'' | 'none' | 'custom'>('');
+  const [ownerCollateralInput, setOwnerCollateralInput] = useState('');
+  const ownerCollateralValue = parseCollateralInput(ownerCollateralMode, ownerCollateralInput);
+  const ownerContext = useRef(`${contractAddress}:${address}`);
+  ownerContext.current = `${contractAddress}:${address}`;
+  const ownerSettingLock = useRef(false);
+  const [isOwnerSettingReview, setIsOwnerSettingReview] = useState(false);
+  useEffect(() => { setOwnerCollateralMode(''); setOwnerCollateralInput(''); }, [contractAddress, address]);
   const roundInfo = useRoundInfo(clubInfo.currentRound, contractAddress);
   const memberStatus = useMemberStatus(address, contractAddress);
   const roundMemberStatus = useRoundMemberStatus(clubInfo.currentRound, address, contractAddress);
@@ -374,10 +386,14 @@ export default function App() {
     data: ownerHash,
     isPending: isOwnerPending,
     reset: resetOwnerWrite,
-  } = useArcWriteContract();
+  } = useArcWriteContract(`${contractAddress}:${address}`);
 
-  const { isLoading: isOwnerConfirming, isSuccess: isOwnerSuccess } =
+  const { isLoading: isOwnerConfirming, isSuccess: isOwnerSuccess, error: ownerReceiptError } =
     useWaitForTransactionReceipt({ chainId: ARC_TESTNET_CHAIN_ID, hash: ownerHash });
+
+  useEffect(() => {
+    if (ownerReceiptError) { toast.error(parseContractError(ownerReceiptError)); resetOwnerWrite(); }
+  }, [ownerReceiptError, resetOwnerWrite]);
 
   useEffect(() => {
     if (isOwnerSuccess) {
@@ -498,6 +514,22 @@ export default function App() {
     }
   };
 
+  const handleOwnerCollateral = async () => {
+    if (ownerCollateralValue === undefined || !clubInfo.membershipKnown || clubInfo.memberCount !== 0 || clubInfo.state !== GROUP_STATE.OPEN || ownerSettingLock.current || isOwnerPending || isOwnerConfirming || isOwnerOpLoading) return;
+    const context = ownerContext.current;
+    const value = ownerCollateralValue;
+    ownerSettingLock.current = true;
+    setIsOwnerSettingReview(true);
+    try {
+      const result = await clubInfo.refetch();
+      const data = result.data;
+      if (context !== ownerContext.current || result.error || data?.[1]?.result !== GROUP_STATE.OPEN || data?.[7]?.status !== 'failure' || data?.[8]?.status !== 'failure' || classifyCycleCapability({ error: data[7].error }) !== 'unsupported' || classifyCycleCapability({ error: data[8].error }) !== 'unsupported') throw new Error('Club data changed or is unavailable. Review the configuration again.');
+      if (passkeyAddress && passkeyAccount && bundler) await sendPasskeyClubAction('setCollateralAmount', [value]);
+      else ownerWrite({ address: contractAddress, abi: ROTATING_SAVINGS_ABI, functionName: 'setCollateralAmount', args: [value], chainId: ARC_TESTNET_CHAIN_ID, account: address as `0x${string}` });
+    } catch (error) { toast.error(parseContractError(error)); }
+    finally { ownerSettingLock.current = false; setIsOwnerSettingReview(false); }
+  };
+
   const sendPasskeyClubAction = async (functionName: string, args: readonly unknown[] = []) => {
     if (!passkeyAccount || !bundler) return;
     setIsOwnerOpLoading(true);
@@ -507,7 +539,8 @@ export default function App() {
         calls: [{ to: contractAddress, data: encodeFunctionData({ abi: ROTATING_SAVINGS_ABI, functionName, args }) }],
         paymaster: true,
       });
-      await bundler.waitForUserOperationReceipt({ hash });
+      const result = await bundler.waitForUserOperationReceipt({ hash });
+      if (result.success === false || result.receipt.status === "reverted") throw new Error("Transaction reverted.");
       toast.success(isEn ? "Transaction confirmed." : "Giao dịch đã xác nhận.");
       refetchAll();
     } catch (error) {
@@ -559,6 +592,7 @@ export default function App() {
   }, [clubInfo.groupName, contractAddress]);
 
   function refetchAll() {
+    void collateralView.refresh();
     clubInfo.refetch();
     roundInfo.refetch();
     memberStatus.refetch();
@@ -587,10 +621,7 @@ export default function App() {
   const knownGroupsList = getKnownGroups();
   const isCurrentRemoved = getRemovedGroups().has(contractAddress.toLowerCase());
   const hasNoActiveClub = isCurrentRemoved || (knownGroupsList.length === 0 && !clubInfo.groupName);
-  const activeCollateralAmount =
-    clubInfo.collateralAmount && clubInfo.collateralAmount > 0n
-      ? clubInfo.collateralAmount
-      : getGroupCollateralAmount(contractAddress);
+  const activeCollateralAmount = clubInfo.collateralAmount;
 
   useEffect(() => {
     if (isCurrentRemoved && knownGroupsList.length > 0) {
@@ -1160,52 +1191,15 @@ export default function App() {
                       </span>
                       <span className="text-slate-400 font-mono">CirBTC</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {([
-                        { sats: 0n, label: isEn ? "None" : "Không cọc" },
-                        { sats: 100_000n, label: "0.001 CirBTC" },
-                        { sats: 500_000n, label: "0.005 CirBTC" },
-                      ] as const).map((opt) => {
-                        const isSelected = activeCollateralAmount === opt.sats;
-                        return (
-                          <button
-                            key={opt.sats.toString()}
-                            type="button"
-                            onClick={() => {
-                              saveGroupCollateral(contractAddress, opt.sats);
-                              setNameUpdateTrigger((prev) => prev + 1);
-                              if (clubInfo.memberCount === 0) {
-                                try {
-                                  if (passkeyAddress && passkeyAccount && bundler) {
-                                    void sendPasskeyClubAction("setCollateralAmount", [opt.sats]);
-                                  } else ownerWrite({
-                                    address: contractAddress,
-                                    abi: ROTATING_SAVINGS_ABI,
-                                    functionName: "setCollateralAmount",
-                                    args: [opt.sats],
-                                    chainId: ARC_TESTNET_CHAIN_ID,
-                                  });
-                                } catch {
-                                  // Ignore if legacy contract doesn't have setCollateralAmount
-                                }
-                              }
-                              toast.success(
-                                isEn
-                                  ? `Collateral preference: ${opt.label}. Confirm the transaction if prompted.`
-                                  : `Mức ký quỹ đã chọn: ${opt.label}. Hãy xác nhận giao dịch nếu ví yêu cầu.`
-                              );
-                            }}
-                            className={`py-1.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                              isSelected
-                                ? "bg-amber-950/70 border-amber-500 text-amber-300 ring-1 ring-amber-500/50"
-                                : "bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800"
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })}
+                    <p className="text-xs text-slate-300">{isEn ? 'Confirmed on-chain requirement:' : 'Mức ký quỹ đã xác nhận on-chain:'} {activeCollateralAmount === undefined ? (isEn ? 'Unavailable' : 'Chưa đọc được') : `${formatCollateral(activeCollateralAmount)} CirBTC`}</p>
+                    <div className="flex gap-3 text-xs text-slate-200">
+                      <label><input type="radio" name="ownerCollateral" checked={ownerCollateralMode === 'none'} onChange={() => setOwnerCollateralMode('none')} /> {isEn ? 'None' : 'Không ký quỹ'}</label>
+                      <label><input type="radio" name="ownerCollateral" checked={ownerCollateralMode === 'custom'} onChange={() => setOwnerCollateralMode('custom')} /> {isEn ? 'Custom' : 'Tự nhập'}</label>
                     </div>
+                    {ownerCollateralMode === 'custom' && <input aria-label="Owner CirBTC collateral" value={ownerCollateralInput} onChange={e => setOwnerCollateralInput(e.target.value)} inputMode="decimal" className="w-full rounded-xl bg-slate-900 p-2 text-white" />}
+                    {ownerCollateralValue !== undefined && <p className="text-xs text-amber-200">{isEn ? 'Proposed requirement:' : 'Mức đề xuất:'} {formatCollateral(ownerCollateralValue)} CirBTC</p>}
+                    <button type="button" disabled={clubInfo.state !== GROUP_STATE.OPEN || !clubInfo.membershipKnown || clubInfo.memberCount !== 0 || clubInfo.isLoading || activeCollateralAmount === undefined || ownerCollateralValue === undefined || isOwnerPending || isOwnerConfirming || isOwnerOpLoading || isOwnerSettingReview} onClick={handleOwnerCollateral} className="rounded-xl border border-amber-500/30 px-3 py-2 text-xs text-amber-200 disabled:opacity-40">{isEn ? 'Confirm collateral setting' : 'Xác nhận mức ký quỹ'}</button>
+                    <p className="text-xs text-slate-400">{isEn ? 'Only before the first member joins. The displayed requirement changes after confirmation and a chain refresh.' : 'Chỉ đổi trước khi thành viên đầu tiên tham gia. Mức hiển thị chỉ đổi sau xác nhận giao dịch và đọc lại chain.'}</p>
                   </div>
 
                   <div className="space-y-2 pt-1">
@@ -1291,6 +1285,7 @@ export default function App() {
               {/* Action panel — passkey or wagmi (Action-First: Primary user actions positioned at top eye-level) */}
               {passkeyAddress && passkeyAccount && bundler ? (
                 <PasskeyActionPanel
+                  collateralView={collateralView}
                   cycleCapability={cycleSupport.capability}
                   onRetryCycleCapability={() => { void cycleSupport.refetch(); }}
                   contractAddress={contractAddress}
@@ -1328,6 +1323,7 @@ export default function App() {
                 />
               ) : (
                 <ActionPanel
+                  collateralView={collateralView}
                   cycleCapability={cycleSupport.capability}
                   onRetryCycleCapability={() => { void cycleSupport.refetch(); }}
                   contractAddress={contractAddress}
