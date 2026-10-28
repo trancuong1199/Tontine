@@ -351,9 +351,13 @@ export function buildShareGroupUrl(address: string, baseUrl?: string): string {
     base = window.location.origin + window.location.pathname;
   }
   if (!base) {
-    base = "https://tontine-phi.vercel.app/";
+    base = "/";
   }
   try {
+    if (base.startsWith("/")) {
+      const cleanBase = base.split("?")[0].replace(/\/+$/, "");
+      return `${cleanBase}/?group=${address.toLowerCase()}`;
+    }
     const url = new URL(base);
     url.searchParams.delete("view");
     url.searchParams.delete("tab");

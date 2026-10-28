@@ -17,6 +17,7 @@ interface ClubCardProps {
   collateralAmount?: bigint;
   onEditName?: () => void;
   language?: Language;
+  isLoading?: boolean;
 }
 
 const STATE_CONFIG: Record<
@@ -67,6 +68,7 @@ export function ClubCard({
   collateralAmount,
   onEditName,
   language = "vi",
+  isLoading = false,
 }: ClubCardProps) {
   const effectiveTotalJoined =
     totalJoined !== undefined && totalJoined > 0
@@ -119,10 +121,14 @@ export function ClubCard({
             )}
           </div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-xs">
-              {groupName}
-            </h2>
-            {onEditName && (
+            {isLoading ? (
+              <div className="h-8 w-44 bg-slate-800/80 animate-pulse rounded-lg" />
+            ) : (
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-xs">
+                {groupName}
+              </h2>
+            )}
+            {onEditName && !isLoading && (
               <button
                 type="button"
                 onClick={onEditName}
@@ -164,11 +170,15 @@ export function ClubCard({
               </span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl sm:text-4xl font-extrabold tabular-nums tracking-tight text-white">
-                {formatUsdc(potSize)}
-              </span>
+              {isLoading ? (
+                <span className="inline-block w-28 h-9 bg-slate-800/80 animate-pulse rounded-lg align-middle" />
+              ) : (
+                <span className="text-3xl sm:text-4xl font-extrabold tabular-nums tracking-tight text-white">
+                  {formatUsdc(potSize)}
+                </span>
+              )}
               <span className="text-lg sm:text-xl font-bold text-cyan-200">USDC</span>
-              {state === GROUP_STATE.OPEN && (
+              {state === GROUP_STATE.OPEN && !isLoading && (
                 <span className="text-xs font-semibold text-amber-300/90 ml-1.5 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
                   {t("clubCard.contribStartsNotice", language)}
                 </span>
@@ -225,7 +235,9 @@ export function ClubCard({
         <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-amber-500/20 text-center">
           <Users size={18} className="mx-auto mb-1.5 text-amber-400" />
           <p className="text-lg sm:text-xl font-bold tabular-nums text-white">
-            {state === GROUP_STATE.ACTIVE ? (
+            {isLoading ? (
+              <span className="inline-block w-12 h-6 bg-slate-800/80 animate-pulse rounded-md align-middle" />
+            ) : state === GROUP_STATE.ACTIVE ? (
               <>
                 <span>{activeMembers.toString()}</span>
                 <span className="text-amber-300 text-xs sm:text-sm font-semibold ml-1">
@@ -248,7 +260,9 @@ export function ClubCard({
         <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-amber-500/20 text-center">
           <Trophy size={18} className="mx-auto mb-1.5 text-amber-400" />
           <p className="text-lg sm:text-xl font-bold tabular-nums text-white">
-            {state === GROUP_STATE.ACTIVE
+            {isLoading ? (
+              <span className="inline-block w-14 h-6 bg-slate-800/80 animate-pulse rounded-md align-middle" />
+            ) : state === GROUP_STATE.ACTIVE
               ? (isEn ? `Round ${currentRound.toString()}` : `Vòng ${currentRound.toString()}`)
               : (isEn ? t("clubCard.statRoundNotStarted", language) : "Chưa chạy")}
           </p>
@@ -260,7 +274,15 @@ export function ClubCard({
         <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-amber-500/20 text-center">
           <Clock size={18} className="mx-auto mb-1.5 text-amber-400" />
           <p className="text-lg sm:text-xl font-bold tabular-nums text-white">
-            {state === GROUP_STATE.ACTIVE ? countdown : "—"}
+            {isLoading ? (
+              <span className="inline-block w-16 h-6 bg-slate-800/80 animate-pulse rounded-md align-middle" />
+            ) : state === GROUP_STATE.ACTIVE ? (
+              countdown
+            ) : (
+              <span className="text-xs sm:text-sm font-semibold text-amber-300/90">
+                {isEn ? "Pending" : "Chờ bắt đầu"}
+              </span>
+            )}
           </p>
           <p className="text-blue-200 text-xs font-semibold mt-1">
             {t("clubCard.statDuration", language)}
