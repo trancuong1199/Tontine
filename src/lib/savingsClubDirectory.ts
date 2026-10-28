@@ -341,3 +341,28 @@ export function updateKnownGroupName(address: string, newName: string): void {
   }
 }
 
+/**
+ * Share-safe URL builder for inviting members to a specific club
+ */
+export function buildShareGroupUrl(address: string, baseUrl?: string): string {
+  if (!isValidAddress(address)) return "";
+  let base = baseUrl;
+  if (!base && typeof window !== "undefined" && window.location) {
+    base = window.location.origin + window.location.pathname;
+  }
+  if (!base) {
+    base = "https://tontine-phi.vercel.app/";
+  }
+  try {
+    const url = new URL(base);
+    url.searchParams.delete("view");
+    url.searchParams.delete("tab");
+    url.searchParams.set("group", address.toLowerCase());
+    return url.toString();
+  } catch {
+    const cleanBase = base.split("?")[0].replace(/\/+$/, "");
+    return `${cleanBase}/?group=${address.toLowerCase()}`;
+  }
+}
+
+

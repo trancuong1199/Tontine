@@ -1544,6 +1544,7 @@ export default function App() {
           onClose={() => setShowCreateModal(false)}
           onSuccess={handleClubCreated}
           language={language}
+          defaultCollateralMode="none"
         />
       )}
 

@@ -26,6 +26,7 @@ import {
   formatAddress,
   parseContractError,
 } from "../../contract";
+import { buildShareGroupUrl } from "../../lib/savingsClubDirectory";
 import { buildTxExplorerUrl } from "@/onchain-facts";
 import { Language, t } from "../../lib/i18n";
 import { ClubMemberInfo } from "../../hooks/useSavingsClub";
@@ -168,6 +169,12 @@ export function ActionPanel({
   const [pendingFollowUp, setPendingFollowUp] = useState<"contribute" | "bid" | null>(null);
   const isWrongChain = chainId !== ARC_TESTNET_CHAIN_ID;
   const isEn = language === "en";
+  const effectiveMemberCount = BigInt(
+    totalJoined && totalJoined > 0
+      ? totalJoined
+      : (members && members.length > 0 ? members.length : 10)
+  );
+  const estimatedPot = contributionAmount * effectiveMemberCount;
   const vaultStatus = isKicked
     ? (isEn ? 'Kicked — collateral withdrawal unavailable' : 'Đã bị loại — không đủ điều kiện rút ký quỹ')
     : lockedCollateral === undefined || collateralAmount === undefined
@@ -188,7 +195,9 @@ export function ActionPanel({
 
 
   const handleCopyInvite = () => {
-    const url = `${window.location.origin}${window.location.pathname}?group=${targetContract}`;
+    const url = typeof buildShareGroupUrl === "function"
+      ? buildShareGroupUrl(targetContract)
+      : `${window.location.origin}${window.location.pathname}?group=${targetContract}`;
     navigator.clipboard.writeText(url);
     setCopiedInvite(true);
     if (isEn) {
@@ -1207,6 +1216,16 @@ export function ActionPanel({
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">USDC</span>
                       </div>
 
+                      {/* Bidding UI live payout preview */}
+                      <div className="flex items-center justify-between text-xs bg-amber-950/20 border border-amber-500/20 rounded-xl px-3 py-2">
+                        <span className="text-slate-400">
+                          {isEn ? "Estimated payout if you win:" : "Bạn sẽ nhận nếu thắng:"}
+                        </span>
+                        <span className="font-bold text-amber-300 font-mono">
+                          {isEn ? `~${formatUsdc(estimatedPot)} USDC` : `bạn sẽ nhận ~${formatUsdc(estimatedPot)} USDC nếu thắng`}
+                        </span>
+                      </div>
+
                       <button
                         onClick={needsApprovalForBid ? handleApproveForBid : handlePlaceBid}
                         disabled={isLoading || isReviewingCollateral || !participationReady || bidRaw <= userBid}
@@ -1263,6 +1282,17 @@ export function ActionPanel({
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">USDC</span>
                   </div>
+
+                  {/* Bidding UI live payout preview */}
+                  <div className="flex items-center justify-between text-xs bg-amber-950/20 border border-amber-500/20 rounded-xl px-3.5 py-2">
+                    <span className="text-slate-400">
+                      {isEn ? "Estimated payout if you win:" : "Bạn sẽ nhận nếu thắng:"}
+                    </span>
+                    <span className="font-bold text-amber-300 font-mono">
+                      {isEn ? `~${formatUsdc(estimatedPot)} USDC` : `bạn sẽ nhận ~${formatUsdc(estimatedPot)} USDC nếu thắng`}
+                    </span>
+                  </div>
+
                   <button
                     onClick={needsApprovalForBid ? handleApproveForBid : handlePlaceBid}
                     disabled={isLoading || isReviewingCollateral || !participationReady || bidRaw <= 0n}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowRight, Share2, Check, Shuffle, Plus, Layers, Zap } from "lucide-react";
 import { isValidAddress, formatAddress } from "../../contract";
-import { saveKnownGroup } from "../../lib/savingsClubDirectory";
+import { saveKnownGroup, buildShareGroupUrl } from "../../lib/savingsClubDirectory";
 import { Language, t } from "../../lib/i18n";
 
 interface GroupSwitcherProps {
@@ -29,7 +29,9 @@ export function GroupSwitcher({
 
   const handleCopyLink = async () => {
     try {
-      const shareUrl = `${window.location.origin}${window.location.pathname}?group=${currentAddress}`;
+      const shareUrl = typeof buildShareGroupUrl === "function"
+        ? buildShareGroupUrl(currentAddress, typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}?group=${currentAddress}` : undefined)
+        : `${window.location.origin}${window.location.pathname}?group=${currentAddress}`;
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

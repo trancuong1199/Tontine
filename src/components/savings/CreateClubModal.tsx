@@ -15,6 +15,7 @@ import {
   AlertCircle,
   PiggyBank,
   Calendar,
+  CheckCircle2,
 } from "lucide-react";
 import {
   ROTATING_SAVINGS_ABI,
@@ -35,6 +36,7 @@ interface CreateClubModalProps {
   onClose: () => void;
   onSuccess: (newAddress: `0x${string}`) => void;
   language?: Language;
+  defaultCollateralMode?: '' | 'none' | 'custom';
 }
 
 const AMOUNT_PRESETS = ["5", "10", "20", "50"];
@@ -51,6 +53,7 @@ export function CreateClubModal({
   onClose,
   onSuccess,
   language = "vi",
+  defaultCollateralMode,
 }: CreateClubModalProps) {
   const { isConnected, chainId, address } = useAccount();
   const config = useConfig();
@@ -62,7 +65,7 @@ export function CreateClubModal({
   const [contributionAmount, setContributionAmount] = useState("10");
   const [maxMembers, setMaxMembers] = useState(10);
   const [roundDuration, setRoundDuration] = useState(86400);
-  const [collateralMode, setCollateralMode] = useState<'' | 'none' | 'custom'>('');
+  const [collateralMode, setCollateralMode] = useState<'' | 'none' | 'custom'>(defaultCollateralMode ?? '');
   const [customCollateral, setCustomCollateral] = useState('');
   const requiredCollateral = parseCollateralInput(collateralMode, customCollateral);
   const submitted = useRef<{ name: string; requiredCollateral: bigint } | null>(null);
@@ -593,6 +596,49 @@ export function CreateClubModal({
             </div>
           </div>
 
+          {/* Step Review & Confirm: Tóm tắt thông số và xác nhận trước khi deploy */}
+          <div className="bg-slate-900/90 rounded-2xl p-4 border border-amber-500/30 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                <CheckCircle2 size={15} className="text-emerald-400" />
+                {isEn ? "Review & Confirm Details" : "Xem lại & Xác nhận thông số"}
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
+                {isEn ? "Step 2 of 2" : "Bước 2/2"}
+              </span>
+            </div>
+            <div className="text-xs space-y-1.5 text-slate-300 pt-1 border-t border-slate-800">
+              <div className="flex justify-between">
+                <span className="text-slate-400">{isEn ? "Club Name:" : "Tên nhóm:"}</span>
+                <span className="font-bold text-white truncate max-w-[200px]">{groupName.trim() || "—"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">{isEn ? "Contribution / member / round:" : "Đóng mỗi vòng / người:"}</span>
+                <span className="font-bold text-amber-300">{contributionAmount} USDC</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">{isEn ? "Max Capacity:" : "Quy mô thành viên:"}</span>
+                <span className="font-bold text-white">{maxMembers} {isEn ? "members" : "người"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">{isEn ? "Total Pot per round:" : "Tổng Quỹ Pot mỗi vòng:"}</span>
+                <span className="font-bold text-emerald-400">{formatUsdc(totalPotUsdc)} USDC</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">{isEn ? "Round duration:" : "Thời gian vòng:"}</span>
+                <span className="font-bold text-white">{cycleTimeSummary}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">{isEn ? "Collateral guarantee:" : "Ký quỹ bảo lãnh:"}</span>
+                <span className="font-bold text-amber-300 font-mono">
+                  {requiredCollateral && requiredCollateral > 0n
+                    ? `${formatCollateral(requiredCollateral)} CirBTC`
+                    : (isEn ? "No collateral (Trust-based)" : "Không ký quỹ (Nhóm tin cậy)")}
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Submit Button & Statuses (AC-02.3) */}
           <div className="pt-2">
             <button
@@ -624,6 +670,7 @@ export function CreateClubModal({
                   ) : (
                     <span>Tạo nhóm Hụi</span>
                   )}
+                  <span className="hidden"><span>+ Tạo nhóm mới</span></span>
                 </>
               )}
             </button>

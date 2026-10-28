@@ -33,9 +33,21 @@ export function CollateralPreview({ view, language = 'vi', status, required, loc
     ? (en ? 'Legacy contract: mandatory collateral is not enforced by this version. A requirement change after review may affect a legacy join; existing approvals can permit a different debit. Frontend checks do not upgrade this contract.' : 'Hợp đồng cũ: phiên bản này không bắt buộc ký quỹ đầy đủ. Mức yêu cầu đổi sau khi xem trước có thể làm khoản trừ khi tham gia khác đi nếu quyền sử dụng token đã cấp trước đó lớn hơn. Kiểm tra giao diện không nâng cấp hợp đồng.')
     : (en ? 'Collateral data is unavailable. Retry before approving or transferring tokens.' : 'Chưa có dữ liệu ký quỹ. Kiểm tra lại trước khi cấp quyền hoặc chuyển token.');
 
-  return <section className="mx-4 my-3 min-w-0 rounded-xl border border-amber-500/25 bg-amber-950/15 p-4 text-xs text-slate-300 sm:mx-5" aria-label={en ? 'Collateral review' : 'Xem trước ký quỹ'}>
+  const isZeroCollateral = (required === 0n || quote?.required === 0n) && !hasShortfall && (lockedAmount === 0n || lockedAmount === undefined) && (!rewards || rewards === 0n);
+
+  return <section className={`mx-4 my-3 min-w-0 rounded-xl border border-amber-500/25 bg-amber-950/15 p-4 text-xs text-slate-300 sm:mx-5 ${isZeroCollateral ? 'hidden' : ''}`} aria-label={en ? 'Collateral review' : 'Xem trước ký quỹ'}>
     <div className="min-w-0">
-      <h4 className="font-semibold text-amber-200">{en ? 'CirBTC collateral' : 'Ký quỹ CirBTC'}</h4>
+      <div className="flex items-center justify-between">
+        <h4 className="font-semibold text-amber-200 flex items-center gap-1.5">
+          <span>{en ? 'CirBTC collateral' : 'Ký quỹ CirBTC'}</span>
+          <span
+            className="cursor-help text-slate-400 hover:text-amber-300 transition-colors"
+            title={en ? "Collateral is a security deposit ensuring members continue contributing after receiving the Pot. 100% refunded upon completion." : "Ký quỹ là khoản tiền cọc để bảo đảm thành viên không bỏ nhóm sau khi nhận tiền. Khoản cọc này được hoàn trả 100% khi nhóm hoàn thành."}
+          >
+            ⓘ
+          </span>
+        </h4>
+      </div>
       {status && <p className="mt-1 text-xs leading-relaxed text-slate-400">{status}</p>}
     </div>
     <div className="mt-3 min-w-0">

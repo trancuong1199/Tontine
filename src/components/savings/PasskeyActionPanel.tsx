@@ -24,6 +24,7 @@ import {
   parseUsdc,
   parseContractError,
 } from "../../contract";
+import { buildShareGroupUrl } from "../../lib/savingsClubDirectory";
 import { buildTxExplorerUrl } from "@/onchain-facts";
 import { Language, t } from "../../lib/i18n";
 
@@ -64,6 +65,8 @@ interface PasskeyActionPanelProps {
   cancelVoteCount?: bigint;
   requiredCancelVotes?: bigint;
   hasVotedCancel?: boolean;
+  totalJoined?: number;
+  members?: any[];
 }
 
 /**
@@ -131,8 +134,16 @@ export function PasskeyActionPanel({
   cancelVoteCount,
   requiredCancelVotes,
   hasVotedCancel,
+  totalJoined,
+  members,
 }: PasskeyActionPanelProps) {
   const targetContract = contractAddress ?? ROTATING_SAVINGS_ADDRESS;
+  const effectiveMemberCount = BigInt(
+    totalJoined && totalJoined > 0
+      ? totalJoined
+      : (members && members.length > 0 ? members.length : 10)
+  );
+  const estimatedPot = contributionAmount * effectiveMemberCount;
   const collateralActionLock = useRef(false);
   const [isReviewingCollateral, setIsReviewingCollateral] = useState(false);
   const quote = collateralView?.quote;
@@ -185,7 +196,9 @@ export function PasskeyActionPanel({
   const [copiedInvite, setCopiedInvite] = useState(false);
 
   const handleCopyInvite = () => {
-    const url = `${window.location.origin}${window.location.pathname}?group=${targetContract}`;
+    const url = typeof buildShareGroupUrl === "function"
+      ? buildShareGroupUrl(targetContract)
+      : `${window.location.origin}${window.location.pathname}?group=${targetContract}`;
     navigator.clipboard.writeText(url);
     setCopiedInvite(true);
     if (isEn) {
@@ -959,6 +972,16 @@ export function PasskeyActionPanel({
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">USDC</span>
                       </div>
 
+                      {/* Bidding UI live payout preview */}
+                      <div className="flex items-center justify-between text-xs bg-amber-950/20 border border-amber-500/20 rounded-xl px-3 py-2">
+                        <span className="text-slate-400">
+                          {isEn ? "Estimated payout if you win:" : "Bạn sẽ nhận nếu thắng:"}
+                        </span>
+                        <span className="font-bold text-amber-300 font-mono">
+                          {isEn ? `~${formatUsdc(estimatedPot)} USDC` : `bạn sẽ nhận ~${formatUsdc(estimatedPot)} USDC nếu thắng`}
+                        </span>
+                      </div>
+
                       {loadingEl}
                       {!isLoading && (
                         <button
@@ -1011,6 +1034,17 @@ export function PasskeyActionPanel({
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">USDC</span>
                   </div>
+
+                  {/* Bidding UI live payout preview */}
+                  <div className="flex items-center justify-between text-xs bg-amber-950/20 border border-amber-500/20 rounded-xl px-3.5 py-2">
+                    <span className="text-slate-400">
+                      {isEn ? "Estimated payout if you win:" : "Bạn sẽ nhận nếu thắng:"}
+                    </span>
+                    <span className="font-bold text-amber-300 font-mono">
+                      {isEn ? `~${formatUsdc(estimatedPot)} USDC` : `bạn sẽ nhận ~${formatUsdc(estimatedPot)} USDC nếu thắng`}
+                    </span>
+                  </div>
+
                   {loadingEl}
                   {!isLoading && (
                     <button
