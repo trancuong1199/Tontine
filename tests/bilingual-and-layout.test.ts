@@ -23,9 +23,9 @@ function readSource(relativePath: string): string {
 }
 
 // ============================================================================
-// TC-I18N-01 (AC-01.1): Khởi tạo mặc định ngôn ngữ "vi", lưu trữ và đọc an toàn
+// TC-I18N-01 (AC-01.1): Khởi tạo mặc định ngôn ngữ "en", lưu trữ và đọc an toàn
 // ============================================================================
-test("TC-I18N-01 (AC-01.1): Khởi tạo mặc định ngôn ngữ 'vi', lưu trữ và đọc an toàn từ localStorage key 'hui_language'", () => {
+test("TC-I18N-01 (AC-01.1): Khởi tạo mặc định ngôn ngữ 'en', lưu trữ và đọc an toàn từ localStorage key 'hui_language'", () => {
   // 1. Kiểm tra khóa lưu trữ chuẩn
   assert.equal(
     LANGUAGE_STORAGE_KEY,
@@ -33,15 +33,15 @@ test("TC-I18N-01 (AC-01.1): Khởi tạo mặc định ngôn ngữ 'vi', lưu tr
     "LANGUAGE_STORAGE_KEY phải chính xác là 'hui_language'"
   );
 
-  // 2. Môi trường SSR / window undefined fallback về "vi"
+  // 2. Môi trường SSR / window undefined fallback về "en"
   const origWindow = globalThis.window;
   try {
     // @ts-expect-error - simulating window undefined
     delete globalThis.window;
     assert.equal(
       getStoredLanguage(),
-      "vi",
-      "getStoredLanguage() phải trả về 'vi' khi window is undefined"
+      "en",
+      "getStoredLanguage() phải trả về 'en' khi window is undefined"
     );
   } finally {
     globalThis.window = origWindow;
@@ -68,27 +68,27 @@ test("TC-I18N-01 (AC-01.1): Khởi tạo mặc định ngôn ngữ 'vi', lưu tr
   globalThis.localStorage = mockLocalStorage;
 
   try {
-    // Key rỗng -> trả về 'vi'
+    // Key rỗng -> trả về 'en'
     mockLocalStorage.clear();
     assert.equal(
       getStoredLanguage(),
-      "vi",
-      "Khi localStorage chưa có key 'hui_language', ngôn ngữ mặc định phải là 'vi'"
+      "en",
+      "Khi localStorage chưa có key 'hui_language', ngôn ngữ mặc định phải là 'en'"
     );
 
-    // Key không hợp lệ (ví dụ: 'fr', 'es', '') -> tự fallback về 'vi'
+    // Key không hợp lệ (ví dụ: 'fr', 'es', '') -> tự fallback về 'en'
     storageMock[LANGUAGE_STORAGE_KEY] = "fr";
     assert.equal(
       getStoredLanguage(),
-      "vi",
-      "Khi localStorage lưu giá trị không hợp lệ ('fr'), phải tự chuẩn hóa về 'vi'"
+      "en",
+      "Khi localStorage lưu giá trị không hợp lệ ('fr'), phải tự chuẩn hóa về 'en'"
     );
 
     storageMock[LANGUAGE_STORAGE_KEY] = "";
     assert.equal(
       getStoredLanguage(),
-      "vi",
-      "Khi localStorage lưu chuỗi rỗng, phải fallback về 'vi'"
+      "en",
+      "Khi localStorage lưu chuỗi rỗng, phải fallback về 'en'"
     );
 
     // Key hợp lệ: 'en'
@@ -136,7 +136,7 @@ test("TC-I18N-01 (AC-01.1): Khởi tạo mặc định ngôn ngữ 'vi', lưu tr
 
     assert.doesNotThrow(() => {
       const lang = getStoredLanguage();
-      assert.equal(lang, "vi", "Khi localStorage bị chặn, phải an toàn trả về 'vi'");
+      assert.equal(lang, "en", "Khi localStorage bị chặn, phải an toàn trả về 'en'");
     }, "getStoredLanguage không được throw khi localStorage lỗi");
 
     assert.doesNotThrow(() => {

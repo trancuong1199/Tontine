@@ -9,7 +9,7 @@ export type Language = "vi" | "en";
 export const LANGUAGE_STORAGE_KEY = "hui_language";
 
 export function getStoredLanguage(): Language {
-  if (typeof window === "undefined") return "vi";
+  if (typeof window === "undefined") return "en";
   try {
     const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
     if (saved === "en" || saved === "vi") {
@@ -18,7 +18,7 @@ export function getStoredLanguage(): Language {
   } catch {
     // In case localStorage is disabled (private browsing)
   }
-  return "vi";
+  return "en";
 }
 
 export function setStoredLanguage(lang: Language): void {

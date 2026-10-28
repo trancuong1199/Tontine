@@ -1080,21 +1080,14 @@ export default function App() {
                   : "Bạn chưa kết nối ví. Vui lòng kết nối ví để xem các nhóm hụi do bạn tạo hoặc đã tham gia, hoặc tạo nhóm mới."}
               </p>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <div className="flex items-center justify-center pt-2">
               <button
                 type="button"
                 onClick={() => openConnectModal?.(true)}
-                className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center gap-2"
+                className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center gap-2"
               >
                 <Wallet size={18} />
                 <span>{isEn ? "Connect Wallet" : "Kết nối ví ngay"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowDirectoryModal(true)}
-                className="px-5 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-sm border border-amber-500/30 transition-all cursor-pointer"
-              >
-                {isEn ? "Open Club Directory" : "Mở Danh sách nhóm"}
               </button>
             </div>
           </div>
