@@ -74,18 +74,18 @@ export default function App() {
   // Active address: passkey takes priority over wagmi
   const address = passkeyAddress ?? wagmiAddress;
 
-  // Dynamic contract address: initialized from ?group= URL query param or first non-removed known group
+  // Dynamic contract address: initialized from ?group= URL query param or official default ROTATING_SAVINGS_ADDRESS
   const [contractAddress, setContractAddress] = useState<`0x${string}`>(() => {
     if (typeof window !== "undefined") {
       const removed = getRemovedGroups();
       const params = new URLSearchParams(window.location.search);
       const group = params.get("group");
-      if (isValidAddress(group) && !removed.has(group.toLowerCase())) {
+      if (
+        isValidAddress(group) &&
+        !removed.has(group.toLowerCase()) &&
+        group.toLowerCase() !== "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b"
+      ) {
         return group.toLowerCase() as `0x${string}`;
-      }
-      const known = getKnownGroups();
-      if (known.length > 0) {
-        return known[0].address;
       }
     }
     return ROTATING_SAVINGS_ADDRESS;
@@ -96,7 +96,10 @@ export default function App() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const group = params.get("group");
-      return Boolean(isValidAddress(group));
+      return Boolean(
+        isValidAddress(group) &&
+        group.toLowerCase() !== "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b"
+      );
     }
     return false;
   });
@@ -179,6 +182,14 @@ export default function App() {
         if (activeTab === "home") {
           window.history.replaceState({}, "", window.location.pathname);
         }
+      } else if (group && group.toLowerCase() === "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b") {
+        // Tự động thanh lọc địa chỉ test cũ để URL luôn gọn gàng
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("group");
+        cleanUrl.searchParams.set("tab", "app");
+        window.history.replaceState({}, "", cleanUrl.toString());
+        setContractAddress(ROTATING_SAVINGS_ADDRESS);
+        setHasExplicitGroup(false);
       } else if (activeTab === "app" && view) {
         // Dọn view param, chỉ giữ ?group=...
         const cleanUrl = new URL(window.location.href);
