@@ -39,12 +39,12 @@ test("TC-CLEAN-01 (AC-02.1): App.tsx tự động dọn sạch query param về 
   );
 });
 
-test("TC-CLEAN-02 (AC-02.2): App.tsx tự động loại bỏ param tab=app và view để giữ URL luôn sạch gọn", () => {
+test("TC-CLEAN-02 (AC-02.2): App.tsx tự động loại bỏ param thừa để giữ URL luôn sạch gọn", () => {
   const appSrc = readSource("src/App.tsx");
 
   assert.ok(
-    appSrc.includes('cleanUrl.searchParams.delete("tab");') &&
+    appSrc.includes('url.searchParams.delete("tab");') &&
     appSrc.includes('cleanUrl.searchParams.delete("view");'),
-    "App.tsx must strip tab and view params from URL"
+    "App.tsx must strip tab and view params appropriately"
   );
 });

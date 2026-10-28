@@ -139,8 +139,14 @@ export default function App() {
         url.searchParams.delete("view");
         url.searchParams.set("tab", "app");
         if (contractAddress && contractAddress.toLowerCase() !== ROTATING_SAVINGS_ADDRESS.toLowerCase()) {
-          url.searchParams.set("group", contractAddress);
-          window.history.pushState({}, "", url.toString());
+          if (address && hasExplicitGroup) {
+            url.searchParams.set("group", contractAddress);
+            window.history.pushState({}, "", url.toString());
+          } else {
+            url.searchParams.delete("group");
+            const cleanPath = url.pathname + (url.search ? url.search : "");
+            window.history.pushState({}, "", cleanPath);
+          }
         } else {
           url.searchParams.delete("group");
           const cleanPath = url.pathname + (url.search ? url.search : "");
@@ -176,12 +182,20 @@ export default function App() {
       const isDefaultGroup = group && group.toLowerCase() === ROTATING_SAVINGS_ADDRESS.toLowerCase();
 
       if (!address) {
-        // When unauthenticated, always clean URL query parameters back to root pathname
-        window.history.replaceState({}, "", window.location.pathname);
-      } else if (params.has("tab") || view) {
-        // Clean tab=app and view params to keep URL neat
+        if (activeTab === "home") {
+          window.history.replaceState({}, "", window.location.pathname);
+        } else if (params.has("group") || view) {
+          // If unauthenticated on app tab, clean long group/view param to keep concise ?tab=app
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete("group");
+          cleanUrl.searchParams.delete("view");
+          cleanUrl.searchParams.set("tab", "app");
+          window.history.replaceState({}, "", cleanUrl.toString());
+          setHasExplicitGroup(false);
+        }
+      } else if (view) {
+        // Clean legacy view param to keep URL neat
         const cleanUrl = new URL(window.location.href);
-        cleanUrl.searchParams.delete("tab");
         cleanUrl.searchParams.delete("view");
         window.history.replaceState({}, "", cleanUrl.toString());
       } else if (view === "home" || (activeTab === "home" && (view || group))) {
