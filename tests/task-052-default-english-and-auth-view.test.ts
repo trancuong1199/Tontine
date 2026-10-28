@@ -13,7 +13,7 @@ test("TC-AUTH-01 (AC-01.1, AC-01.2): Unauthenticated View trong App.tsx không c
 
   // Locate the unauthenticated view block
   const unauthBlockMatch = appSrc.match(
-    /\{!\s*isLoading\s*&&\s*!hasNoActiveClub\s*&&\s*!address\s*&&\s*!hasExplicitGroup\s*&&\s*\([\s\S]*?\)\s*\}/
+    /\{!\s*isLoading\s*&&\s*!hasNoActiveClub\s*&&\s*!address\s*&&\s*\([\s\S]*?\)\s*\}/
   );
   assert.ok(unauthBlockMatch, "Must find unauthenticated view block in App.tsx");
   const unauthBlock = unauthBlockMatch[0];

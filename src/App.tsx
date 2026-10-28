@@ -175,7 +175,16 @@ export default function App() {
       const group = params.get("group");
       const isDefaultGroup = group && group.toLowerCase() === ROTATING_SAVINGS_ADDRESS.toLowerCase();
 
-      if (view === "home" || (activeTab === "home" && (view || group))) {
+      if (!address) {
+        // When unauthenticated, always clean URL query parameters back to root pathname
+        window.history.replaceState({}, "", window.location.pathname);
+      } else if (params.has("tab") || view) {
+        // Clean tab=app and view params to keep URL neat
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("tab");
+        cleanUrl.searchParams.delete("view");
+        window.history.replaceState({}, "", cleanUrl.toString());
+      } else if (view === "home" || (activeTab === "home" && (view || group))) {
         // Dọn sạch URL về gốc pathname sạch sẽ
         window.history.replaceState({}, "", window.location.pathname);
       } else if (isDefaultGroup) {
@@ -201,7 +210,7 @@ export default function App() {
         window.history.replaceState({}, "", cleanUrl.toString());
       }
     }
-  }, [activeTab]);
+  }, [activeTab, address]);
 
   useEffect(() => {
     const onPopState = () => {
@@ -1064,8 +1073,8 @@ export default function App() {
           </div>
         )}
 
-        {/* Unauthenticated View: User opened app directly without logging in and without explicit invite link */}
-        {!isLoading && !hasNoActiveClub && !address && !hasExplicitGroup && (
+        {/* Unauthenticated View: User opened app directly without logging in */}
+        {!isLoading && !hasNoActiveClub && !address && (
           <div className="bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] rounded-3xl p-10 sm:p-14 text-center border border-amber-500/30 shadow-xl max-w-2xl mx-auto my-8 space-y-6">
             <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400 shadow-lg shadow-amber-500/10">
               <Wallet size={34} />
@@ -1130,7 +1139,7 @@ export default function App() {
         )}
 
         {/* Main Content: 2-column layout on desktop, stacked on mobile */}
-        {!isLoading && !hasNoActiveClub && (hasExplicitGroup || isUserAffiliated) && (clubInfo.groupName || displayedGroupName) && (
+        {!isLoading && !hasNoActiveClub && Boolean(address) && (hasExplicitGroup || isUserAffiliated) && (clubInfo.groupName || displayedGroupName) && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* LEFT COLUMN: Overview, History, Rules (col-span-7 / 8) */}
             <div className="lg:col-span-7 xl:col-span-8 space-y-6">
