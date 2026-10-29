@@ -1282,15 +1282,6 @@ export default function App() {
                 </div>
               )}
 
-              {isOwner && clubInfo.state === GROUP_STATE.ACTIVE && (
-                <div className="p-5 rounded-2xl border border-red-500/30 space-y-3">
-                  <p className="text-xs text-slate-300">{isEn ? "A majority vote ends future rounds and refunds only contributions and bids from the unsettled round. Earlier payouts remain final; eligible collateral is claimed separately." : "Biểu quyết đủ đa số sẽ chấm dứt các vòng tương lai, chỉ hoàn tiền góp và bid của vòng chưa quyết toán. Tiền đã trả giữ nguyên; ký quỹ đủ điều kiện được rút riêng."}</p>
-                  <button onClick={handleCancelGroup} disabled={isOwnerPending || isOwnerConfirming || isOwnerOpLoading || memberStatus.hasVotedCancel} className="w-full py-2 rounded-xl border border-red-500/30 text-red-300 disabled:opacity-50">
-                    {memberStatus.hasVotedCancel ? (isEn ? "Voted to cancel" : "Đã bỏ phiếu huỷ") : (isEn ? "Vote to cancel club" : "Biểu quyết huỷ nhóm")} ({String(clubInfo.cancelVoteCount ?? 0n)}/{String(clubInfo.requiredCancelVotes ?? 1n)})
-                  </button>
-                </div>
-              )}
-
               {/* Owner Controls (only visible to owner when group state is OPEN) */}
               {isOwner && clubInfo.state === GROUP_STATE.OPEN && (
                 <div className="bg-slate-900/90 rounded-3xl p-5 border border-amber-500/20 shadow-lg space-y-3.5">
