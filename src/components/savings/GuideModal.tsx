@@ -150,7 +150,7 @@ export function GuideModal({
                   </ul>
                 </div>
                 <div className="mt-4 pt-2 border-t border-rose-900/30 text-xs font-medium text-rose-400">
-                  ⚠️ Nguy cơ bể hụi, mất vốn rất cao
+                  {isEn ? "⚠️ High risk of tontine collapse & loss of funds" : "⚠️ Nguy cơ bể hụi, mất vốn rất cao"}
                 </div>
               </div>
 
@@ -179,7 +179,8 @@ export function GuideModal({
                   </ul>
                 </div>
                 <div className="mt-4 pt-2 border-t border-amber-500/20 text-xs font-semibold text-amber-300 flex items-center gap-1.5">
-                  <CheckCircle2 size={14} className="text-amber-400" /> An toàn tuyệt đối, thực thi bằng code
+                  <CheckCircle2 size={14} className="text-amber-400" />
+                  <span>{isEn ? "100% Secure, enforced strictly by code" : "An toàn tuyệt đối, thực thi bằng code"}</span>
                 </div>
               </div>
             </div>
