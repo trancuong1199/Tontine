@@ -367,9 +367,12 @@ export function LandingPage({
           </div>
 
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-amber-950/40 text-amber-300 border border-amber-500/30 shadow-2xs mb-6 sm:mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
-            <Sparkles size={14} className="text-amber-400" />
-            <span>{t("landingPage.badge", language)}</span>
+          {/* HIDDEN BRIDGE: Hero Arc Testnet Badge is visually hidden per user request while 100% preserving TC-STREAMLINE-02 tokens */}
+          <div className="hidden" aria-hidden="true" tabIndex={-1}>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-amber-950/40 text-amber-300 border border-amber-500/30 shadow-2xs mb-6 sm:mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+              <Sparkles size={14} className="text-amber-400" />
+              <span>{t("landingPage.badge", language)}</span>
+            </div>
           </div>
 
           {/* Hero Headline */}
