@@ -70,7 +70,7 @@ export function OnboardingScreen({
             <PiggyBank size={18} className="text-white" />
           </div>
           <span className="font-bold text-slate-900 text-lg tracking-tight">
-            HụiChain
+            Tontine
           </span>
         </div>
         <div className="flex items-center gap-2">

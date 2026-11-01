@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Share2, Check, Shuffle, Plus, Layers, Zap } from "lucide-react";
-import { isValidAddress, formatAddress } from "../../contract";
+import { ArrowRight, Share2, Check, Shuffle, Plus, Layers, Zap, Copy, ExternalLink } from "lucide-react";
+import { isValidAddress, formatAddress, ARC_TESTNET_CHAIN_ID } from "../../contract";
+import { buildAddressExplorerUrl } from "@/onchain-facts";
 import { saveKnownGroup, buildShareGroupUrl } from "../../lib/savingsClubDirectory";
 import { Language, t } from "../../lib/i18n";
 
@@ -25,7 +26,24 @@ export function GroupSwitcher({
   const [inputAddress, setInputAddress] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState(false);
   const isEn = language === "en";
+
+  const handleCopyContractAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(currentAddress);
+      setCopiedAddress(true);
+      setTimeout(() => setCopiedAddress(false), 2000);
+      toast.success(
+        isEn ? "Copied contract address!" : "Đã sao chép địa chỉ hợp đồng!",
+        { description: currentAddress }
+      );
+    } catch {
+      toast.error(
+        isEn ? "Could not copy contract address" : "Không thể sao chép địa chỉ hợp đồng"
+      );
+    }
+  };
 
   const handleCopyLink = async () => {
     try {
@@ -77,9 +95,29 @@ export function GroupSwitcher({
             {isEn ? t("groupSwitcher.title", language) : "Hợp đồng nhóm hụi"}
           </span>
           <div className="flex items-center gap-1.5 mt-1">
-            <span className="font-mono text-xs text-slate-800 font-bold bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/60">
-              {formatAddress(currentAddress)}
-            </span>
+            <button
+              type="button"
+              onClick={handleCopyContractAddress}
+              className="font-mono text-xs text-slate-800 font-bold bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200/60 hover:bg-amber-100 transition-colors flex items-center gap-1.5 cursor-pointer group"
+              title={isEn ? `Copy contract address: ${currentAddress}` : `Sao chép địa chỉ hợp đồng: ${currentAddress}`}
+            >
+              <span>{formatAddress(currentAddress)}</span>
+              {copiedAddress ? (
+                <Check size={12} className="text-emerald-600 shrink-0" />
+              ) : (
+                <Copy size={12} className="text-slate-500 group-hover:text-amber-700 shrink-0 transition-colors" />
+              )}
+            </button>
+            <a
+              href={buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, currentAddress)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-slate-800/80 transition-colors inline-flex items-center"
+              title={isEn ? "View on Arc Explorer" : "Tra cứu trên Arc Explorer"}
+              aria-label={isEn ? "View on Arc Explorer" : "Tra cứu trên Arc Explorer"}
+            >
+              <ExternalLink size={13} />
+            </a>
           </div>
         </div>
       </div>

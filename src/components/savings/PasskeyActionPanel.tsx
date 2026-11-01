@@ -882,8 +882,8 @@ export function PasskeyActionPanel({
               {userBid !== undefined && userBid > 0n ? (
                 /* CONFIRMED BID CARD (TASK-021) */
                 <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-br from-[#12141f] to-[#0a0c14] border border-amber-500/30 space-y-3.5 shadow-md">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
                       <span className="text-xs sm:text-sm font-semibold text-slate-300">
                         {t("actionPanel.confirmedBidLabel", language)}
@@ -891,16 +891,17 @@ export function PasskeyActionPanel({
                       <span className="text-base sm:text-lg font-bold text-amber-300 tabular-nums">
                         {formatUsdc(userBid)} USDC
                       </span>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                        {t("actionPanel.confirmedBidBadge", language)}
-                      </span>
                     </div>
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0">
+                      {t("actionPanel.confirmedBidBadge", language)}
+                    </span>
+                  </div>
 
-                    {/* Highest Bidder or Outbid Badge */}
-                    {highestBid !== undefined && highestBid > 0n && (
-                      userBid >= highestBid ? (
+                  {/* Highest Bidder or Outbid Badge */}
+                  {highestBid !== undefined && highestBid > 0n && (
+                    <div>
+                      {userBid >= highestBid ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-950/60 text-amber-300 border border-amber-500/40 shadow-xs shadow-amber-500/20">
-                          <Trophy size={13} className="text-amber-400" />
                           {t("actionPanel.leadingPotBadge", language)}
                         </span>
                       ) : (
@@ -908,9 +909,9 @@ export function PasskeyActionPanel({
                           <AlertCircle size={13} className="text-rose-400" />
                           {t("actionPanel.outbidBadge", language).replace("{amount}", formatUsdc(highestBid))}
                         </span>
-                      )
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Collapsible Raise Bid Toggle */}
                   <div className="pt-1">
