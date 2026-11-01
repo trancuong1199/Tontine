@@ -47,7 +47,7 @@ import {
   parseContractError,
 } from "./contract";
 import { buildTxExplorerUrl, buildAddressExplorerUrl } from "@/onchain-facts";
-import { ExternalLink, RefreshCw, Info, Shield, Crown, Layers, Globe, Plus, BookOpen, PiggyBank, Users, Calendar, Zap, Wallet, ChevronDown, Check } from "lucide-react";
+import { ExternalLink, RefreshCw, Info, Shield, Crown, Layers, Globe, Plus, BookOpen, PiggyBank, Users, Calendar, Zap, Wallet, ChevronDown, Check, Copy, LogOut } from "lucide-react";
 import { Language, getStoredLanguage, setStoredLanguage, t } from "./lib/i18n";
 
 export default function App() {
@@ -70,6 +70,30 @@ export default function App() {
   const { state: pkState, bundler, isConfigured, register, login, logout, clearError } = usePasskeyWallet();
   const passkeyAddress = pkState.status === "ready" ? pkState.address : undefined;
   const passkeyAccount = pkState.status === "ready" ? pkState.account : undefined;
+
+  const handleDisconnectAll = () => {
+    if (passkeyAddress) {
+      logout();
+    }
+    if (wagmiAddress) {
+      try {
+        void Promise.resolve(connector?.disconnect?.()).finally(() => {
+          try {
+            localStorage.removeItem("wagmi.store");
+            localStorage.removeItem("wagmi.recentConnectorId");
+          } catch {
+            // Ignore storage errors
+          }
+          if (typeof window !== "undefined") {
+            window.location.reload();
+          }
+        });
+      } catch {
+        // Ignore
+      }
+    }
+    toast.success(isEn ? "Wallet disconnected!" : "Đã đăng xuất ví!");
+  };
 
   // Active address: passkey takes priority over wagmi
   const address = passkeyAddress ?? wagmiAddress;
@@ -272,7 +296,10 @@ export default function App() {
   const [showArcAppKitModal, setShowArcAppKitModal] = useState(false);
   const [nameUpdateTrigger, setNameUpdateTrigger] = useState(0);
   const [isPasskeyLangOpen, setIsPasskeyLangOpen] = useState(false);
+  const [isPasskeyWalletOpen, setIsPasskeyWalletOpen] = useState(false);
+  const [copiedPasskeyAddr, setCopiedPasskeyAddr] = useState(false);
   const passkeyLangRef = useRef<HTMLDivElement>(null);
+  const passkeyWalletRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -280,14 +307,17 @@ export default function App() {
       if (passkeyLangRef.current && !passkeyLangRef.current.contains(event.target as Node)) {
         setIsPasskeyLangOpen(false);
       }
+      if (passkeyWalletRef.current && !passkeyWalletRef.current.contains(event.target as Node)) {
+        setIsPasskeyWalletOpen(false);
+      }
     }
-    if (isPasskeyLangOpen) {
+    if (isPasskeyLangOpen || isPasskeyWalletOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isPasskeyLangOpen]);
+  }, [isPasskeyLangOpen, isPasskeyWalletOpen]);
 
   // Scroll progress for dynamic orbital motion on Saving Clubs page (Task-031: Synced with Home page)
   const [scrollY, setScrollY] = useState(0);
@@ -936,6 +966,7 @@ export default function App() {
           onOpenCreateModal={() => setShowCreateModal(true)}
           onOpenDirectoryModal={() => setShowDirectoryModal(true)}
           onOpenArcAppKit={() => setShowArcAppKitModal(true)}
+          onDisconnectWallet={handleDisconnectAll}
           language={language}
           onToggleLanguage={handleToggleLanguage}
           onSelectLanguage={(lang) => {
@@ -1116,13 +1147,59 @@ export default function App() {
                   {formatUsdc(balance)} USDC
                 </span>
               )}
-              <div
-                onClick={() => setShowArcAppKitModal(true)}
-                className="text-xs font-mono bg-slate-800/80 px-2 sm:px-3 py-1.5 rounded-xl border border-slate-700 text-slate-300 font-semibold whitespace-nowrap cursor-pointer"
-                title={passkeyAddress}
-              >
-                <span className="sm:hidden">{`${passkeyAddress.slice(0, 4)}..${passkeyAddress.slice(-2)}`}</span>
-                <span className="hidden sm:inline">{formatAddress(passkeyAddress)}</span>
+              <div className="relative" ref={passkeyWalletRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsPasskeyWalletOpen((prev) => !prev)}
+                  className="flex items-center gap-1 text-xs font-mono bg-slate-800/80 hover:bg-slate-800 px-2 sm:px-3 py-1.5 rounded-xl border border-slate-700 hover:border-amber-500/40 text-amber-300 font-semibold whitespace-nowrap cursor-pointer transition-all active:scale-95"
+                  title={passkeyAddress}
+                >
+                  <span className="sm:hidden">{`${passkeyAddress.slice(0, 4)}..${passkeyAddress.slice(-2)}`}</span>
+                  <span className="hidden sm:inline">{formatAddress(passkeyAddress)}</span>
+                  <ChevronDown size={12} className={`text-slate-400 transition-transform duration-200 ${isPasskeyWalletOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {isPasskeyWalletOpen && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-[#0f1422] border border-amber-500/30 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/50 space-y-1">
+                    <div className="px-2.5 py-1.5 text-xs font-mono text-amber-300 border-b border-slate-800/80 truncate">
+                      {passkeyAddress}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(passkeyAddress);
+                        setCopiedPasskeyAddr(true);
+                        setTimeout(() => setCopiedPasskeyAddr(false), 1800);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800/80 transition-all cursor-pointer"
+                    >
+                      {copiedPasskeyAddr ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} className="text-amber-400" />}
+                      <span>{copiedPasskeyAddr ? (isEn ? "Copied!" : "Đã sao chép!") : (isEn ? "Copy Address" : "Sao chép địa chỉ")}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPasskeyWalletOpen(false);
+                        setShowArcAppKitModal(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800/80 transition-all cursor-pointer"
+                    >
+                      <Zap size={14} className="text-amber-400" />
+                      <span>{isEn ? "Passkey & Arc AppKit" : "Ví Passkey & Arc AppKit"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPasskeyWalletOpen(false);
+                        handleDisconnectAll();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-950/40 transition-all cursor-pointer"
+                    >
+                      <LogOut size={14} />
+                      <span>{isEn ? "Disconnect Wallet" : "Đăng xuất Ví"}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1364,6 +1441,14 @@ export default function App() {
                       title={isEn ? "Refresh balance" : "Làm mới số dư"}
                     >
                       <RefreshCw size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDisconnectAll}
+                      className="p-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-950/40 transition-colors cursor-pointer"
+                      title={isEn ? "Disconnect wallet" : "Đăng xuất ví"}
+                    >
+                      <LogOut size={14} />
                     </button>
                   </div>
                 </div>
@@ -1715,6 +1800,7 @@ export default function App() {
         passkeyAddress={passkeyAddress}
         passkeyStatus={pkState.status}
         connector={connector}
+        onLogoutPasskey={handleDisconnectAll}
         onOpenPasskeyRegister={() => {
           const defaultUsername = `member_${Math.floor(1000 + Math.random() * 9000)}`;
           register(defaultUsername).catch((err) => {

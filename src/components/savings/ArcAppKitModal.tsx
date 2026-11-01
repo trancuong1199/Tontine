@@ -31,6 +31,7 @@ interface ArcAppKitModalProps {
   passkeyAddress?: `0x${string}`;
   passkeyStatus?: string;
   onOpenPasskeyRegister?: () => void;
+  onLogoutPasskey?: () => void;
   connector?: any;
 }
 
@@ -42,6 +43,7 @@ export function ArcAppKitModal({
   passkeyAddress,
   passkeyStatus,
   onOpenPasskeyRegister,
+  onLogoutPasskey,
   connector,
 }: ArcAppKitModalProps) {
   const isEn = language === "en";
@@ -514,7 +516,7 @@ export function ArcAppKitModal({
               </div>
 
               {passkeyAddress ? (
-                <div className="bg-black/40 rounded-2xl p-4 border border-slate-800 space-y-2">
+                <div className="bg-black/40 rounded-2xl p-4 border border-slate-800 space-y-3">
                   <span className="text-xs text-slate-400 font-medium block">
                     {isEn ? "Your Connected Passkey Address:" : "Địa chỉ Ví Passkey của bạn:"}
                   </span>
@@ -534,6 +536,18 @@ export function ArcAppKitModal({
                       {copiedAddr ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                     </button>
                   </div>
+                  {onLogoutPasskey && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onLogoutPasskey();
+                        onClose();
+                      }}
+                      className="w-full py-2.5 px-4 rounded-xl border border-red-500/30 bg-red-950/30 hover:bg-red-900/40 text-red-400 hover:text-red-300 text-xs font-bold transition-all cursor-pointer"
+                    >
+                      {isEn ? "Disconnect Passkey Wallet" : "Đăng xuất Ví Passkey"}
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-6 px-4 bg-black/30 rounded-2xl border border-dashed border-amber-500/20 space-y-3">

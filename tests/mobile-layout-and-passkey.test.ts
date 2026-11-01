@@ -125,3 +125,27 @@ test("TC-MOB-08 (AC-01.2): Thanh Header khi đã đăng nhập (cả Passkey Top
   );
 });
 
+test("TC-MOB-09 (AC-01.3): Click vào nút địa chỉ ví trên Header (cả Passkey và Wagmi) và trong ArcAppKitModal đều có menu Đăng xuất Ví (Disconnect Wallet)", () => {
+  assert.match(
+    appSrc,
+    /setIsPasskeyWalletOpen/,
+    "App.tsx phải mở menu ví khi click vào địa chỉ ví Passkey trên Header"
+  );
+  assert.match(
+    appSrc,
+    /handleDisconnectAll/,
+    "App.tsx phải có hàm handleDisconnectAll để đăng xuất cả ví Passkey và ví Wagmi"
+  );
+  assert.match(
+    headerSrc,
+    /onDisconnectWallet/,
+    "Header.tsx phải hỗ trợ nút Đăng xuất Ví (onDisconnectWallet) trong menu ví trên mobile"
+  );
+  assert.match(
+    arcModalSrc,
+    /onLogoutPasskey/,
+    "ArcAppKitModal.tsx phải có nút Đăng xuất Ví Passkey trong tab Passkey"
+  );
+});
+
+

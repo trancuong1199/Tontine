@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { ConnectKitButton } from "connectkit";
-import { PiggyBank, BookOpen, ExternalLink, Plus, Layers, Globe, Zap, ChevronDown, Check } from "lucide-react";
+import { PiggyBank, BookOpen, ExternalLink, Plus, Layers, Globe, Zap, ChevronDown, Check, Copy, LogOut } from "lucide-react";
 import { Language, t } from "../../lib/i18n";
 
 export interface HeaderProps {
@@ -8,6 +8,7 @@ export interface HeaderProps {
   onOpenCreateModal?: () => void;
   onOpenDirectoryModal?: () => void;
   onOpenArcAppKit?: () => void;
+  onDisconnectWallet?: () => void;
   language?: Language;
   onToggleLanguage?: () => void;
   onSelectLanguage?: (lang: Language) => void;
@@ -20,6 +21,7 @@ export function Header({
   onOpenCreateModal,
   onOpenDirectoryModal,
   onOpenArcAppKit,
+  onDisconnectWallet,
   language = "vi",
   onToggleLanguage,
   onSelectLanguage,
@@ -28,7 +30,10 @@ export function Header({
 }: HeaderProps = {}) {
   const isEn = language === "en";
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isWalletMenuOpen, setIsWalletMenuOpen] = useState(false);
+  const [copiedWallet, setCopiedWallet] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
+  const walletMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -36,14 +41,17 @@ export function Header({
       if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
         setIsLangMenuOpen(false);
       }
+      if (walletMenuRef.current && !walletMenuRef.current.contains(event.target as Node)) {
+        setIsWalletMenuOpen(false);
+      }
     }
-    if (isLangMenuOpen) {
+    if (isLangMenuOpen || isWalletMenuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isLangMenuOpen]);
+  }, [isLangMenuOpen, isWalletMenuOpen]);
 
   return (
     <header className="sticky top-0 z-40 bg-[#0b0f19]/85 backdrop-blur-md border-b border-slate-800/80 transition-all shadow-sm">
@@ -259,24 +267,78 @@ export function Header({
             <ExternalLink size={12} />
           </a>
 
-          <div className="sm:hidden shrink-0">
+          <div className="sm:hidden shrink-0 relative" ref={walletMenuRef}>
             <ConnectKitButton.Custom>
               {({ isConnected, show, address, truncatedAddress, ensName }) => (
-                <button
-                  type="button"
-                  onClick={show}
-                  className={`px-2 py-1.5 rounded-xl text-xs font-extrabold transition-all active:scale-95 cursor-pointer whitespace-nowrap ${
-                    isConnected
-                      ? "font-mono bg-slate-800/80 border border-slate-700 text-amber-300"
-                      : "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20"
-                  }`}
-                >
-                  {isConnected
-                    ? ensName ?? (address ? `${address.slice(0, 4)}..${address.slice(-2)}` : truncatedAddress)
-                    : isEn
-                      ? "Connect"
-                      : "Kết nối"}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isConnected) {
+                        setIsWalletMenuOpen((prev) => !prev);
+                      } else {
+                        show?.();
+                      }
+                    }}
+                    className={`px-2 py-1.5 rounded-xl text-xs font-extrabold transition-all active:scale-95 cursor-pointer whitespace-nowrap ${
+                      isConnected
+                        ? "font-mono bg-slate-800/80 border border-slate-700 text-amber-300"
+                        : "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20"
+                    }`}
+                  >
+                    {isConnected
+                      ? ensName ?? (address ? `${address.slice(0, 4)}..${address.slice(-2)}` : truncatedAddress)
+                      : isEn
+                        ? "Connect"
+                        : "Kết nối"}
+                  </button>
+
+                  {isConnected && isWalletMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-[#0f1422] border border-amber-500/30 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/50 space-y-1">
+                      <div className="px-2.5 py-1.5 text-xs font-mono text-amber-300 border-b border-slate-800/80 truncate">
+                        {address ?? truncatedAddress}
+                      </div>
+                      {address && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(address);
+                            setCopiedWallet(true);
+                            setTimeout(() => setCopiedWallet(false), 1800);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800/80 transition-all cursor-pointer"
+                        >
+                          {copiedWallet ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} className="text-amber-400" />}
+                          <span>{copiedWallet ? (isEn ? "Copied!" : "Đã sao chép!") : (isEn ? "Copy Address" : "Sao chép địa chỉ")}</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsWalletMenuOpen(false);
+                          show?.();
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800/80 transition-all cursor-pointer"
+                      >
+                        <Zap size={14} className="text-amber-400" />
+                        <span>{isEn ? "Wallet Modal" : "Hộp thoại Ví"}</span>
+                      </button>
+                      {onDisconnectWallet && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsWalletMenuOpen(false);
+                            onDisconnectWallet();
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-950/40 transition-all cursor-pointer"
+                        >
+                          <LogOut size={14} />
+                          <span>{isEn ? "Disconnect Wallet" : "Đăng xuất Ví"}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </ConnectKitButton.Custom>
           </div>
