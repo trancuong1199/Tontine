@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { formatCollateral } from "../../lib/collateralPolicy";
-import { Users, Clock, Trophy, Coins, ShieldCheck, Pencil } from "lucide-react";
-import { formatUsdc, formatCirBtc, GROUP_STATE, formatAddress } from "../../contract";
+import { Users, Clock, Trophy, Coins, ShieldCheck, Pencil, Copy, Check, ExternalLink } from "lucide-react";
+import { formatUsdc, formatCirBtc, GROUP_STATE, formatAddress, ARC_TESTNET_CHAIN_ID } from "../../contract";
+import { buildAddressExplorerUrl } from "@/onchain-facts";
 import { Language, t } from "../../lib/i18n";
+import { toast } from "sonner";
 
 interface ClubCardProps {
   groupName: string;
@@ -86,6 +89,25 @@ export function ClubCard({
       : 0;
   const stateInfo = STATE_CONFIG[state] ?? STATE_CONFIG[GROUP_STATE.OPEN];
   const isEn = language === "en";
+  const [copiedAddress, setCopiedAddress] = useState(false);
+
+  const handleCopyContractAddress = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!contractAddress) return;
+    try {
+      await navigator.clipboard.writeText(contractAddress);
+      setCopiedAddress(true);
+      setTimeout(() => setCopiedAddress(false), 2000);
+      toast.success(
+        isEn ? "Copied contract address!" : "Đã sao chép địa chỉ hợp đồng!",
+        { description: contractAddress }
+      );
+    } catch {
+      toast.error(
+        isEn ? "Could not copy contract address" : "Không thể sao chép địa chỉ hợp đồng"
+      );
+    }
+  };
 
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] text-white shadow-xl shadow-amber-500/5 border border-amber-500/30 p-6 sm:p-7 transition-all">
@@ -115,9 +137,32 @@ export function ClubCard({
               </span>
             )}
             {contractAddress && (
-              <span className="text-xs text-amber-300/80 font-mono hidden sm:inline bg-black/40 px-2 py-0.5 rounded-lg border border-amber-500/20">
-                {formatAddress(contractAddress)}
-              </span>
+              <div className="inline-flex items-center gap-1 bg-black/50 px-2 py-0.5 rounded-lg border border-amber-500/30 text-xs">
+                <button
+                  type="button"
+                  onClick={handleCopyContractAddress}
+                  className="inline-flex items-center gap-1.5 text-amber-300 hover:text-amber-200 font-mono transition-colors cursor-pointer group"
+                  title={isEn ? `Copy full address: ${contractAddress}` : `Sao chép toàn bộ địa chỉ: ${contractAddress}`}
+                  aria-label={isEn ? `Copy contract address ${contractAddress}` : `Sao chép địa chỉ hợp đồng ${contractAddress}`}
+                >
+                  <span className="font-semibold">{formatAddress(contractAddress)}</span>
+                  {copiedAddress ? (
+                    <Check size={12} className="text-emerald-400 shrink-0" />
+                  ) : (
+                    <Copy size={12} className="text-amber-400/80 group-hover:text-amber-300 shrink-0 transition-colors" />
+                  )}
+                </button>
+                <a
+                  href={buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, contractAddress)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-400 hover:text-amber-300 p-0.5 rounded transition-colors inline-flex items-center"
+                  title={isEn ? "View on Arc Explorer" : "Tra cứu trên Arc Explorer"}
+                  aria-label={isEn ? "View on Arc Explorer" : "Tra cứu trên Arc Explorer"}
+                >
+                  <ExternalLink size={12} />
+                </a>
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2.5 flex-wrap">
