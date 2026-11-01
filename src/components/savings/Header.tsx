@@ -169,7 +169,7 @@ export function Header({
                   >
                     <span className="flex items-center gap-2">
                       <span className="text-sm">🇻🇳</span>
-                      <span>Tiếng Việt</span>
+                      <span>Vietnamese</span>
                     </span>
                     {!isEn && <Check size={14} className="text-amber-400" />}
                   </button>
