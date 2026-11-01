@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-10-25T16:10:37.955028+00:00",
+  "files": {
+    "tests/collateral-policy.test.ts": "bf3b5cfd1a098a14606bfda3dd8997325c5f73a340acf3f3160c5f65272a1d0d",
+    "tests/review-followup.test.ts": "9d7d500a0c11788e4ec83fc5fc38b5d8e83938e20cdf792acc4bb7c8cdd5f296",
+    "tests/cycle-capability.test.ts": "4ea280093b5992e0311155bd5cc3bf48c95cb5007850d0a0af4f950816c26d00",
+    "tests/cirbtc-collateral-vault.test.ts": "b10b949cda6d5f841aa7139f5a9bdcd65d3445e10d500e57ca50a351b9240bc4"
+  }
+}

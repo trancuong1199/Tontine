@@ -108,16 +108,16 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"home" | "app">(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
+      const group = params.get("group");
+      if (isValidAddress(group)) {
+        return "app";
+      }
       const view = params.get("view");
       const tab = params.get("tab");
       if (view === "home" || tab === "home") {
         return "home";
       }
       if (view === "app" || tab === "app") {
-        return "app";
-      }
-      const group = params.get("group");
-      if (isValidAddress(group)) {
         return "app";
       }
     }
@@ -184,6 +184,9 @@ export default function App() {
       if (!address) {
         if (activeTab === "home") {
           window.history.replaceState({}, "", window.location.pathname);
+        } else if (isValidAddress(group)) {
+          // Valid invite link: preserve group query and maintain explicit group flag
+          setHasExplicitGroup(true);
         } else if (params.has("group") || view) {
           // If unauthenticated on app tab, clean long group/view param to keep concise ?tab=app
           const cleanUrl = new URL(window.location.href);
@@ -1178,12 +1181,18 @@ export default function App() {
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                {isEn ? "Connect Wallet to View Your Clubs" : "Vui lòng kết nối ví để xem Nhóm Hụi"}
+                {hasExplicitGroup
+                  ? (isEn ? `You're invited to join: ${displayedGroupName || "Savings Club"}` : `Bạn được mời tham gia: ${displayedGroupName || "Nhóm Hụi"}`)
+                  : isEn ? "Connect Wallet to View Your Clubs" : "Vui lòng kết nối ví để xem Nhóm Hụi"}
               </h2>
               <p className="text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
-                {isEn
-                  ? "Connect your wallet to manage savings clubs you've created or joined, or create a new rotating savings club on Arc Testnet."
-                  : "Bạn chưa kết nối ví. Vui lòng kết nối ví để xem các nhóm hụi do bạn tạo hoặc đã tham gia, hoặc tạo nhóm mới."}
+                {hasExplicitGroup
+                  ? (isEn
+                      ? "Connect your wallet to review club details, deposit collateral, and join."
+                      : "Kết nối ví của bạn để xem chi tiết nhóm, nộp tiền cọc và cùng tham gia hụi.")
+                  : isEn
+                      ? "Connect your wallet to manage savings clubs you've created or joined, or create a new rotating savings club on Arc Testnet."
+                      : "Bạn chưa kết nối ví. Vui lòng kết nối ví để xem các nhóm hụi do bạn tạo hoặc đã tham gia, hoặc tạo nhóm mới."}
               </p>
             </div>
             <div className="flex items-center justify-center pt-2">
@@ -1193,7 +1202,11 @@ export default function App() {
                 className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center gap-2"
               >
                 <Wallet size={18} />
-                <span>{isEn ? "Connect Wallet" : "Kết nối ví ngay"}</span>
+                <span>
+                  {hasExplicitGroup
+                    ? (isEn ? "Connect Wallet to Join" : "Kết nối ví để tham gia ngay")
+                    : isEn ? "Connect Wallet" : "Kết nối ví ngay"}
+                </span>
               </button>
             </div>
           </div>

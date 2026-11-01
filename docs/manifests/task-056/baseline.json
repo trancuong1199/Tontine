@@ -1,0 +1,16 @@
+{
+  "taskId": "task-056",
+  "createdAt": "2026-11-01T11:58:31.765Z",
+  "files": {
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "exists": true,
+      "sha256": "574d4ec495609c6375a8e2c9b0e5dae1a8948a2651235f43b6898a31e4cada64",
+      "snapshot": "docs/manifests/task-056/baseline/src_components_savings_ClubDirectoryModal.tsx"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "9c33ef02a0725a229fe2c878aaa2637b7b11464d0e3521919fc5c5f4903fc211",
+      "snapshot": "docs/manifests/task-056/baseline/src_lib_i18n.ts"
+    }
+  }
+}

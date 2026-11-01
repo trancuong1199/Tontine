@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "--experimental-strip-types",
+    "tests/collateral-policy.test.ts"
+  ],
+  "started": "2026-10-25T15:56:05.791204+00:00",
+  "finished": "2026-10-25T15:56:08.218959+00:00",
+  "exitCode": 0
+}

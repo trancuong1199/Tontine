@@ -1,0 +1,62 @@
+{
+  "taskId": "task-055",
+  "frozenAt": "2026-11-01T11:20:31.262Z",
+  "status": "FROZEN",
+  "files": {
+    "src/lib/savingsClubDirectory.ts": {
+      "sha256": "8f5a349ba71d7ba83ae5007f42305adb09e827a9026ad16264fc8f9e95b93f85",
+      "baselineSha256": "494339ba02639b88bbb3c810d43978fed52de1784eda648de859e685f3ee1cc1",
+      "isNew": false
+    },
+    "src/components/savings/WaitingView.tsx": {
+      "sha256": "8dd41dc6faac620710c2d325405423cdc5c6b05c2bc13c5ec8d81104075c5540",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/NonMemberActiveView.tsx": {
+      "sha256": "41cda7b70f2ff48499e1f5645adcacab871f4a235db6e4e3d3db2038ad442693",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "74ce82a55d5f04a3895f69bb73ca22d3d9396671315270b0b4fec231a2a8b19d",
+      "baselineSha256": "79594ae03d6a57eefcdc1cdf595599393c07110338ca01879c3f87f8e90e9dc8",
+      "isNew": false
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "sha256": "77392a1ceb2cbacb0bfd049d40f9f4205dbe6f9daee9550ed57f5f633020b699",
+      "baselineSha256": "5f6d2c83bd18e6dd86c36c8877e4b5ffddcaa01672041bfd474c58d48e221fd9",
+      "isNew": false
+    },
+    "src/components/landing/LandingPage.tsx": {
+      "sha256": "b37b16baba32d6e99a50344fdd4bbeb50def854b8f96a826b8b8f71335092448",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/GuideModal.tsx": {
+      "sha256": "b6905dd75f1d61c98cc634153f47fafbfb06605614d565287ef4a3d41b9f1330",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/OnboardingScreen.tsx": {
+      "sha256": "b32c430bc136577b4c8c95df6c25d05f3059bdc5c796a2f3306667dea0f5431e",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/lib/i18n.ts": {
+      "sha256": "9c33ef02a0725a229fe2c878aaa2637b7b11464d0e3521919fc5c5f4903fc211",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/Header.tsx": {
+      "sha256": "d372ff78cfc38758eebce7dc4d7f1796b650b46911d5cef0c7b89acb5c0ea492",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "9f13e0ec1a6a0927428c95220930bc7bdb2aca7e35d4d5ca3b5cfa07619982c9",
+      "baselineSha256": null,
+      "isNew": false
+    }
+  }
+}

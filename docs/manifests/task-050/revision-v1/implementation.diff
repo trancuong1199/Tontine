@@ -1,0 +1,322 @@
+--- baseline/src/components/savings/CollateralPreview.tsx
++++ src/components/savings/CollateralPreview.tsx
+@@ -1,33 +1,76 @@
++import type { ReactNode } from 'react';
+ import type { CollateralView } from '../../hooks/useCollateralPolicy';
+ import { formatCollateral } from '../../lib/collateralPolicy';
+ import type { Language } from '../../lib/i18n';
+ 
+-export function CollateralPreview({ view, language = 'vi' }: { view?: CollateralView; language?: Language }) {
++interface CollateralPreviewProps {
++  view?: CollateralView;
++  language?: Language;
++  status?: string;
++  required?: bigint;
++  locked?: bigint;
++  balance?: bigint;
++  rewards?: bigint;
++  groupAddress?: string;
++  tokenAddress?: string;
++  accountAddress?: string;
++  detailsNotice?: ReactNode;
++  children?: ReactNode;
++}
++
++export function CollateralPreview({ view, language = 'vi', status, required, locked, balance, rewards, groupAddress, tokenAddress, accountAddress, detailsNotice, children }: CollateralPreviewProps) {
+   const en = language === 'en';
+   const quote = view?.quote;
+-  return <section className="mx-5 my-3 rounded-xl border border-amber-500/30 p-4 text-xs text-slate-300" aria-label={en ? 'Collateral review' : 'Xem trước ký quỹ'}>
+-    <p className="font-bold text-amber-200">{en ? 'CirBTC collateral review' : 'Xem trước ký quỹ CirBTC'}</p>
+-    <p className="mt-2">{view?.policy === 'enforced'
+-      ? (en ? 'This contract requires full collateral at join and before contributing or bidding. Restart does not automatically fund members.' : 'Hợp đồng bắt buộc đủ ký quỹ khi tham gia và trước khi góp hoặc bid. Mở chu kỳ không tự nạp tiền cho thành viên.')
+-      : view?.policy === 'legacy'
+-      ? (en ? 'Legacy contract: mandatory collateral is not enforced by this version. A requirement change after review may affect a legacy join; existing approvals can permit a different debit. Frontend checks do not upgrade this contract.' : 'Hợp đồng cũ: phiên bản này không bắt buộc ký quỹ đầy đủ. Mức yêu cầu đổi sau khi xem trước có thể làm khoản trừ khi tham gia khác đi nếu quyền sử dụng token đã cấp trước đó lớn hơn. Kiểm tra giao diện không nâng cấp hợp đồng.')
+-      : view?.policy === 'loading'
+-      ? (en ? 'Checking collateral policy and balances…' : 'Đang kiểm tra chính sách và số dư ký quỹ…')
+-      : (en ? 'Collateral data is unavailable. Retry before approving or transferring tokens.' : 'Chưa có dữ liệu ký quỹ. Kiểm tra lại trước khi cấp quyền hoặc chuyển token.')}</p>
+-    {quote && <>
+-      <p className="mt-2 break-all">{en ? 'Club' : 'Nhóm'}: {quote.group}<br />Token: {quote.token}<br />{en ? 'Wallet' : 'Ví'}: {quote.account}</p>
+-      <dl className="mt-3 grid grid-cols-2 gap-2 font-mono">
++  const hasShortfall = quote !== undefined && quote.shortfall > 0n;
++  const lockedAmount = quote?.locked ?? locked;
++  const walletBalance = quote?.balance ?? balance;
++  const amount = (value: bigint | undefined) => value === undefined
++    ? (en ? 'Unavailable' : 'Chưa đọc được')
++    : `${formatCollateral(value)} CirBTC`;
++  const policyExplanation = view?.policy === 'enforced'
++    ? (en ? 'This contract requires full collateral at join and before contributing or bidding. Restart does not automatically fund members.' : 'Hợp đồng bắt buộc đủ ký quỹ khi tham gia và trước khi góp hoặc bid. Mở chu kỳ không tự nạp tiền cho thành viên.')
++    : view?.policy === 'legacy'
++    ? (en ? 'Legacy contract: mandatory collateral is not enforced by this version. A requirement change after review may affect a legacy join; existing approvals can permit a different debit. Frontend checks do not upgrade this contract.' : 'Hợp đồng cũ: phiên bản này không bắt buộc ký quỹ đầy đủ. Mức yêu cầu đổi sau khi xem trước có thể làm khoản trừ khi tham gia khác đi nếu quyền sử dụng token đã cấp trước đó lớn hơn. Kiểm tra giao diện không nâng cấp hợp đồng.')
++    : (en ? 'Collateral data is unavailable. Retry before approving or transferring tokens.' : 'Chưa có dữ liệu ký quỹ. Kiểm tra lại trước khi cấp quyền hoặc chuyển token.');
++
++  return <section className="mx-4 my-3 min-w-0 rounded-xl border border-amber-500/25 bg-amber-950/15 p-4 text-xs text-slate-300 sm:mx-5" aria-label={en ? 'Collateral review' : 'Xem trước ký quỹ'}>
++    <div className="min-w-0">
++      <h4 className="font-semibold text-amber-200">{en ? 'CirBTC collateral' : 'Ký quỹ CirBTC'}</h4>
++      {status && <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{status}</p>}
++    </div>
++    <div className="mt-3 min-w-0">
++      <p className="text-slate-400">{hasShortfall ? (en ? 'To deposit' : 'Cần nộp') : (en ? 'Locked' : 'Đang khóa')}</p>
++      <p className="mt-0.5 break-all text-lg font-bold tabular-nums text-amber-200 sm:text-xl">{amount(hasShortfall ? quote?.shortfall : lockedAmount)}</p>
++      <p className="mt-1 break-words text-[11px] text-slate-400">
++        {hasShortfall ? (en ? 'Balance after deposit:' : 'Số dư sau nộp:') : (en ? 'Wallet balance:' : 'Số dư ví:')}{' '}
++        <span className="break-all tabular-nums">{amount(hasShortfall ? quote?.after : walletBalance)}</span>
++      </p>
++    </div>
++    {quote && quote.deficit > 0n && <p role="alert" className="mt-2 break-words text-red-300">{en ? 'Insufficient balance. Missing' : 'Không đủ số dư. Còn thiếu'} <span className="break-all">{amount(quote.deficit)}</span>.</p>}
++    {view?.policy === 'loading' && <p role="status" className="mt-2 text-amber-200">{en ? 'Checking collateral…' : 'Đang kiểm tra ký quỹ…'}</p>}
++    {(!view || view.policy === 'unknown') && <p role="status" className="mt-2 text-amber-200">{en ? 'Collateral unavailable. Refresh in Details before signing.' : 'Chưa đọc được ký quỹ. Đọc lại trong Chi tiết trước khi ký.'}</p>}
++    {view?.policy === 'legacy' && <p className="mt-2 text-amber-200">{en ? 'Legacy contract: changed requirements and prior approvals may change the debit.' : 'Hợp đồng cũ: mức yêu cầu thay đổi và quyền đã cấp có thể làm đổi khoản trừ.'}</p>}
++    {children && <div className="mt-3 space-y-2 empty:hidden">{children}</div>}
++    <details className="mt-3 min-w-0 border-t border-amber-500/10 pt-2">
++      <summary className="cursor-pointer select-none text-[11px] text-slate-400 hover:text-amber-200">{en ? 'Details' : 'Chi tiết'}</summary>
++      <dl className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
+         {[
+-          [en ? 'Required' : 'Yêu cầu', quote.required],
+-          [en ? 'Locked' : 'Đã khóa', quote.locked],
+-          [en ? 'To deposit' : 'Cần nộp', quote.shortfall],
+-          [en ? 'Wallet balance' : 'Số dư ví', quote.balance],
+-          [en ? 'Estimated balance after' : 'Số dư dự kiến sau nộp', quote.after],
+-        ].map(([label, amount]) => <div key={String(label)}><dt>{String(label)}</dt><dd>{typeof amount === 'bigint' ? `${formatCollateral(amount)} CirBTC` : (en ? 'Unavailable' : 'Không khả dụng')}</dd></div>)}
++          [en ? 'Required' : 'Yêu cầu', quote?.required ?? required],
++          [en ? 'Locked' : 'Đã khóa', lockedAmount],
++          [en ? 'To deposit' : 'Cần nộp', quote?.shortfall],
++          [en ? 'Wallet balance' : 'Số dư ví', walletBalance],
++          [en ? 'Rewards (separate)' : 'Phần thưởng (riêng)', rewards],
++        ].map(([label, value]) => <div key={String(label)} className="min-w-0"><dt className="text-slate-400">{String(label)}</dt><dd className="break-all tabular-nums">{amount(typeof value === 'bigint' ? value : undefined)}</dd></div>)}
+       </dl>
+-      {quote.deficit > 0n && <p role="alert" className="mt-2 text-red-300">{en ? 'Insufficient balance. Missing' : 'Không đủ số dư. Còn thiếu'} {formatCollateral(quote.deficit)} CirBTC.</p>}
+-      <p className="mt-2">{en ? 'Approval only grants permission; it does not transfer tokens. The balance estimate excludes USDC gas. Claimable rewards are separate from locked collateral.' : 'Cấp quyền chỉ cho phép sử dụng token, chưa chuyển tiền. Số dư dự tính chưa gồm gas USDC. Phần thưởng có thể nhận tách biệt với ký quỹ đang khóa.'}</p>
+-    </>}
+-    {view && <button type="button" disabled={view.policy === 'loading'} onClick={() => { void view.refresh(); }} className="mt-3 underline disabled:opacity-50">{en ? 'Refresh collateral review' : 'Đọc lại ký quỹ'}</button>}
++      <div className="mt-3 space-y-1 break-all text-[11px] text-slate-400">
++        <p>{en ? 'Club' : 'Nhóm'}: {quote?.group ?? groupAddress ?? '—'}</p>
++        <p>Token: {quote?.token ?? tokenAddress ?? '—'}</p>
++        <p>{en ? 'Wallet' : 'Ví'}: {quote?.account ?? accountAddress ?? '—'}</p>
++      </div>
++      <p className="mt-3 leading-relaxed">{policyExplanation}</p>
++      {detailsNotice && <p className="mt-2 leading-relaxed">{detailsNotice}</p>}
++      <p className="mt-2 leading-relaxed">{en ? 'Approval only grants permission; it does not transfer tokens. The balance estimate excludes USDC gas. Claimable rewards are separate from locked collateral.' : 'Cấp quyền chỉ cho phép sử dụng token, chưa chuyển tiền. Số dư dự tính chưa gồm gas USDC. Phần thưởng có thể nhận tách biệt với ký quỹ đang khóa.'}</p>
++      {view && <button type="button" disabled={view.policy === 'loading'} onClick={() => { void view.refresh(); }} className="mt-3 underline disabled:opacity-50">{en ? 'Refresh collateral review' : 'Đọc lại ký quỹ'}</button>}
++    </details>
+   </section>;
+ }
+--- baseline/src/components/savings/ActionPanel.tsx
++++ src/components/savings/ActionPanel.tsx
+@@ -648,72 +648,41 @@
+         </p>
+       )}
+ 
+-      {state === GROUP_STATE.ACTIVE && isMember && !isKicked && quote && quote.required > 0n && quote.shortfall > 0n && (
+-        <p role="status" className="mx-5 my-3 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-xs text-amber-200">
+-          {t("actionPanel.cycleNoCollateralNotice", language)}
+-        </p>
+-      )}
+-
+-      <CollateralPreview view={collateralView} language={language} />
+-      {canTopUp && <button type="button" onClick={handleDepositCollateral} disabled={isLoading || isReviewingCollateral || !collateralReady} className="mx-5 my-3 rounded-xl border border-amber-500/40 px-4 py-3 text-xs text-amber-200 disabled:opacity-40">
+-        {needsCirBtcApproval
+-          ? (isEn ? 'Approve CirBTC, then review and deposit' : 'Cấp quyền CirBTC, sau đó xem lại và nộp')
+-          : (isEn ? 'Deposit collateral' : 'Nộp bổ sung ký quỹ')} ({quote ? formatCollateral(quote.shortfall) : '—'} CirBTC)
+-      </button>}
+-
+-      {/* --- CirBTC Collateral Vault Card (TASK-043) --- */}
+-      {((collateralAmount !== undefined && collateralAmount > 0n) ||
+-        (lockedCollateral !== undefined && lockedCollateral > 0n) ||
+-        (claimableCirBtc !== undefined && claimableCirBtc > 0n)) && (
+-        <div className="p-6 border-b border-amber-500/20 bg-gradient-to-br from-amber-950/40 via-[#0c0d14] to-[#0c0d14]">
+-          <div className="rounded-2xl p-4 sm:p-5 bg-amber-950/30 border border-amber-500/30 space-y-3">
+-            <div className="flex items-start justify-between gap-3">
+-              <div className="flex items-center gap-2.5">
+-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 border border-amber-500/30">
+-                  <ShieldCheck size={22} className="text-amber-400" />
+-                </div>
+-                <div>
+-                  <h4 className="font-bold text-sm sm:text-base text-amber-200">
+-                    {t("collateral.badgeTitle", language)}
+-                  </h4>
+-                  <p className="text-xs text-amber-300/80">
+-                    {vaultStatus}
+-                  </p>
+-                </div>
+-              </div>
+-              <div className="text-right">
+-                <p className="text-xs text-slate-400">{isEn ? 'Locked collateral' : 'Ký quỹ đang khóa'}</p>
+-                <span className="text-lg sm:text-xl font-black text-amber-300 tabular-nums">
+-                  {lockedCollateral === undefined ? (isEn ? "Unavailable" : "Chưa đọc được") : formatCollateral(lockedCollateral)}
+-                </span>
+-                <span className="text-xs font-bold text-amber-400 ml-1">CirBTC</span>
+-                <p className="text-xs text-slate-400 font-mono mt-1">
+-                  {isEn ? 'Rewards (separate):' : 'Phần thưởng (riêng):'} {claimableCirBtc === undefined ? (isEn ? 'Unavailable' : 'Chưa đọc được') : `${formatCollateral(claimableCirBtc)} CirBTC`}
+-                </p>
+-                <p className="text-xs text-slate-400 font-mono mt-1">
+-                  {isEn ? 'Wallet:' : 'Số dư ví:'} {cirBtcBalance === undefined ? (isEn ? 'Unavailable' : 'Chưa đọc được') : `${formatCollateral(cirBtcBalance)} CirBTC`}
+-                </p>
+-              </div>
+-            </div>
+-            <p className="text-xs text-slate-300 leading-relaxed">
+-              {t("collateral.securityNotice", language)}
+-            </p>
+-            {(state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED) &&
+-              !isKicked &&
+-              ((lockedCollateral ?? 0n) + (claimableCirBtc ?? 0n) > 0n) && (
+-                <button
+-                  type="button"
+-                  onClick={handleClaimCollateral}
+-                  disabled={isLoading}
+-                  className="w-full py-3 px-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold rounded-xl transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer text-sm"
+-                >
+-                  <ShieldCheck size={16} className="text-slate-950" />
+-                  <span>{t("collateral.claimBtn", language)}</span>
+-                </button>
+-              )}
+-          </div>
+-        </div>
+-      )}
++      <CollateralPreview
++        view={collateralView}
++        language={language}
++        status={vaultStatus}
++        required={collateralAmount}
++        locked={lockedCollateral}
++        balance={cirBtcBalance}
++        rewards={claimableCirBtc}
++        groupAddress={targetContract}
++        tokenAddress={collateralToken}
++        accountAddress={address}
++        detailsNotice={<>
++          {state === GROUP_STATE.ACTIVE && isMember && !isKicked && quote && quote.required > 0n && quote.shortfall > 0n && <span className="block mb-2">{t("actionPanel.cycleNoCollateralNotice", language)}</span>}
++          {t("collateral.securityNotice", language)}
++        </>}
++      >
++        {canTopUp && <button type="button" onClick={handleDepositCollateral} disabled={isLoading || isReviewingCollateral || !collateralReady} className="w-full rounded-xl border border-amber-500/40 px-3 py-2.5 text-xs text-amber-200 disabled:opacity-40">
++          {needsCirBtcApproval
++            ? (isEn ? 'Approve CirBTC, then review and deposit' : 'Cấp quyền CirBTC, sau đó xem lại và nộp')
++            : (isEn ? 'Deposit collateral' : 'Nộp bổ sung ký quỹ')} ({quote ? formatCollateral(quote.shortfall) : '—'} CirBTC)
++        </button>}
++        {(state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED) &&
++          !isKicked &&
++          ((lockedCollateral ?? 0n) + (claimableCirBtc ?? 0n) > 0n) && (
++            <button
++              type="button"
++              onClick={handleClaimCollateral}
++              disabled={isLoading}
++              className="w-full py-3 px-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold rounded-xl transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer text-sm"
++            >
++              <ShieldCheck size={16} className="text-slate-950" />
++              <span>{t("collateral.claimBtn", language)}</span>
++            </button>
++          )}
++      </CollateralPreview>
+ 
+       {/* --- OPEN state: Join --- */}
+       {state === GROUP_STATE.ACTIVE && isMember && (
+--- baseline/src/components/savings/PasskeyActionPanel.tsx
++++ src/components/savings/PasskeyActionPanel.tsx
+@@ -479,72 +479,41 @@
+         </p>
+       )}
+ 
+-      {state === GROUP_STATE.ACTIVE && isMember && !isKicked && quote && quote.required > 0n && quote.shortfall > 0n && (
+-        <p role="status" className="mx-5 my-3 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3 text-xs text-amber-200">
+-          {t("actionPanel.cycleNoCollateralNotice", language)}
+-        </p>
+-      )}
+-
+-      <CollateralPreview view={collateralView} language={language} />
+-      {canTopUp && <button type="button" onClick={handleDepositCollateral} disabled={isLoading || isReviewingCollateral || !collateralReady} className="mx-5 my-3 rounded-xl border border-amber-500/40 px-4 py-3 text-xs text-amber-200 disabled:opacity-40">
+-        {needsCirBtcApproval
+-          ? (isEn ? 'Approve + deposit CirBTC in one batch' : 'Cấp quyền + nộp CirBTC trong một giao dịch')
+-          : (isEn ? 'Deposit collateral' : 'Nộp bổ sung ký quỹ')} ({quote ? formatCollateral(quote.shortfall) : '—'} CirBTC)
+-      </button>}
+-
+-      {/* CirBTC Collateral Vault Card (TASK-043) */}
+-      {((collateralAmount !== undefined && collateralAmount > 0n) ||
+-        (lockedCollateral !== undefined && lockedCollateral > 0n) ||
+-        (claimableCirBtc !== undefined && claimableCirBtc > 0n)) && (
+-        <div className="p-4 sm:p-5 border-b border-amber-500/20 bg-gradient-to-br from-amber-950/40 via-[#0c0d14] to-[#0c0d14]">
+-          <div className="rounded-2xl p-4 sm:p-5 bg-amber-950/30 border border-amber-500/30 space-y-3">
+-            <div className="flex items-start justify-between gap-3">
+-              <div className="flex items-center gap-2.5">
+-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 border border-amber-500/30">
+-                  <ShieldCheck size={22} className="text-amber-400" />
+-                </div>
+-                <div>
+-                  <h4 className="font-bold text-sm sm:text-base text-amber-200">
+-                    {t("collateral.badgeTitle", language)}
+-                  </h4>
+-                  <p className="text-xs text-amber-300/80">
+-                    {vaultStatus}
+-                  </p>
+-                </div>
+-              </div>
+-              <div className="text-right">
+-                <p className="text-xs text-slate-400">{isEn ? 'Locked collateral' : 'Ký quỹ đang khóa'}</p>
+-                <span className="text-lg sm:text-xl font-black text-amber-300 tabular-nums">
+-                  {lockedCollateral === undefined ? (isEn ? "Unavailable" : "Chưa đọc được") : formatCollateral(lockedCollateral)}
+-                </span>
+-                <span className="text-xs font-bold text-amber-400 ml-1">CirBTC</span>
+-                <p className="text-xs text-slate-400 font-mono mt-1">
+-                  {isEn ? 'Rewards (separate):' : 'Phần thưởng (riêng):'} {claimableCirBtc === undefined ? (isEn ? 'Unavailable' : 'Chưa đọc được') : `${formatCollateral(claimableCirBtc)} CirBTC`}
+-                </p>
+-                <p className="text-xs text-slate-400 font-mono mt-1">
+-                  {isEn ? 'Wallet:' : 'Số dư ví:'} {quote?.balance === undefined ? (isEn ? 'Unavailable' : 'Chưa đọc được') : `${formatCollateral(quote?.balance)} CirBTC`}
+-                </p>
+-              </div>
+-            </div>
+-            <p className="text-xs text-slate-300 leading-relaxed">
+-              {t("collateral.securityNotice", language)}
+-            </p>
+-            {(state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED) &&
+-              !isKicked &&
+-              ((lockedCollateral ?? 0n) + (claimableCirBtc ?? 0n) > 0n) && (
+-                <button
+-                  type="button"
+-                  onClick={handleClaimCollateralPasskey}
+-                  disabled={isLoading}
+-                  className="w-full py-3 px-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold rounded-xl transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer text-sm"
+-                >
+-                  <ShieldCheck size={16} className="text-slate-950" />
+-                  <span>{t("collateral.claimBtn", language)}</span>
+-                </button>
+-              )}
+-          </div>
+-        </div>
+-      )}
++      <CollateralPreview
++        view={collateralView}
++        language={language}
++        status={vaultStatus}
++        required={collateralAmount}
++        locked={lockedCollateral}
++        balance={quote?.balance}
++        rewards={claimableCirBtc}
++        groupAddress={targetContract}
++        tokenAddress={quote?.token}
++        accountAddress={account.address}
++        detailsNotice={<>
++          {state === GROUP_STATE.ACTIVE && isMember && !isKicked && quote && quote.required > 0n && quote.shortfall > 0n && <span className="block mb-2">{t("actionPanel.cycleNoCollateralNotice", language)}</span>}
++          {t("collateral.securityNotice", language)}
++        </>}
++      >
++        {canTopUp && <button type="button" onClick={handleDepositCollateral} disabled={isLoading || isReviewingCollateral || !collateralReady} className="w-full rounded-xl border border-amber-500/40 px-3 py-2.5 text-xs text-amber-200 disabled:opacity-40">
++          {needsCirBtcApproval
++            ? (isEn ? 'Approve + deposit CirBTC in one batch' : 'Cấp quyền + nộp CirBTC trong một giao dịch')
++            : (isEn ? 'Deposit collateral' : 'Nộp bổ sung ký quỹ')} ({quote ? formatCollateral(quote.shortfall) : '—'} CirBTC)
++        </button>}
++        {(state === GROUP_STATE.COMPLETED || state === GROUP_STATE.CANCELLED) &&
++          !isKicked &&
++          ((lockedCollateral ?? 0n) + (claimableCirBtc ?? 0n) > 0n) && (
++            <button
++              type="button"
++              onClick={handleClaimCollateralPasskey}
++              disabled={isLoading}
++              className="w-full py-3 px-4 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold rounded-xl transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer text-sm"
++            >
++              <ShieldCheck size={16} className="text-slate-950" />
++              <span>{t("collateral.claimBtn", language)}</span>
++            </button>
++          )}
++      </CollateralPreview>
+ 
+       {(state === GROUP_STATE.OPEN || state === GROUP_STATE.ACTIVE) && isMember && (
+         <div className="p-5 border-b border-red-500/20 space-y-3">

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useReadContracts } from "wagmi";
+import type { Abi } from "viem";
 import { toast } from "sonner";
 import {
   X,
@@ -13,7 +15,12 @@ import {
   AlertTriangle,
   Pencil,
 } from "lucide-react";
-import { formatAddress } from "../../contract";
+import {
+  formatAddress,
+  ROTATING_SAVINGS_ABI,
+  ARC_TESTNET_CHAIN_ID,
+  GROUP_STATE,
+} from "../../contract";
 import {
   getKnownGroups,
   removeKnownGroup,
@@ -55,6 +62,31 @@ export function ClubDirectoryModal({
       setGroups(getKnownGroups());
     }
   }, [isOpen]);
+
+  const stateContracts = useMemo(() => {
+    return groups.flatMap((g) => [
+      {
+        address: g.address,
+        abi: ROTATING_SAVINGS_ABI as Abi,
+        functionName: "state",
+        chainId: ARC_TESTNET_CHAIN_ID,
+      },
+      {
+        address: g.address,
+        abi: ROTATING_SAVINGS_ABI as Abi,
+        functionName: "members",
+        args: [0n],
+        chainId: ARC_TESTNET_CHAIN_ID,
+      },
+    ]);
+  }, [groups]);
+
+  const { data: stateData } = useReadContracts({
+    contracts: stateContracts,
+    query: {
+      enabled: isOpen && groups.length > 0,
+    },
+  });
 
   const customGroupsCount = useMemo(() => {
     return groups.filter((g) => !g.isDefault).length;
@@ -123,12 +155,57 @@ export function ClubDirectoryModal({
 
   const handleDeleteGroup = (group: SavingsClubItem, e: React.MouseEvent) => {
     e.stopPropagation();
+    const groupIndex = groups.findIndex(
+      (g) => g.address.toLowerCase() === group.address.toLowerCase()
+    );
+    const rawState =
+      stateData?.[groupIndex * 2]?.status === "success"
+        ? (stateData[groupIndex * 2].result as number)
+        : undefined;
+    const hasMember0 =
+      stateData?.[groupIndex * 2 + 1]?.status === "success" &&
+      Boolean(stateData[groupIndex * 2 + 1].result);
+    const isActive =
+      rawState === GROUP_STATE.ACTIVE ||
+      (rawState === GROUP_STATE.OPEN && hasMember0);
+
+    if (isActive) {
+      toast.error(
+        isEn
+          ? t("clubDirectoryModal.deleteActiveError", language)
+          : "Không thể xóa nhóm đang hoạt động!"
+      );
+      return;
+    }
     setConfirmingClub(group);
   };
 
   const handleConfirmDelete = () => {
     if (!confirmingClub) return;
     const group = confirmingClub;
+    const groupIndex = groups.findIndex(
+      (g) => g.address.toLowerCase() === group.address.toLowerCase()
+    );
+    const rawState =
+      stateData?.[groupIndex * 2]?.status === "success"
+        ? (stateData[groupIndex * 2].result as number)
+        : undefined;
+    const hasMember0 =
+      stateData?.[groupIndex * 2 + 1]?.status === "success" &&
+      Boolean(stateData[groupIndex * 2 + 1].result);
+    const isActive =
+      rawState === GROUP_STATE.ACTIVE ||
+      (rawState === GROUP_STATE.OPEN && hasMember0);
+
+    if (isActive) {
+      toast.error(
+        isEn
+          ? t("clubDirectoryModal.deleteActiveError", language)
+          : "Không thể xóa nhóm đang hoạt động!"
+      );
+      setConfirmingClub(null);
+      return;
+    }
     removeKnownGroup(group.address);
     const updated = getKnownGroups();
     setGroups(updated);
@@ -204,9 +281,19 @@ export function ClubDirectoryModal({
               <p>{isEn ? t("clubDirectoryModal.emptyList", language) : "Chưa có nhóm nào trong danh sách."}</p>
             </div>
           ) : (
-            groups.map((group) => {
+            groups.map((group, index) => {
               const isCurrent =
                 group.address.toLowerCase() === currentAddress.toLowerCase();
+              const rawState =
+                stateData?.[index * 2]?.status === "success"
+                  ? (stateData[index * 2].result as number)
+                  : undefined;
+              const hasMember0 =
+                stateData?.[index * 2 + 1]?.status === "success" &&
+                Boolean(stateData[index * 2 + 1].result);
+              const isActive =
+                rawState === GROUP_STATE.ACTIVE ||
+                (rawState === GROUP_STATE.OPEN && hasMember0);
 
               return (
                 <div
@@ -235,6 +322,32 @@ export function ClubDirectoryModal({
                         >
                           <Pencil size={14} />
                         </button>
+
+                        {/* On-chain Status Badge */}
+                        {rawState === GROUP_STATE.OPEN && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-950/40 text-emerald-300 border border-emerald-500/30">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            {hasMember0
+                              ? (isEn ? "Open" : "Mở tham gia")
+                              : (isEn ? "Open (0 members)" : "Mở tham gia (0 tv)")}
+                          </span>
+                        )}
+                        {rawState === GROUP_STATE.ACTIVE && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-950/40 text-amber-300 border border-amber-500/30">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                            {isEn ? "Active" : "Đang chạy"}
+                          </span>
+                        )}
+                        {rawState === GROUP_STATE.COMPLETED && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-950/40 text-purple-300 border border-purple-500/30">
+                            {isEn ? "Completed" : "Hoàn thành"}
+                          </span>
+                        )}
+                        {rawState === GROUP_STATE.CANCELLED && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-950/40 text-red-300 border border-red-500/30">
+                            {isEn ? "Cancelled" : "Đã huỷ"}
+                          </span>
+                        )}
 
                         {group.isDefault && (
                           <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-950/40 text-amber-300 border border-amber-500/30">
@@ -296,14 +409,34 @@ export function ClubDirectoryModal({
                       )}
 
                       {/* Icon xóa cho từng club (cancle, hết hạn, hoặc không chơi nữa) */}
-                      <button
-                        onClick={(e) => handleDeleteGroup(group, e)}
-                        className="p-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-950/40 border border-slate-800 hover:border-red-500/30 transition-all cursor-pointer shrink-0"
-                        title={isEn ? t("clubDirectoryModal.deleteClubTooltip", language) : "Xóa nhóm khỏi danh sách (đã hủy / hết hạn / không chơi nữa)"}
-                        aria-label={isEn ? `Delete ${group.name}` : `Xóa nhóm ${group.name}`}
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {isActive ? (
+                        <button
+                          type="button"
+                          disabled={true}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toast.error(
+                              isEn
+                                ? t("clubDirectoryModal.deleteActiveError", language)
+                                : "Không thể xóa nhóm đang hoạt động!"
+                            );
+                          }}
+                          className="p-2 rounded-xl text-slate-600 bg-slate-900/40 border border-slate-800 cursor-not-allowed opacity-40 shrink-0"
+                          title={isEn ? t("clubDirectoryModal.deleteClubDisabledTooltip", language) : "Không thể xóa nhóm đang hoạt động (Mở tham gia / Đang chạy)"}
+                          aria-label={isEn ? `Cannot delete active club ${group.name}` : `Không thể xóa nhóm đang hoạt động ${group.name}`}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => handleDeleteGroup(group, e)}
+                          className="p-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-950/40 border border-slate-800 hover:border-red-500/30 transition-all cursor-pointer shrink-0"
+                          title={isEn ? t("clubDirectoryModal.deleteClubTooltip", language) : "Xóa nhóm khỏi danh sách (đã hủy / hết hạn / không chơi nữa)"}
+                          aria-label={isEn ? `Delete ${group.name}` : `Xóa nhóm ${group.name}`}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

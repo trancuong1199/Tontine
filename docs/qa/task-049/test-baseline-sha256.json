@@ -1,0 +1,7 @@
+{
+  "contracts/test/ArcReviewFixes.t.sol": "ffdf281a5e8098a71f792aca4ec268ad7db4ea9d5a3b7e318d4d6f20d4f27a27",
+  "contracts/test/RotatingSavings.t.sol": "5ff789d2ea83427145be61e2ed9fe6e120ff41a5753d030db8bbc5da3a709b96",
+  "contracts/test/ReviewV3Semantics.t.sol": "18310c1e9ed89884d5ca07f3891be719757ecff8ce538c65a92eb31b46e4fc1f",
+  "contracts/test/ReviewFollowup.t.sol": "bf43e84e64268050022a0de47b9d795a631469d310a6c93175b71623bf5367d8",
+  "tests/arc-review-fixes.test.ts": "ac3d30a6668cbefbdab426b728fb12306327bddaeb622d20245b9095251f1cf8"
+}

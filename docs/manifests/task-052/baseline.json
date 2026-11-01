@@ -1,0 +1,16 @@
+{
+  "taskId": "task-052",
+  "createdAt": "2026-10-28T10:53:13.621Z",
+  "files": {
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "f76ffe4a28ce0743f78b07ad3ea889753fb12e9a09c9be847c61fc3220d864db",
+      "snapshot": "docs/manifests/task-052/baseline/src_App.tsx"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "2d6aac87f91e177d9d51500c51f959136a2cfd49d64c4ce4524ad2eb34c1bcc8",
+      "snapshot": "docs/manifests/task-052/baseline/src_lib_i18n.ts"
+    }
+  }
+}

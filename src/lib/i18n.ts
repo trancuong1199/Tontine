@@ -302,6 +302,8 @@ export interface Translations {
     clearOldClubsSuccess: string;
     clearOldClubsEmpty: string;
     deleteClubTooltip: string;
+    deleteClubDisabledTooltip: string;
+    deleteActiveError: string;
     deleteClubSuccess: string;
     deleteClubAndSwitched: string;
     confirmDeleteTitle: string;
@@ -739,6 +741,8 @@ export const translations: Record<Language, Translations> = {
       clearOldClubsSuccess: "Đã dọn dẹp danh sách nhóm hụi cũ!",
       clearOldClubsEmpty: "Danh bạ hiện đã sạch sẽ, chỉ chứa các nhóm mặc định.",
       deleteClubTooltip: "Xóa nhóm khỏi danh sách (đã hủy / hết hạn / không chơi nữa)",
+      deleteClubDisabledTooltip: "Không thể xóa nhóm đang hoạt động (Mở tham gia / Đang chạy)",
+      deleteActiveError: "Không thể xóa nhóm đang hoạt động!",
       deleteClubSuccess: "Đã xóa nhóm \"{name}\" khỏi danh sách!",
       deleteClubAndSwitched: "Đã xóa nhóm \"{name}\" và chuyển về nhóm mặc định!",
       confirmDeleteTitle: "Xác nhận xóa nhóm",
@@ -1174,6 +1178,8 @@ export const translations: Record<Language, Translations> = {
       clearOldClubsSuccess: "Cleaned up old savings clubs!",
       clearOldClubsEmpty: "Directory is already clean with default clubs.",
       deleteClubTooltip: "Remove club from directory (cancelled / expired / not playing)",
+      deleteClubDisabledTooltip: "Cannot remove active savings club (Open / Active)",
+      deleteActiveError: "Cannot remove a savings club that is currently active!",
       deleteClubSuccess: "Removed club \"{name}\" from directory!",
       deleteClubAndSwitched: "Removed club \"{name}\" and switched to default club!",
       confirmDeleteTitle: "Confirm Delete Club",

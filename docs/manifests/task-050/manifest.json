@@ -1,0 +1,22 @@
+{
+  "taskId": "task-050",
+  "frozenAt": "2026-10-25T16:13:34.120Z",
+  "status": "FROZEN",
+  "files": {
+    "src/components/savings/CollateralPreview.tsx": {
+      "sha256": "6c386d3240de0793c8dd46796ddcc1b5fe95cb8817706f2231bb16b59b11d8ad",
+      "baselineSha256": "a64ca62002f019129ee21dbb2f374805e96f01c75767f5d14b83a89130fc7be4",
+      "isNew": false
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "7ab2647619c0ceba65d4af5c397c1c67f027cde9402c17668d725725fa894e76",
+      "baselineSha256": "40d161c142054293eb5c34cef869ad0ce66b371fc8c02675e5c820038f6ec1fc",
+      "isNew": false
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "sha256": "9e03acbca209ac3309a8f3b6c6db0186e2852c090cebdbdbdfd78d4490484e1c",
+      "baselineSha256": "defe4e8afe52968f04a29a210f3f92e2b0ad99297eaea2a93f8de7dca6282b8b",
+      "isNew": false
+    }
+  }
+}

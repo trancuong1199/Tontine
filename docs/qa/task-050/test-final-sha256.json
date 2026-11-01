@@ -1,0 +1,6 @@
+{
+  "tests/collateral-policy.test.ts": "ca4d024350958f6f1d8af9247b88ea37e6fdad0adc48293fada02038e57096d7",
+  "tests/review-followup.test.ts": "d21eb60f0942bcdcf09280e6e80fe939ad48cfd8a584a5ddbba3f94151e7f980",
+  "tests/cycle-capability.test.ts": "4ea280093b5992e0311155bd5cc3bf48c95cb5007850d0a0af4f950816c26d00",
+  "tests/cirbtc-collateral-vault.test.ts": "b10b949cda6d5f841aa7139f5a9bdcd65d3445e10d500e57ca50a351b9240bc4"
+}

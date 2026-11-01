@@ -1,0 +1,21 @@
+{
+  "taskId": "task-050",
+  "createdAt": "2026-10-25T16:10:45.538Z",
+  "files": {
+    "src/components/savings/CollateralPreview.tsx": {
+      "exists": true,
+      "sha256": "a64ca62002f019129ee21dbb2f374805e96f01c75767f5d14b83a89130fc7be4",
+      "snapshot": "docs/manifests/task-050/baseline/src_components_savings_CollateralPreview.tsx"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "40d161c142054293eb5c34cef869ad0ce66b371fc8c02675e5c820038f6ec1fc",
+      "snapshot": "docs/manifests/task-050/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "defe4e8afe52968f04a29a210f3f92e2b0ad99297eaea2a93f8de7dca6282b8b",
+      "snapshot": "docs/manifests/task-050/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    }
+  }
+}

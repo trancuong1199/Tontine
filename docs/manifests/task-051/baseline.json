@@ -1,0 +1,36 @@
+{
+  "taskId": "task-051",
+  "createdAt": "2026-10-28T10:17:10.029Z",
+  "files": {
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "f7a1d8a699e1c55ae1f5eab63b4cfda4241228c263908d363eb4a1302ffafd79",
+      "snapshot": "docs/manifests/task-051/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "9e03acbca209ac3309a8f3b6c6db0186e2852c090cebdbdbdfd78d4490484e1c",
+      "snapshot": "docs/manifests/task-051/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    },
+    "src/components/savings/CreateClubModal.tsx": {
+      "exists": true,
+      "sha256": "f7b816855d3f55d8fe6667c4a601669c55e96693a5a77d77f7ebb840fcbd5174",
+      "snapshot": "docs/manifests/task-051/baseline/src_components_savings_CreateClubModal.tsx"
+    },
+    "src/components/savings/GroupSwitcher.tsx": {
+      "exists": true,
+      "sha256": "79a45d3221f78d8dfe5db69a90c94024dac959601e1b97ab5f06d7e638ddd9bf",
+      "snapshot": "docs/manifests/task-051/baseline/src_components_savings_GroupSwitcher.tsx"
+    },
+    "src/lib/savingsClubDirectory.ts": {
+      "exists": true,
+      "sha256": "b3d4340c6cfa4f23eea3fbf404afa429e36fbdc2b8408ec54e0ed3ecf207d027",
+      "snapshot": "docs/manifests/task-051/baseline/src_lib_savingsClubDirectory.ts"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "2d6aac87f91e177d9d51500c51f959136a2cfd49d64c4ce4524ad2eb34c1bcc8",
+      "snapshot": "docs/manifests/task-051/baseline/src_lib_i18n.ts"
+    }
+  }
+}

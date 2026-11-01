@@ -1,0 +1,11 @@
+{
+  "command": [
+    "node",
+    "scripts/manifest-tool.mjs",
+    "verify",
+    "task-049"
+  ],
+  "started": "2026-10-25T15:51:31.415282+00:00",
+  "finished": "2026-10-25T15:51:31.462100+00:00",
+  "exitCode": 0
+}

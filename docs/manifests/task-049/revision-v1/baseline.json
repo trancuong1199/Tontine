@@ -1,0 +1,111 @@
+{
+  "taskId": "task-049",
+  "createdAt": "2026-10-25T15:44:47.018Z",
+  "files": {
+    "contracts/RotatingSavings.sol": {
+      "exists": true,
+      "sha256": "259f5c857d7ff69352e6df09cc41f9e19106f407a7a005c91394b51f5ed6677b",
+      "snapshot": "docs/manifests/task-049/baseline/contracts_RotatingSavings.sol"
+    },
+    "contracts/out/RotatingSavings.sol/RotatingSavings.json": {
+      "exists": true,
+      "sha256": "54e59f9ccdf1175802c3d22af6d138a40cf352e3fb943cbf43185b0c7bda7daf",
+      "snapshot": "docs/manifests/task-049/baseline/contracts_out_RotatingSavings.sol_RotatingSavings.json"
+    },
+    "src/contract.ts": {
+      "exists": true,
+      "sha256": "c85db5a177b77aee94af7df76ed6d0e1c7c1fe6f06c46dca186f596e723990cf",
+      "snapshot": "docs/manifests/task-049/baseline/src_contract.ts"
+    },
+    "src/hooks/useSavingsClub.ts": {
+      "exists": true,
+      "sha256": "9be5b1b0411f831c1be5bb8e6f75f756584eb654314bb6f0670491a85a6a0d82",
+      "snapshot": "docs/manifests/task-049/baseline/src_hooks_useSavingsClub.ts"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "4db1649f53608124d42c1523d6acbe4fe6f055cf2ec126548db48cc20ca9daa0",
+      "snapshot": "docs/manifests/task-049/baseline/src_App.tsx"
+    },
+    "src/components/savings/CreateClubModal.tsx": {
+      "exists": true,
+      "sha256": "708df2dd66df2defbf758623600fd6945ff1fd2312ad8ea90d2b678658a7e095",
+      "snapshot": "docs/manifests/task-049/baseline/src_components_savings_CreateClubModal.tsx"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "f45bd1891e71e5aca568a820806518ee43a8307e5ee507283bc843790a31de4e",
+      "snapshot": "docs/manifests/task-049/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "654900aef9e45f56d0dab907e71ad118c78cd3828e9a52cab75053191a6e0587",
+      "snapshot": "docs/manifests/task-049/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "exists": true,
+      "sha256": "24b27086467153955c15a8db62d247dee62475d48fa681bc8d9f7cb4f48eac5c",
+      "snapshot": "docs/manifests/task-049/baseline/src_components_savings_ClubCard.tsx"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "af1f0a5f340f3b9cbe99664cfcfd38b1ff20b741f4a5b87811d148745a6a3da5",
+      "snapshot": "docs/manifests/task-049/baseline/src_lib_i18n.ts"
+    },
+    "src/lib/savingsClubDirectory.ts": {
+      "exists": true,
+      "sha256": "167a9d51a9cb850ed41997e4af0afdd2edca35391404ad9c450f43e38c9f587f",
+      "snapshot": "docs/manifests/task-049/baseline/src_lib_savingsClubDirectory.ts"
+    },
+    "src/lib/collateralPolicy.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/components/savings/CollateralPreview.tsx": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/hooks/useCollateralPolicy.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "scripts/setup-10-members.mjs": {
+      "exists": true,
+      "sha256": "53f9d0ab7bdfa0eb6f205e626c34598c478bf93653a1569b4f621490afb7185d",
+      "snapshot": "docs/manifests/task-049/baseline/scripts_setup-10-members.mjs"
+    },
+    "scripts/setup-2min-arena.mjs": {
+      "exists": true,
+      "sha256": "8ae45dd1f4a56d252a7f4ebe756342349065c3cbddd157853adffe4f4ab3cbb8",
+      "snapshot": "docs/manifests/task-049/baseline/scripts_setup-2min-arena.mjs"
+    },
+    "scripts/wait-and-launch-interactive-arena.mjs": {
+      "exists": true,
+      "sha256": "60268cf74f3a9e74803df055a9e8dd583816325a56589dff1e38f4286dcb3f66",
+      "snapshot": "docs/manifests/task-049/baseline/scripts_wait-and-launch-interactive-arena.mjs"
+    },
+    "scripts/setup-complete-user-arena.mjs": {
+      "exists": true,
+      "sha256": "99a1df8b25e124f5e3d769e42facdff7593bc1e4b6df6dfbd6ce20404eae8e81",
+      "snapshot": "docs/manifests/task-049/baseline/scripts_setup-complete-user-arena.mjs"
+    },
+    "scripts/launch-interactive-arena.mjs": {
+      "exists": true,
+      "sha256": "f1df0713eee13dcb709e57a8ded994c7539d57efe27552221f0c8fd8b8f8c82d",
+      "snapshot": "docs/manifests/task-049/baseline/scripts_launch-interactive-arena.mjs"
+    },
+    "scripts/setup-interactive-bidding.mjs": {
+      "exists": true,
+      "sha256": "639a8ff821251a748fa705f083e0c6b676a89aadd54259adabc5a299f91838ef",
+      "snapshot": "docs/manifests/task-049/baseline/scripts_setup-interactive-bidding.mjs"
+    },
+    "src/hooks/useArcWriteContract.ts": {
+      "exists": true,
+      "sha256": "6d15a41d8b3a044230eeb08243036eb06414f412f28dbb1d43d3e402761cf160",
+      "snapshot": "docs/manifests/task-049/baseline/src_hooks_useArcWriteContract.ts"
+    }
+  }
+}

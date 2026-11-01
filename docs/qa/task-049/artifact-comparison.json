@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-10-25T15:56:09.131611+00:00",
+  "compiler": "native solc 0.8.28 via full independent forge test",
+  "compiledArtifact": "/tmp/task049-qa-out/RotatingSavings.sol/RotatingSavings.json",
+  "sourceSHA256": "5b720d576cbd5acf4223c5b2bc843ea8552b9779f8718eca500093759eadff01",
+  "abiEqual": true,
+  "creationBytecodeEqual": true,
+  "runtimeBytecodeEqual": true,
+  "exitCode": 0
+}

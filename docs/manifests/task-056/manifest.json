@@ -1,0 +1,17 @@
+{
+  "taskId": "task-056",
+  "frozenAt": "2026-11-01T12:19:38.845Z",
+  "status": "FROZEN",
+  "files": {
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "sha256": "154d816aae35e7ae07e8ecd4954cc3007ddf22c3cdb0236d914a86fbbf2d3897",
+      "baselineSha256": "574d4ec495609c6375a8e2c9b0e5dae1a8948a2651235f43b6898a31e4cada64",
+      "isNew": false
+    },
+    "src/lib/i18n.ts": {
+      "sha256": "56449afb8d19d18932a3be181890a19e0e0c323291cf80d1814607852a54ba4c",
+      "baselineSha256": "9c33ef02a0725a229fe2c878aaa2637b7b11464d0e3521919fc5c5f4903fc211",
+      "isNew": false
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "--experimental-strip-types",
+    "tests/review-followup.test.ts"
+  ],
+  "started": "2026-10-25T16:12:48.137864+00:00",
+  "finished": "2026-10-25T16:12:49.106061+00:00",
+  "exitCode": 0
+}

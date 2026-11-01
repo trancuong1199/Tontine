@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "--experimental-strip-types",
+    "tests/cirbtc-collateral-vault.test.ts"
+  ],
+  "started": "2026-10-25T16:14:04.717084+00:00",
+  "finished": "2026-10-25T16:14:05.246678+00:00",
+  "exitCode": 0
+}

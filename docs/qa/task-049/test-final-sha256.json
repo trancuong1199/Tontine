@@ -1,0 +1,16 @@
+{
+  "contracts/test/ArcReviewFixes.t.sol": "b5d02183dadecd00b497c5eb15ba48b306f2cdc6fdf08904de6aac662ae668b7",
+  "contracts/test/ReviewFollowup.t.sol": "9d87d53a1c6e8d7fd153ad9f219919fab20faaa8e0fbd6ecaa555ec0890d5763",
+  "contracts/test/ReviewV3Semantics.t.sol": "c0497b6e5fd05039ddda7c36bab7d948e5f7a346e28050317eb3d07299afdec7",
+  "contracts/test/RotatingSavings.t.sol": "ccf2fb50c12e59bd7e61d965a065d11b7134231602fca53ced87c2916859213d",
+  "tests/allowance-and-expiration-guard.test.ts": "67c52a70ed9839eb46b0be23da61ee4780a27af0fc23668e759d96cd4b1ccd91",
+  "tests/arc-review-fixes.test.ts": "fb1af7eb9ca2a1d1d63e3a1d4d9b78384274eae373996ed0eb7b76edccef87eb",
+  "tests/bilingual-and-layout.test.ts": "164301f620d0214b30a1cdee67713237bf11cc6b2f89d7b769e0c4f0c1616382",
+  "tests/cirbtc-collateral-vault.test.ts": "b10b949cda6d5f841aa7139f5a9bdcd65d3445e10d500e57ca50a351b9240bc4",
+  "tests/create-club.test.ts": "d0e2f5126ff8bab484f4e7592f1d68990a890e8e309a4d425cc3cbf781d7df0b",
+  "tests/review-followup.test.ts": "9d7d500a0c11788e4ec83fc5fc38b5d8e83938e20cdf792acc4bb7c8cdd5f296",
+  "tests/single-click-join.test.ts": "a675ec6ec54554fd64623042b146fe4e2ed3c0b219d04e3be0426ff9f263d097",
+  "tests/tontine-upgrade.test.ts": "1a0d5a96be6f6f1191fa12b822c5a67334417cc632aedcb81563d385fb4c9389",
+  "tests/collateral-policy.test.ts": "bf3b5cfd1a098a14606bfda3dd8997325c5f73a340acf3f3160c5f65272a1d0d",
+  "contracts/test/CollateralPolicy.t.sol": "5060b659cb0c7599e55d33c9ce8b28545e0271dee7ce384814ea44650dc4123a"
+}

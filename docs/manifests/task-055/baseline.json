@@ -1,0 +1,21 @@
+{
+  "taskId": "task-055",
+  "createdAt": "2026-10-28T11:55:28.241Z",
+  "files": {
+    "src/lib/savingsClubDirectory.ts": {
+      "exists": true,
+      "sha256": "494339ba02639b88bbb3c810d43978fed52de1784eda648de859e685f3ee1cc1",
+      "snapshot": "docs/manifests/task-055/baseline/src_lib_savingsClubDirectory.ts"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "79594ae03d6a57eefcdc1cdf595599393c07110338ca01879c3f87f8e90e9dc8",
+      "snapshot": "docs/manifests/task-055/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "exists": true,
+      "sha256": "5f6d2c83bd18e6dd86c36c8877e4b5ffddcaa01672041bfd474c58d48e221fd9",
+      "snapshot": "docs/manifests/task-055/baseline/src_components_savings_ClubCard.tsx"
+    }
+  }
+}

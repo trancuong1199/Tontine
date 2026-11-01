@@ -1,0 +1,20 @@
+{
+  "contracts/RotatingSavings.sol": true,
+  "contracts/out/RotatingSavings.sol/RotatingSavings.json": true,
+  "src/contract.ts": true,
+  "src/hooks/useSavingsClub.ts": true,
+  "src/App.tsx": true,
+  "src/components/savings/CreateClubModal.tsx": true,
+  "src/components/savings/ClubCard.tsx": true,
+  "src/lib/i18n.ts": true,
+  "src/lib/savingsClubDirectory.ts": true,
+  "src/lib/collateralPolicy.ts": true,
+  "src/hooks/useCollateralPolicy.ts": true,
+  "scripts/setup-10-members.mjs": true,
+  "scripts/setup-2min-arena.mjs": true,
+  "scripts/wait-and-launch-interactive-arena.mjs": true,
+  "scripts/setup-complete-user-arena.mjs": true,
+  "scripts/launch-interactive-arena.mjs": true,
+  "scripts/setup-interactive-bidding.mjs": true,
+  "src/hooks/useArcWriteContract.ts": true
+}
