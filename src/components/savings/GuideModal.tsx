@@ -26,6 +26,7 @@ export function GuideModal({
   onClose,
   language = "vi",
 }: GuideModalProps) {
+  const isEn = language === "en";
   // Handle ESC key to dismiss modal
   useEffect(() => {
     if (!isOpen) return;

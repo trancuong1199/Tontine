@@ -926,7 +926,7 @@ export default function App() {
           onToggleLanguage={handleToggleLanguage}
           onSelectLanguage={(lang) => {
             setLanguage(lang);
-            saveLanguage(lang);
+            setStoredLanguage(lang);
           }}
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
@@ -1019,7 +1019,7 @@ export default function App() {
                       type="button"
                       onClick={() => {
                         setLanguage("vi");
-                        saveLanguage("vi");
+                        setStoredLanguage("vi");
                         setIsPasskeyLangOpen(false);
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -1039,7 +1039,7 @@ export default function App() {
                       type="button"
                       onClick={() => {
                         setLanguage("en");
-                        saveLanguage("en");
+                        setStoredLanguage("en");
                         setIsPasskeyLangOpen(false);
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all mt-1 cursor-pointer ${
