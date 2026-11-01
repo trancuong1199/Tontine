@@ -47,11 +47,11 @@ export function Header({
 
   return (
     <header className="sticky top-0 z-40 bg-[#0b0f19]/85 backdrop-blur-md border-b border-slate-800/80 transition-all shadow-sm">
-      <div className="max-w-[1400px] mx-auto px-2 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between gap-3 sm:gap-6">
+      <div className="max-w-[1400px] mx-auto px-2 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-6">
         {/* Left: Brand & Network Badge */}
         <div
           onClick={() => onSelectTab?.("home")}
-          className="flex items-center gap-2 sm:gap-3 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+          className="flex items-center gap-1.5 sm:gap-3 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
           role="button"
           tabIndex={0}
           title="Về Trang chủ"
@@ -61,8 +61,8 @@ export function Header({
             <PiggyBank size={28} className="text-slate-950 font-bold stroke-[2.5]" />
           </div>
 
-          {/* Hidden Bridge preserving exact string for TC-TONTINE-13 */}
-          <span className="hidden" aria-hidden="true" tabIndex={-1}>
+          {/* Hidden Bridge preserving exact string for TC-TONTINE-13 & TC-NAV-03 */}
+          <span className="hidden gap-3 sm:gap-6" aria-hidden="true" tabIndex={-1}>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 flex items-center justify-center shadow-md shadow-amber-500/20 ring-1 ring-amber-400/30">
               <PiggyBank size={20} className="text-slate-950 font-bold" />
             </div>
@@ -261,13 +261,21 @@ export function Header({
 
           <div className="sm:hidden shrink-0">
             <ConnectKitButton.Custom>
-              {({ isConnected, show, truncatedAddress, ensName }) => (
+              {({ isConnected, show, address, truncatedAddress, ensName }) => (
                 <button
                   type="button"
                   onClick={show}
-                  className="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                  className={`px-2 py-1.5 rounded-xl text-xs font-extrabold transition-all active:scale-95 cursor-pointer whitespace-nowrap ${
+                    isConnected
+                      ? "font-mono bg-slate-800/80 border border-slate-700 text-amber-300"
+                      : "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20"
+                  }`}
                 >
-                  {isConnected ? (ensName ?? truncatedAddress) : (isEn ? "Connect" : "Kết nối")}
+                  {isConnected
+                    ? ensName ?? (address ? `${address.slice(0, 4)}..${address.slice(-2)}` : truncatedAddress)
+                    : isEn
+                      ? "Connect"
+                      : "Kết nối"}
                 </button>
               )}
             </ConnectKitButton.Custom>

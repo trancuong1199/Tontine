@@ -111,3 +111,17 @@ test("TC-MOB-07 (AC-03.4): App.tsx hiển thị toast.error khi pkState.status =
     "App.tsx phải hiển thị thông báo toast.error khi đăng ký/đăng nhập Passkey gặp lỗi"
   );
 });
+
+test("TC-MOB-08 (AC-01.2): Thanh Header khi đã đăng nhập (cả Passkey Topbar và Wagmi Header) gọn gàng trên mobile 375px — không xuống dòng nút Savings Clubs và rút gọn địa chỉ ví", () => {
+  assert.match(
+    appSrc,
+    /passkeyAddress\.slice\(0, 4\)\}\.\.\$\{passkeyAddress\.slice\(-2\)/,
+    "Passkey Topbar trong App.tsx phải rút gọn địa chỉ ví trên màn hình nhỏ (< sm)"
+  );
+  assert.match(
+    headerSrc,
+    /address\.slice\(0, 4\)\}\.\.\$\{address\.slice\(-2\)/,
+    "Header.tsx phải rút gọn địa chỉ ví đã kết nối trên màn hình nhỏ (< sm)"
+  );
+});
+

@@ -950,10 +950,10 @@ export default function App() {
       {/* Passkey top bar */}
       {passkeyAddress && (
         <header className="sticky top-0 z-40 bg-[#0b0f19]/85 backdrop-blur-md border-b border-slate-800/80 shadow-xs">
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between gap-3 sm:gap-6">
+          <div className="max-w-[1400px] mx-auto px-2 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-6">
             <div
               onClick={() => handleSelectTab("home")}
-              className="flex items-center gap-2.5 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+              className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
               role="button"
               tabIndex={0}
               title="Về Trang chủ"
@@ -969,7 +969,7 @@ export default function App() {
             </div>
 
             {/* Center: Navigation Tabs for Passkey */}
-            <nav className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-2xl border border-slate-800 shadow-2xs">
+            <nav className="flex items-center gap-0.5 sm:gap-1 bg-slate-900/80 p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border border-slate-800 shadow-2xs shrink-0">
               {/* Hidden Bridge for TC-NAV-01 & TC-BLACK-15 regex/inclusion tests */}
               <span className="hidden" aria-hidden="true">
                 {activeTab === "home" ? "bg-white text-blue-600 shadow-2xs" : ""}
@@ -978,7 +978,7 @@ export default function App() {
 
               <button
                 onClick={() => handleSelectTab("home")}
-                className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === "home"
                     ? "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20"
                     : "text-slate-400 hover:text-amber-200 hover:bg-slate-800/40"
@@ -988,7 +988,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => handleSelectTab("app")}
-                className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === "app"
                     ? "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20"
                     : "text-slate-400 hover:text-amber-200 hover:bg-slate-800/40"
@@ -998,21 +998,22 @@ export default function App() {
               </button>
             </nav>
 
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-3 shrink-0">
               {/* Language Selector Dropdown in Passkey Top Bar */}
               <div className="relative" ref={passkeyLangRef}>
                 <button
                   type="button"
                   onClick={() => setIsPasskeyLangOpen(!isPasskeyLangOpen)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 text-slate-200 hover:text-amber-300 transition-all active:scale-95 shadow-2xs cursor-pointer whitespace-nowrap"
+                  className="flex items-center gap-1 sm:gap-1.5 px-1.5 py-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 text-slate-200 hover:text-amber-300 transition-all active:scale-95 shadow-2xs cursor-pointer whitespace-nowrap"
                   title={language === "vi" ? "Chọn ngôn ngữ (Select Language)" : "Select Language (Chọn ngôn ngữ)"}
                   aria-label="Select language"
                   aria-haspopup="listbox"
                   aria-expanded={isPasskeyLangOpen}
                 >
-                  <Globe size={14} className="text-amber-400" />
-                  <span>{language === "en" ? "EN 🇬🇧" : "VI 🇻🇳"}</span>
-                  <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${isPasskeyLangOpen ? "rotate-180" : ""}`} />
+                  <Globe size={14} className="hidden sm:inline text-amber-400" />
+                  <span className="sm:hidden">{language === "en" ? "EN" : "VI"}</span>
+                  <span className="hidden sm:inline">{language === "en" ? "EN 🇬🇧" : "VI 🇻🇳"}</span>
+                  <ChevronDown size={13} className={`hidden sm:inline text-slate-400 transition-transform duration-200 ${isPasskeyLangOpen ? "rotate-180" : ""}`} />
                 </button>
 
                 {/* Hidden Bridge preserving exact test string for TC-BILINGUAL-02 */}
@@ -1075,7 +1076,7 @@ export default function App() {
               {/* Arc AppKit Button (Passkey Mode) */}
               <button
                 onClick={() => setShowArcAppKitModal(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-amber-500/40 bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 text-amber-300 transition-all active:scale-95 shadow-sm shadow-amber-500/10 cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-amber-500/40 bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 text-amber-300 transition-all active:scale-95 shadow-sm shadow-amber-500/10 cursor-pointer whitespace-nowrap"
                 title={t("arcAppKit.btnLabel", language)}
               >
                 <Zap size={14} className="text-amber-400 fill-amber-400/20 animate-pulse" />
@@ -1115,8 +1116,13 @@ export default function App() {
                   {formatUsdc(balance)} USDC
                 </span>
               )}
-              <div className="text-xs font-mono bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-slate-300 font-semibold">
-                {formatAddress(passkeyAddress)}
+              <div
+                onClick={() => setShowArcAppKitModal(true)}
+                className="text-xs font-mono bg-slate-800/80 px-2 sm:px-3 py-1.5 rounded-xl border border-slate-700 text-slate-300 font-semibold whitespace-nowrap cursor-pointer"
+                title={passkeyAddress}
+              >
+                <span className="sm:hidden">{`${passkeyAddress.slice(0, 4)}..${passkeyAddress.slice(-2)}`}</span>
+                <span className="hidden sm:inline">{formatAddress(passkeyAddress)}</span>
               </div>
             </div>
           </div>
