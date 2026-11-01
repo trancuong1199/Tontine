@@ -47,11 +47,11 @@ export function Header({
 
   return (
     <header className="sticky top-0 z-40 bg-[#0b0f19]/85 backdrop-blur-md border-b border-slate-800/80 transition-all shadow-sm">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between gap-3 sm:gap-6">
+      <div className="max-w-[1400px] mx-auto px-2 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between gap-3 sm:gap-6">
         {/* Left: Brand & Network Badge */}
         <div
           onClick={() => onSelectTab?.("home")}
-          className="flex items-center gap-3 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 sm:gap-3 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
           role="button"
           tabIndex={0}
           title="Về Trang chủ"
@@ -67,7 +67,7 @@ export function Header({
               <PiggyBank size={20} className="text-slate-950 font-bold" />
             </div>
           </span>
-          <div>
+          <div className="hidden md:block">
             <div className="flex items-center gap-2">
               <span className="font-bold text-white text-lg tracking-tight">
                 Tontine
@@ -86,7 +86,7 @@ export function Header({
 
         {/* Center: Navigation Tabs (Home vs Savings Clubs) */}
         {onSelectTab && (
-          <nav className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-2xl border border-slate-800 shadow-2xs">
+          <nav className="flex items-center gap-0.5 sm:gap-1 bg-slate-900/80 p-0.5 sm:p-1 rounded-xl sm:rounded-2xl border border-slate-800 shadow-2xs shrink-0">
             {/* Hidden Bridge for TC-NAV-01 & TC-BLACK-15 regex tests */}
             <span className="hidden" aria-hidden="true">
               {activeTab === "home" ? "bg-white text-blue-600 shadow-2xs" : ""}
@@ -95,7 +95,7 @@ export function Header({
 
             <button
               onClick={() => onSelectTab("home")}
-              className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "home"
                   ? "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20"
                   : "text-slate-400 hover:text-amber-200 hover:bg-slate-800/40"
@@ -105,7 +105,7 @@ export function Header({
             </button>
             <button
               onClick={() => onSelectTab("app")}
-              className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "app"
                   ? "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20"
                   : "text-slate-400 hover:text-amber-200 hover:bg-slate-800/40"
@@ -117,22 +117,23 @@ export function Header({
         )}
 
         {/* Right: Actions & Connect Wallet */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
           {/* Language Selector Dropdown */}
           {onToggleLanguage && (
             <div className="relative" ref={langMenuRef}>
               <button
                 type="button"
                 onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-bold border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 text-slate-200 hover:text-amber-300 transition-all active:scale-95 shadow-2xs cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-1 sm:gap-1.5 px-1.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-bold border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 text-slate-200 hover:text-amber-300 transition-all active:scale-95 shadow-2xs cursor-pointer whitespace-nowrap"
                 title={isEn ? "Select Language (Chọn ngôn ngữ)" : "Chọn ngôn ngữ (Select Language)"}
                 aria-label="Select language"
                 aria-haspopup="listbox"
                 aria-expanded={isLangMenuOpen}
               >
-                <Globe size={15} className="text-amber-400" />
-                <span>{isEn ? "EN 🇬🇧" : "VI 🇻🇳"}</span>
-                <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${isLangMenuOpen ? "rotate-180" : ""}`} />
+                <Globe size={15} className="hidden sm:inline text-amber-400" />
+                <span className="sm:hidden">{isEn ? "EN" : "VI"}</span>
+                <span className="hidden sm:inline">{isEn ? "EN 🇬🇧" : "VI 🇻🇳"}</span>
+                <ChevronDown size={13} className={`hidden sm:inline text-slate-400 transition-transform duration-200 ${isLangMenuOpen ? "rotate-180" : ""}`} />
               </button>
 
               {/* Hidden Bridge preserving exact test strings for TC-BILINGUAL-02 */}
@@ -203,11 +204,11 @@ export function Header({
           {onOpenArcAppKit && (
             <button
               onClick={onOpenArcAppKit}
-              className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white transition-all active:scale-95 shadow-md shadow-amber-500/10 cursor-pointer whitespace-nowrap"
+              className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-extrabold border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white transition-all active:scale-95 shadow-md shadow-amber-500/10 cursor-pointer whitespace-nowrap"
               title={isEn ? "Arc & Circle Web3 AppKit" : "Bộ công cụ Arc & Circle AppKit"}
             >
               <Zap size={14} className="fill-amber-400 text-amber-400" />
-              <span>{t("arcAppKit.btnLabel", language)}</span>
+              <span className="hidden md:inline">{t("arcAppKit.btnLabel", language)}</span>
             </button>
           )}
 
@@ -240,11 +241,11 @@ export function Header({
           {onOpenGuide && (
             <button
               onClick={onOpenGuide}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-700/80 hover:border-amber-500/30 transition-all active:scale-95 shadow-2xs cursor-pointer whitespace-nowrap"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-700/80 hover:border-amber-500/30 transition-all active:scale-95 shadow-2xs cursor-pointer whitespace-nowrap"
               title={isEn ? "View guide and rules" : "Xem hướng dẫn cách chơi và luật hụi"}
             >
               <BookOpen size={15} className="text-amber-400" />
-              <span>{isEn ? t("header.guideBtn", language) : "Hướng dẫn"}</span>
+              <span className="hidden md:inline">{isEn ? t("header.guideBtn", language) : "Hướng dẫn"}</span>
             </button>
           )}
 
@@ -258,7 +259,23 @@ export function Header({
             <ExternalLink size={12} />
           </a>
 
-          <ConnectKitButton />
+          <div className="sm:hidden shrink-0">
+            <ConnectKitButton.Custom>
+              {({ isConnected, show, truncatedAddress, ensName }) => (
+                <button
+                  type="button"
+                  onClick={show}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                >
+                  {isConnected ? (ensName ?? truncatedAddress) : (isEn ? "Connect" : "Kết nối")}
+                </button>
+              )}
+            </ConnectKitButton.Custom>
+          </div>
+
+          <div className="hidden sm:block shrink-0">
+            <ConnectKitButton />
+          </div>
         </div>
       </div>
     </header>

@@ -1,0 +1,31 @@
+{
+  "taskId": "task-058",
+  "createdAt": "2026-11-01T16:15:01.990Z",
+  "files": {
+    "src/components/savings/Header.tsx": {
+      "exists": true,
+      "sha256": "d372ff78cfc38758eebce7dc4d7f1796b650b46911d5cef0c7b89acb5c0ea492",
+      "snapshot": "docs/manifests/task-058/baseline/src_components_savings_Header.tsx"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "1db4ac4496dbea797889b2a6786ee3fe2bc5542c0bfb863d378ee697b59b7bb9",
+      "snapshot": "docs/manifests/task-058/baseline/src_App.tsx"
+    },
+    "src/components/landing/LandingPage.tsx": {
+      "exists": true,
+      "sha256": "b37b16baba32d6e99a50344fdd4bbeb50def854b8f96a826b8b8f71335092448",
+      "snapshot": "docs/manifests/task-058/baseline/src_components_landing_LandingPage.tsx"
+    },
+    "src/hooks/usePasskeyWallet.ts": {
+      "exists": true,
+      "sha256": "5b82ad4c7f814c8a91121545db8b81eea031621ae5cb343b734abe5f6020c692",
+      "snapshot": "docs/manifests/task-058/baseline/src_hooks_usePasskeyWallet.ts"
+    },
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "exists": true,
+      "sha256": "0f70972eee6b8afe5cc9a2eaa613564084ee2671d8071f65fe336e0e31584227",
+      "snapshot": "docs/manifests/task-058/baseline/src_components_savings_ArcAppKitModal.tsx"
+    }
+  }
+}

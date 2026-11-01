@@ -4,10 +4,11 @@
  * tạo smart account trên Arc Testnet, không cần MetaMask.
  */
 import { useState, useCallback, useEffect } from "react";
-import { createPublicClient } from "viem";
+import { createPublicClient, http } from "viem";
 import { arcTestnet } from "viem/chains";
 import {
   createBundlerClient,
+  createWebAuthnCredential,
   toWebAuthnAccount,
   type SmartAccount,
 } from "viem/account-abstraction";
@@ -39,29 +40,43 @@ function buildTransports() {
   return { passkeyTransport, modularTransport, publicClient, bundlerClient };
 }
 
+function buildFallbackPublicClient() {
+  return createPublicClient({ chain: arcTestnet, transport: http() });
+}
+
+function checkWebAuthnAvailable(): string | null {
+  if (typeof window === "undefined") {
+    return "Môi trường không hỗ trợ WebAuthn.";
+  }
+  if (!window.isSecureContext) {
+    return "Passkey yêu cầu kết nối bảo mật HTTPS.";
+  }
+  if (typeof window.PublicKeyCredential === "undefined" || !navigator.credentials) {
+    return "Trình duyệt trong ứng dụng (Zalo/Telegram/Messenger) không hỗ trợ Passkey. Vui lòng mở bằng Safari (iOS) hoặc Chrome (Android).";
+  }
+  return null;
+}
+
 export function usePasskeyWallet() {
   const [state, setState] = useState<PasskeyWalletState>({ status: "idle" });
   const [bundler, setBundler] = useState<ReturnType<typeof createBundlerClient> | null>(null);
-  const isConfigured = Boolean(clientKey && clientUrl);
-
-  // Auto-restore session on mount
-  useEffect(() => {
-    if (!isConfigured) return;
-    const stored = loadStoredCredential();
-    if (!stored) return;
-    restoreSession(stored);
-  }, [isConfigured]);
+  const isConfigured = Boolean(
+    (clientKey && clientUrl) ||
+      (typeof window !== "undefined" && typeof window.PublicKeyCredential !== "undefined")
+  );
 
   const restoreSession = useCallback(async (credential: StoredCredential) => {
     const transports = buildTransports();
-    if (!transports) return;
+    const publicClient = transports ? transports.publicClient : buildFallbackPublicClient();
     try {
       setState({ status: "loading", message: "Đang khôi phục phiên..." });
       const account = await toCircleSmartAccount({
-        client: transports.publicClient,
+        client: publicClient,
         owner: toWebAuthnAccount({ credential }),
       });
-      setBundler(transports.bundlerClient);
+      if (transports) {
+        setBundler(transports.bundlerClient);
+      }
       setState({ status: "ready", account, address: account.address });
     } catch {
       clearCredential();
@@ -69,33 +84,60 @@ export function usePasskeyWallet() {
     }
   }, []);
 
+  // Auto-restore session on mount
+  useEffect(() => {
+    const stored = loadStoredCredential();
+    if (!stored) return;
+    restoreSession(stored);
+  }, [restoreSession]);
+
   const register = useCallback(async (username: string) => {
-    const transports = buildTransports();
-    if (!transports) {
-      setState({ status: "error", message: "VITE_CLIENT_KEY chưa được cấu hình." });
+    const envErr = checkWebAuthnAvailable();
+    if (envErr) {
+      setState({ status: "error", message: envErr });
       return;
     }
+    const transports = buildTransports();
     try {
-      setState({ status: "loading", message: "Đang tạo passkey..." });
-      const credential = await toWebAuthnCredential({
-        transport: transports.passkeyTransport,
-        mode: WebAuthnMode.Register,
-        username,
-      });
+      setState({ status: "loading", message: "Đang tạo passkey (Face ID / Vân tay)..." });
+      const credential: StoredCredential = transports
+        ? await toWebAuthnCredential({
+            transport: transports.passkeyTransport,
+            mode: WebAuthnMode.Register,
+            username,
+          })
+        : await (async () => {
+            const raw = await createWebAuthnCredential({
+              name: username,
+              rp: {
+                id: window.location.hostname,
+                name: "Tontine Arc Savings Club",
+              },
+            });
+            return {
+              id: raw.id,
+              publicKey: raw.publicKey as `0x${string}`,
+            };
+          })();
       saveCredential(credential);
       setState({ status: "loading", message: "Đang tạo ví thông minh..." });
+      const publicClient = transports ? transports.publicClient : buildFallbackPublicClient();
       const account = await toCircleSmartAccount({
-        client: transports.publicClient,
+        client: publicClient,
         owner: toWebAuthnAccount({ credential }),
       });
-      setBundler(transports.bundlerClient);
+      if (transports) {
+        setBundler(transports.bundlerClient);
+      }
       setState({ status: "ready", account, address: account.address });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Đăng ký thất bại.";
-      if (msg.includes("NotAllowedError") || msg.includes("cancelled")) {
-        setState({ status: "error", message: "Bạn đã huỷ xác thực passkey." });
+      if (msg.includes("NotAllowedError") || msg.includes("cancelled") || msg.includes("aborted")) {
+        setState({ status: "error", message: "Bạn đã huỷ xác thực passkey hoặc trình duyệt chặn WebAuthn (hãy mở bằng Safari/Chrome)." });
       } else if (msg.includes("InvalidStateError")) {
-        setState({ status: "error", message: "Passkey đã tồn tại. Hãy đăng nhập." });
+        setState({ status: "error", message: "Passkey đã tồn tại trên thiết bị này. Hãy bấm Đăng nhập." });
+      } else if (msg.includes("SecurityError")) {
+        setState({ status: "error", message: "Lỗi bảo mật tên miền WebAuthn. Hãy mở trực tiếp trên Safari hoặc Chrome." });
       } else {
         setState({ status: "error", message: msg });
       }
@@ -103,28 +145,51 @@ export function usePasskeyWallet() {
   }, []);
 
   const login = useCallback(async () => {
-    const transports = buildTransports();
-    if (!transports) {
-      setState({ status: "error", message: "VITE_CLIENT_KEY chưa được cấu hình." });
+    const envErr = checkWebAuthnAvailable();
+    if (envErr) {
+      setState({ status: "error", message: envErr });
       return;
     }
+    const transports = buildTransports();
     try {
       setState({ status: "loading", message: "Đang xác thực passkey..." });
-      const credential = await toWebAuthnCredential({
-        transport: transports.passkeyTransport,
-        mode: WebAuthnMode.Login,
-      });
+      let credential: StoredCredential;
+      if (transports) {
+        credential = await toWebAuthnCredential({
+          transport: transports.passkeyTransport,
+          mode: WebAuthnMode.Login,
+        });
+      } else {
+        const stored = loadStoredCredential();
+        if (!stored) {
+          setState({
+            status: "error",
+            message: "Chưa tìm thấy Passkey lưu trên trình duyệt này. Vui lòng bấm Đăng ký Ví Passkey.",
+          });
+          return;
+        }
+        const owner = toWebAuthnAccount({ credential: stored });
+        if (owner.sign) {
+          await owner.sign({
+            hash: "0x0000000000000000000000000000000000000000000000000000000000000001",
+          });
+        }
+        credential = stored;
+      }
       saveCredential(credential);
       setState({ status: "loading", message: "Đang tải ví..." });
+      const publicClient = transports ? transports.publicClient : buildFallbackPublicClient();
       const account = await toCircleSmartAccount({
-        client: transports.publicClient,
+        client: publicClient,
         owner: toWebAuthnAccount({ credential }),
       });
-      setBundler(transports.bundlerClient);
+      if (transports) {
+        setBundler(transports.bundlerClient);
+      }
       setState({ status: "ready", account, address: account.address });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Đăng nhập thất bại.";
-      if (msg.includes("NotAllowedError") || msg.includes("cancelled")) {
+      if (msg.includes("NotAllowedError") || msg.includes("cancelled") || msg.includes("aborted")) {
         setState({ status: "error", message: "Bạn đã huỷ xác thực." });
       } else {
         setState({ status: "error", message: msg });

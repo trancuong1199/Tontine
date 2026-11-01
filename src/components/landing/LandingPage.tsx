@@ -69,10 +69,15 @@ export function LandingPage({
 
   useEffect(() => {
     let ticking = false;
+    let lastScrollY = 0;
     const handleScroll = () => {
+      if (window.innerWidth < 640) return;
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
+          if (Math.abs(window.scrollY - lastScrollY) >= 12) {
+            lastScrollY = window.scrollY;
+            setScrollY(window.scrollY);
+          }
           ticking = false;
         });
         ticking = true;
@@ -131,11 +136,11 @@ export function LandingPage({
   return (
     <div className="flex flex-col min-h-screen bg-[#050508] text-slate-100 relative overflow-hidden">
       {/* Global Ambient Cyber Grid & Cosmic Gold Dust Background */}
-      <div className="fixed inset-0 pointer-events-none z-0">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(rgba(245,158,11,0.06)_1px,transparent_1px)] [background-size:32px_32px] opacity-70" />
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-amber-500/[0.04] rounded-full blur-[140px]" />
-        <div className="absolute top-1/3 right-10 w-[500px] h-[500px] bg-yellow-600/[0.03] rounded-full blur-[130px]" />
-        <div className="absolute bottom-1/4 left-10 w-[550px] h-[550px] bg-amber-600/[0.035] rounded-full blur-[140px]" />
+        <div className="hidden sm:block absolute top-0 left-1/4 w-[600px] h-[600px] bg-amber-500/[0.04] rounded-full blur-[140px]" />
+        <div className="hidden sm:block absolute top-1/3 right-10 w-[500px] h-[500px] bg-yellow-600/[0.03] rounded-full blur-[130px]" />
+        <div className="hidden sm:block absolute bottom-1/4 left-10 w-[550px] h-[550px] bg-amber-600/[0.035] rounded-full blur-[140px]" />
       </div>
 
       {/* High-Visibility Web3 Atmospheric Canvas (Task-025: Highly Visible & Alluring Background Overlay) */}
@@ -147,13 +152,13 @@ export function LandingPage({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.22)_1.5px,transparent_1.5px)] bg-[size:48px_48px] opacity-90" />
 
         {/* Layer 3: Vivid Ambient Aurora Beams (Rich amber & solar gold nebula glows) */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-gradient-to-b from-amber-500/25 via-yellow-500/15 to-transparent rounded-full blur-[90px]" />
-        <div className="absolute top-1/4 -left-32 w-[550px] h-[550px] bg-gradient-to-tr from-amber-600/20 to-yellow-500/15 rounded-full blur-[100px]" />
-        <div className="absolute top-1/2 -right-32 w-[600px] h-[600px] bg-gradient-to-bl from-amber-500/20 via-yellow-600/15 to-transparent rounded-full blur-[100px]" />
-        <div className="absolute bottom-10 left-1/3 w-[700px] h-[500px] bg-amber-500/15 rounded-full blur-[110px]" />
+        <div className="hidden sm:block absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-gradient-to-b from-amber-500/25 via-yellow-500/15 to-transparent rounded-full blur-[90px]" />
+        <div className="hidden sm:block absolute top-1/4 -left-32 w-[550px] h-[550px] bg-gradient-to-tr from-amber-600/20 to-yellow-500/15 rounded-full blur-[100px]" />
+        <div className="hidden sm:block absolute top-1/2 -right-32 w-[600px] h-[600px] bg-gradient-to-bl from-amber-500/20 via-yellow-600/15 to-transparent rounded-full blur-[100px]" />
+        <div className="hidden sm:block absolute bottom-10 left-1/3 w-[700px] h-[500px] bg-amber-500/15 rounded-full blur-[110px]" />
         
         {/* Layer 4: Cyan Security Energy Horizon Glow */}
-        <div className="absolute top-[68%] left-10 w-[450px] h-[450px] bg-cyan-500/12 rounded-full blur-[100px]" />
+        <div className="hidden sm:block absolute top-[68%] left-10 w-[450px] h-[450px] bg-cyan-500/12 rounded-full blur-[100px]" />
       </div>
 
       {/* Continuous Full-Page Atmospheric Side Orbital Arcs (Task-027: Seamless Vertical Continuity) */}
@@ -186,7 +191,7 @@ export function LandingPage({
       {/* Continuous Viewport Orbital Companion Layer (Task-029: Framing entire page across all sections at z-20) */}
       <div className="fixed inset-0 pointer-events-none z-20 overflow-hidden" aria-hidden="true">
         {/* LEFT WING: Concentric Orbital Dashed Arcs & Icons */}
-        <div className="absolute top-1/2 -translate-y-1/2 -left-20 sm:-left-10 lg:left-0 w-[340px] sm:w-[420px] lg:w-[500px] h-[650px] lg:h-[750px] opacity-75 sm:opacity-85 lg:opacity-100 transition-opacity duration-500">
+        <div className="hidden sm:block absolute top-1/2 -translate-y-1/2 -left-20 sm:-left-10 lg:left-0 w-[340px] sm:w-[420px] lg:w-[500px] h-[650px] lg:h-[750px] opacity-75 sm:opacity-85 lg:opacity-100 transition-opacity duration-500">
           <svg className="w-full h-full" viewBox="0 0 500 750" fill="none" xmlns="http://www.w3.org/2000/svg">
             {/* Outer Dashed Orbital Arc */}
             <path
@@ -265,7 +270,7 @@ export function LandingPage({
         </div>
 
         {/* RIGHT WING: Concentric Orbital Dashed Arcs & Icons */}
-        <div className="absolute top-1/2 -translate-y-1/2 -right-20 sm:-right-10 lg:right-0 w-[340px] sm:w-[420px] lg:w-[500px] h-[650px] lg:h-[750px] opacity-75 sm:opacity-85 lg:opacity-100 transition-opacity duration-500">
+        <div className="hidden sm:block absolute top-1/2 -translate-y-1/2 -right-20 sm:-right-10 lg:right-0 w-[340px] sm:w-[420px] lg:w-[500px] h-[650px] lg:h-[750px] opacity-75 sm:opacity-85 lg:opacity-100 transition-opacity duration-500">
           <svg className="w-full h-full" viewBox="0 0 500 750" fill="none" xmlns="http://www.w3.org/2000/svg">
             {/* Outer Dashed Orbital Arc */}
             <path

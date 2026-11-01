@@ -1,0 +1,32 @@
+{
+  "taskId": "task-058",
+  "frozenAt": "2026-11-01T16:41:34.860Z",
+  "status": "FROZEN",
+  "files": {
+    "src/components/savings/Header.tsx": {
+      "sha256": "5d53854fffb3f81253579dfbf0afff50161000427edbd7d3d0ed0eb90d9166e0",
+      "baselineSha256": "d372ff78cfc38758eebce7dc4d7f1796b650b46911d5cef0c7b89acb5c0ea492",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "88afe400cdf2b861ac0a265997751c3e38f1b0cbe27b2aa98cf857239deccd6d",
+      "baselineSha256": "1db4ac4496dbea797889b2a6786ee3fe2bc5542c0bfb863d378ee697b59b7bb9",
+      "isNew": false
+    },
+    "src/components/landing/LandingPage.tsx": {
+      "sha256": "cf5e39eb3bbca37ba81341663c0159396659f33685ccbc1868e569cfcb6e9a5d",
+      "baselineSha256": "b37b16baba32d6e99a50344fdd4bbeb50def854b8f96a826b8b8f71335092448",
+      "isNew": false
+    },
+    "src/hooks/usePasskeyWallet.ts": {
+      "sha256": "c0fc79e0a7bc4ab2c9cfe89d4fcf070b73400c3eaabe892f312973bd39598183",
+      "baselineSha256": "5b82ad4c7f814c8a91121545db8b81eea031621ae5cb343b734abe5f6020c692",
+      "isNew": false
+    },
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "sha256": "96c0150d77faf548dd972839306bc389dc6e055e7bd8c34e420635dd6876d730",
+      "baselineSha256": "0f70972eee6b8afe5cc9a2eaa613564084ee2671d8071f65fe336e0e31584227",
+      "isNew": false
+    }
+  }
+}

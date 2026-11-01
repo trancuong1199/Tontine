@@ -294,10 +294,15 @@ export default function App() {
 
   useEffect(() => {
     let ticking = false;
+    let lastScrollY = 0;
     const handleScroll = () => {
+      if (window.innerWidth < 640) return;
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          setScrollY(window.scrollY);
+          if (Math.abs(window.scrollY - lastScrollY) >= 15) {
+            lastScrollY = window.scrollY;
+            setScrollY(window.scrollY);
+          }
           ticking = false;
         });
         ticking = true;
@@ -307,6 +312,12 @@ export default function App() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (pkState.status === "error" && pkState.message) {
+      toast.error(pkState.message);
+    }
+  }, [pkState]);
 
   // Compute smooth scroll offset factor along the orbital trajectory (0 at top, up to 0.08 at 500px scroll)
   const scrollOffset = Math.min(0.08, Math.max(0, (scrollY / 600) * 0.08));
@@ -729,11 +740,11 @@ export default function App() {
   return (
     <div className="min-h-dvh bg-[#050508] text-slate-100 font-sans relative overflow-x-hidden">
       {/* Global Ambient Cyber Grid & Cosmic Gold Dust Background */}
-      <div className="fixed inset-0 pointer-events-none z-0">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(rgba(245,158,11,0.06)_1px,transparent_1px)] [background-size:32px_32px] opacity-70" />
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-amber-500/[0.04] rounded-full blur-[140px]" />
-        <div className="absolute top-1/3 right-10 w-[500px] h-[500px] bg-yellow-600/[0.03] rounded-full blur-[130px]" />
-        <div className="absolute bottom-1/4 left-10 w-[550px] h-[550px] bg-amber-600/[0.035] rounded-full blur-[140px]" />
+        <div className="hidden sm:block absolute top-0 left-1/4 w-[600px] h-[600px] bg-amber-500/[0.04] rounded-full blur-[140px]" />
+        <div className="hidden sm:block absolute top-1/3 right-10 w-[500px] h-[500px] bg-yellow-600/[0.03] rounded-full blur-[130px]" />
+        <div className="hidden sm:block absolute bottom-1/4 left-10 w-[550px] h-[550px] bg-amber-600/[0.035] rounded-full blur-[140px]" />
       </div>
 
       {/* DApp Ambient Web3 Atmospheric Canvas (Task-027: Unified Aesthetics for Savings Clubs Page) */}
@@ -749,11 +760,11 @@ export default function App() {
         {/* Layer 2: Ambient Aurora Glow Orbs (Preserved for TC-DAPP-SYNC-01) */}
         <div className="hidden absolute -top-20 left-1/4 w-[600px] h-[400px] bg-gradient-to-b from-amber-500/12 via-yellow-600/08 to-transparent rounded-full blur-[100px]" />
         {/* Vivid Ambient Aurora Beams */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-gradient-to-b from-amber-500/25 via-yellow-500/15 to-transparent rounded-full blur-[90px]" />
-        <div className="absolute top-1/4 -left-32 w-[550px] h-[550px] bg-gradient-to-tr from-amber-600/20 to-yellow-500/15 rounded-full blur-[100px]" />
-        <div className="absolute top-1/2 -right-32 w-[600px] h-[600px] bg-gradient-to-bl from-amber-500/20 via-yellow-600/15 to-transparent rounded-full blur-[100px]" />
-        <div className="absolute bottom-10 left-1/3 w-[700px] h-[500px] bg-amber-500/15 rounded-full blur-[110px]" />
-        <div className="absolute top-[68%] left-10 w-[450px] h-[450px] bg-cyan-500/12 rounded-full blur-[100px]" />
+        <div className="hidden sm:block absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-gradient-to-b from-amber-500/25 via-yellow-500/15 to-transparent rounded-full blur-[90px]" />
+        <div className="hidden sm:block absolute top-1/4 -left-32 w-[550px] h-[550px] bg-gradient-to-tr from-amber-600/20 to-yellow-500/15 rounded-full blur-[100px]" />
+        <div className="hidden sm:block absolute top-1/2 -right-32 w-[600px] h-[600px] bg-gradient-to-bl from-amber-500/20 via-yellow-600/15 to-transparent rounded-full blur-[100px]" />
+        <div className="hidden sm:block absolute bottom-10 left-1/3 w-[700px] h-[500px] bg-amber-500/15 rounded-full blur-[110px]" />
+        <div className="hidden sm:block absolute top-[68%] left-10 w-[450px] h-[450px] bg-cyan-500/12 rounded-full blur-[100px]" />
 
         {/* Layer 3: DApp Subtle Side Orbital Arcs (Legacy preservation for TC-DAPP-SYNC-02) */}
         <svg className="hidden absolute top-24 -left-28 w-[300px] h-[900px] opacity-30" viewBox="0 0 300 900" fill="none">
@@ -781,7 +792,7 @@ export default function App() {
         {activeTab === "app" && (
           <>
             {/* Left Wing for Saving Clubs */}
-            <div className="absolute top-1/2 -translate-y-1/2 -left-20 sm:-left-10 lg:left-0 w-[340px] sm:w-[420px] lg:w-[480px] h-[650px] lg:h-[750px] opacity-75 sm:opacity-85 lg:opacity-100 transition-opacity duration-500 pointer-events-none">
+            <div className="hidden sm:block absolute top-1/2 -translate-y-1/2 -left-20 sm:-left-10 lg:left-0 w-[340px] sm:w-[420px] lg:w-[480px] h-[650px] lg:h-[750px] opacity-75 sm:opacity-85 lg:opacity-100 transition-opacity duration-500 pointer-events-none">
               <svg className="w-full h-full" viewBox="0 0 500 750" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   d="M -50,50 C 320,120 380,630 -50,700"
@@ -848,7 +859,7 @@ export default function App() {
             </div>
 
             {/* Right Wing for Saving Clubs */}
-            <div className="absolute top-1/2 -translate-y-1/2 -right-20 sm:-right-10 lg:right-0 w-[340px] sm:w-[420px] lg:w-[480px] h-[650px] lg:h-[750px] opacity-75 sm:opacity-85 lg:opacity-100 transition-opacity duration-500 pointer-events-none">
+            <div className="hidden sm:block absolute top-1/2 -translate-y-1/2 -right-20 sm:-right-10 lg:right-0 w-[340px] sm:w-[420px] lg:w-[480px] h-[650px] lg:h-[750px] opacity-75 sm:opacity-85 lg:opacity-100 transition-opacity duration-500 pointer-events-none">
               <svg className="w-full h-full" viewBox="0 0 500 750" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   d="M 550,50 C 180,120 120,630 550,700"
@@ -951,7 +962,7 @@ export default function App() {
                 <PiggyBank size={26} className="text-slate-950 font-bold stroke-[2.5]" />
               </div>
               <span className="hidden" aria-hidden="true">HC</span>
-              <span className="font-bold text-white text-lg">
+              <span className="hidden md:inline font-bold text-white text-lg">
                 Tontine
               </span>
               <span className="hidden" aria-hidden="true">HụiChain</span>
@@ -1068,7 +1079,7 @@ export default function App() {
                 title={t("arcAppKit.btnLabel", language)}
               >
                 <Zap size={14} className="text-amber-400 fill-amber-400/20 animate-pulse" />
-                <span>{t("arcAppKit.btnLabel", language)}</span>
+                <span className="hidden md:inline">{t("arcAppKit.btnLabel", language)}</span>
               </button>
 
               <button
@@ -1100,7 +1111,7 @@ export default function App() {
                 <span>{isEn ? t("header.createBtn", language) : "Tạo nhóm"}</span>
               </button>
               {balance !== undefined && (
-                <span className="text-xs sm:text-sm font-bold text-slate-700 tabular-nums bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/60">
+                <span className="hidden md:inline text-xs sm:text-sm font-bold text-slate-700 tabular-nums bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/60">
                   {formatUsdc(balance)} USDC
                 </span>
               )}

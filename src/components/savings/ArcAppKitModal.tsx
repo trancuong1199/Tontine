@@ -536,21 +536,32 @@ export function ArcAppKitModal({
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-6 bg-black/30 rounded-2xl border border-dashed border-amber-500/20 space-y-3">
+                <div className="text-center py-6 px-4 bg-black/30 rounded-2xl border border-dashed border-amber-500/20 space-y-3">
                   <p className="text-xs text-slate-300">
                     {isEn
                       ? "You haven't activated a Passkey Smart Account on this device yet."
                       : "Bạn chưa kích hoạt Ví Passkey trên thiết bị này."}
                   </p>
+                  <p className="text-xs text-amber-300/80 leading-relaxed">
+                    {isEn
+                      ? "Tip on Mobile: Please open directly in Safari (iOS) or Chrome (Android). In-app browsers (Zalo/Telegram/Messenger) block Face ID & Passkeys."
+                      : "Lưu ý trên điện thoại: Hãy mở trực tiếp bằng Safari (iOS) hoặc Chrome (Android). Trình duyệt trong Zalo/Telegram/Messenger sẽ chặn Face ID & Vân tay."}
+                  </p>
                   {onOpenPasskeyRegister && (
                     <button
                       onClick={() => {
-                        onClose();
                         onOpenPasskeyRegister();
                       }}
-                      className="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-yellow-600 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md"
+                      disabled={passkeyStatus === "loading"}
+                      className="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-yellow-600 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md disabled:opacity-60 cursor-pointer"
                     >
-                      {isEn ? "Register Passkey (Touch ID / Face ID)" : "Đăng ký Ví Passkey (Vân tay / Face ID)"}
+                      {passkeyStatus === "loading"
+                        ? isEn
+                          ? "Authenticating Passkey..."
+                          : "Đang xác thực Passkey..."
+                        : isEn
+                          ? "Register Passkey (Touch ID / Face ID)"
+                          : "Đăng ký Ví Passkey (Vân tay / Face ID)"}
                     </button>
                   )}
                 </div>
