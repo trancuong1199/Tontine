@@ -63,7 +63,7 @@ export function GuideModal({
                 id="guide-modal-title"
                 className="text-lg sm:text-xl font-bold text-white tracking-tight"
               >
-                {t("guideModal.title", language)}
+                {t("guideModal.title", language).replace(/HụiChain/g, "Tontine")}
               </h2>
               <p className="text-xs text-slate-400 font-medium hidden sm:block">
                 {t("guideModal.subtitle", language)}
@@ -93,7 +93,7 @@ export function GuideModal({
               </h3>
             </div>
             <p className="text-sm text-slate-300 leading-relaxed font-normal">
-              {t("guideModal.pillar1Desc", language)}
+              {t("guideModal.pillar1Desc", language).replace(/HụiChain/g, "Tontine")}
             </p>
             <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
               <span className="px-2.5 py-1 rounded-lg bg-amber-950/40 text-amber-300 border border-amber-500/30">
@@ -116,7 +116,7 @@ export function GuideModal({
                   2
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-white">
-                  {t("guideModal.pillar2Title", language)}
+                  {t("guideModal.pillar2Title", language).replace(/HụiChain/g, "Tontine")}
                 </h3>
               </div>
               <p className="text-xs sm:text-sm text-slate-400 ml-9.5">
@@ -154,13 +154,13 @@ export function GuideModal({
                 </div>
               </div>
 
-              {/* HụiChain Smart Contract Column */}
+              {/* Tontine Smart Contract Column */}
               <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-b from-[#0e1612] to-[#09110d] p-4 sm:p-5 flex flex-col justify-between shadow-xl shadow-amber-500/5">
                 <div>
                   <div className="flex items-center gap-2 mb-3 pb-2 border-b border-amber-500/30">
                     <ShieldCheck size={18} className="text-amber-400 shrink-0" />
                     <h4 className="font-bold text-white text-sm sm:text-base">
-                      {t("guideModal.smartTitle", language)}
+                      {t("guideModal.smartTitle", language).replace(/HụiChain/g, "Tontine")}
                     </h4>
                   </div>
                   <ul className="space-y-2.5 text-xs sm:text-sm text-slate-300">

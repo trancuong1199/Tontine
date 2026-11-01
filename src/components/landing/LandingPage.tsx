@@ -533,7 +533,7 @@ export function LandingPage({
               </div>
             </div>
 
-            {/* The Solution: HụiChain Smart Contract */}
+            {/* The Solution: Tontine Smart Contract */}
             <div className="bg-gradient-to-b from-[#0e1612] to-[#09110d] border border-amber-500/40 rounded-3xl p-6 sm:p-8 shadow-xl shadow-amber-500/5">
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-amber-500/30">
                 <div className="w-10 h-10 rounded-xl bg-amber-950/60 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold">
@@ -541,7 +541,7 @@ export function LandingPage({
                 </div>
                 <div>
                   <h3 className="text-lg sm:text-xl font-bold text-white">
-                    {isEn ? "HụiChain Smart Contract" : "Giải Pháp Smart Contract HụiChain"}
+                    {isEn ? "Tontine Smart Contract" : "Giải Pháp Smart Contract Tontine"}
                   </h3>
                   <p className="text-xs text-amber-300">
                     {isEn
@@ -899,7 +899,7 @@ export function LandingPage({
             </div>
             <span className="hidden" aria-hidden="true"><PiggyBank size={18} /></span>
             <div>
-              <div className="font-bold text-white text-sm">HụiChain</div>
+              <div className="font-bold text-white text-sm">Tontine</div>
               <div className="text-xs text-slate-400">
                 {t("landingPage.footerDesc", language)}
               </div>
@@ -931,7 +931,7 @@ export function LandingPage({
           </div>
 
           <div className="text-xs text-slate-500">
-            © 2026 HụiChain. {t("landingPage.allRightsReserved", language)}
+            © 2026 Tontine. {t("landingPage.allRightsReserved", language)}
           </div>
         </div>
       </footer>
