@@ -236,6 +236,17 @@ export function parseContractError(error: unknown): string {
   if (msg.includes("erc20insufficientallowance") || msg.includes("insufficient allowance")) {
     return "Chưa cấp quyền (Approve) đủ token. Vui lòng xem lại token và số tiền cần cấp quyền trước khi nộp.";
   }
+  if (msg.includes("defaultpending")) return "Nhóm đang chờ xử lý vỡ nợ, tạm thời không nhận thêm tiền góp";
+  if (msg.includes("exceedsborrowlimit")) return "Số tiền vay vượt quá hạn mức tín dụng được bảo đảm bởi cọc CirBTC.";
+  if (msg.includes("collaterallocked")) return "Không thể rút cọc CirBTC vì dư nợ và lãi hiện tại vượt hạn mức an toàn sau khi rút.";
+  if (msg.includes("staleprice")) return "Giá BTC/USD từ Oracle đã quá hạn (stale), vui lòng cập nhật giá trước khi thực hiện.";
+  if (msg.includes("badprice")) return "Dữ liệu giá BTC/USD từ Oracle không hợp lệ.";
+  if (msg.includes("notliquidatable")) return "Vị thế cọc vẫn an toàn trên ngưỡng thanh lý, chưa thể kích hoạt thanh lý.";
+  if (msg.includes("notdefaultable")) return "Chưa hết thời gian ân hạn trả lãi hoặc tất toán, chưa thể tuyên bố vỡ nợ.";
+  if (msg.includes("notfinalizable")) return "Chưa kết thúc chu kỳ hoặc chủ hụi chưa hoàn trả đủ gốc và lãi để tất toán.";
+  if (msg.includes("ownercannotjoin")) return "Chủ hụi (người vay) không được phép tham gia làm thành viên đóng tiền trong cùng nhóm.";
+  if (msg.includes("renouncedisabled")) return "Chức năng từ bỏ quyền chủ hụi đã bị khóa để bảo vệ nghĩa vụ trả nợ.";
+  if (msg.includes("transferlockedafteropen")) return "Không thể chuyển quyền chủ hụi sau khi nhóm đã bắt đầu chạy các vòng.";
   if (msg.includes("notmember")) return "Địa chỉ ví của bạn không phải là thành viên của nhóm hụi này.";
   if (msg.includes("alreadymember")) return "Bạn đã là thành viên rồi.";
   if (msg.includes("groupnotopen")) return "Nhóm không còn mở để tham gia.";

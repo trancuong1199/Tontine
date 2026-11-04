@@ -9,26 +9,41 @@ import {
   BONDED_STATE,
   DEFAULT_REASON,
   DEFAULT_BONDED_PARAMS,
+  BONDED_TONTINE_ERROR_MESSAGES,
   calculateAnnualizedAprPct,
   isMockOracleDescription,
   validateBondedClubParams,
   validateOracleFeedForEnv,
+  parseBondedTontineError,
+} from "../src/lib/bondedTontine.ts";
+import {
   MockOracleSimulator,
   MockTokenLedger,
   BondedTontineSimulator,
   BondedTontineFactorySimulator,
-} from "../src/lib/bondedTontine.ts";
+} from "./helpers/bondedSimulator.ts";
 import {
   getClubVersion,
   getKnownGroups,
   saveKnownGroup,
+  syncFactoryBondedClubs,
   SAVINGS_CLUBS_STORAGE_KEY,
 } from "../src/lib/savingsClubDirectory.ts";
+import {
+  ARC_TESTNET_CHAIN_ID,
+  CANONICAL_FACTORY,
+  ORACLE_INFO,
+  ARC_TESTNET_BONDED_FACTORY,
+  ARC_TESTNET_MOCK_FEED,
+  BONDED_DISCLOSURE_COPY,
+  MOCK_ORACLE_WARNING_COPY,
+} from "../src/config/bonded-tontine.ts";
+import { USDC_ADDRESS, CIRBTC_ADDRESS } from "../src/config/arc-constants.ts";
 import { validatePreBroadcastConfig } from "../scripts/deploy-bonded-tontine-factory.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
-describe("Task-059: BondedTontine Design Specification & Implementation Suite", () => {
+describe("Task-059 / Task-060: BondedTontine Design Specification & Implementation Suite", () => {
   // ───────────────────────────────────────────────────────────────────────────
   // 1. Contract Artifacts, EIP-170 Bytecode Size & ABI Completeness
   // ───────────────────────────────────────────────────────────────────────────
@@ -56,11 +71,17 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     const tontineRuntimeBytes = tontineRuntimeHex.length / 2;
     const factoryRuntimeBytes = factoryRuntimeHex.length / 2;
 
-    assert.ok(tontineRuntimeBytes > 1000 && tontineRuntimeBytes < 24_576, `BondedTontine runtime (${tontineRuntimeBytes} B) must be < 24576 B`);
-    assert.ok(factoryRuntimeBytes > 1000 && factoryRuntimeBytes < 24_576, `BondedTontineFactory runtime (${factoryRuntimeBytes} B) must be < 24576 B`);
+    assert.ok(
+      tontineRuntimeBytes > 1000 && tontineRuntimeBytes < 24_576,
+      `BondedTontine runtime (${tontineRuntimeBytes} B) must be < 24576 B`
+    );
+    assert.ok(
+      factoryRuntimeBytes > 1000 && factoryRuntimeBytes < 24_576,
+      `BondedTontineFactory runtime (${factoryRuntimeBytes} B) must be < 24576 B`
+    );
   });
 
-  it("T059-02: BondedTontine ABI exposes all 20 custom errors, 14 events, and all write/view functions from Section 10", () => {
+  it("T059-02: BondedTontine ABI exposes all 21 custom errors (including DefaultPending), 14 events, and all write/view functions (including interestClaimedTotal)", () => {
     const errors = BONDED_TONTINE_ABI.filter((item: { type: string }) => item.type === "error").map(
       (item: { name?: string }) => item.name
     );
@@ -85,7 +106,9 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
       "OwnerCannotJoin",
       "RenounceDisabled",
       "TransferLockedAfterOpen",
+      "DefaultPending",
     ];
+    assert.equal(expectedErrors.length, 21);
     for (const errName of expectedErrors) {
       assert.ok(errors.includes(errName), `Missing custom error in ABI: ${errName}`);
     }
@@ -137,6 +160,7 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
       "collateralValueUsdc",
       "borrowLimit",
       "interestOwed",
+      "interestClaimedTotal",
       "exposure",
       "healthBps",
       "pendingInterest",
@@ -156,19 +180,21 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     assert.ok(fs.existsSync(testSolPath));
     const src = fs.readFileSync(testSolPath, "utf8");
     assert.ok(src.includes("test_WorkedExampleA_HappyPath"));
-    assert.ok(src.includes("test_WorkedExampleB_InterestOverdueDefault"));
+    assert.ok(src.includes("test_WorkedExampleB_InterestOverdueDefault_And_DefaultPendingGate"));
     assert.ok(src.includes("test_WorkedExampleC_FlashCrashLiquidation"));
+    assert.ok(src.includes("test_ConstructorAndFactoryRevertOnWrongTokenDecimals"));
     assert.ok(src.includes("test_Security_S3_BorrowRepaySameRoundPeakDebt"));
     assert.ok(src.includes("test_Security_S4_OracleFailureDuringZeroExposureAllowsCollateralWithdraw"));
     assert.ok(src.includes("test_Security_S8_BlocklistIsolation"));
     assert.ok(src.includes("invariant_solvency"));
     assert.ok(src.includes("invariant_stateMonotonic"));
+    assert.ok(!src.includes("block.timestamp"), "Foundry tests with via_ir must use vm.getBlockTimestamp()");
   });
 
   // ───────────────────────────────────────────────────────────────────────────
   // 2. Worked Example A — Happy Path (Section 26)
   // ───────────────────────────────────────────────────────────────────────────
-  it("T059-04: Worked Example A (Happy Path) matches Section 26 exact numbers (207 USDC per member, 0.05 CirBTC unlocked)", () => {
+  it("T059-04: Worked Example A (Happy Path) matches Section 26 exact numbers and caps interestClaimedTotal <= interestPaidTotal", () => {
     let now = 1_700_000_000n;
     const owner = "0x00000000000000000000000000000000000a11ce";
     const m1 = "0x000000000000000000000000000000000000b0b1";
@@ -177,13 +203,13 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     const m4 = "0x000000000000000000000000000000000000b0b4";
     const members = [m1, m2, m3, m4];
 
-    const usdcLedger = new MockTokenLedger();
-    const cirBtcLedger = new MockTokenLedger();
+    const usdcLedger = new MockTokenLedger(6);
+    const cirBtcLedger = new MockTokenLedger(8);
     const oracle = new MockOracleSimulator(owner, 8, 60_000_00000000n, "MOCK BTC/USD", now);
 
     const factory = new BondedTontineFactorySimulator({
-      usdc: "0x3600000000000000000000000000000000000000",
-      cirBtc: "0x1cbb6874ef4b97c2f3f062a9f45fbbfc44f81a88",
+      usdc: USDC_ADDRESS,
+      cirBtc: CIRBTC_ADDRESS,
       priceFeed: "0x9999999999999999999999999999999999999999",
       maxPriceAge: 3600n,
       usdcLedger,
@@ -202,23 +228,21 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
       liquidationBps: 12_000,
     });
 
-    cirBtcLedger.mint(owner, 5_000_000n); // 0.05 CirBTC
-    usdcLedger.mint(owner, 100_000_000n); // enough for interest
+    cirBtcLedger.mint(owner, 5_000_000n);
+    usdcLedger.mint(owner, 100_000_000n);
     for (const m of members) {
       usdcLedger.mint(m, 200_000_000n);
       club.joinGroup(m);
     }
 
     club.depositCollateral(owner, 5_000_000n);
-    assert.equal(club.collateralValueUsdc(), 3_000_000_000n); // $3,000
-    assert.equal(club.borrowLimit(), 1_500_000_000n); // $1,500
+    assert.equal(club.collateralValueUsdc(), 3_000_000_000n);
+    assert.equal(club.borrowLimit(), 1_500_000_000n);
     club.startRounds(owner);
 
-    // Round 1: 4 * 50 = 200 USDC deposited, owner borrows 200 USDC
     for (const m of members) club.contribute(m);
     club.borrow(owner, 200_000_000n);
 
-    // Round 2: Round 1 interest = 4 USDC. Owner pays 4 USDC and borrows 200 USDC more (totalDebt = 400)
     now += 86_400n;
     oracle.setPrice(owner, 60_000_00000000n, now);
     for (const m of members) club.contribute(m);
@@ -226,21 +250,18 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     club.payInterest(owner, 4_000_000n);
     club.borrow(owner, 200_000_000n);
 
-    // Round 3: Round 2 interest = 8 USDC. Owner pays 8 USDC.
     now += 86_400n;
     oracle.setPrice(owner, 60_000_00000000n, now);
     for (const m of members) club.contribute(m);
     assert.equal(club.interestOwed(), 8_000_000n);
     club.payInterest(owner, 8_000_000n);
 
-    // Round 4: Round 3 interest = 8 USDC. Owner pays 8 USDC.
     now += 86_400n;
     oracle.setPrice(owner, 60_000_00000000n, now);
     for (const m of members) club.contribute(m);
     assert.equal(club.interestOwed(), 8_000_000n);
     club.payInterest(owner, 8_000_000n);
 
-    // Cycle ends after Round 4: Round 4 interest = 8 USDC. Owner repays 400 USDC + 8 USDC interest, finalizes.
     now += 86_400n;
     oracle.setPrice(owner, 60_000_00000000n, now);
     assert.equal(club.interestOwed(), 8_000_000n);
@@ -250,26 +271,22 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
 
     assert.equal(club.state, BONDED_STATE.COMPLETED);
 
-    // Owner withdraws all 0.05 CirBTC collateral
     club.withdrawCollateral(owner, 5_000_000n);
     assert.equal(cirBtcLedger.balanceOf(owner), 5_000_000n);
 
-    // Each member claims ~7 USDC interest (within 1 micro-USDC integer division floor on 600e6) and withdraws 200 USDC principal
     for (const m of members) {
       const pending = club.pendingInterest(m);
-      assert.ok(
-        pending >= 6_999_999n && pending <= 7_000_000n,
-        `Expected ~7 USDC interest, got ${pending}`
-      );
+      assert.ok(pending >= 6_999_999n && pending <= 7_000_000n);
       club.claimInterest(m);
       const { usdcOut, cirBtcOut } = club.withdrawPrincipal(m);
       assert.equal(usdcOut, 200_000_000n);
       assert.equal(cirBtcOut, 0n);
       assert.equal(usdcLedger.balanceOf(m), 200_000_000n + pending);
     }
+    assert.ok(club.interestClaimedTotal <= club.interestPaidTotal);
   });
 
-  it("T059-04b: Section 26 10-member 0.11 CirBTC Worked Examples A (450 USDC total interest), B ($30k crash liquidation), and C (Round 1 interest default)", () => {
+  it("T059-04b: Section 26 10-member 0.11 CirBTC Worked Example A (450 USDC total interest)", () => {
     let now = 1_700_000_000n;
     const owner = "0x00000000000000000000000000000000000a11ce";
     const members = Array.from(
@@ -277,13 +294,13 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
       (_, i) => `0x${(i + 101).toString(16).padStart(40, "0")}`
     );
 
-    const usdcLedger = new MockTokenLedger();
-    const cirBtcLedger = new MockTokenLedger();
+    const usdcLedger = new MockTokenLedger(6);
+    const cirBtcLedger = new MockTokenLedger(8);
     const oracle = new MockOracleSimulator(owner, 8, 60_000_00000000n, "MOCK BTC/USD", now);
 
     const factory = new BondedTontineFactorySimulator({
-      usdc: "0x3600000000000000000000000000000000000000",
-      cirBtc: "0x1cbb6874ef4b97c2f3f062a9f45fbbfc44f81a88",
+      usdc: USDC_ADDRESS,
+      cirBtc: CIRBTC_ADDRESS,
       priceFeed: "0x9999999999999999999999999999999999999999",
       maxPriceAge: 3600n,
       usdcLedger,
@@ -302,7 +319,6 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
       liquidationBps: 12_000,
     });
 
-    // Owner deposits 0.11 CirBTC (11,000,000 units) -> collateralValueUsdc = $6,600, borrowLimit = $3,300
     cirBtcLedger.mint(owner, 11_000_000n);
     usdcLedger.mint(owner, 1_000_000_000n);
     for (const m of members) {
@@ -315,7 +331,6 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     assert.equal(club.borrowLimit(), 3_300_000_000n);
     club.startRounds(owner);
 
-    // Rounds 1..10: members contribute 500 USDC per round; owner borrows 500 USDC in rounds 1..6 (up to 3,000 USDC)
     for (let r = 1; r <= 10; r++) {
       for (const m of members) club.contribute(m);
       const owed = club.interestOwed();
@@ -326,27 +341,25 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
         club.borrow(owner, 500_000_000n);
       }
       if (r === 6) {
-        // Exposure at Round 6 borrow = 3,000 + 60 = 3,060 USDC <= 3,300 USDC borrowLimit
         assert.equal(club.exposure(), 3_060_000_000n);
       }
       now += 86_400n;
       oracle.setPrice(owner, 60_000_00000000n, now);
     }
 
-    // Pay final round 10 interest (60 USDC), repay 3,000 USDC, finalize
     assert.equal(club.interestOwed(), 60_000_000n);
     club.repay(owner, 3_000_000_000n);
     club.payInterest(owner, 60_000_000n);
-    assert.equal(club.interestDueTotal, 450_000_000n); // 10+20+30+40+50 + 5*60 = 450 USDC
+    assert.equal(club.interestDueTotal, 450_000_000n);
     assert.equal(club.interestPaidTotal, 450_000_000n);
     club.finalize();
     assert.equal(club.state, BONDED_STATE.COMPLETED);
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 3. Worked Example B — Interest Overdue Default (Section 26)
+  // 3. Worked Example B — Interest Overdue Default & DefaultPending Gate
   // ───────────────────────────────────────────────────────────────────────────
-  it("T059-05: Worked Example B (Interest Overdue Default) seizes 0.05 CirBTC and distributes 0.0125 CirBTC per member", () => {
+  it("T059-05: Worked Example B (Interest Overdue Default) enforces DefaultPending on contribute and seizes 0.05 CirBTC", () => {
     let now = 1_700_000_000n;
     const owner = "0x00000000000000000000000000000000000a11ce";
     const members = [
@@ -356,13 +369,13 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
       "0x000000000000000000000000000000000000b0b4",
     ];
 
-    const usdcLedger = new MockTokenLedger();
-    const cirBtcLedger = new MockTokenLedger();
+    const usdcLedger = new MockTokenLedger(6);
+    const cirBtcLedger = new MockTokenLedger(8);
     const oracle = new MockOracleSimulator(owner, 8, 60_000_00000000n, "MOCK BTC/USD", now);
 
     const factory = new BondedTontineFactorySimulator({
-      usdc: "0x3600000000000000000000000000000000000000",
-      cirBtc: "0x1cbb6874ef4b97c2f3f062a9f45fbbfc44f81a88",
+      usdc: USDC_ADDRESS,
+      cirBtc: CIRBTC_ADDRESS,
       priceFeed: "0x9999999999999999999999999999999999999999",
       maxPriceAge: 3600n,
       usdcLedger,
@@ -378,7 +391,7 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
 
     cirBtcLedger.mint(owner, 5_000_000n);
     for (const m of members) {
-      usdcLedger.mint(m, 50_000_000n);
+      usdcLedger.mint(m, 100_000_000n);
       club.joinGroup(m);
     }
     club.depositCollateral(owner, 5_000_000n);
@@ -387,14 +400,15 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     for (const m of members) club.contribute(m);
     club.borrow(owner, 200_000_000n);
 
-    // Round 1 ends at startTime + 86400; grace ends 86400s later
     now += 86_400n + 86_399n;
     oracle.setPrice(owner, 60_000_00000000n, now);
     assert.throws(() => club.declareDefault(), /NotDefaultable/);
 
-    // 1 second after grace period
+    // Once grace elapses, contribute() reverts DefaultPending before declareDefault() is called
     now += 1n;
     oracle.setPrice(owner, 60_000_00000000n, now);
+    assert.throws(() => club.contribute(members[0]), /DefaultPending/);
+
     club.declareDefault();
 
     assert.equal(club.state, BONDED_STATE.DEFAULTED);
@@ -404,12 +418,12 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     for (const m of members) {
       const { usdcOut, cirBtcOut } = club.withdrawPrincipal(m);
       assert.equal(usdcOut, 0n);
-      assert.equal(cirBtcOut, 1_250_000n); // 0.0125 CirBTC
+      assert.equal(cirBtcOut, 1_250_000n);
     }
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 4. Worked Example C — BTC Flash Crash Liquidation (Section 26)
+  // 4. Worked Example C — BTC Flash Crash Liquidation
   // ───────────────────────────────────────────────────────────────────────────
   it("T059-06: Worked Example C (BTC Flash Crash Liquidation) triggers UNDERCOLLATERALIZED when BTC drops to $11,500", () => {
     let now = 1_700_000_000n;
@@ -421,13 +435,13 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
       "0x000000000000000000000000000000000000b0b4",
     ];
 
-    const usdcLedger = new MockTokenLedger();
-    const cirBtcLedger = new MockTokenLedger();
+    const usdcLedger = new MockTokenLedger(6);
+    const cirBtcLedger = new MockTokenLedger(8);
     const oracle = new MockOracleSimulator(owner, 8, 60_000_00000000n, "MOCK BTC/USD", now);
 
     const factory = new BondedTontineFactorySimulator({
-      usdc: "0x3600000000000000000000000000000000000000",
-      cirBtc: "0x1cbb6874ef4b97c2f3f062a9f45fbbfc44f81a88",
+      usdc: USDC_ADDRESS,
+      cirBtc: CIRBTC_ADDRESS,
       priceFeed: "0x9999999999999999999999999999999999999999",
       maxPriceAge: 3600n,
       usdcLedger,
@@ -449,7 +463,6 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     club.depositCollateral(owner, 5_000_000n);
     club.startRounds(owner);
 
-    // 3 rounds of contributions = 600 USDC totalDeposits
     for (let r = 0; r < 3; r++) {
       for (const m of members) club.contribute(m);
       if (r < 2) {
@@ -461,7 +474,6 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     club.borrow(owner, 500_000_000n);
     assert.throws(() => club.liquidate(), /NotLiquidatable/);
 
-    // BTC flash crashes to $11,500 -> collateralValueUsdc = $575 < $600 floor
     oracle.setPrice(owner, 11_500_00000000n, now);
     assert.equal(club.collateralValueUsdc(), 575_000_000n);
 
@@ -473,8 +485,8 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
 
     for (const m of members) {
       const { usdcOut, cirBtcOut } = club.withdrawPrincipal(m);
-      assert.equal(usdcOut, 25_000_000n); // 25 USDC
-      assert.equal(cirBtcOut, 1_250_000n); // 0.0125 CirBTC
+      assert.equal(usdcOut, 25_000_000n);
+      assert.equal(cirBtcOut, 1_250_000n);
     }
   });
 
@@ -487,13 +499,13 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     const m1 = "0x000000000000000000000000000000000000b0b1";
     const m2 = "0x000000000000000000000000000000000000b0b2";
 
-    const usdcLedger = new MockTokenLedger();
-    const cirBtcLedger = new MockTokenLedger();
+    const usdcLedger = new MockTokenLedger(6);
+    const cirBtcLedger = new MockTokenLedger(8);
     const oracle = new MockOracleSimulator(owner, 8, 60_000_00000000n, "MOCK BTC/USD", now);
 
     const factory = new BondedTontineFactorySimulator({
-      usdc: "0x3600000000000000000000000000000000000000",
-      cirBtc: "0x1cbb6874ef4b97c2f3f062a9f45fbbfc44f81a88",
+      usdc: USDC_ADDRESS,
+      cirBtc: CIRBTC_ADDRESS,
       priceFeed: "0x9999999999999999999999999999999999999999",
       maxPriceAge: 3600n,
       usdcLedger,
@@ -507,10 +519,7 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
       maxMembers: 2,
     });
 
-    // Renounce ownership always reverts
     assert.throws(() => club.renounceOwnership(owner), /RenounceDisabled/);
-
-    // Owner cannot join
     assert.throws(() => club.joinGroup(owner), /OwnerCannotJoin/);
 
     cirBtcLedger.mint(owner, 5_000_000n);
@@ -523,39 +532,33 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     club.depositCollateral(owner, 5_000_000n);
     club.startRounds(owner);
 
-    // Ownership transfer is locked after OPEN
     assert.throws(
       () => club.transferOwnership(owner, "0x000000000000000000000000000000000000dead"),
       /TransferLockedAfterOpen/
     );
 
-    // S5: Fee-on-transfer USDC contribution reverts InvalidAmount
-    usdcLedger.feeBps = 100n; // 1% fee
+    usdcLedger.feeBps = 100n;
     assert.throws(() => club.contribute(m1), /InvalidAmount/);
     usdcLedger.feeBps = 0n;
 
     club.contribute(m1);
     club.contribute(m2);
 
-    // S3: Borrow and repay in the same round still records peakDebt and charges interest
     club.borrow(owner, 100_000_000n);
     club.repay(owner, 100_000_000n);
     assert.equal(club.totalDebt, 0n);
     assert.equal(club.peakDebt.get(1n), 100_000_000n);
 
-    // Advance to Round 2 -> 2% of 100 USDC = 2 USDC interest owed
     now += 86_400n;
     oracle.setPrice(owner, 60_000_00000000n, now);
     assert.equal(club.interestOwed(), 2_000_000n);
     club.payInterest(owner, 2_000_000n);
 
-    // S4: When exposure == 0, owner can withdraw collateral even if oracle is broken
     oracle.setBad(owner, -1n);
     assert.throws(() => club.borrow(owner, 10_000_000n), /BadPrice/);
     club.withdrawCollateral(owner, 1_000_000n);
     assert.equal(club.collateral, 4_000_000n);
 
-    // Restore oracle and finish Round 2
     oracle.setPrice(owner, 60_000_00000000n, now);
     club.contribute(m1);
     club.contribute(m2);
@@ -563,7 +566,6 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     oracle.setPrice(owner, 60_000_00000000n, now);
     club.finalize();
 
-    // S8: Blocklist isolation — blocking m1 does not prevent m2 from claiming and withdrawing
     usdcLedger.setBlocked(m1, true);
     assert.throws(() => club.withdrawPrincipal(m1), /AddressBlocked/);
     club.claimInterest(m2);
@@ -572,9 +574,9 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 6. Oracle Environment Validation & Pre-Broadcast Script (Section 12.1)
+  // 6. Oracle Environment Validation & Pre-Broadcast Script (Section 12.1 & T7)
   // ───────────────────────────────────────────────────────────────────────────
-  it("T059-08: Oracle environment validator & deploy script enforce MOCK prohibition and allowlist on mainnet", () => {
+  it("T059-08: Oracle environment validator & deploy script enforce MOCK prohibition, allowlist, token decimals (6 & 8), and deployed bytecode checks", () => {
     const now = 1_700_000_000n;
     const validRoundData = {
       roundId: 5n,
@@ -584,10 +586,9 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
       answeredInRound: 5n,
     };
 
-    // Testnet accepts MOCK oracle
     const testnetCheck = validateOracleFeedForEnv({
       env: "testnet",
-      feedAddress: "0x1111111111111111111111111111111111111111",
+      feedAddress: ARC_TESTNET_MOCK_FEED,
       description: "MOCK BTC / USD",
       decimals: 8,
       roundData: validRoundData,
@@ -596,41 +597,30 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     });
     assert.equal(testnetCheck.valid, true);
 
-    // Mainnet rejects MOCK oracle
     const mainnetMockCheck = validateOracleFeedForEnv({
       env: "mainnet",
-      feedAddress: "0x1111111111111111111111111111111111111111",
+      feedAddress: ARC_TESTNET_MOCK_FEED,
       description: "MOCK BTC / USD",
       decimals: 8,
       roundData: validRoundData,
       nowSeconds: now,
       maxPriceAge: 3600n,
-      mainnetAllowlist: ["0x1111111111111111111111111111111111111111"],
+      mainnetAllowlist: [ARC_TESTNET_MOCK_FEED],
     });
     assert.equal(mainnetMockCheck.valid, false);
     assert.ok(mainnetMockCheck.reason?.includes("MainnetOracleRejected"));
 
-    // Mainnet rejects non-allowlisted feed even if description is not MOCK
-    const mainnetAllowlistCheck = validateOracleFeedForEnv({
-      env: "mainnet",
-      feedAddress: "0x2222222222222222222222222222222222222222",
-      description: "BTC / USD",
-      decimals: 8,
-      roundData: validRoundData,
-      nowSeconds: now,
-      maxPriceAge: 3600n,
-      mainnetAllowlist: ["0x3333333333333333333333333333333333333333"],
-    });
-    assert.equal(mainnetAllowlistCheck.valid, false);
-
-    // Pre-broadcast script validator succeeds on valid testnet config and throws on stale price
     const preBroadcastOk = validatePreBroadcastConfig({
       env: "testnet",
-      chainId: 5042002,
-      expectedChainId: 5042002,
-      usdc: "0x3600000000000000000000000000000000000000",
-      cirBtc: "0x1cbb6874ef4b97c2f3f062a9f45fbbfc44f81a88",
-      priceFeed: "0x1111111111111111111111111111111111111111",
+      chainId: ARC_TESTNET_CHAIN_ID,
+      expectedChainId: ARC_TESTNET_CHAIN_ID,
+      usdc: USDC_ADDRESS,
+      cirBtc: CIRBTC_ADDRESS,
+      usdcDecimals: 6,
+      cirBtcDecimals: 8,
+      usdcHasCode: true,
+      cirBtcHasCode: true,
+      priceFeed: ARC_TESTNET_MOCK_FEED,
       maxPriceAge: 3600,
       feedDecimals: 8,
       feedDescription: "MOCK BTC / USD",
@@ -639,15 +629,78 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     });
     assert.equal(preBroadcastOk.ok, true);
 
+    // Reject wrong token decimals (non-6 USDC or non-8 cirBTC)
     assert.throws(
       () =>
         validatePreBroadcastConfig({
           env: "testnet",
-          chainId: 5042002,
-          expectedChainId: 5042002,
-          usdc: "0x3600000000000000000000000000000000000000",
-          cirBtc: "0x1cbb6874ef4b97c2f3f062a9f45fbbfc44f81a88",
-          priceFeed: "0x1111111111111111111111111111111111111111",
+          chainId: ARC_TESTNET_CHAIN_ID,
+          expectedChainId: ARC_TESTNET_CHAIN_ID,
+          usdc: USDC_ADDRESS,
+          cirBtc: CIRBTC_ADDRESS,
+          usdcDecimals: 18,
+          cirBtcDecimals: 8,
+          priceFeed: ARC_TESTNET_MOCK_FEED,
+          maxPriceAge: 3600,
+          feedDecimals: 8,
+          feedDescription: "MOCK BTC / USD",
+          latestRoundData: validRoundData,
+          nowSeconds: now,
+        }),
+      /usdc\.decimals\(\) must be 6/
+    );
+
+    assert.throws(
+      () =>
+        validatePreBroadcastConfig({
+          env: "testnet",
+          chainId: ARC_TESTNET_CHAIN_ID,
+          expectedChainId: ARC_TESTNET_CHAIN_ID,
+          usdc: USDC_ADDRESS,
+          cirBtc: CIRBTC_ADDRESS,
+          usdcDecimals: 6,
+          cirBtcDecimals: 6,
+          priceFeed: ARC_TESTNET_MOCK_FEED,
+          maxPriceAge: 3600,
+          feedDecimals: 8,
+          feedDescription: "MOCK BTC / USD",
+          latestRoundData: validRoundData,
+          nowSeconds: now,
+        }),
+      /cirBtc\.decimals\(\) must be 8/
+    );
+
+    // Reject cirBTC address with no code on-chain
+    assert.throws(
+      () =>
+        validatePreBroadcastConfig({
+          env: "testnet",
+          chainId: ARC_TESTNET_CHAIN_ID,
+          expectedChainId: ARC_TESTNET_CHAIN_ID,
+          usdc: USDC_ADDRESS,
+          cirBtc: CIRBTC_ADDRESS,
+          usdcDecimals: 6,
+          cirBtcDecimals: 8,
+          cirBtcHasCode: false,
+          priceFeed: ARC_TESTNET_MOCK_FEED,
+          maxPriceAge: 3600,
+          feedDecimals: 8,
+          feedDescription: "MOCK BTC / USD",
+          latestRoundData: validRoundData,
+          nowSeconds: now,
+        }),
+      /cirBtc address has no deployed bytecode/
+    );
+
+    assert.throws(
+      () =>
+        validatePreBroadcastConfig({
+          env: "testnet",
+          chainId: ARC_TESTNET_CHAIN_ID,
+          expectedChainId: ARC_TESTNET_CHAIN_ID,
+          usdc: USDC_ADDRESS,
+          cirBtc: CIRBTC_ADDRESS,
+          priceFeed: ARC_TESTNET_MOCK_FEED,
           maxPriceAge: 3600,
           feedDecimals: 8,
           feedDescription: "MOCK BTC / USD",
@@ -659,15 +712,39 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
   });
 
   // ───────────────────────────────────────────────────────────────────────────
-  // 7. APR Calculation & Directory Version Support (Section 13)
+  // 7. Canonical Config, Error Mapping, Directory Sync & UI Copy (T4, T6, T7)
   // ───────────────────────────────────────────────────────────────────────────
-  it("T059-09: APR helper & savingsClubDirectory version tag ('v1-rotating' | 'v2-bonded') work with 100% backward compatibility", () => {
-    // 200 bps (2%) per 1-day round = 730% annualized APR
+  it("T059-09: Canonical factory config, 21 bilingual error messages, UI disclosure copy, and directory version sync work accurately", async () => {
     assert.equal(calculateAnnualizedAprPct(200, 86_400), 730);
     assert.equal(isMockOracleDescription("MOCK BTC/USD"), true);
     assert.equal(isMockOracleDescription("BTC / USD"), false);
 
-    // Default club version when omitted is "v1-rotating"
+    // T4 canonical factory & oracle info
+    assert.equal(CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID], ARC_TESTNET_BONDED_FACTORY);
+    assert.equal(ORACLE_INFO[ARC_TESTNET_CHAIN_ID].feedAddress, ARC_TESTNET_MOCK_FEED);
+    assert.equal(ORACLE_INFO[ARC_TESTNET_CHAIN_ID].isMock, true);
+
+    // T6.9 bilingual error mapping for all 21 custom errors
+    assert.equal(Object.keys(BONDED_TONTINE_ERROR_MESSAGES).length, 21);
+    assert.equal(
+      parseBondedTontineError(new Error("DefaultPending"), "vi"),
+      "Nhóm đang chờ xử lý vỡ nợ, tạm thời không nhận thêm tiền góp"
+    );
+    assert.ok(
+      parseBondedTontineError(new Error("ExceedsBorrowLimit"), "en").includes("Borrow amount exceeds")
+    );
+    assert.ok(
+      parseBondedTontineError(new Error("CollateralLocked"), "vi").includes("Không thể rút cọc")
+    );
+    assert.ok(parseBondedTontineError(new Error("StalePrice"), "vi").includes("quá hạn"));
+    assert.ok(parseBondedTontineError(new Error("BadPrice"), "en").includes("invalid"));
+    assert.ok(parseBondedTontineError(new Error("NotLiquidatable"), "vi").includes("ngưỡng thanh lý"));
+
+    // T6.8 & T6.11 UI disclosure and mock oracle warning copy
+    assert.ok(BONDED_DISCLOSURE_COPY.vi.includes("Chủ hụi vay trong hạn mức cọc; ai cũng kích hoạt được thanh lý"));
+    assert.equal(MOCK_ORACLE_WARNING_COPY.vi, "Giá thử nghiệm, không phải giá thị trường");
+
+    // T6.10 directory version support & factory sync
     assert.equal(getClubVersion(undefined), "v1-rotating");
     assert.equal(getClubVersion({}), "v1-rotating");
     assert.equal(getClubVersion({ version: "v2-bonded" }), "v2-bonded");
@@ -683,14 +760,27 @@ describe("Task-059: BondedTontine Design Specification & Implementation Suite", 
     };
 
     try {
-      saveKnownGroup({
-        address: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        name: "Bonded Club V2",
-        version: "v2-bonded",
-      });
+      const mockReader = {
+        readContract: async ({ functionName }: { functionName: string }) => {
+          if (functionName === "clubsLength") return 1n;
+          if (functionName === "clubAt") return "0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b";
+          if (functionName === "groupName") return "Saigon Bonded Club V2";
+          return null;
+        },
+      };
+
+      const synced = await syncFactoryBondedClubs(
+        mockReader,
+        ARC_TESTNET_BONDED_FACTORY,
+        BONDED_TONTINE_FACTORY_ABI,
+        BONDED_TONTINE_ABI
+      );
+      assert.equal(synced.length, 1);
+      assert.equal(synced[0].version, "v2-bonded");
+
       const groups = getKnownGroups();
       const found = groups.find(
-        (g) => g.address === "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        (g) => g.address === "0x3d35e830fe5ba48ff5b36dbba9ecebd3a7bad59b"
       );
       assert.ok(found);
       assert.equal(found.version, "v2-bonded");

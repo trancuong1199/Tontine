@@ -1918,7 +1918,7 @@ export const UniswapPortal: React.FC<UniswapPortalProps> = ({ connectedAccount, 
                 marginTop: '0.5rem'
               }}
             >
-              Close Simulator Explorer
+              Close Simulation Explorer
             </button>
           </div>
         </div>

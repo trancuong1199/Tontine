@@ -12,6 +12,8 @@ import { ClubCard } from "./components/savings/ClubCard";
 import { MemberStatus } from "./components/savings/MemberStatus";
 import { ActionPanel } from "./components/savings/ActionPanel";
 import { PasskeyActionPanel } from "./components/savings/PasskeyActionPanel";
+import { BondedClubWorkspace } from "./components/savings/BondedClubWorkspace";
+import { ARC_TESTNET_DEFAULT_BONDED_CLUB } from "./config/bonded-tontine";
 import { GroupSwitcher } from "./components/savings/GroupSwitcher";
 import { RoundHistory } from "./components/savings/RoundHistory";
 import { ClubMembersRoster } from "./components/savings/ClubMembersRoster";
@@ -1341,6 +1343,19 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* BondedTontine V2 Workspace (when selected club is v2-bonded or ARC_TESTNET_DEFAULT_BONDED_CLUB) */}
+        {contractAddress?.toLowerCase() === ARC_TESTNET_DEFAULT_BONDED_CLUB.toLowerCase() ||
+        getKnownGroups().find((g) => g.address.toLowerCase() === contractAddress?.toLowerCase())?.version === "v2-bonded" ? (
+          <div className="my-6">
+            <BondedClubWorkspace
+              contractAddress={contractAddress}
+              userAddress={address}
+              language={language}
+              onSelectGroup={handleSwitchGroup}
+            />
+          </div>
+        ) : null}
 
         {/* Main Content: 2-column layout on desktop, stacked on mobile */}
         {!isLoading && !hasNoActiveClub && Boolean(address) && (hasExplicitGroup || isUserAffiliated) && (clubInfo.groupName || displayedGroupName) && (

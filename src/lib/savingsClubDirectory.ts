@@ -399,4 +399,69 @@ export function buildShareGroupUrl(address: string, baseUrl?: string): string {
   }
 }
 
+/**
+ * Syncs verified BondedTontine clubs from BondedTontineFactory.clubAt(i) into known groups with version: "v2-bonded" (T6.10).
+ */
+export async function syncFactoryBondedClubs(
+  reader: {
+    readContract: (args: {
+      address: `0x${string}`;
+      abi: readonly unknown[];
+      functionName: string;
+      args?: readonly unknown[];
+    }) => Promise<unknown>;
+  },
+  factoryAddress: `0x${string}`,
+  factoryAbi: readonly unknown[],
+  tontineAbi: readonly unknown[]
+): Promise<SavingsClubItem[]> {
+  if (!reader || !isValidAddress(factoryAddress)) return [];
+  const synced: SavingsClubItem[] = [];
+  try {
+    const lengthRaw = (await reader.readContract({
+      address: factoryAddress,
+      abi: factoryAbi,
+      functionName: "clubsLength",
+      args: [],
+    })) as bigint;
+    const count = Number(lengthRaw);
+    for (let i = 0; i < count; i++) {
+      const clubAddr = (await reader.readContract({
+        address: factoryAddress,
+        abi: factoryAbi,
+        functionName: "clubAt",
+        args: [BigInt(i)],
+      })) as `0x${string}`;
+      if (!isValidAddress(clubAddr)) continue;
+      let groupName = `Bonded Club #${i + 1}`;
+      try {
+        const nameOnChain = (await reader.readContract({
+          address: clubAddr,
+          abi: tontineAbi,
+          functionName: "groupName",
+          args: [],
+        })) as string;
+        if (typeof nameOnChain === "string" && nameOnChain.trim()) {
+          groupName = nameOnChain.trim();
+        }
+      } catch {
+        // Fallback name
+      }
+      saveKnownGroup({
+        address: clubAddr,
+        name: groupName,
+        version: "v2-bonded",
+      });
+      synced.push({
+        address: clubAddr.toLowerCase() as `0x${string}`,
+        name: groupName,
+        version: "v2-bonded",
+      });
+    }
+  } catch {
+    // Graceful catch on network error
+  }
+  return synced;
+}
+
 
