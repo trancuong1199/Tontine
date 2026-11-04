@@ -7,6 +7,8 @@ export function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
+export type ClubVersion = "v1-rotating" | "v2-bonded";
+
 export interface SavingsClubItem {
   address: `0x${string}`;
   name: string;
@@ -14,6 +16,11 @@ export interface SavingsClubItem {
   createdAt?: number;
   initialCollateral?: string; // Deployment snapshot only; never current financial authority.
   creator?: string;
+  version?: ClubVersion;
+}
+
+export function getClubVersion(item?: { version?: ClubVersion } | null): ClubVersion {
+  return item?.version === "v2-bonded" ? "v2-bonded" : "v1-rotating";
 }
 
 export const SAVINGS_CLUBS_STORAGE_KEY = "hui_known_groups";
@@ -130,6 +137,9 @@ export function getKnownGroups(): SavingsClubItem[] {
           address: defaultMatch.address.toLowerCase() as `0x${string}`,
           createdAt: typeof item.createdAt === "number" ? item.createdAt : undefined,
           creator: typeof item.creator === "string" ? item.creator : undefined,
+          ...(item.version === "v1-rotating" || item.version === "v2-bonded"
+            ? { version: item.version as ClubVersion }
+            : {}),
         });
       } else {
         result.push({
@@ -141,6 +151,9 @@ export function getKnownGroups(): SavingsClubItem[] {
           isDefault: false,
           createdAt: typeof item.createdAt === "number" ? item.createdAt : undefined,
           creator: typeof item.creator === "string" ? item.creator : undefined,
+          ...(item.version === "v1-rotating" || item.version === "v2-bonded"
+            ? { version: item.version as ClubVersion }
+            : {}),
         });
       }
     }
@@ -161,7 +174,13 @@ export function getKnownGroups(): SavingsClubItem[] {
   }
 }
 
-export function saveKnownGroup(item: { address: string; name: string; initialCollateral?: string; creator?: string }): void {
+export function saveKnownGroup(item: {
+  address: string;
+  name: string;
+  initialCollateral?: string;
+  creator?: string;
+  version?: ClubVersion;
+}): void {
   if (!item || !isValidAddress(item.address)) return;
   if (typeof window === "undefined" || !window.localStorage) return;
 
@@ -170,7 +189,14 @@ export function saveKnownGroup(item: { address: string; name: string; initialCol
     (d) => d.address.toLowerCase() === normalized
   );
 
-  let rawList: Array<{ address: string; name: string; createdAt?: number; initialCollateral?: string; creator?: string }> = [];
+  let rawList: Array<{
+    address: string;
+    name: string;
+    createdAt?: number;
+    initialCollateral?: string;
+    creator?: string;
+    version?: ClubVersion;
+  }> = [];
   try {
     const raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
     if (raw) {
@@ -221,12 +247,16 @@ export function saveKnownGroup(item: { address: string; name: string; initialCol
     resolvedName = `Nhóm Hụi ${formatAddress(normalized)}`;
   }
 
+  const resolvedVersion = item.version ?? existing?.version;
   const newItem = {
     address: normalized,
     name: resolvedName,
     createdAt: existing?.createdAt || Date.now(),
     initialCollateral: item.initialCollateral ?? existing?.initialCollateral,
     creator: item.creator ?? existing?.creator,
+    ...(resolvedVersion === "v1-rotating" || resolvedVersion === "v2-bonded"
+      ? { version: resolvedVersion }
+      : {}),
   };
 
   const updated = [newItem, ...filtered];

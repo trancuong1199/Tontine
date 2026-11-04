@@ -1,0 +1,16 @@
+{
+  "taskId": "task-059",
+  "createdAt": "2026-11-04T06:58:26.821Z",
+  "files": {
+    "src/lib/savingsClubDirectory.ts": {
+      "exists": true,
+      "sha256": "8f5a349ba71d7ba83ae5007f42305adb09e827a9026ad16264fc8f9e95b93f85",
+      "snapshot": "docs/manifests/task-059/baseline/src_lib_savingsClubDirectory.ts"
+    },
+    "foundry.toml": {
+      "exists": true,
+      "sha256": "2deb4217c39b7b62fbc9f9c844bea76b9b00f1a48cb422f174bf80e6ba155b10",
+      "snapshot": "docs/manifests/task-059/baseline/foundry.toml"
+    }
+  }
+}
