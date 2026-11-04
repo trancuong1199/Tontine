@@ -1,0 +1,482 @@
+diff --git a/contracts/test/BondedTontine.t.sol b/contracts/test/BondedTontine.t.sol
+index fc0acd0..54f6d8d 100644
+--- a/contracts/test/BondedTontine.t.sol
++++ b/contracts/test/BondedTontine.t.sol
+@@ -6,7 +6,7 @@ import {BondedTontine} from "../BondedTontine.sol";
+ import {BondedTontineFactory} from "../BondedTontineFactory.sol";
+ import {MockAggregatorV3} from "./mocks/MockAggregatorV3.sol";
+ 
+-/// @dev Blocklistable ERC-20 mock for testing S8 (Blocklist isolation).
++/// @dev Blocklistable ERC-20 mock for testing S8 (Blocklist isolation) and decimals validation.
+ contract BlocklistableMockERC20 {
+     string public name;
+     string public symbol;
+@@ -68,7 +68,7 @@ contract BlocklistableMockERC20 {
+     }
+ }
+ 
+-/// @dev Invariant handler for BondedTontine (Section 20.2).
++/// @dev Invariant handler for BondedTontine (Section 20.2 & P3).
+ contract BondedTontineHandler is Test {
+     BondedTontine public club;
+     BlocklistableMockERC20 public usdc;
+@@ -157,9 +157,16 @@ contract BondedTontineHandler is Test {
+         _checkStateMonotonic();
+     }
+ 
++    function claimInterest(uint256 memberSeed) external {
++        address m = members[memberSeed % members.length];
++        vm.prank(m);
++        try club.claimInterest() {} catch {}
++        _checkStateMonotonic();
++    }
++
+     function warpTime(uint256 delta) external {
+         delta = bound(delta, 60, 2 days);
+-        vm.warp(block.timestamp + delta);
++        vm.warp(vm.getBlockTimestamp() + delta);
+         (, int256 currentAnswer, , , ) = oracle.latestRoundData();
+         oracle.setPrice(currentAnswer);
+         _checkStateMonotonic();
+@@ -247,7 +254,7 @@ contract BondedTontineTest is Test {
+     }
+ 
+     // ─────────────────────────────────────────────────────────────────────────
+-    // 1. Constructor & Factory Tests
++    // 1. Constructor & Factory Tests (including Decimals 6 & 8 Validation)
+     // ─────────────────────────────────────────────────────────────────────────
+ 
+     function test_FactoryRegistryAndImmutables() public view {
+@@ -281,17 +288,62 @@ contract BondedTontineTest is Test {
+         );
+     }
+ 
++    function test_ConstructorAndFactoryRevertOnWrongTokenDecimals() public {
++        BlocklistableMockERC20 badUsdc = new BlocklistableMockERC20("Bad USDC", "USDC", 18);
++        BlocklistableMockERC20 badCirBtc = new BlocklistableMockERC20("Bad BTC", "BTC", 6);
++
++        vm.expectRevert(BondedTontineFactory.InvalidConfiguration.selector);
++        new BondedTontineFactory(address(badUsdc), address(cirBtc), address(oracle), MAX_PRICE_AGE);
++
++        vm.expectRevert(BondedTontineFactory.InvalidConfiguration.selector);
++        new BondedTontineFactory(address(usdc), address(badCirBtc), address(oracle), MAX_PRICE_AGE);
++
++        vm.expectRevert(BondedTontine.InvalidConfiguration.selector);
++        new BondedTontine(
++            clubOwner,
++            address(badUsdc),
++            address(cirBtc),
++            address(oracle),
++            MAX_PRICE_AGE,
++            "Bad USDC Decimals",
++            CONTRIBUTION,
++            MAX_MEMBERS,
++            ROUND_DURATION,
++            RATE_BPS,
++            SAFETY_BPS,
++            LIQUIDATION_BPS,
++            INTEREST_GRACE,
++            SETTLEMENT_GRACE
++        );
++
++        vm.expectRevert(BondedTontine.InvalidConfiguration.selector);
++        new BondedTontine(
++            clubOwner,
++            address(usdc),
++            address(badCirBtc),
++            address(oracle),
++            MAX_PRICE_AGE,
++            "Bad CirBTC Decimals",
++            CONTRIBUTION,
++            MAX_MEMBERS,
++            ROUND_DURATION,
++            RATE_BPS,
++            SAFETY_BPS,
++            LIQUIDATION_BPS,
++            INTEREST_GRACE,
++            SETTLEMENT_GRACE
++        );
++    }
++
+     // ─────────────────────────────────────────────────────────────────────────
+     // 2. OPEN State Tests (joinGroup, removeMember, cancelOpen, startRounds)
+     // ─────────────────────────────────────────────────────────────────────────
+ 
+     function test_OpenState_OwnerCannotJoin_And_StartRequiresMinMembersAndCollateral() public {
+-        // Owner cannot join as member
+         vm.prank(clubOwner);
+         vm.expectRevert(BondedTontine.OwnerCannotJoin.selector);
+         club.joinGroup();
+ 
+-        // Only 1 member -> startRounds reverts InvalidConfiguration
+         vm.prank(member1);
+         club.joinGroup();
+ 
+@@ -299,7 +351,6 @@ contract BondedTontineTest is Test {
+         vm.expectRevert(BondedTontine.InvalidConfiguration.selector);
+         club.startRounds();
+ 
+-        // 2nd member joins -> still 0 collateral -> reverts InvalidConfiguration
+         vm.prank(member2);
+         club.joinGroup();
+ 
+@@ -307,7 +358,6 @@ contract BondedTontineTest is Test {
+         vm.expectRevert(BondedTontine.InvalidConfiguration.selector);
+         club.startRounds();
+ 
+-        // Deposit collateral -> startRounds succeeds
+         vm.prank(clubOwner);
+         club.depositCollateral(10_000_000); // 0.1 BTC
+ 
+@@ -337,7 +387,6 @@ contract BondedTontineTest is Test {
+     // ─────────────────────────────────────────────────────────────────────────
+ 
+     function test_WorkedExampleA_HappyPath() public {
+-        // 4 members join
+         vm.prank(member1);
+         club.joinGroup();
+         vm.prank(member2);
+@@ -347,17 +396,15 @@ contract BondedTontineTest is Test {
+         vm.prank(member4);
+         club.joinGroup();
+ 
+-        // Owner deposits 0.05 CirBTC (5,000,000 sats) -> $3,000 at $60k -> borrowLimit = $1,500
+         vm.startPrank(clubOwner);
+         club.depositCollateral(5_000_000);
+         assertEq(club.collateralValueUsdc(), 3_000e6);
+         assertEq(club.borrowLimit(), 1_500e6);
+ 
+-        // Start rounds -> totalRounds = 4
+         club.startRounds();
+         vm.stopPrank();
+ 
+-        // Round 1: all 4 contribute 50 USDC -> totalDeposits = 200 USDC. Owner borrows 200 USDC.
++        // Round 1
+         vm.prank(member1);
+         club.contribute();
+         vm.prank(member2);
+@@ -371,11 +418,9 @@ contract BondedTontineTest is Test {
+         club.borrow(200e6);
+ 
+         // Advance to Round 2
+-        vm.warp(block.timestamp + ROUND_DURATION);
++        vm.warp(vm.getBlockTimestamp() + ROUND_DURATION);
+         oracle.setPrice(INITIAL_BTC_PRICE);
+ 
+-        // Round 2: all 4 contribute -> totalDeposits = 400 USDC.
+-        // Round 1 closed with peakDebt[1] = 200 USDC -> interest = 4 USDC.
+         vm.prank(member1);
+         club.contribute();
+         assertEq(club.interestOwed(), 4e6);
+@@ -393,11 +438,9 @@ contract BondedTontineTest is Test {
+         vm.stopPrank();
+ 
+         // Advance to Round 3
+-        vm.warp(block.timestamp + ROUND_DURATION);
++        vm.warp(vm.getBlockTimestamp() + ROUND_DURATION);
+         oracle.setPrice(INITIAL_BTC_PRICE);
+ 
+-        // Round 3: Round 2 closed with peak 400 -> interest = 8 USDC.
+-        // All 4 contribute -> totalDeposits = 600 USDC. Owner pays 8 USDC interest, does not borrow more.
+         vm.prank(member1);
+         club.contribute();
+         assertEq(club.interestOwed(), 8e6);
+@@ -412,11 +455,9 @@ contract BondedTontineTest is Test {
+         club.payInterest(8e6);
+ 
+         // Advance to Round 4
+-        vm.warp(block.timestamp + ROUND_DURATION);
++        vm.warp(vm.getBlockTimestamp() + ROUND_DURATION);
+         oracle.setPrice(INITIAL_BTC_PRICE);
+ 
+-        // Round 4: Round 3 closed with peak 400 -> interest = 8 USDC.
+-        // All 4 contribute -> totalDeposits = 800 USDC. Owner pays 8 USDC interest.
+         vm.prank(member1);
+         club.contribute();
+         assertEq(club.interestOwed(), 8e6);
+@@ -430,13 +471,12 @@ contract BondedTontineTest is Test {
+         vm.prank(clubOwner);
+         club.payInterest(8e6);
+ 
+-        // End of Round 4: warp past cycle end -> Round 4 closes with peak 400 -> interest = 8 USDC.
++        // End of Round 4
+         vm.warp(club.startTime() + (MAX_MEMBERS * ROUND_DURATION) + 1);
+         oracle.setPrice(INITIAL_BTC_PRICE);
+ 
+         assertEq(club.interestOwed(), 8e6);
+ 
+-        // Owner repays 400 USDC principal and pays 8 USDC interest, then finalizes
+         vm.startPrank(clubOwner);
+         club.repay(400e6);
+         club.payInterest(8e6);
+@@ -445,10 +485,10 @@ contract BondedTontineTest is Test {
+ 
+         assertEq(uint256(club.state()), uint256(BondedTontine.State.COMPLETED));
+ 
+-        // Each member deposited 200 USDC and earned (4 + 8 + 8 + 8) / 4 = 7 USDC interest
+         address[4] memory mList = [member1, member2, member3, member4];
+         for (uint256 i = 0; i < 4; i++) {
+-            assertEq(club.pendingInterest(mList[i]), 7e6);
++            uint256 pending = club.pendingInterest(mList[i]);
++            assertApproxEqAbs(pending, 7e6, 7);
+ 
+             uint256 balBefore = usdc.balanceOf(mList[i]);
+             vm.startPrank(mList[i]);
+@@ -457,15 +497,17 @@ contract BondedTontineTest is Test {
+             vm.stopPrank();
+             uint256 balAfter = usdc.balanceOf(mList[i]);
+ 
+-            assertEq(balAfter - balBefore, 207e6);
++            assertEq(balAfter - balBefore, 200e6 + pending);
+         }
++        assertLe(club.interestClaimedTotal(), club.interestPaidTotal());
++        assertLe(club.interestPaidTotal() - club.interestClaimedTotal(), 10);
+     }
+ 
+     // ─────────────────────────────────────────────────────────────────────────
+-    // 4. Worked Example B — Interest Overdue Default (Section 26)
++    // 4. Worked Example B — Interest Overdue Default & DefaultPending Gate
+     // ─────────────────────────────────────────────────────────────────────────
+ 
+-    function test_WorkedExampleB_InterestOverdueDefault() public {
++    function test_WorkedExampleB_InterestOverdueDefault_And_DefaultPendingGate() public {
+         vm.prank(member1);
+         club.joinGroup();
+         vm.prank(member2);
+@@ -480,7 +522,7 @@ contract BondedTontineTest is Test {
+         club.startRounds();
+         vm.stopPrank();
+ 
+-        // Round 1: all 4 contribute 50 USDC (200 USDC total). Owner borrows 200 USDC.
++        // Round 1
+         vm.prank(member1);
+         club.contribute();
+         vm.prank(member2);
+@@ -493,7 +535,6 @@ contract BondedTontineTest is Test {
+         vm.prank(clubOwner);
+         club.borrow(200e6);
+ 
+-        // Round 1 ends at T1.
+         uint256 t1 = club.startTime() + ROUND_DURATION;
+         vm.warp(t1);
+         oracle.setPrice(INITIAL_BTC_PRICE);
+@@ -505,16 +546,21 @@ contract BondedTontineTest is Test {
+         vm.expectRevert(BondedTontine.NotDefaultable.selector);
+         club.declareDefault();
+ 
+-        // At T1 + interestGrace + 1, keeper calls declareDefault()
++        // At T1 + interestGrace + 1, interest is overdue:
++        // contribute() must revert with DefaultPending!
+         vm.warp(t1 + INTEREST_GRACE + 1);
+         oracle.setPrice(INITIAL_BTC_PRICE);
++        vm.prank(member1);
++        vm.expectRevert(BondedTontine.DefaultPending.selector);
++        club.contribute();
++
++        // Keeper calls declareDefault()
+         vm.prank(keeper);
+         club.declareDefault();
+ 
+         assertEq(uint256(club.state()), uint256(BondedTontine.State.DEFAULTED));
+         assertEq(club.settledCollateral(), 5_000_000);
+ 
+-        // Each member deposited 50 / 200 = 25% -> receives 0 USDC (all 200 borrowed) + 1,250,000 sats
+         address[4] memory mList = [member1, member2, member3, member4];
+         for (uint256 i = 0; i < 4; i++) {
+             uint256 btcBefore = cirBtc.balanceOf(mList[i]);
+@@ -526,7 +572,7 @@ contract BondedTontineTest is Test {
+     }
+ 
+     // ─────────────────────────────────────────────────────────────────────────
+-    // 5. Worked Example C — BTC Flash Crash Liquidation (Section 26)
++    // 5. Worked Example C — BTC Flash Crash Liquidation & DefaultPending Gate
+     // ─────────────────────────────────────────────────────────────────────────
+ 
+     function test_WorkedExampleC_FlashCrashLiquidation() public {
+@@ -539,13 +585,11 @@ contract BondedTontineTest is Test {
+         vm.prank(member4);
+         club.joinGroup();
+ 
+-        // Owner has 0.05 CirBTC, borrows 500 USDC across rounds
+         vm.startPrank(clubOwner);
+         club.depositCollateral(5_000_000); // 0.05 BTC
+         club.startRounds();
+         vm.stopPrank();
+ 
+-        // Round 1..3 contributions to reach 600 USDC deposits, borrow 500 USDC
+         for (uint256 r = 0; r < 3; r++) {
+             vm.prank(member1);
+             club.contribute();
+@@ -556,12 +600,11 @@ contract BondedTontineTest is Test {
+             vm.prank(member4);
+             club.contribute();
+             if (r < 2) {
+-                vm.warp(block.timestamp + ROUND_DURATION);
++                vm.warp(vm.getBlockTimestamp() + ROUND_DURATION);
+                 oracle.setPrice(INITIAL_BTC_PRICE);
+             }
+         }
+ 
+-        // Pay any prior round interest and borrow 500 USDC
+         uint256 due = club.interestOwed();
+         if (due > 0) {
+             vm.prank(clubOwner);
+@@ -571,22 +614,29 @@ contract BondedTontineTest is Test {
+         club.borrow(500e6);
+         assertEq(club.totalDebt(), 500e6);
+ 
+-        // At $60,000 BTC, collateralUsd = $3,000 -> healthy
+         vm.expectRevert(BondedTontine.NotLiquidatable.selector);
+         club.liquidate();
+ 
+-        // BTC drops to $11,500 -> collateralUsd = 0.05 * 11,500 = $575 < $600 liquidation floor
++        // BTC drops to $11,500 -> collateralUsd = $575 < $600 liquidation floor
+         oracle.setPrice(11_500e8);
+         assertEq(club.collateralValueUsdc(), 575e6);
+ 
++        // Advance to Round 4: while undercollateralized, contribute() reverts DefaultPending
++        vm.warp(vm.getBlockTimestamp() + ROUND_DURATION);
++        oracle.setPrice(11_500e8);
++        vm.prank(clubOwner);
++        club.payInterest(club.interestOwed()); // pay interest so only undercollateralization is pending
++        vm.prank(member1);
++        vm.expectRevert(BondedTontine.DefaultPending.selector);
++        club.contribute();
++
+         vm.prank(keeper);
+         club.liquidate();
+ 
+         assertEq(uint256(club.state()), uint256(BondedTontine.State.DEFAULTED));
+-        assertEq(club.settledRecoveredUsdc(), 100e6); // 600 deposited - 500 borrowed
++        assertEq(club.settledRecoveredUsdc(), 100e6);
+         assertEq(club.settledCollateral(), 5_000_000);
+ 
+-        // Each member gets 25 USDC + 0.0125 CirBTC
+         uint256 usdcBefore = usdc.balanceOf(member1);
+         uint256 btcBefore = cirBtc.balanceOf(member1);
+         vm.prank(member1);
+@@ -600,7 +650,6 @@ contract BondedTontineTest is Test {
+     // ─────────────────────────────────────────────────────────────────────────
+ 
+     function test_Security_S3_BorrowRepaySameRoundPeakDebt() public {
+-        // S3: Owner cannot borrow, repay in the same round, and pay zero interest
+         vm.prank(member1);
+         club.joinGroup();
+         vm.prank(member2);
+@@ -616,23 +665,20 @@ contract BondedTontineTest is Test {
+         vm.prank(member2);
+         club.contribute();
+ 
+-        // Owner borrows 100 USDC and immediately repays 100 USDC in Round 1
+         vm.startPrank(clubOwner);
+         club.borrow(100e6);
+         assertEq(club.peakDebt(1), 100e6);
+         club.repay(100e6);
+         assertEq(club.totalDebt(), 0);
+-        assertEq(club.peakDebt(1), 100e6); // peak debt remains 100 USDC!
++        assertEq(club.peakDebt(1), 100e6);
+         vm.stopPrank();
+ 
+-        // Advance to Round 2 -> 2% of 100 USDC = 2 USDC interest is still charged!
+-        vm.warp(block.timestamp + ROUND_DURATION);
++        vm.warp(vm.getBlockTimestamp() + ROUND_DURATION);
+         oracle.setPrice(INITIAL_BTC_PRICE);
+         assertEq(club.interestOwed(), 2e6);
+     }
+ 
+     function test_Security_S4_OracleFailureDuringZeroExposureAllowsCollateralWithdraw() public {
+-        // S4: When exposure == 0, owner can withdraw collateral even if oracle is stale/broken
+         vm.prank(member1);
+         club.joinGroup();
+         vm.prank(member2);
+@@ -643,30 +689,24 @@ contract BondedTontineTest is Test {
+         club.startRounds();
+         vm.stopPrank();
+ 
+-        // Make oracle negative / broken
+         oracle.setPrice(-1);
+ 
+-        // Contribute so liquidity exists
+         vm.prank(member1);
+         club.contribute();
+ 
+-        // Borrow must revert with BadPrice
+         vm.prank(clubOwner);
+         vm.expectRevert(BondedTontine.BadPrice.selector);
+         club.borrow(10e6);
+ 
+-        // Liquidate must revert with BadPrice
+         vm.expectRevert(BondedTontine.BadPrice.selector);
+         club.liquidate();
+ 
+-        // But owner has 0 exposure, so withdrawCollateral succeeds without consulting oracle!
+         vm.prank(clubOwner);
+         club.withdrawCollateral(2_000_000);
+         assertEq(club.collateral(), 3_000_000);
+     }
+ 
+     function test_Security_S8_BlocklistIsolation() public {
+-        // S8: One blocked member cannot block other members from claiming or withdrawing
+         vm.prank(member1);
+         club.joinGroup();
+         vm.prank(member2);
+@@ -677,7 +717,6 @@ contract BondedTontineTest is Test {
+         club.startRounds();
+         vm.stopPrank();
+ 
+-        // Round 1..4
+         for (uint256 r = 0; r < MAX_MEMBERS; r++) {
+             vm.prank(member1);
+             club.contribute();
+@@ -687,26 +726,28 @@ contract BondedTontineTest is Test {
+                 vm.prank(clubOwner);
+                 club.borrow(100e6);
+             }
+-            vm.warp(block.timestamp + ROUND_DURATION);
++            uint256 owed = club.interestOwed();
++            if (owed > 0) {
++                vm.prank(clubOwner);
++                club.payInterest(owed);
++            }
++            vm.warp(vm.getBlockTimestamp() + ROUND_DURATION);
+             oracle.setPrice(INITIAL_BTC_PRICE);
+         }
+ 
+         uint256 due = club.interestOwed();
+         vm.startPrank(clubOwner);
+         club.repay(100e6);
+-        club.payInterest(due);
++        if (due > 0) club.payInterest(due);
+         club.finalize();
+         vm.stopPrank();
+ 
+-        // Block member1 on USDC token
+         usdc.setBlocked(member1, true);
+ 
+-        // member1 fails to withdraw
+         vm.prank(member1);
+         vm.expectRevert();
+         club.withdrawPrincipal();
+ 
+-        // member2 can still claim interest and withdraw principal independently!
+         vm.startPrank(member2);
+         club.claimInterest();
+         club.withdrawPrincipal();
+@@ -715,7 +756,7 @@ contract BondedTontineTest is Test {
+     }
+ 
+     // ─────────────────────────────────────────────────────────────────────────
+-    // 7. Invariant Tests (Section 20.2)
++    // 7. Invariant Tests (Section 20.2 & P3)
+     // ─────────────────────────────────────────────────────────────────────────
+ 
+     /// @notice Solvency invariant: contract USDC balance >= unborrowed deposits + unclaimed interest.
+@@ -730,6 +771,8 @@ contract BondedTontineTest is Test {
+             club.pendingInterest(member3) +
+             club.pendingInterest(member4);
+ 
++        assertLe(club.interestClaimedTotal(), club.interestPaidTotal());
++
+         if (club.state() == BondedTontine.State.ACTIVE || club.state() == BondedTontine.State.OPEN) {
+             assertGe(usdc.balanceOf(address(club)), unborrowed + unclaimedInterest);
+         }

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {BondedTontine, AggregatorV3Interface} from "./BondedTontine.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 /// @title BondedTontineFactory
 /// @notice Immutable factory that supplies canonical USDC, CirBTC, Chainlink-compatible BTC/USD price feed,
@@ -35,6 +36,22 @@ contract BondedTontineFactory {
         ) {
             revert InvalidConfiguration();
         }
+
+        uint8 usdcDec;
+        try IERC20Metadata(usdc_).decimals() returns (uint8 d) {
+            usdcDec = d;
+        } catch {
+            revert InvalidConfiguration();
+        }
+        if (usdcDec != 6) revert InvalidConfiguration();
+
+        uint8 cirBtcDec;
+        try IERC20Metadata(cirBtc_).decimals() returns (uint8 d) {
+            cirBtcDec = d;
+        } catch {
+            revert InvalidConfiguration();
+        }
+        if (cirBtcDec != 8) revert InvalidConfiguration();
 
         uint8 dec;
         try AggregatorV3Interface(priceFeed_).decimals() returns (uint8 d) {

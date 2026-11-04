@@ -6,6 +6,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// @notice Minimal Chainlink AggregatorV3 interface used by BondedTontine and BondedTontineFactory.
@@ -66,6 +67,7 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
     error OwnerCannotJoin();
     error RenounceDisabled();
     error TransferLockedAfterOpen();
+    error DefaultPending();
 
     // Events (Section 10.8)
     event CollateralDeposited(address indexed owner, uint256 amount);
@@ -118,6 +120,7 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
     uint256 public lastRolledRound;
     uint256 public interestDueTotal;
     uint256 public interestPaidTotal;
+    uint256 public interestClaimedTotal;
     uint256 public settledTotalDeposits;
     uint256 public settledRecoveredUsdc;
     uint256 public settledCollateral;
@@ -153,6 +156,22 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         ) {
             revert InvalidConfiguration();
         }
+
+        uint8 usdcDec;
+        try IERC20Metadata(usdc_).decimals() returns (uint8 d) {
+            usdcDec = d;
+        } catch {
+            revert InvalidConfiguration();
+        }
+        if (usdcDec != 6) revert InvalidConfiguration();
+
+        uint8 cirBtcDec;
+        try IERC20Metadata(cirBtc_).decimals() returns (uint8 d) {
+            cirBtcDec = d;
+        } catch {
+            revert InvalidConfiguration();
+        }
+        if (cirBtcDec != 8) revert InvalidConfiguration();
 
         uint8 dec;
         try AggregatorV3Interface(priceFeed_).decimals() returns (uint8 d) {
@@ -304,6 +323,7 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
 
     function contribute() external nonReentrant inState(State.ACTIVE) {
         _rollRounds();
+        if (_isDefaultOrLiquidationPending()) revert DefaultPending();
         uint256 idx = currentRoundIndex();
         if (idx < 1 || idx > maxMembers) revert RoundNotActive();
         if (!isMember[msg.sender]) revert NotMember();
@@ -330,9 +350,16 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         }
         _updateMember(msg.sender);
         uint256 claimable = interestClaimable[msg.sender];
+        uint256 remainingInterest = interestPaidTotal > interestClaimedTotal
+            ? interestPaidTotal - interestClaimedTotal
+            : 0;
+        if (claimable > remainingInterest) {
+            claimable = remainingInterest;
+        }
         if (claimable == 0) revert NothingToClaim();
 
         interestClaimable[msg.sender] = 0;
+        interestClaimedTotal += claimable;
         usdc.safeTransfer(msg.sender, claimable);
         emit InterestClaimed(msg.sender, claimable);
     }
@@ -477,7 +504,11 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
     function pendingInterest(address addr) external view returns (uint256) {
         uint256 accrued = Math.mulDiv(deposit[addr], accInterestPerShare, 1e18);
         uint256 newlyAccrued = accrued > rewardDebt[addr] ? accrued - rewardDebt[addr] : 0;
-        return interestClaimable[addr] + newlyAccrued;
+        uint256 raw = interestClaimable[addr] + newlyAccrued;
+        uint256 remainingInterest = interestPaidTotal > interestClaimedTotal
+            ? interestPaidTotal - interestClaimedTotal
+            : 0;
+        return raw > remainingInterest ? remainingInterest : raw;
     }
 
     function previewPrincipal(address addr) external view returns (uint256 usdcOut, uint256 cirBtcOut) {
@@ -568,6 +599,48 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
             dueThrough += interestDue[k];
         }
         return interestPaidTotal < dueThrough;
+    }
+
+    function _isDefaultOrLiquidationPending() internal view returns (bool) {
+        if (_interestOverdue()) return true;
+        if (
+            block.timestamp >= startTime + (maxMembers * roundDuration) + settlementGrace &&
+            (totalDebt > 0 || interestPaidTotal < interestDueTotal)
+        ) {
+            return true;
+        }
+        uint256 debtAndInterest = totalDebt + (interestDueTotal - interestPaidTotal);
+        if (debtAndInterest > 0) {
+            (bool ok, uint256 colVal) = _tryCollateralValueUsdc();
+            if (ok && Math.mulDiv(colVal, 10000, liquidationBps) < debtAndInterest) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function _tryCollateralValueUsdc() internal view returns (bool ok, uint256 val) {
+        try priceFeed.latestRoundData() returns (
+            uint80 roundId,
+            int256 answer,
+            uint256,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        ) {
+            if (
+                answer <= 0 ||
+                updatedAt == 0 ||
+                updatedAt > block.timestamp ||
+                answeredInRound < roundId ||
+                block.timestamp - updatedAt > maxPriceAge
+            ) {
+                return (false, 0);
+            }
+            val = Math.mulDiv(collateral, uint256(answer), 10 ** (uint256(feedDecimals) + 2));
+            return (true, val);
+        } catch {
+            return (false, 0);
+        }
     }
 
     function _updateMember(address m) internal {
