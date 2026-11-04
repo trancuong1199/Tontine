@@ -114,7 +114,7 @@ Mục này bắt đầu rỗng ở các vòng review sau. Hiện là danh sách 
 
 | S4 | Không hàm nào cho owner rút cọc khi sau đó dư nợ vượt hạn mức. |
 
-| S5 | Giá oracle &lt;= 0, hoặc quá hạn `maxPriceAge`, thì các hàm cần giá đều revert. Giá cũ không bao giờ được dùng. |
+| S5 | Giá oracle <= 0, hoặc quá hạn `maxPriceAge`, thì các hàm cần giá đều revert. Giá cũ không bao giờ được dùng. |
 
 | S6 | Sau khi trạng thái là DEFAULTED hoặc COMPLETED thì không quay lại ACTIVE. |
 
@@ -122,7 +122,7 @@ Mục này bắt đầu rỗng ở các vòng review sau. Hiện là danh sách 
 
 | S8 | Một thành viên bị chặn USDC (blocklist) không làm kẹt việc rút của thành viên khác. |
 
-## 5. Terminology &amp; Actors
+## 5. Terminology & Actors
 
 | Thuật ngữ | Nghĩa |
 
@@ -166,7 +166,7 @@ Không có admin, không có operator, không có upgrader.
 
 - Giao diện oracle: `AggregatorV3Interface` của Chainlink (khai báo interface rút gọn trong repo, không cần thêm package).
 
-## 7. Transaction &amp; Execution Model
+## 7. Transaction & Execution Model
 
 - Mỗi giao dịch atomic. Mọi hàm có chuyển token đều `nonReentrant` và theo thứ tự checks, effects, interactions.
 
@@ -174,9 +174,9 @@ Không có admin, không có operator, không có upgrader.
 
 - Không có callback từ token (USDC và CirBTC là ERC-20 chuẩn). Không dùng `msg.value`: trên Arc, USDC native 18 decimals chỉ dùng trả gas, hợp đồng chỉ làm việc với ERC-20 USDC 6 decimals.
 
-- Vòng lặp: chỉ lặp tối đa `totalRounds` (&lt;= 20) để chốt vòng đã kết thúc. Không lặp qua danh sách thành viên (dùng bộ tích lũy lãi theo cổ phần).
+- Vòng lặp: chỉ lặp tối đa `totalRounds` (<= 20) để chốt vòng đã kết thúc. Không lặp qua danh sách thành viên (dùng bộ tích lũy lãi theo cổ phần).
 
-## 8. Chain Standards &amp; Interfaces
+## 8. Chain Standards & Interfaces
 
 | Chuẩn | Dùng cho | Ghi chú |
 
@@ -194,21 +194,21 @@ Không có admin, không có operator, không có upgrader.
 
 stateDiagram-v2
 
-    \[\*\] --&gt; OPEN
+    \[\*\] --> OPEN
 
-    OPEN --&gt; CANCELLED: cancelOpen (owner)
+    OPEN --> CANCELLED: cancelOpen (owner)
 
-    OPEN --&gt; ACTIVE: startRounds (owner)
+    OPEN --> ACTIVE: startRounds (owner)
 
-    ACTIVE --&gt; COMPLETED: finalize (ai cũng gọi, sau chu kỳ, nợ = 0, lãi đã trả đủ)
+    ACTIVE --> COMPLETED: finalize (ai cũng gọi, sau chu kỳ, nợ = 0, lãi đã trả đủ)
 
-    ACTIVE --&gt; DEFAULTED: declareDefault / liquidate (ai cũng gọi)
+    ACTIVE --> DEFAULTED: declareDefault / liquidate (ai cũng gọi)
 
-    COMPLETED --&gt; \[\*\]
+    COMPLETED --> \[\*\]
 
-    DEFAULTED --&gt; \[\*\]
+    DEFAULTED --> \[\*\]
 
-    CANCELLED --&gt; \[\*\]
+    CANCELLED --> \[\*\]
 
 \`\`\`
 
@@ -224,35 +224,35 @@ sequenceDiagram
 
     participant P as Oracle
 
-    O-&gt;&gt;C: depositCollateral(cirBTC)
+    O->>C: depositCollateral(cirBTC)
 
-    M-&gt;&gt;C: joinGroup()
+    M->>C: joinGroup()
 
-    O-&gt;&gt;C: startRounds()
+    O->>C: startRounds()
 
     loop mỗi vòng
 
-        M-&gt;&gt;C: contribute() (USDC)
+        M->>C: contribute() (USDC)
 
-        O-&gt;&gt;C: borrow(amount)
+        O->>C: borrow(amount)
 
-        C-&gt;&gt;P: latestRoundData()
+        C->>P: latestRoundData()
 
-        C--&gt;&gt;O: USDC
+        C-->>O: USDC
 
     end
 
-    O-&gt;&gt;C: payInterest(amount) (sau mỗi vòng)
+    O->>C: payInterest(amount) (sau mỗi vòng)
 
-    C--&gt;&gt;M: lãi (claimInterest)
+    C-->>M: lãi (claimInterest)
 
-    O-&gt;&gt;C: repay(amount)
+    O->>C: repay(amount)
 
     Note over C: hết chu kỳ, nợ = 0, lãi đủ
 
-    M-&gt;&gt;C: finalize() rồi withdrawPrincipal()
+    M->>C: finalize() rồi withdrawPrincipal()
 
-    O-&gt;&gt;C: withdrawCollateral()
+    O->>C: withdrawCollateral()
 
 \`\`\`
 
@@ -300,17 +300,17 @@ sequenceDiagram
 
 | --- | --- | --- | --- |
 
-| `usdc` | address | khác 0 | USDC của Arc |
+| `usdc` | address | khác 0, `decimals() == 6` | USDC của Arc |
 
-| `cirBtc` | address | khác 0, khác `usdc` | CirBTC của Arc |
+| `cirBtc` | address | khác 0, khác `usdc`, `decimals() == 8` | CirBTC của Arc |
 
 | `owner_` | address | khác 0 | `msg.sender` của `createClub`, do factory truyền vào |
 
-| `priceFeed` | address | khác 0, `decimals()` &lt;= 18 | do **factory** cấp, owner không chọn (mục 10.10) |
+| `priceFeed` | address | khác 0, `decimals()` <= 18 | do **factory** cấp, owner không chọn (mục 10.10) |
 
 | `groupName` | string | 1 đến 32 ký tự | do owner nhập |
 
-| `contributionAmount` | uint256 | &gt; 0 (USDC 6 decimals) | 50 USDC |
+| `contributionAmount` | uint256 | > 0 (USDC 6 decimals) | 50 USDC |
 
 | `maxMembers` | uint256 | 2 đến 20. Cũng là `totalRounds` | 10 |
 
@@ -354,29 +354,29 @@ Không upgradeable nên không cần `__gap` hay EIP-7201.
 
 | `startTime` | uint256 | đặt khi `startRounds` |
 
-| `isMember` | mapping(address =&gt; bool) | |
+| `isMember` | mapping(address => bool) | |
 
 | `memberCount` | uint256 | |
 
-| `deposit` | mapping(address =&gt; uint256) | tổng USDC thành viên đã góp (cổ phần) |
+| `deposit` | mapping(address => uint256) | tổng USDC thành viên đã góp (cổ phần) |
 
 | `totalDeposits` | uint256 | tổng `deposit` |
 
-| `contributed` | mapping(uint256 =&gt; mapping(address =&gt; bool)) | đã góp ở vòng nào |
+| `contributed` | mapping(uint256 => mapping(address => bool)) | đã góp ở vòng nào |
 
 | `accInterestPerShare` | uint256 | độ chính xác 1e18 |
 
-| `rewardDebt` | mapping(address =&gt; uint256) | |
+| `rewardDebt` | mapping(address => uint256) | |
 
-| `interestClaimable` | mapping(address =&gt; uint256) | |
+| `interestClaimable` | mapping(address => uint256) | |
 
 | `collateral` | uint256 | số CirBTC owner đang ký quỹ (đếm nội bộ, không dùng `balanceOf`) |
 
 | `totalDebt` | uint256 | USDC owner đang nợ |
 
-| `peakDebt` | mapping(uint256 =&gt; uint256) | đỉnh dư nợ theo vòng |
+| `peakDebt` | mapping(uint256 => uint256) | đỉnh dư nợ theo vòng |
 
-| `interestDue` | mapping(uint256 =&gt; uint256) | lãi của vòng đã kết thúc |
+| `interestDue` | mapping(uint256 => uint256) | lãi của vòng đã kết thúc |
 
 | `lastRolledRound` | uint256 | vòng cuối đã chốt |
 
@@ -384,13 +384,15 @@ Không upgradeable nên không cần `__gap` hay EIP-7201.
 
 | `interestPaidTotal` | uint256 | tổng lãi owner đã trả |
 
+| `interestClaimedTotal` | uint256 | tổng lãi thành viên đã rút (chặn tràn do làm tròn `mulDiv`) |
+
 | `settledTotalDeposits` | uint256 | chụp khi kết thúc |
 
 | `settledRecoveredUsdc` | uint256 | USDC để chia cho thành viên |
 
 | `settledCollateral` | uint256 | CirBTC để chia cho thành viên (chỉ khi DEFAULTED) |
 
-| `principalWithdrawn` | mapping(address =&gt; bool) | |
+| `principalWithdrawn` | mapping(address => bool) | |
 
 ### 10.4 Modifiers
 
@@ -422,9 +424,9 @@ Không upgradeable nên không cần `__gap` hay EIP-7201.
 
 | `startRounds()` | owner | state = ACTIVE, `startTime = now` | `RoundsStarted` | state không phải OPEN, `memberCount < 2`, `collateral == 0` |
 
-| `contribute()` | thành viên | `deposit`, `totalDeposits`, `contributed`, cập nhật lãi chờ | `Contributed` | state không phải ACTIVE, ngoài vòng 1..`totalRounds`, không phải thành viên, đã góp vòng này |
+| `contribute()` | thành viên | `deposit`, `totalDeposits`, `contributed`, cập nhật lãi chờ | `Contributed` | state không phải ACTIVE, đang đủ điều kiện vỡ nợ / thanh lý (`DefaultPending`), ngoài vòng 1..`totalRounds`, không phải thành viên, đã góp vòng này |
 
-| `claimInterest()` | thành viên | `interestClaimable = 0`, chuyển USDC | `InterestClaimed` | không có lãi để rút |
+| `claimInterest()` | thành viên | `interestClaimable = 0`, `interestClaimedTotal += claimable`, chuyển USDC (tối đa `interestPaidTotal - interestClaimedTotal`) | `InterestClaimed` | không có lãi để rút |
 
 | `borrow(amount)` | owner | `totalDebt`, `peakDebt[vòng]`, chuyển USDC cho owner | `Borrowed` | state không phải ACTIVE, ngoài vòng 1..`totalRounds`, `amount == 0`, `amount > totalDeposits - totalDebt`, vượt hạn mức, giá lỗi hoặc cũ |
 
@@ -478,7 +480,7 @@ function \_rollRounds():
 
     idx = currentRoundIndex()                     // 1..R, hoặc R+1 nếu hết chu kỳ
 
-    for k = lastRolledRound + 1; k &lt; idx and k &lt;= R; k++:
+    for k = lastRolledRound + 1; k < idx and k <= R; k++:
 
         peakDebt\[k\] = max(peakDebt\[k\], totalDebt)   // vòng k đã kết thúc, nợ không đổi giữa các hàm
 
@@ -488,7 +490,7 @@ function \_rollRounds():
 
         lastRolledRound = k
 
-    if idx &lt;= R:
+    if idx <= R:
 
         peakDebt\[idx\] = max(peakDebt\[idx\], totalDebt)   // nợ mang từ vòng trước tính vào đỉnh
 
@@ -502,9 +504,9 @@ Lý do dùng đỉnh dư nợ: owner không né được lãi bằng cách trả
 
 function borrow(amount):
 
-    require state == ACTIVE; \_rollRounds(); idx = currentRoundIndex(); require idx &lt;= R
+    require state == ACTIVE; \_rollRounds(); idx = currentRoundIndex(); require idx <= R
 
-    require amount &gt; 0 and amount &lt;= totalDeposits - totalDebt
+    require amount > 0 and amount <= totalDeposits - totalDebt
 
     newDebt = totalDebt + amount
 
@@ -512,7 +514,7 @@ function borrow(amount):
 
     exposureAfter = newDebt + interestOwed() + newPeak \* rate / 10000
 
-    require exposureAfter &lt;= borrowLimit()          // đọc giá, revert nếu lỗi hoặc cũ
+    require exposureAfter <= borrowLimit()          // đọc giá, revert nếu lỗi hoặc cũ
 
     totalDebt = newDebt; peakDebt\[idx\] = newPeak
 
@@ -524,17 +526,17 @@ function borrow(amount):
 
 \`\`\`
 
-function *interestOverdue() view -&gt; bool:        // gọi sau* rollRounds()
+function *interestOverdue() view -> bool:        // gọi sau* rollRounds()
 
     dueThrough = 0
 
-    for k = 1; k &lt;= lastRolledRound; k++:
+    for k = 1; k <= lastRolledRound; k++:
 
-        if startTime + k \* roundDuration + interestGrace &gt; block.timestamp: break
+        if startTime + k \* roundDuration + interestGrace > block.timestamp: break
 
         dueThrough += interestDue\[k\]
 
-    return interestPaidTotal &lt; dueThrough
+    return interestPaidTotal < dueThrough
 
 \`\`\`
 
@@ -546,13 +548,13 @@ function *interestOverdue() view -&gt; bool:        // gọi sau* rollRounds()
 
 function payInterest(amount):
 
-    \_rollRounds(); require amount &gt; 0 and amount &lt;= interestDueTotal - interestPaidTotal
+    \_rollRounds(); require amount > 0 and amount <= interestDueTotal - interestPaidTotal
 
     usdc.safeTransferFrom(owner, this, amount)
 
     interestPaidTotal += amount
 
-    accInterestPerShare += amount \* 1e18 / totalDeposits      // totalDeposits &gt; 0 vì có nợ
+    accInterestPerShare += amount \* 1e18 / totalDeposits      // totalDeposits > 0 vì có nợ
 
 \`\`\`
 
@@ -576,7 +578,7 @@ function \_settle(bool defaulted):
 
     settledTotalDeposits = totalDeposits
 
-    if defaulted and totalDeposits &gt; 0:
+    if defaulted and totalDeposits > 0:
 
         state = DEFAULTED
 
@@ -600,7 +602,7 @@ function \_settle(bool defaulted):
 
 function withdrawPrincipal():
 
-    require state in {COMPLETED, DEFAULTED} and deposit\[m\] &gt; 0 and !principalWithdrawn\[m\]
+    require state in {COMPLETED, DEFAULTED} and deposit\[m\] > 0 and !principalWithdrawn\[m\]
 
     principalWithdrawn\[m\] = true
 
@@ -608,7 +610,7 @@ function withdrawPrincipal():
 
     cirOut  = deposit\[m\] \* settledCollateral / settledTotalDeposits
 
-    transfer usdcOut (và cirOut nếu &gt; 0) cho m
+    transfer usdcOut (và cirOut nếu > 0) cho m
 
 \`\`\`
 
@@ -616,13 +618,13 @@ function withdrawPrincipal():
 
 \`\`\`
 
-function \_price() view -&gt; uint256:
+function \_price() view -> uint256:
 
     (roundId, answer, , updatedAt, answeredInRound) = priceFeed.latestRoundData()
 
-    require answer &gt; 0, updatedAt != 0, updatedAt &lt;= block.timestamp,
+    require answer > 0, updatedAt != 0, updatedAt <= block.timestamp,
 
-            block.timestamp - updatedAt &lt;= maxPriceAge, answeredInRound &gt;= roundId
+            block.timestamp - updatedAt <= maxPriceAge, answeredInRound >= roundId
 
     return uint256(answer)
 
@@ -672,7 +674,7 @@ Lý do vỡ nợ (`reason`): INTEREST_OVERDUE, SETTLEMENT_OVERDUE, UNDERCOLLATER
 
 ### 10.9 Custom errors
 
-`WrongState`, `NotMember`, `AlreadyMember`, `GroupFull`, `AlreadyContributed`, `RoundNotActive`, `InvalidConfiguration`, `InvalidAmount`, `InsufficientLiquidity`, `ExceedsBorrowLimit`, `CollateralLocked`, `NothingToClaim`, `NotDefaultable`, `NotLiquidatable`, `NotFinalizable`, `BadPrice`, `StalePrice`, `OwnerCannotJoin`, `RenounceDisabled`, `TransferLockedAfterOpen`.
+`WrongState`, `NotMember`, `AlreadyMember`, `GroupFull`, `AlreadyContributed`, `RoundNotActive`, `InvalidConfiguration`, `InvalidAmount`, `InsufficientLiquidity`, `ExceedsBorrowLimit`, `CollateralLocked`, `NothingToClaim`, `NotDefaultable`, `NotLiquidatable`, `NotFinalizable`, `BadPrice`, `StalePrice`, `OwnerCannotJoin`, `RenounceDisabled`, `TransferLockedAfterOpen`, `DefaultPending`.
 
 ### 10.10 `BondedTontineFactory` (bịt lỗ hổng "owner tự chọn feed")
 
@@ -692,7 +694,7 @@ contract BondedTontineFactory {
 
     uint256 public immutable maxPriceAge;
 
-    mapping(address =&gt; bool) public isClub;
+    mapping(address => bool) public isClub;
 
     address\[\] private \_clubs;
 
@@ -700,7 +702,7 @@ contract BondedTontineFactory {
 
     constructor(address usdc\_, address cirBtc\_, address priceFeed\_, uint256 maxPriceAge\_);
 
-    // kiểm tra: khác 0; usdc != cirBtc; feed.decimals() &lt;= 18; maxPriceAge trong \[1 giờ, 48 giờ\]
+    // kiểm tra: khác 0; usdc != cirBtc; feed.decimals() <= 18; maxPriceAge trong \[1 giờ, 48 giờ\]
 
     function createClub(
 
@@ -748,7 +750,7 @@ contract BondedTontineFactory {
 
 N/A. Hợp đồng không triển khai chuẩn nền nào (USDC và CirBTC chỉ được gọi như ERC-20 client).
 
-## 12. Deployment &amp; Initialization
+## 12. Deployment & Initialization
 
 - Constructor nhận đủ tham số ở 10.1, không có `initialize`, không proxy.
 
@@ -764,7 +766,7 @@ N/A. Hợp đồng không triển khai chuẩn nền nào (USDC và CirBTC chỉ
 
   4. Owner `startRounds`.
 
-- Script deploy phải assert trước khi gửi giao dịch: đúng chain ID; `priceFeed.description()` đúng cặp BTC / USD; `latestRoundData()` trả giá dương và còn mới; `decimals()` &lt;= 18.
+- Script deploy phải assert trước khi gửi giao dịch: đúng chain ID; `priceFeed.description()` đúng cặp BTC / USD; `latestRoundData()` trả giá dương và còn mới; `decimals()` <= 18.
 
 - Địa chỉ feed truyền vào **factory** từ cấu hình, không hardcode trong contract và không do owner của club chọn. Testnet: dùng `MockAggregatorV3` (Phụ lục C). Không bao giờ deploy mock lên mainnet.
 
@@ -782,7 +784,7 @@ N/A. Hợp đồng không triển khai chuẩn nền nào (USDC và CirBTC chỉ
 
 | Arc Testnet khi có feed chính thức hoặc adapter | Feed thật | Script assert `description()`, giá dương và còn mới | Bỏ badge |
 
-| Arc Mainnet | Feed Chainlink BTC/USD trong allowlist | Script từ chối nếu `description()` chứa `MOCK`, địa chỉ ngoài allowlist, `latestRoundData()` cũ hoặc &lt;= 0, hoặc `maxPriceAge` &lt; heartbeat của feed | Hiển thị địa chỉ feed, tuổi giá, link explorer |
+| Arc Mainnet | Feed Chainlink BTC/USD trong allowlist | Script từ chối nếu `description()` chứa `MOCK`, địa chỉ ngoài allowlist, `latestRoundData()` cũ hoặc <= 0, hoặc `maxPriceAge` < heartbeat của feed | Hiển thị địa chỉ feed, tuổi giá, link explorer |
 
 **Quy tắc**
 
@@ -798,7 +800,7 @@ N/A. Hợp đồng không triển khai chuẩn nền nào (USDC và CirBTC chỉ
 
 Không upgradeable. Lý do: giữ tiền người dùng, mỗi nhóm có chu kỳ ngắn, quyền upgrade là quyền admin mà mục tiêu S7 loại bỏ. Migration: contract switch. Khi cần phiên bản mới, deploy hợp đồng mới (địa chỉ mới). Nhóm cũ chạy hết hoặc vỡ nợ theo luật cũ. Frontend giữ thêm trường `version` cho mỗi nhóm trong `savingsClubDirectory` và hiển thị đúng ABI theo version.
 
-## 14. Key Management &amp; Signing
+## 14. Key Management & Signing
 
 - Một key quyền duy nhất: owner. Khuyến nghị owner dùng ví đa chữ ký hoặc smart account (ví dụ ví passkey của Circle) vì key này cầm cọc và nợ.
 
@@ -816,7 +818,7 @@ Không upgradeable. Lý do: giữ tiền người dùng, mỗi nhóm có chu k�
 
 | Access control | Có | Chỉ `onlyOwner` ở 10.5; hàm kích hoạt thì permissionless nhưng có điều kiện chặt |
 
-| Integer overflow/underflow | Solidity &gt;= 0.8 | Không dùng `unchecked`; dùng `Math.mulDiv` cho phép nhân chia lớn |
+| Integer overflow/underflow | Solidity >= 0.8 | Không dùng `unchecked`; dùng `Math.mulDiv` cho phép nhân chia lớn |
 
 | Unchecked external call / return | Có | `SafeERC20` |
 
@@ -852,7 +854,7 @@ Không upgradeable. Lý do: giữ tiền người dùng, mỗi nhóm có chu k�
 
 | Dust / làm tròn | Có | Làm tròn xuống; phần dư nhỏ ở lại hợp đồng; test bảo toàn tổng |
 
-## 16. Trust Model &amp; Threat Analysis
+## 16. Trust Model & Threat Analysis
 
 | Actor | Thiệt hại tối đa nếu bị kiểm soát hoặc xấu | Giảm thiểu | Phát hiện |
 
@@ -872,7 +874,7 @@ Không upgradeable. Lý do: giữ tiền người dùng, mỗi nhóm có chu k�
 
 | Deployer | Không có quyền sau deploy trừ vai trò owner | Không có admin riêng | Không áp dụng |
 
-## 17. Emergency Response &amp; Circuit Breakers
+## 17. Emergency Response & Circuit Breakers
 
 - Không có pause. Lý do: pause do owner thì owner đóng băng được tiền thành viên; pause do bên thứ ba là quyền admin mà S7 loại bỏ.
 
@@ -906,7 +908,7 @@ Không upgradeable. Lý do: giữ tiền người dùng, mỗi nhóm có chu k�
 
 | Một lần `borrow` revert giữa chừng | Toàn bộ giao dịch hoàn tác | Atomic |
 
-## 19. Priorities &amp; Tradeoffs
+## 19. Priorities & Tradeoffs
 
 | Quyết định | Đánh đổi | Lý do / phương án bị loại |
 
@@ -940,9 +942,15 @@ Không upgradeable. Lý do: giữ tiền người dùng, mỗi nhóm có chu k�
 
 | BTC/USD của Chainlink thay vì CBBTC/USD | Cả hai đều không phản ánh depeg CirBTC | CirBTC là Bitcoin được bọc; v2 có thể lấy giá thấp hơn của hai feed |
 
+| Một feed cố định (immutable), không có fallback feed | Nếu feed ngừng cập nhật vĩnh viễn, không thể gọi `liquidate`, `borrow`, hay `withdrawCollateral` khi còn nợ | Các đường `repay`, `payInterest`, `declareDefault` (quá hạn lãi/tất toán), `finalize`, `claimInterest`, `withdrawPrincipal` không đọc giá nên quỹ không bao giờ bị khóa cứng; muốn đổi feed cho nhóm mới thì deploy factory mới |
+
+| Cổng `DefaultPending` trong `contribute()` | Chặn thành viên nạp thêm tiền vào nhóm đã đủ điều kiện vỡ nợ / thanh lý (khi giá còn mới), nhưng vẫn có thể pha loãng tối đa 1 lần góp / thành viên / vòng trong lúc giá đang giảm từ `safetyBps` xuống `liquidationBps` hoặc trong thời gian ân hạn `interestGrace` | Giữ `contribute()` không phụ thuộc cứng vào oracle sống (nếu giá cũ, `_isDefaultOrLiquidationPending()` chỉ kiểm tra quá hạn thời gian để không khóa góp tiền khi oracle lag ngắn hạn) |
+
+| Giới hạn `interestClaimedTotal <= interestPaidTotal` | Người rút lãi cuối cùng có thể nhận ít hơn 1–2 wei so với phép tính lý thuyết nếu các lần cộng dồn trước có sai số làm tròn | Đảm bảo rút lãi không bao giờ chạm vào tiền gốc `totalDeposits - totalDebt` của thành viên |
+
 ## 20. Testing Strategy
 
-Lệnh chạy toàn bộ: `forge build && forge test -vv`. Phân tích tĩnh: `slither .`. Coverage: `forge coverage` (mục tiêu &gt;= 95% branch cho `BondedTontine.sol`).
+Lệnh chạy toàn bộ: `forge build && forge test -vv`. Phân tích tĩnh: `slither .`. Coverage: `forge coverage` (mục tiêu >= 95% branch cho `BondedTontine.sol`).
 
 **Unit test (ví dụ tên)**
 
@@ -950,11 +958,11 @@ Lệnh chạy toàn bộ: `forge build && forge test -vv`. Phân tích tĩnh: `s
 
 - OPEN: owner không join; không join hai lần; nhóm đầy; `removeMember`; `cancelOpen` trả cọc.
 
-- `startRounds` cần &gt;= 2 thành viên và cọc &gt; 0.
+- `startRounds` cần >= 2 thành viên và cọc > 0.
 
 - `contribute`: một lần mỗi vòng; ngoài thời gian revert; không phải thành viên revert.
 
-- `borrow`: đúng hạn mức; vượt hạn mức; vượt thanh khoản; giá cũ, giá &lt;= 0, `answeredInRound < roundId`.
+- `borrow`: đúng hạn mức; vượt hạn mức; vượt thanh khoản; giá cũ, giá <= 0, `answeredInRound < roundId`.
 
 - `repay` và `payInterest`: biên số; không trả vượt.
 
@@ -1002,21 +1010,21 @@ Lệnh chạy toàn bộ: `forge build && forge test -vv`. Phân tích tĩnh: `s
 
 | Chainlink `AggregatorV3Interface` | khai báo interface rút gọn | Không cần package | Chỉ cần `latestRoundData` và `decimals` | N/A |
 
-## 22. Monitoring &amp; Alerting
+## 22. Monitoring & Alerting
 
 | Tín hiệu | Ngưỡng | Mức | Hành động |
 
 | --- | --- | --- | --- |
 
-| `healthBps()` | &lt; 15000 | Warning | Báo owner nạp thêm cọc |
+| `healthBps()` | < 15000 | Warning | Báo owner nạp thêm cọc |
 
-| `healthBps()` | &lt; 13000 | Critical | Chuẩn bị `liquidate` |
+| `healthBps()` | < 13000 | Critical | Chuẩn bị `liquidate` |
 
-| Tuổi giá oracle | &gt; 12 giờ | Warning | Kiểm tra feed |
+| Tuổi giá oracle | > 12 giờ | Warning | Kiểm tra feed |
 
-| Tuổi giá oracle | &gt; `maxPriceAge` | Critical | Các hàm cần giá đang revert |
+| Tuổi giá oracle | > `maxPriceAge` | Critical | Các hàm cần giá đang revert |
 
-| Hạn trả lãi | còn &lt; 6 giờ mà `interestOwed > 0` | Warning | Nhắc owner |
+| Hạn trả lãi | còn < 6 giờ mà `interestOwed > 0` | Warning | Nhắc owner |
 
 | `GroupDefaulted` | bất kỳ | Critical | Thông báo thành viên rút |
 
@@ -1040,7 +1048,7 @@ Lệnh chạy toàn bộ: `forge build && forge test -vv`. Phân tích tĩnh: `s
 
 N/A. Không có cross-chain message.
 
-## 25. Types &amp; Enums
+## 25. Types & Enums
 
 \`\`\`solidity
 
