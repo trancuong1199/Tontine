@@ -15,16 +15,23 @@ This is the **project memory** - what Arc Studio remembers about building this a
 | Contract | Network | Address |
 |---|---|---|
 | RotatingSavings | Arc Testnet | 0x6afaa0825d2e05ef00d571d4a043ab5dcc03534b |
+| BondedTontineFactory | Arc Testnet | 0x8cE12D62b0bD565c92164aC7c847620Bfe710eb0 |
+| MockAggregatorV3 (BTC/USD) | Arc Testnet | 0x9c0866b4D6dB662038f805563b8f4CdECA626525 |
+| BondedTontine (Club #0 - Open) | Arc Testnet | 0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b |
+| BondedTontine (Club #1 - Completed E2E) | Arc Testnet | 0xe74069717317dbB86d423439fb9c219A5c5bf812 |
+| BondedTontine (Club #2 - Defaulted/Liquidated E2E) | Arc Testnet | 0xF9469568ebb287275009fcE3Db224a16273C5d05 |
 
 - Explorer: https://explorer.testnet.arc.io/address/0x6afaa0825d2e05ef00d571d4a043ab5dcc03534b
+- BondedTontineFactory Explorer: https://explorer.testnet.arc.io/address/0x8cE12D62b0bD565c92164aC7c847620Bfe710eb0
 - USDC: 0x3600000000000000000000000000000000000000 (6 decimals)
+- cirBTC: 0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF (8 decimals)
 - Deploy params: contributionAmount=10 USDC, maxMembers=10, roundDuration=86400s (1 day), groupName="BAVI Savings Club"
 
 ## Tech Stack
 
 - Frontend: React 18, Vite, TypeScript, Tailwind CSS
 - Web3: wagmi v2, viem v2, ConnectKit
-- Contracts: Solidity 0.8.28 + Foundry. Sources in `contracts/`, unit tests in `contracts/test/*.t.sol`.
+- Contracts: Solidity 0.8.28 + Foundry (`via_ir = true` in `foundry.toml` for `BondedTontine` stack depth; note that `via_ir = true` increases Solidity build time while `ROTATING_SAVINGS_BYTECODE` remains unchanged). Sources in `contracts/`, unit tests in `contracts/test/*.t.sol`.
 - Wallet: injected (MetaMask, etc.)
 - Chain: Arc Testnet (Chain ID: 5042002, imported from `viem/chains`)
 - Token: USDC (6 decimals) (Address: 0x3600000000000000000000000000000000000000, Chain: Arc Testnet)
