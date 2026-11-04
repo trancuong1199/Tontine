@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useReadContracts } from "wagmi";
+import { usePublicClient, useReadContracts } from "wagmi";
 import type { Abi } from "viem";
 import { toast } from "sonner";
 import {
@@ -26,9 +26,13 @@ import {
   removeKnownGroup,
   updateKnownGroupName,
   clearCustomKnownGroups,
+  syncFactoryBondedClubs,
+  saveKnownGroup,
   DEFAULT_SAVINGS_CLUBS,
   SavingsClubItem,
 } from "../../lib/savingsClubDirectory";
+import { CANONICAL_FACTORY, registerRuntimeBondedClub } from "../../config/bonded-tontine";
+import { BONDED_TONTINE_ABI, BONDED_TONTINE_FACTORY_ABI } from "../../lib/bondedTontine";
 import { Language, t } from "../../lib/i18n";
 import { EditClubNameModal } from "./EditClubNameModal";
 
@@ -57,11 +61,67 @@ export function ClubDirectoryModal({
   const [editingClub, setEditingClub] = useState<SavingsClubItem | null>(null);
   const isEn = language === "en";
 
+  const publicClient = usePublicClient({ chainId: ARC_TESTNET_CHAIN_ID });
+  const canonicalFactory = CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
+
   useEffect(() => {
     if (isOpen) {
       setGroups(getKnownGroups());
     }
-  }, [isOpen]);
+    if (!publicClient || !canonicalFactory) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const synced = await syncFactoryBondedClubs(
+          publicClient as unknown as Parameters<typeof syncFactoryBondedClubs>[0],
+          canonicalFactory,
+          BONDED_TONTINE_FACTORY_ABI as unknown as readonly unknown[],
+          BONDED_TONTINE_ABI as unknown as readonly unknown[]
+        );
+        for (const item of synced) {
+          registerRuntimeBondedClub(item.address);
+        }
+        if (currentAddress && currentAddress.startsWith("0x")) {
+          const isClub = await publicClient.readContract({
+            address: canonicalFactory,
+            abi: BONDED_TONTINE_FACTORY_ABI,
+            functionName: "isClub",
+            args: [currentAddress as `0x${string}`],
+          });
+          if (isClub) {
+            registerRuntimeBondedClub(currentAddress);
+            let clubName = `Bonded Club ${formatAddress(currentAddress)}`;
+            try {
+              const nameOnChain = await publicClient.readContract({
+                address: currentAddress as `0x${string}`,
+                abi: BONDED_TONTINE_ABI,
+                functionName: "groupName",
+              });
+              if (typeof nameOnChain === "string" && nameOnChain.trim()) {
+                clubName = nameOnChain.trim();
+              }
+            } catch {
+              // ignore
+            }
+            saveKnownGroup({
+              address: currentAddress as `0x${string}`,
+              name: clubName,
+              version: "v2-bonded",
+            });
+            onGroupNameUpdated?.(currentAddress as `0x${string}`, clubName);
+          }
+        }
+        if (!cancelled && isOpen) {
+          setGroups(getKnownGroups());
+        }
+      } catch {
+        // Ignore network errors
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, publicClient, canonicalFactory, currentAddress]);
 
   const stateContracts = useMemo(() => {
     return groups.flatMap((g) => [
@@ -261,7 +321,7 @@ export function ClubDirectoryModal({
                 <span className="text-white">{isEn ? t("clubDirectoryModal.title", language) : "Danh Sách Nhóm Hụi"}</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                Savings Clubs Directory trên Arc Testnet
+                {isEn ? "Savings Clubs Directory on Arc Testnet" : "Savings Clubs Directory trên Arc Testnet"}
               </p>
             </div>
           </div>
@@ -345,7 +405,20 @@ export function ClubDirectoryModal({
                         )}
                         {rawState === GROUP_STATE.CANCELLED && (
                           <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-950/40 text-red-300 border border-red-500/30">
+                            {group.version === "v2-bonded"
+                              ? (isEn ? "Defaulted" : "Đã vỡ nợ")
+                              : (isEn ? "Cancelled" : "Đã huỷ")}
+                          </span>
+                        )}
+                        {rawState === 4 && group.version === "v2-bonded" && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-red-950/40 text-red-300 border border-red-500/30">
                             {isEn ? "Cancelled" : "Đã huỷ"}
+                          </span>
+                        )}
+
+                        {group.version === "v2-bonded" && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            BondedTontine V2
                           </span>
                         )}
 

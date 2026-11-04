@@ -1,5 +1,6 @@
 import { historyRoundIds } from "../lib/roundHistory";
 import { classifyCycleCapability } from "../lib/cycleCapabilities";
+import { isKnownBondedClubAddress } from "../config/bonded-tontine";
 import { useReadContract, useReadContracts } from "wagmi";
 import { erc20Abi, type Abi } from "viem";
 import {
@@ -11,18 +12,20 @@ import {
 
 /** A separate query keeps legacy getter failures isolated from club/claim reads. */
 export function useCycleCapability(contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS) {
+  const isBonded = isKnownBondedClubAddress(contractAddress);
   const read = useReadContract({
     address: contractAddress,
     abi: ROTATING_SAVINGS_ABI,
     functionName: "cycleStartRound",
     chainId: ARC_TESTNET_CHAIN_ID,
     // Query identity includes address+chain; never borrow the previous club's data.
-    query: { retry: false, placeholderData: () => undefined },
+    query: { retry: false, placeholderData: () => undefined, ...(isBonded ? { enabled: false } : {}) },
   });
   return { capability: classifyCycleCapability(read), refetch: read.refetch };
 }
 
 export function useClubInfo(contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS) {
+  const isBonded = isKnownBondedClubAddress(contractAddress);
   const { data, isLoading, isFetching, error, refetch } = useReadContracts({
     contracts: [
       { address: contractAddress, abi: ROTATING_SAVINGS_ABI, functionName: "groupName", chainId: ARC_TESTNET_CHAIN_ID },
@@ -39,7 +42,7 @@ export function useClubInfo(contractAddress: `0x${string}` = ROTATING_SAVINGS_AD
       { address: contractAddress, abi: ROTATING_SAVINGS_ABI, functionName: "cancelVoteCount", chainId: ARC_TESTNET_CHAIN_ID },
       { address: contractAddress, abi: ROTATING_SAVINGS_ABI, functionName: "requiredCancelVotes", chainId: ARC_TESTNET_CHAIN_ID },
     ],
-    query: { placeholderData: () => undefined },
+    query: { placeholderData: () => undefined, ...(isBonded ? { enabled: false } : {}) },
   });
 
   const membershipKnown = !error && !isFetching && !!data && [data[7], data[8]].every(item => item?.status === 'success' || classifyCycleCapability({ error: item?.error }) === 'unsupported');
@@ -72,7 +75,8 @@ export function useRoundInfo(
   roundId: bigint | undefined,
   contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS
 ) {
-  const enabled = roundId !== undefined && roundId > 0n;
+  const isBonded = isKnownBondedClubAddress(contractAddress);
+  const enabled = !isBonded && roundId !== undefined && roundId > 0n;
   const { data, isLoading, refetch } = useReadContract({
     address: contractAddress,
     abi: ROTATING_SAVINGS_ABI,
@@ -99,15 +103,17 @@ export function useMemberStatus(
   address: string | undefined,
   contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS
 ) {
+  const isBonded = isKnownBondedClubAddress(contractAddress);
   const tokenRead = useReadContract({
     address: contractAddress,
     abi: ROTATING_SAVINGS_ABI,
     functionName: "cirBtcToken",
     chainId: ARC_TESTNET_CHAIN_ID,
+    ...(isBonded ? { query: { enabled: false } } : {}),
   });
   const collateralToken = typeof tokenRead.data === "string" && /^0x[0-9a-fA-F]{40}$/.test(tokenRead.data) && !/^0x0{40}$/.test(tokenRead.data)
     ? tokenRead.data as `0x${string}` : undefined;
-  const enabled = !!address;
+  const enabled = !isBonded && !!address;
   const { data, isLoading, refetch } = useReadContracts({
     contracts: [
       {
@@ -201,7 +207,8 @@ export function useRoundMemberStatus(
   address: string | undefined,
   contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS
 ) {
-  const enabled = !!address && roundId !== undefined && roundId > 0n;
+  const isBonded = isKnownBondedClubAddress(contractAddress);
+  const enabled = !isBonded && !!address && roundId !== undefined && roundId > 0n;
   const addr = (address ?? "0x0000000000000000000000000000000000000000") as `0x${string}`;
   const rId = roundId ?? 1n;
 
@@ -279,7 +286,8 @@ export function useRoundHistory(
   currentRound: bigint | undefined,
   contractAddress: `0x${string}` = ROTATING_SAVINGS_ADDRESS
 ) {
-  const roundIds = historyRoundIds(currentRound);
+  const isBonded = isKnownBondedClubAddress(contractAddress);
+  const roundIds = isBonded ? [] : historyRoundIds(currentRound);
   const contracts = roundIds.map((roundId) => ({
     address: contractAddress,
     abi: ROTATING_SAVINGS_ABI as Abi,
@@ -338,8 +346,9 @@ export function useClubMembers(
   maxMembers: bigint | undefined = 10n,
   contributionAmount: bigint | undefined = 0n
 ) {
+  const isBonded = isKnownBondedClubAddress(contractAddress);
   const max = maxMembers ? Number(maxMembers) : 10;
-  const count = Math.min(Math.max(max, 2), 20);
+  const count = isBonded ? 0 : Math.min(Math.max(max, 2), 20);
   const rId = currentRound && currentRound > 0n ? currentRound : 1n;
 
   // 1. Read members array up to count

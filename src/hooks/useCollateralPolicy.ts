@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePublicClient } from 'wagmi';
 import { erc20Abi, isAddress, zeroAddress, type PublicClient } from 'viem';
 import { ARC_TESTNET_CHAIN_ID, ROTATING_SAVINGS_ABI } from '../contract';
+import { isKnownBondedClubAddress } from '../config/bonded-tontine';
 import { classifyCollateralPolicy, collateralAmounts, sameCollateralQuote, type CollateralPolicy, type CollateralQuote } from '../lib/collateralPolicy';
 
 export async function readCollateralQuote(client: Pick<PublicClient, 'readContract'>, group: `0x${string}`, account: `0x${string}`): Promise<CollateralQuote> {
@@ -39,6 +40,7 @@ export function useCollateralPolicy(group: `0x${string}`, account: `0x${string}`
   const sequence = useRef(0);
   const [result, setResult] = useState<{ key: string; policy: CollateralPolicy; quote?: CollateralQuote; error?: string }>({ key, policy: 'loading' });
   const refresh = useCallback(async () => {
+    if (isKnownBondedClubAddress(group)) return undefined;
     const request = ++sequence.current;
     setResult({ key, policy: 'loading' });
     try {

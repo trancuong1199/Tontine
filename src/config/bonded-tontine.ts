@@ -17,6 +17,27 @@ export const ARC_TESTNET_BONDED_FACTORY =
 export const ARC_TESTNET_DEFAULT_BONDED_CLUB =
   "0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b" as const;
 
+export const KNOWN_BONDED_TONTINE_CLUBS: readonly `0x${string}`[] = [
+  "0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b",
+  "0xe74069717317dbB86d423439fb9c219A5c5bf812",
+  "0xF9469568ebb287275009fcE3Db224a16273C5d05",
+] as const;
+
+const runtimeBondedClubSet = new Set<string>(
+  KNOWN_BONDED_TONTINE_CLUBS.map((a) => a.toLowerCase())
+);
+
+export function registerRuntimeBondedClub(address?: string | null): void {
+  if (address && address.startsWith("0x")) {
+    runtimeBondedClubSet.add(address.toLowerCase());
+  }
+}
+
+export function isKnownBondedClubAddress(address?: string | null): boolean {
+  if (!address) return false;
+  return runtimeBondedClubSet.has(address.toLowerCase());
+}
+
 export interface ChainOracleInfo {
   feedAddress?: `0x${string}`;
   isMock: boolean;

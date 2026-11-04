@@ -13,7 +13,7 @@ import { MemberStatus } from "./components/savings/MemberStatus";
 import { ActionPanel } from "./components/savings/ActionPanel";
 import { PasskeyActionPanel } from "./components/savings/PasskeyActionPanel";
 import { BondedClubWorkspace } from "./components/savings/BondedClubWorkspace";
-import { ARC_TESTNET_DEFAULT_BONDED_CLUB } from "./config/bonded-tontine";
+import { ARC_TESTNET_DEFAULT_BONDED_CLUB, isKnownBondedClubAddress, registerRuntimeBondedClub } from "./config/bonded-tontine";
 import { GroupSwitcher } from "./components/savings/GroupSwitcher";
 import { RoundHistory } from "./components/savings/RoundHistory";
 import { ClubMembersRoster } from "./components/savings/ClubMembersRoster";
@@ -417,6 +417,17 @@ export default function App() {
     }
   };
 
+  // Check whether the selected contractAddress is a BondedTontine V2 club (U1)
+  const isBondedClub = Boolean(
+    contractAddress &&
+      (contractAddress.toLowerCase() === ARC_TESTNET_DEFAULT_BONDED_CLUB.toLowerCase() ||
+        isKnownBondedClubAddress(contractAddress) ||
+        getKnownGroups().find((g) => g.address.toLowerCase() === contractAddress.toLowerCase())?.version === "v2-bonded")
+  );
+  if (isBondedClub && contractAddress) {
+    registerRuntimeBondedClub(contractAddress);
+  }
+
   // Contract reads (keyed by active contract address and user address)
   const clubInfo = useClubInfo(contractAddress);
   const cycleSupport = useCycleCapability(contractAddress);
@@ -497,7 +508,7 @@ export default function App() {
 
   // Auto-switch to user-owned club if connected and current club is not affiliated
   useEffect(() => {
-    if (address && !hasExplicitGroup && !isUserAffiliated) {
+    if (!isBondedClub && address && !hasExplicitGroup && !isUserAffiliated) {
       const known = getKnownGroups();
       const myClub = known.find(
         (g) => g.creator && g.creator.toLowerCase() === address.toLowerCase()
@@ -705,7 +716,7 @@ export default function App() {
 
   // Two-way sync: Save valid on-chain group name to known groups (unless removed by user)
   useEffect(() => {
-    if (clubInfo.groupName && contractAddress) {
+    if (!isBondedClub && clubInfo.groupName && contractAddress) {
       const removed = getRemovedGroups();
       if (!removed.has(contractAddress.toLowerCase())) {
         const existed = getKnownGroups().some(
@@ -1221,6 +1232,47 @@ export default function App() {
         />
       ) : (
         <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 relative z-10">
+        {isBondedClub ? (
+          <>
+            {!address && (
+              <div className="bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] rounded-3xl p-8 sm:p-10 text-center border border-amber-500/30 shadow-xl max-w-2xl mx-auto my-6 space-y-5">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400 shadow-lg shadow-amber-500/10">
+                  <Wallet size={30} />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+                    {isEn ? "Connect Wallet to Join BondedTontine V2" : "Kết nối ví để tham gia BondedTontine V2"}
+                  </h2>
+                  <p className="text-slate-300 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed">
+                    {isEn
+                      ? "Connect your wallet to join this BondedTontine V2 club, contribute USDC each round, or claim fixed interest."
+                      : "Kết nối ví của bạn để tham gia nhóm BondedTontine V2, góp USDC mỗi vòng và nhận lãi cố định."}
+                  </p>
+                </div>
+                <div className="flex items-center justify-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => openConnectModal?.(true)}
+                    className="px-7 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    <Wallet size={18} />
+                    <span>{isEn ? "Connect Wallet to Join" : "Kết nối ví để tham gia ngay"}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+            <div className="my-6">
+              <BondedClubWorkspace
+                contractAddress={contractAddress}
+                userAddress={address}
+                language={language}
+                onSelectGroup={handleSwitchGroup}
+                onOpenDirectoryModal={() => setShowDirectoryModal(true)}
+              />
+            </div>
+          </>
+        ) : (
+          <>
         {/* Loading Spinner */}
         {isLoading && (
           <div className="bg-slate-900/90 rounded-3xl p-16 text-center border border-slate-800/80 shadow-xs max-w-lg mx-auto my-12">
@@ -1343,19 +1395,6 @@ export default function App() {
             </div>
           </div>
         )}
-
-        {/* BondedTontine V2 Workspace (when selected club is v2-bonded or ARC_TESTNET_DEFAULT_BONDED_CLUB) */}
-        {contractAddress?.toLowerCase() === ARC_TESTNET_DEFAULT_BONDED_CLUB.toLowerCase() ||
-        getKnownGroups().find((g) => g.address.toLowerCase() === contractAddress?.toLowerCase())?.version === "v2-bonded" ? (
-          <div className="my-6">
-            <BondedClubWorkspace
-              contractAddress={contractAddress}
-              userAddress={address}
-              language={language}
-              onSelectGroup={handleSwitchGroup}
-            />
-          </div>
-        ) : null}
 
         {/* Main Content: 2-column layout on desktop, stacked on mobile */}
         {!isLoading && !hasNoActiveClub && Boolean(address) && (hasExplicitGroup || isUserAffiliated) && (clubInfo.groupName || displayedGroupName) && (
@@ -1754,6 +1793,8 @@ export default function App() {
               )}
             </div>
           </div>
+        )}
+          </>
         )}
       </main>
       )}

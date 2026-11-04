@@ -1,6 +1,6 @@
 {
   "taskId": "task-059",
-  "frozenAt": "2026-11-04T08:59:56.221Z",
+  "frozenAt": "2026-11-04T15:53:51.755Z",
   "status": "FROZEN",
   "files": {
     "contracts/BondedTontine.sol": {
@@ -44,12 +44,17 @@
       "isNew": false
     },
     "scripts/deploy-bonded-tontine-factory.mjs": {
-      "sha256": "a0ff47485a5984b19f7d3581eadea6be138d560dbd33961ed40e2bb4dc2d61f2",
+      "sha256": "9b9ed6fcae677fa676595ad7171413b3ac4f7de695c24dcbe3046ea33f536f6b",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "scripts/refresh-mock-oracle.mjs": {
+      "sha256": "8afbbf89f9277b70ca634b55fefc3fc001b822da50db90cfd03fc1c8d6b9069d",
       "baselineSha256": null,
       "isNew": false
     },
     "src/config/bonded-tontine.ts": {
-      "sha256": "b5694cc166bae1ad85f4069fbee0f9244de26228f4c563ddc059417a579eb914",
+      "sha256": "d3dcaddce5c557a82851ad4c47c351afec76b85fb1619a169a790c9f4fbb71e3",
       "baselineSha256": null,
       "isNew": false
     },
@@ -64,12 +69,27 @@
       "isNew": false
     },
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "f27d54569bad9f4f7bf5ed3de43361ef3cb846f1f19376b080bd09a2e085f677",
+      "sha256": "cc88ecb59aa7e74d04e827795116d1b84e44565cc3b3f1792b55bc6937baa0b9",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "sha256": "be37a8b5eb0e57dac9ed6a0e6ef3a177600cdb6544d468314000dfaa6d2fb68f",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/hooks/useSavingsClub.ts": {
+      "sha256": "06538e219a3d0311febc4e277be8d88200fa7280274a0687627c3fdf59ae7a4b",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/hooks/useCollateralPolicy.ts": {
+      "sha256": "40395b854831ac52b88b05829ecb8bdf75cd556e4cf836939c9152c7a26a5508",
       "baselineSha256": null,
       "isNew": false
     },
     "src/App.tsx": {
-      "sha256": "949a99b2b60abc5cbb621415326a81a12701c420613b879203f5884e77ae6a18",
+      "sha256": "01afdbadfaa2a799c4b05e61db30afd5ae77ff8d1f5de6d16225463a255a0a4f",
       "baselineSha256": null,
       "isNew": false
     },
