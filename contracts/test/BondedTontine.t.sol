@@ -624,8 +624,9 @@ contract BondedTontineTest is Test {
         // Advance to Round 4: while undercollateralized, contribute() reverts DefaultPending
         vm.warp(vm.getBlockTimestamp() + ROUND_DURATION);
         oracle.setPrice(11_500e8);
+        uint256 owed = club.interestOwed();
         vm.prank(clubOwner);
-        club.payInterest(club.interestOwed()); // pay interest so only undercollateralization is pending
+        club.payInterest(owed); // pay interest so only undercollateralization is pending
         vm.prank(member1);
         vm.expectRevert(BondedTontine.DefaultPending.selector);
         club.contribute();

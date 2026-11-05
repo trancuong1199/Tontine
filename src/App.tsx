@@ -13,7 +13,7 @@ import { MemberStatus } from "./components/savings/MemberStatus";
 import { ActionPanel } from "./components/savings/ActionPanel";
 import { PasskeyActionPanel } from "./components/savings/PasskeyActionPanel";
 import { BondedClubWorkspace } from "./components/savings/BondedClubWorkspace";
-import { ARC_TESTNET_DEFAULT_BONDED_CLUB, isKnownBondedClubAddress, registerRuntimeBondedClub } from "./config/bonded-tontine";
+import { useIsBondedClub } from "./hooks/useIsBondedClub";
 import { GroupSwitcher } from "./components/savings/GroupSwitcher";
 import { RoundHistory } from "./components/savings/RoundHistory";
 import { ClubMembersRoster } from "./components/savings/ClubMembersRoster";
@@ -417,16 +417,8 @@ export default function App() {
     }
   };
 
-  // Check whether the selected contractAddress is a BondedTontine V2 club (U1)
-  const isBondedClub = Boolean(
-    contractAddress &&
-      (contractAddress.toLowerCase() === ARC_TESTNET_DEFAULT_BONDED_CLUB.toLowerCase() ||
-        isKnownBondedClubAddress(contractAddress) ||
-        getKnownGroups().find((g) => g.address.toLowerCase() === contractAddress.toLowerCase())?.version === "v2-bonded")
-  );
-  if (isBondedClub && contractAddress) {
-    registerRuntimeBondedClub(contractAddress);
-  }
+  // BondedTontine V2 detection: local knowledge first, then on-chain factory.isClub (U1 / R7)
+  const { isBonded: isBondedClub, isChecking: isBondedChecking } = useIsBondedClub(contractAddress);
 
   // Contract reads (keyed by active contract address and user address)
   const clubInfo = useClubInfo(contractAddress);
@@ -1271,6 +1263,13 @@ export default function App() {
               />
             </div>
           </>
+        ) : isBondedChecking ? (
+          <div className="bg-slate-900/90 rounded-3xl p-16 text-center border border-slate-800/80 shadow-xs max-w-lg mx-auto my-12">
+            <div className="w-10 h-10 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <h3 className="font-bold text-slate-100 text-base sm:text-lg">
+              {isEn ? "Verifying club type on-chain..." : "Đang xác minh loại nhóm trên chuỗi..."}
+            </h3>
+          </div>
         ) : (
           <>
         {/* Loading Spinner */}

@@ -1,6 +1,6 @@
 {
   "taskId": "task-059",
-  "frozenAt": "2026-11-04T15:53:51.755Z",
+  "frozenAt": "2026-11-05T01:32:31.868Z",
   "status": "FROZEN",
   "files": {
     "contracts/BondedTontine.sol": {
@@ -19,7 +19,7 @@
       "isNew": false
     },
     "contracts/test/BondedTontine.t.sol": {
-      "sha256": "6724a79b063a99a33363461bd79d1488dfda6f149d05befa689fd04ba022607d",
+      "sha256": "205584aea0fec2d4b678b088486a0fdbb8f584416f88a08fb43faca2e0504660",
       "baselineSha256": null,
       "isNew": false
     },
@@ -49,7 +49,7 @@
       "isNew": false
     },
     "scripts/refresh-mock-oracle.mjs": {
-      "sha256": "8afbbf89f9277b70ca634b55fefc3fc001b822da50db90cfd03fc1c8d6b9069d",
+      "sha256": "c747ed029d920c95ef431d7b8af1f0c7110e2d4f5beeadbec5e26830a865b137",
       "baselineSha256": null,
       "isNew": false
     },
@@ -68,8 +68,18 @@
       "baselineSha256": null,
       "isNew": false
     },
+    "src/hooks/useIsBondedClub.ts": {
+      "sha256": "f46988500be6af316769c02e5204615bf7906972e4cf8884334e768588dda902",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/hooks/useArcWriteContract.ts": {
+      "sha256": "b5e961c7074b3200b9a76b0f2c500b3770d6ed6ae1903479297b5a72800d346f",
+      "baselineSha256": null,
+      "isNew": false
+    },
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "cc88ecb59aa7e74d04e827795116d1b84e44565cc3b3f1792b55bc6937baa0b9",
+      "sha256": "4cd0dd0477af9e02ff11cf760abc9276811e3367cf7eb8d6b646a1f4597f9168",
       "baselineSha256": null,
       "isNew": false
     },
@@ -89,7 +99,7 @@
       "isNew": false
     },
     "src/App.tsx": {
-      "sha256": "01afdbadfaa2a799c4b05e61db30afd5ae77ff8d1f5de6d16225463a255a0a4f",
+      "sha256": "2986598e1b083f50a068b88ad51ba3a07661377280c391cdfb305824cf5a02e6",
       "baselineSha256": null,
       "isNew": false
     },

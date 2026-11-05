@@ -12,6 +12,7 @@ bavi-finance/
 scripts/.burner-bots.json
 scripts/.coordinator-wallet.json
 scripts/setup-*.mjs
+!scripts/setup-10-members.mjs
 scripts/launch-*.mjs
 scripts/wait-*.mjs
 scripts/watch-*.mjs

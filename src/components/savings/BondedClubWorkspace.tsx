@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useWaitForTransactionReceipt } from "wagmi";
+import { usePublicClient, useWaitForTransactionReceipt } from "wagmi";
 import { toast } from "sonner";
 import {
   ShieldAlert,
@@ -36,6 +36,7 @@ import {
   ORACLE_INFO,
   BONDED_DISCLOSURE_COPY,
   MOCK_ORACLE_WARNING_COPY,
+  registerRuntimeBondedClub,
 } from "../../config/bonded-tontine.ts";
 import { buildAddressExplorerUrl } from "../../onchain-facts.ts";
 import {
@@ -88,6 +89,7 @@ export function BondedClubWorkspace({
   const club = useBondedClub(contractAddress, userAddress, true);
   const usdcBalance = useUsdcBalance(userAddress);
   const { writeContractAsync, isPending } = useArcWriteContract();
+  const publicClient = usePublicClient({ chainId: ARC_TESTNET_CHAIN_ID });
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   useWaitForTransactionReceipt({ hash: txHash });
 
@@ -151,26 +153,37 @@ export function BondedClubWorkspace({
     }
   };
 
-  // Exact-amount approval helper (T6.6: never approve infinite amounts)
+  // Wait until a transaction is mined on Arc before sending the dependent transaction (R2).
+  const waitForSuccessfulReceipt = async (hash: `0x${string}`) => {
+    if (!publicClient) throw new Error("Arc Testnet RPC client is unavailable");
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    if (receipt.status !== "success") throw new Error("Approval transaction reverted");
+    return receipt;
+  };
+
+  // Exact-amount approval helper (T6.6: never approve infinite amounts).
+  // Sends approve, then waits for its receipt so the main call never estimates gas without allowance.
   const ensureExactUsdcApproval = async (exactAmount: bigint) => {
     if (club.usdcAllowance < exactAmount) {
-      await writeContractAsync({
+      const approveHash = await writeContractAsync({
         address: BONDED_USDC_ADDRESS,
         abi: ERC20_APPROVE_ABI,
         functionName: "approve",
         args: [contractAddress, exactAmount],
       });
+      await waitForSuccessfulReceipt(approveHash);
     }
   };
 
   const ensureExactCirBtcApproval = async (exactAmount: bigint) => {
     if (club.cirBtcAllowance < exactAmount) {
-      await writeContractAsync({
+      const approveHash = await writeContractAsync({
         address: BONDED_CIRBTC_ADDRESS,
         abi: ERC20_APPROVE_ABI,
         functionName: "approve",
         args: [contractAddress, exactAmount],
       });
+      await waitForSuccessfulReceipt(approveHash);
     }
   };
 
@@ -410,6 +423,40 @@ export function BondedClubWorkspace({
           : "Submitted BondedTontine creation via Factory!"
       );
       setShowCreateForm(false);
+
+      // R6: wait for the receipt, read ClubCreated, register the new club and switch to it.
+      if (!publicClient) return;
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") {
+        throw new Error("Create club transaction reverted");
+      }
+      const created = parseEventLogs({
+        abi: BONDED_TONTINE_FACTORY_ABI,
+        eventName: "ClubCreated",
+        logs: receipt.logs,
+      }).find((log) => log.address.toLowerCase() === factoryAddr.toLowerCase());
+      const newClubAddress = (created as unknown as { args?: { club?: `0x${string}` } } | undefined)?.args?.club;
+      if (!newClubAddress) {
+        toast.error(
+          isVi
+            ? "Đã tạo nhóm nhưng không đọc được địa chỉ nhóm mới từ sự kiện ClubCreated"
+            : "Club created but the new club address could not be read from ClubCreated"
+        );
+        return;
+      }
+      registerRuntimeBondedClub(newClubAddress);
+      saveKnownGroup({
+        address: newClubAddress,
+        name: params.groupName,
+        creator: userAddress?.toLowerCase(),
+        version: "v2-bonded",
+      });
+      toast.success(
+        isVi
+          ? `Nhóm mới đã sẵn sàng: ${params.groupName}`
+          : `New club ready: ${params.groupName}`
+      );
+      onSelectGroup?.(newClubAddress);
     } catch (err) {
       toast.error(parseBondedTontineError(err, language));
     }
@@ -770,7 +817,7 @@ export function BondedClubWorkspace({
                 className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-xs text-white"
               />
               {Number(newRoundDurationSec) < 86_400 && (
-                <span className="mt-1 block text-[11px] text-amber-300">
+                <span className="mt-1 block text-xs text-amber-300">
                   {isVi
                     ? "Vòng ngắn chỉ để thử nghiệm"
                     : "Short rounds are for testing only"}
@@ -838,7 +885,7 @@ export function BondedClubWorkspace({
                 className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-xs text-white"
               />
               {estimatedNewBorrowLimitUsdc !== null && (
-                <span className="mt-1 block text-[11px] text-emerald-300">
+                <span className="mt-1 block text-xs text-emerald-300">
                   {isVi ? "Hạn mức vay ước tính:" : "Est. Borrow Limit:"}{" "}
                   {displayUsdc(estimatedNewBorrowLimitUsdc)} USDC
                 </span>
@@ -853,7 +900,7 @@ export function BondedClubWorkspace({
                 ? `Ân hạn trả lãi: ${newInterestGraceSec}s • Ân hạn tất toán: ${newSettlementGraceSec}s. Quá hạn thì cọc CirBTC bị tịch thu toàn bộ và chia cho thành viên.`
                 : `Interest grace: ${newInterestGraceSec}s • Settlement grace: ${newSettlementGraceSec}s. If overdue or undercollateralized, 100% of CirBTC collateral is seized and distributed to members.`}
             </div>
-            <div className="text-[11px] text-zinc-400">
+            <div className="text-xs text-zinc-400">
               {isVi ? "Nguồn giá của Factory:" : "Factory Price Feed:"}{" "}
               <a
                 href={feedExplorerUrl}
@@ -1051,7 +1098,7 @@ export function BondedClubWorkspace({
                 </button>
               </div>
               {staleBlocksPriceAction && (
-                <p className="text-[11px] text-red-300">
+                <p className="text-xs text-red-300">
                   {isVi
                     ? "Giá oracle đã quá hạn, cần làm mới giá"
                     : "Oracle price is stale; refresh price first"}
@@ -1118,7 +1165,7 @@ export function BondedClubWorkspace({
                 </button>
               </div>
               {staleBlocksPriceAction && club.totalDebt + club.interestOwed > 0n && (
-                <p className="text-[11px] text-red-300">
+                <p className="text-xs text-red-300">
                   {isVi
                     ? "Giá oracle đã quá hạn, cần làm mới giá"
                     : "Oracle price is stale; refresh price first"}
@@ -1189,7 +1236,7 @@ export function BondedClubWorkspace({
               {isVi ? "Tất toán chu kỳ (finalize)" : "Finalize Cycle (finalize)"}
             </button>
             {finalizeDisabledReason && (
-              <p className="text-[11px] text-zinc-400">{finalizeDisabledReason}</p>
+              <p className="text-xs text-zinc-400">{finalizeDisabledReason}</p>
             )}
           </div>
 
@@ -1203,7 +1250,7 @@ export function BondedClubWorkspace({
               {isVi ? "Tuyên bố vỡ nợ quá hạn (declareDefault)" : "Declare Default (declareDefault)"}
             </button>
             {declareDefaultDisabledReason && (
-              <p className="text-[11px] text-zinc-400">{declareDefaultDisabledReason}</p>
+              <p className="text-xs text-zinc-400">{declareDefaultDisabledReason}</p>
             )}
           </div>
 
@@ -1217,7 +1264,7 @@ export function BondedClubWorkspace({
               {isVi ? "Thanh lý do thiếu cọc (liquidate)" : "Liquidate Undercollateralized (liquidate)"}
             </button>
             {liquidateDisabledReason && (
-              <p className="text-[11px] text-zinc-400">{liquidateDisabledReason}</p>
+              <p className="text-xs text-zinc-400">{liquidateDisabledReason}</p>
             )}
           </div>
         </div>
