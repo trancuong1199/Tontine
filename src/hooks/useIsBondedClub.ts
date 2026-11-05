@@ -15,6 +15,9 @@ export interface IsBondedClubResult {
   isBonded: boolean;
   /** True while the on-chain `factory.isClub(address)` check is still running for an unknown address. */
   isChecking: boolean;
+  /** True if reading factory.isClub failed */
+  isError: boolean;
+  refetch?: () => void;
 }
 
 /**
@@ -60,5 +63,7 @@ export function useIsBondedClub(address?: `0x${string}`): IsBondedClubResult {
   return {
     isBonded,
     isChecking: shouldCheckOnChain && read.isLoading,
+    isError: shouldCheckOnChain && read.isError,
+    refetch: read.refetch,
   };
 }

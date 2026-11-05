@@ -10,10 +10,13 @@ import {
 } from "../lib/bondedTontine.ts";
 import {
   ARC_TESTNET_CHAIN_ID,
+  ARC_TESTNET_DEFAULT_BONDED_CLUB,
   CANONICAL_FACTORY,
   BONDED_USDC_ADDRESS,
   BONDED_CIRBTC_ADDRESS,
+  isKnownBondedClubAddress,
 } from "../config/bonded-tontine.ts";
+import { getKnownGroups } from "../lib/savingsClubDirectory.ts";
 
 const ERC20_READ_ABI = [
   {
@@ -63,9 +66,11 @@ export interface BondedClubSnapshot {
   interestPaidTotal: bigint;
   interestClaimedTotal: bigint;
   interestOwed: bigint;
+  startTime: bigint;
   nextInterestDeadline: bigint;
   currentRoundIndex: bigint;
   cycleEnded: boolean;
+  memberAddresses: readonly `0x${string}`[];
   // Oracle-dependent fields (may be null if oracle is stale/broken)
   oracleError: boolean;
   collateralValueUsdc: bigint | null;
@@ -99,11 +104,17 @@ export function useBondedClub(
   enabled = true
 ): BondedClubSnapshot {
   const publicClient = usePublicClient({ chainId: ARC_TESTNET_CHAIN_ID });
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const initialVerified = Boolean(
+    clubAddress &&
+      (clubAddress.toLowerCase() === ARC_TESTNET_DEFAULT_BONDED_CLUB.toLowerCase() ||
+        isKnownBondedClubAddress(clubAddress) ||
+        getKnownGroups().find((g) => g.address.toLowerCase() === clubAddress.toLowerCase())?.version === "v2-bonded")
+  );
   const [data, setData] = useState<Omit<BondedClubSnapshot, "isLoading" | "error" | "refetch">>({
     address: (clubAddress ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    isVerifiedClub: false,
+    isVerifiedClub: initialVerified,
     factoryAddress: CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID],
     state: BONDED_STATE.OPEN,
     owner: "0x0000000000000000000000000000000000000000",
@@ -127,9 +138,11 @@ export function useBondedClub(
     interestPaidTotal: 0n,
     interestClaimedTotal: 0n,
     interestOwed: 0n,
+    startTime: 0n,
     nextInterestDeadline: 0n,
     currentRoundIndex: 0n,
     cycleEnded: false,
+    memberAddresses: [],
     oracleError: false,
     collateralValueUsdc: null,
     borrowLimit: null,
@@ -189,6 +202,7 @@ export function useBondedClub(
         interestPaidTotal,
         interestClaimedTotal,
         interestOwed,
+        startTime,
         nextInterestDeadline,
         currentRoundIndex,
         cycleEnded,
@@ -215,6 +229,7 @@ export function useBondedClub(
         readClub<bigint>("interestPaidTotal"),
         readClub<bigint>("interestClaimedTotal").catch(() => 0n),
         readClub<bigint>("interestOwed"),
+        readClub<bigint>("startTime").catch(() => 0n),
         readClub<bigint>("nextInterestDeadline"),
         readClub<bigint>("currentRoundIndex"),
         readClub<boolean>("cycleEnded"),
@@ -357,6 +372,51 @@ export function useBondedClub(
         cirBtcAllowance = cAllow;
       }
 
+      // Read member list from MemberJoined / MemberRemoved events (L5)
+      let memberAddresses: `0x${string}`[] = [];
+      try {
+        const [joinedLogs, removedLogs] = await Promise.all([
+          publicClient.getLogs({
+            address: clubAddress,
+            event: {
+              type: "event",
+              name: "MemberJoined",
+              inputs: [{ type: "address", name: "member", indexed: true }],
+            },
+            fromBlock: 0n,
+            toBlock: "latest",
+          }),
+          publicClient.getLogs({
+            address: clubAddress,
+            event: {
+              type: "event",
+              name: "MemberRemoved",
+              inputs: [{ type: "address", name: "member", indexed: true }],
+            },
+            fromBlock: 0n,
+            toBlock: "latest",
+          }),
+        ]);
+
+        const removedSet = new Set(
+          removedLogs
+            .map((l) => (l.args as { member?: string })?.member?.toLowerCase())
+            .filter(Boolean)
+        );
+
+        const joinedOrder: `0x${string}`[] = [];
+        for (const log of joinedLogs) {
+          const m = (log.args as { member?: `0x${string}` })?.member;
+          if (m && !removedSet.has(m.toLowerCase()) && !joinedOrder.some((a) => a.toLowerCase() === m.toLowerCase())) {
+            joinedOrder.push(m);
+          }
+        }
+        memberAddresses = joinedOrder;
+      } catch {
+        // Fallback: empty member array if getLogs not supported by RPC
+        memberAddresses = [];
+      }
+
       setData({
         address: clubAddress,
         isVerifiedClub,
@@ -383,9 +443,11 @@ export function useBondedClub(
         interestPaidTotal,
         interestClaimedTotal,
         interestOwed,
+        startTime,
         nextInterestDeadline,
         currentRoundIndex,
         cycleEnded,
+        memberAddresses,
         oracleError,
         collateralValueUsdc,
         borrowLimit,

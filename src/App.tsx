@@ -418,7 +418,12 @@ export default function App() {
   };
 
   // BondedTontine V2 detection: local knowledge first, then on-chain factory.isClub (U1 / R7)
-  const { isBonded: isBondedClub, isChecking: isBondedChecking } = useIsBondedClub(contractAddress);
+  const {
+    isBonded: isBondedClub,
+    isChecking: isBondedChecking,
+    isError: isBondedError,
+    refetch: refetchIsBonded,
+  } = useIsBondedClub(contractAddress);
 
   // Contract reads (keyed by active contract address and user address)
   const clubInfo = useClubInfo(contractAddress);
@@ -1258,6 +1263,7 @@ export default function App() {
                 contractAddress={contractAddress}
                 userAddress={address}
                 language={language}
+                isPasskeyUser={Boolean(passkeyAddress)}
                 onSelectGroup={handleSwitchGroup}
                 onOpenDirectoryModal={() => setShowDirectoryModal(true)}
               />
@@ -1269,6 +1275,26 @@ export default function App() {
             <h3 className="font-bold text-slate-100 text-base sm:text-lg">
               {isEn ? "Verifying club type on-chain..." : "Đang xác minh loại nhóm trên chuỗi..."}
             </h3>
+          </div>
+        ) : isBondedError ? (
+          <div className="bg-slate-900/90 rounded-3xl p-12 text-center border border-red-500/30 shadow-xs max-w-lg mx-auto my-12 space-y-4">
+            <h3 className="font-bold text-red-300 text-base sm:text-lg">
+              {isEn
+                ? "Could not verify club type on-chain"
+                : "Không xác minh được loại nhóm, vui lòng thử lại"}
+            </h3>
+            <p className="text-slate-400 text-xs sm:text-sm">
+              {isEn
+                ? "Failed to check if this address is a canonical BondedTontine club. Please verify your connection."
+                : "Lỗi kết nối RPC khi kiểm tra Factory. Vui lòng kiểm tra lại mạng hoặc thử lại."}
+            </p>
+            <button
+              type="button"
+              onClick={() => refetchIsBonded?.()}
+              className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+            >
+              {isEn ? "Retry Verification" : "Thử lại"}
+            </button>
           </div>
         ) : (
           <>

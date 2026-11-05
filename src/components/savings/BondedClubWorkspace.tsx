@@ -38,7 +38,7 @@ import {
   MOCK_ORACLE_WARNING_COPY,
   registerRuntimeBondedClub,
 } from "../../config/bonded-tontine.ts";
-import { buildAddressExplorerUrl } from "../../onchain-facts.ts";
+import { buildAddressExplorerUrl, buildTxExplorerUrl } from "../../onchain-facts.ts";
 import {
   formatUsdc,
   formatUsdcExact,
@@ -75,6 +75,7 @@ export interface BondedClubWorkspaceProps {
   contractAddress: `0x${string}`;
   userAddress?: `0x${string}`;
   language: "vi" | "en";
+  isPasskeyUser?: boolean;
   onSelectGroup?: (address: `0x${string}`) => void;
   onOpenDirectoryModal?: () => void;
 }
@@ -83,12 +84,15 @@ export function BondedClubWorkspace({
   contractAddress,
   userAddress,
   language,
+  isPasskeyUser = false,
   onSelectGroup,
   onOpenDirectoryModal,
 }: BondedClubWorkspaceProps) {
   const club = useBondedClub(contractAddress, userAddress, true);
   const usdcBalance = useUsdcBalance(userAddress);
-  const { writeContractAsync, isPending } = useArcWriteContract();
+  const { writeContractAsync } = useArcWriteContract(undefined, { disableAutoToast: true });
+  const [isActionPending, setIsActionPending] = useState(false);
+  const isPending = isActionPending;
   const publicClient = usePublicClient({ chainId: ARC_TESTNET_CHAIN_ID });
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   useWaitForTransactionReceipt({ hash: txHash });
@@ -141,15 +145,52 @@ export function BondedClubWorkspace({
   };
 
   const runAction = async (label: string, fn: () => Promise<`0x${string}`>) => {
+    if (isActionPending) return;
+    setIsActionPending(true);
     try {
       const hash = await fn();
       setTxHash(hash);
-      toast.success(isVi ? `Đã gửi giao dịch: ${label}` : `Submitted: ${label}`);
-      setTimeout(() => {
-        void club.refetch();
-      }, 2000);
+      const submittingToastId = toast.loading(
+        isVi
+          ? `Đang chờ xác nhận giao dịch: ${label}...`
+          : `Waiting for on-chain confirmation: ${label}...`
+      );
+
+      if (publicClient) {
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        toast.dismiss(submittingToastId);
+        if (receipt.status === "success") {
+          toast.success(
+            <div className="space-y-1">
+              <div>{isVi ? `Thành công: ${label}` : `Confirmed: ${label}`}</div>
+              <a
+                href={buildTxExplorerUrl(ARC_TESTNET_CHAIN_ID, hash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-400 underline flex items-center gap-1"
+              >
+                {isVi ? "Xem trên Arc Explorer" : "View on Arc Explorer"}
+                <ExternalLink className="h-3 w-3 inline" />
+              </a>
+            </div>
+          );
+        } else {
+          toast.error(
+            isVi
+              ? `Giao dịch ${label} bị revert trên chain.`
+              : `Transaction reverted on-chain: ${label}`
+          );
+        }
+      } else {
+        toast.dismiss(submittingToastId);
+        toast.success(isVi ? `Đã gửi giao dịch: ${label}` : `Submitted: ${label}`);
+      }
+
+      await club.refetch();
     } catch (err) {
       toast.error(parseBondedTontineError(err, language));
+    } finally {
+      setIsActionPending(false);
     }
   };
 
@@ -229,10 +270,22 @@ export function BondedClubWorkspace({
       })
     );
 
-  // Owner actions (T6.3)
-  const handleDepositCollateral = () =>
-    runAction(isVi ? "Nạp cọc CirBTC" : "Deposit CirBTC Collateral", async () => {
-      const sats = parseUnitsExact(collateralInput, 8);
+  // Owner actions (T6.3 & L3)
+  const handleDepositCollateral = () => {
+    let sats = 0n;
+    try {
+      if (!collateralInput.trim()) throw new Error();
+      sats = parseUnitsExact(collateralInput, 8);
+      if (sats <= 0n) throw new Error();
+    } catch {
+      toast.error(
+        isVi
+          ? "Vui lòng nhập số lượng cirBTC cọc hợp lệ (> 0)"
+          : "Please enter a valid cirBTC collateral amount (> 0)"
+      );
+      return;
+    }
+    return runAction(isVi ? "Nạp cọc CirBTC" : "Deposit CirBTC Collateral", async () => {
       await ensureExactCirBtcApproval(sats);
       return writeContractAsync({
         address: contractAddress,
@@ -241,10 +294,23 @@ export function BondedClubWorkspace({
         args: [sats],
       });
     });
+  };
 
-  const handleWithdrawCollateral = () =>
-    runAction(isVi ? "Rút cọc CirBTC" : "Withdraw CirBTC Collateral", () => {
-      const sats = parseUnitsExact(withdrawColInput, 8);
+  const handleWithdrawCollateral = () => {
+    let sats = 0n;
+    try {
+      if (!withdrawColInput.trim()) throw new Error();
+      sats = parseUnitsExact(withdrawColInput, 8);
+      if (sats <= 0n) throw new Error();
+    } catch {
+      toast.error(
+        isVi
+          ? "Vui lòng nhập số lượng cirBTC rút hợp lệ (> 0)"
+          : "Please enter a valid cirBTC withdraw amount (> 0)"
+      );
+      return;
+    }
+    return runAction(isVi ? "Rút cọc CirBTC" : "Withdraw CirBTC Collateral", () => {
       return writeContractAsync({
         address: contractAddress,
         abi: BONDED_TONTINE_ABI,
@@ -252,6 +318,7 @@ export function BondedClubWorkspace({
         args: [sats],
       });
     });
+  };
 
   const handleStartRounds = () =>
     runAction(isVi ? "Bắt đầu các vòng" : "Start Rounds", () =>
@@ -263,9 +330,21 @@ export function BondedClubWorkspace({
       })
     );
 
-  const handleBorrow = () =>
-    runAction(isVi ? "Vay USDC trong hạn mức" : "Borrow USDC", () => {
-      const amt = parseUsdc(borrowInput);
+  const handleBorrow = () => {
+    let amt = 0n;
+    try {
+      if (!borrowInput.trim()) throw new Error();
+      amt = parseUsdc(borrowInput);
+      if (amt <= 0n) throw new Error();
+    } catch {
+      toast.error(
+        isVi
+          ? "Vui lòng nhập số tiền vay hợp lệ (> 0)"
+          : "Please enter a valid borrow amount (> 0)"
+      );
+      return;
+    }
+    return runAction(isVi ? "Vay USDC trong hạn mức" : "Borrow USDC", () => {
       return writeContractAsync({
         address: contractAddress,
         abi: BONDED_TONTINE_ABI,
@@ -273,10 +352,23 @@ export function BondedClubWorkspace({
         args: [amt],
       });
     });
+  };
 
-  const handleRepay = () =>
-    runAction(isVi ? "Trả nợ gốc USDC" : "Repay Principal USDC", async () => {
-      const amt = parseUsdc(repayInput);
+  const handleRepay = () => {
+    let amt = 0n;
+    try {
+      if (!repayInput.trim()) throw new Error();
+      amt = parseUsdc(repayInput);
+      if (amt <= 0n) throw new Error();
+    } catch {
+      toast.error(
+        isVi
+          ? "Vui lòng nhập số tiền trả gốc hợp lệ (> 0)"
+          : "Please enter a valid repay amount (> 0)"
+      );
+      return;
+    }
+    return runAction(isVi ? "Trả nợ gốc USDC" : "Repay Principal USDC", async () => {
       await ensureExactUsdcApproval(amt);
       return writeContractAsync({
         address: contractAddress,
@@ -285,12 +377,23 @@ export function BondedClubWorkspace({
         args: [amt],
       });
     });
+  };
 
-  const handlePayInterest = () =>
-    runAction(isVi ? "Trả lãi USDC" : "Pay Interest USDC", async () => {
-      const amt = interestInput.trim()
-        ? parseUsdc(interestInput)
-        : club.interestOwed;
+  const handlePayInterest = () => {
+    let amt = 0n;
+    try {
+      const trimmed = interestInput.trim();
+      amt = trimmed ? parseUsdc(trimmed) : club.interestOwed;
+      if (amt <= 0n) throw new Error();
+    } catch {
+      toast.error(
+        isVi
+          ? "Vui lòng nhập số tiền trả lãi hợp lệ (> 0)"
+          : "Please enter a valid interest amount (> 0)"
+      );
+      return;
+    }
+    return runAction(isVi ? "Trả lãi USDC" : "Pay Interest USDC", async () => {
       await ensureExactUsdcApproval(amt);
       return writeContractAsync({
         address: contractAddress,
@@ -299,16 +402,27 @@ export function BondedClubWorkspace({
         args: [amt],
       });
     });
+  };
 
-  const handleRemoveMember = () =>
-    runAction(isVi ? "Xóa thành viên" : "Remove Member", () =>
+  const handleRemoveMember = () => {
+    const trimmed = removeMemberInput.trim();
+    if (!trimmed.startsWith("0x") || trimmed.length !== 42) {
+      toast.error(
+        isVi
+          ? "Vui lòng nhập hoặc chọn địa chỉ thành viên hợp lệ (0x...)"
+          : "Please enter or select a valid member address (0x...)"
+      );
+      return;
+    }
+    return runAction(isVi ? "Xóa thành viên" : "Remove Member", () =>
       writeContractAsync({
         address: contractAddress,
         abi: BONDED_TONTINE_ABI,
         functionName: "removeMember",
-        args: [removeMemberInput.trim() as `0x${string}`],
+        args: [trimmed as `0x${string}`],
       })
     );
+  };
 
   const handleCancelOpen = () =>
     runAction(isVi ? "Hủy nhóm đang mở" : "Cancel Open Club", () =>
@@ -368,6 +482,7 @@ export function BondedClubWorkspace({
 
   // Create BondedTontine club via Factory (T6.1 & T6.10 & U5)
   const handleCreateBondedClub = async () => {
+    if (isActionPending) return;
     const factoryAddr = CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
     if (!factoryAddr) {
       toast.error(isVi ? "Chưa cấu hình Factory trên mạng này" : "Factory not configured on this chain");
@@ -381,6 +496,7 @@ export function BondedClubWorkspace({
       );
       return;
     }
+    setIsActionPending(true);
     try {
       const contributionAmount = parseUsdc(newContribUsdc);
       const params = {
@@ -459,6 +575,8 @@ export function BondedClubWorkspace({
       onSelectGroup?.(newClubAddress);
     } catch (err) {
       toast.error(parseBondedTontineError(err, language));
+    } finally {
+      setIsActionPending(false);
     }
   };
 
@@ -591,8 +709,16 @@ export function BondedClubWorkspace({
             {stateLabels[club.state]?.[language] ?? "UNKNOWN"} •{" "}
             {isVi ? "Thành viên" : "Members"}: {club.memberCount.toString()}/
             {club.maxMembers.toString()} •{" "}
-            {isVi ? "Vòng hiện tại" : "Current Round"}:{" "}
-            {club.currentRoundIndex.toString()}/{club.totalRounds.toString()}
+            {club.cycleEnded ? (
+              <span className="font-semibold text-amber-400">
+                {isVi ? "Chu kỳ đã kết thúc" : "Cycle ended"}
+              </span>
+            ) : (
+              <>
+                {isVi ? "Vòng hiện tại" : "Current Round"}:{" "}
+                {club.currentRoundIndex.toString()}/{club.totalRounds.toString()}
+              </>
+            )}
           </p>
         </div>
 
@@ -761,7 +887,9 @@ export function BondedClubWorkspace({
                 ? isVi
                   ? "∞ (Không nợ)"
                   : "∞ (No debt)"
-                : `${(Number(club.healthBps) / 100).toFixed(1)}%`}
+                : Number(club.healthBps) > 100_000
+                  ? ">1,000%"
+                  : `${(Number(club.healthBps) / 100).toFixed(1)}%`}
           </div>
           <div className="text-xs text-zinc-400">
             {isVi ? "Ngưỡng thanh lý:" : "Liquidation:"}{" "}
@@ -769,6 +897,190 @@ export function BondedClubWorkspace({
           </div>
         </div>
       </div>
+
+      {/* Zero Collateral Alert (Active but Collateral is 0) */}
+      {club.state === BONDED_STATE.ACTIVE && club.collateral === 0n && (
+        <div className="rounded-xl border border-yellow-500/40 bg-yellow-950/40 p-3.5 text-xs text-yellow-200 flex items-start gap-2.5">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-yellow-400 mt-0.5" />
+          <div>
+            <div className="font-semibold text-yellow-300">
+              {isVi ? "Cảnh báo cọc bảo đảm bằng 0" : "Zero Collateral Warning"}
+            </div>
+            <p className="mt-0.5 text-yellow-200/90 leading-relaxed">
+              {isVi
+                ? "Chủ hụi hiện không có cọc CirBTC nào trong nhóm (hạn mức vay = 0). Thành viên cần lưu ý trước khi đóng thêm tiền."
+                : "The club owner currently has zero CirBTC collateral locked (borrow limit = 0). Members should take note before contributing."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Deadlines Timeline Block (M2) */}
+      {club.state === BONDED_STATE.ACTIVE && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+              <RefreshCw className="h-4 w-4 text-amber-400" />
+              {isVi ? "Mốc thời gian & Hạn chót (Deadlines)" : "Timeline & Deadlines"}
+            </h3>
+            <span className="text-xs text-zinc-400">
+              {isVi ? "Chu kỳ:" : "Cycle duration:"} {Number(club.roundDuration)}s × {Number(club.totalRounds)}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 text-xs">
+            {/* 1. Current Round Deadline */}
+            {(() => {
+              const currentRoundEnd =
+                club.startTime > 0n && club.currentRoundIndex >= 1n && club.currentRoundIndex <= club.maxMembers
+                  ? club.startTime + club.currentRoundIndex * club.roundDuration
+                  : 0n;
+              const isPast = currentRoundEnd > 0n && nowSec >= currentRoundEnd;
+              const remainingSec = currentRoundEnd > nowSec ? Number(currentRoundEnd - nowSec) : 0;
+              const isUrgent = remainingSec > 0 && remainingSec < Number(club.roundDuration) * 0.2;
+
+              return (
+                <div
+                  className={`rounded-lg border p-3 ${
+                    isPast
+                      ? "border-zinc-700 bg-zinc-950/60 text-zinc-400"
+                      : isUrgent
+                        ? "border-amber-500/50 bg-amber-950/30 text-amber-200"
+                        : "border-zinc-800 bg-zinc-950/40 text-zinc-300"
+                  }`}
+                >
+                  <div className="font-semibold text-white">
+                    {isVi ? `Hạn đóng tiền vòng ${club.currentRoundIndex}` : `Round ${club.currentRoundIndex} Cutoff`}
+                  </div>
+                  <div className="mt-1 font-mono text-sm font-bold">
+                    {currentRoundEnd === 0n
+                      ? "—"
+                      : isPast
+                        ? isVi
+                          ? "Vòng đã kết thúc"
+                          : "Round ended"
+                        : `${remainingSec}s ${isVi ? "còn lại" : "left"}`}
+                  </div>
+                  <div className="mt-1 text-zinc-400">
+                    {currentRoundEnd > 0n ? new Date(Number(currentRoundEnd) * 1000).toLocaleTimeString() : ""}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 2. Interest Deadline (+ Grace) */}
+            {(() => {
+              const deadline = club.nextInterestDeadline;
+              const hasDebtOrInterest = club.totalDebt > 0n || club.interestOwed > 0n;
+              const isOverdue = deadline > 0n && nowSec >= deadline && club.interestOwed > 0n;
+              const remainingSec = deadline > nowSec ? Number(deadline - nowSec) : 0;
+              const isUrgent = remainingSec > 0 && remainingSec < Number(club.interestGrace || 120n);
+
+              return (
+                <div
+                  className={`rounded-lg border p-3 ${
+                    isOverdue
+                      ? "border-red-500 bg-red-950/50 text-red-200 animate-pulse"
+                      : isUrgent
+                        ? "border-amber-500 bg-amber-950/40 text-amber-200"
+                        : "border-zinc-800 bg-zinc-950/40 text-zinc-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className={isOverdue ? "text-red-300 font-bold" : "text-white"}>
+                      {isVi ? "Hạn trả lãi (+ ân hạn)" : "Interest Deadline (+ Grace)"}
+                    </span>
+                    {isOverdue && (
+                      <span className="rounded bg-red-500 px-1.5 py-0.5 text-xs font-extrabold text-black uppercase">
+                        {isVi ? "Quá hạn!" : "Overdue!"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 font-mono text-sm font-bold">
+                    {deadline === 0n || !hasDebtOrInterest
+                      ? isVi
+                        ? "Không nợ lãi"
+                        : "No interest due"
+                      : isOverdue
+                        ? isVi
+                          ? `ĐÃ QUÁ HẠN (${Number(nowSec - deadline)}s)`
+                          : `OVERDUE (${Number(nowSec - deadline)}s ago)`
+                        : `${remainingSec}s ${isVi ? "còn lại" : "left"}`}
+                  </div>
+                  <div className="mt-1 text-zinc-400">
+                    {deadline > 0n ? new Date(Number(deadline) * 1000).toLocaleTimeString() : ""} (ân hạn:{" "}
+                    {Number(club.interestGrace)}s)
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 3. Cycle Settlement Deadline */}
+            {(() => {
+              const cycleEnd =
+                club.startTime > 0n ? club.startTime + club.totalRounds * club.roundDuration : 0n;
+              const settlementDeadline =
+                cycleEnd > 0n ? cycleEnd + club.settlementGrace : 0n;
+              const isOverdue =
+                settlementDeadline > 0n &&
+                nowSec >= settlementDeadline &&
+                (club.totalDebt > 0n || club.interestOwed > 0n);
+              const remainingSec = settlementDeadline > nowSec ? Number(settlementDeadline - nowSec) : 0;
+
+              return (
+                <div
+                  className={`rounded-lg border p-3 ${
+                    isOverdue
+                      ? "border-red-500 bg-red-950/50 text-red-200 animate-pulse"
+                      : "border-zinc-800 bg-zinc-950/40 text-zinc-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className={isOverdue ? "text-red-300 font-bold" : "text-white"}>
+                      {isVi ? "Hạn tất toán chu kỳ (+ ân hạn)" : "Settlement Deadline"}
+                    </span>
+                    {isOverdue && (
+                      <span className="rounded bg-red-500 px-1.5 py-0.5 text-xs font-extrabold text-black uppercase">
+                        {isVi ? "Quá hạn!" : "Overdue!"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 font-mono text-sm font-bold">
+                    {settlementDeadline === 0n
+                      ? "—"
+                      : isOverdue
+                        ? isVi
+                          ? "ĐÃ QUÁ HẠN TẤT TOÁN"
+                          : "OVERDUE SETTLEMENT"
+                        : `${remainingSec}s ${isVi ? "còn lại" : "left"}`}
+                  </div>
+                  <div className="mt-1 text-zinc-400">
+                    {settlementDeadline > 0n
+                      ? new Date(Number(settlementDeadline) * 1000).toLocaleTimeString()
+                      : ""}{" "}
+                    (ân hạn: {Number(club.settlementGrace)}s)
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Overdue Danger Banner */}
+          {(nowSec >= club.nextInterestDeadline && club.interestOwed > 0n && club.nextInterestDeadline > 0n) && (
+            <div className="rounded-lg border border-red-500 bg-red-950/70 p-3 text-xs text-red-200 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+                <span>
+                  <strong>{isVi ? "CẢNH BÁO QUÁ HẠN:" : "CRITICAL OVERDUE ALERT:"}</strong>{" "}
+                  {isVi
+                    ? "Chủ hụi đã trễ hạn trả lãi! Bất kỳ ai cũng có thể bấm 'Tuyên bố vỡ nợ' bên dưới để tịch thu 100% cọc CirBTC chia cho thành viên."
+                    : "Owner has missed interest deadline! Anyone can click 'Declare Default' below to seize 100% CirBTC collateral for members."}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Create BondedTontine Club Modal/Section (T6.1, U4.2 & U5) */}
       {showCreateForm && (
@@ -954,6 +1266,16 @@ export function BondedClubWorkspace({
 
       {/* Member Panel (T6.4) */}
       <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+        {/* Passkey Wallet Warning (M3) */}
+        {isPasskeyUser && (
+          <div className="rounded-xl border border-amber-500/40 bg-amber-950/40 p-3 text-xs text-amber-200">
+            <strong>{isVi ? "Thông báo ví Passkey:" : "Passkey Wallet Notice:"}</strong>{" "}
+            {isVi
+              ? "Bản BondedTontine V2 hiện tại sử dụng ví trình duyệt Web3 (như MetaMask / Rabby) để ký trực tiếp hợp đồng. Tính năng Circle Passkey Smart Account đang được cấu hình cho V2."
+              : "BondedTontine V2 currently requires a standard Web3 browser wallet (MetaMask / Rabby). Circle Passkey smart account execution is disabled for V2 transactions."}
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="flex items-center gap-2 text-sm font-bold text-white">
             <Coins className="h-4 w-4 text-amber-400" />
@@ -985,25 +1307,42 @@ export function BondedClubWorkspace({
           )}
 
           {club.state === BONDED_STATE.ACTIVE && club.isMember && (
-            <button
-              type="button"
-              disabled={
-                isPending ||
-                club.hasContributedCurrentRound ||
-                contributeBlockedByVerification
-              }
-              onClick={handleContribute}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-black hover:bg-amber-400 disabled:opacity-50 cursor-pointer"
-            >
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              {club.hasContributedCurrentRound
-                ? isVi
-                  ? "Đã góp vòng này"
-                  : "Contributed this round"
-                : isVi
-                  ? `Approve & Góp ${displayUsdc(club.contributionAmount)} USDC`
-                  : `Approve & Contribute ${displayUsdc(club.contributionAmount)} USDC`}
-            </button>
+            <div className="space-y-1">
+              <button
+                type="button"
+                disabled={
+                  isPending ||
+                  isPasskeyUser ||
+                  club.hasContributedCurrentRound ||
+                  contributeBlockedByVerification ||
+                  club.cycleEnded ||
+                  canDeclareDefault ||
+                  canLiquidate
+                }
+                onClick={handleContribute}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-black hover:bg-amber-400 disabled:opacity-50 cursor-pointer"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {club.hasContributedCurrentRound
+                  ? isVi
+                    ? "Đã góp vòng này"
+                    : "Contributed this round"
+                  : isVi
+                    ? `Approve & Góp ${displayUsdc(club.contributionAmount)} USDC`
+                    : `Approve & Contribute ${displayUsdc(club.contributionAmount)} USDC`}
+              </button>
+              {(club.cycleEnded || canDeclareDefault || canLiquidate) && !club.hasContributedCurrentRound && (
+                <p className="text-xs text-red-300">
+                  {club.cycleEnded
+                    ? isVi
+                      ? "Chu kỳ đã kết thúc, không thể góp thêm"
+                      : "Cycle has ended, no further contributions"
+                    : isVi
+                      ? "Nhóm đang chờ xử lý vỡ nợ hoặc thanh lý (DefaultPending)"
+                      : "Default or liquidation pending (DefaultPending)"}
+                </p>
+              )}
+            </div>
           )}
 
           <button
@@ -1018,10 +1357,11 @@ export function BondedClubWorkspace({
           </button>
 
           {(club.state === BONDED_STATE.COMPLETED ||
-            club.state === BONDED_STATE.DEFAULTED) && (
+            club.state === BONDED_STATE.DEFAULTED) &&
+            club.userDeposit > 0n && (
             <button
               type="button"
-              disabled={isPending || club.principalWithdrawn || club.userDeposit === 0n}
+              disabled={isPending || isPasskeyUser || club.principalWithdrawn}
               onClick={handleWithdrawPrincipal}
               className="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-black hover:bg-emerald-400 disabled:opacity-40 cursor-pointer"
             >
@@ -1029,6 +1369,62 @@ export function BondedClubWorkspace({
                 ? `Rút gốc (${displayUsdc(club.previewPrincipalUsdc)} USDC + ${formatUnitsExact(club.previewPrincipalCirBtc, 8)} cirBTC)`
                 : `Withdraw Principal (${displayUsdc(club.previewPrincipalUsdc)} USDC + ${formatUnitsExact(club.previewPrincipalCirBtc, 8)} cirBTC)`}
             </button>
+          )}
+        </div>
+
+        {/* Member Roster (L5) */}
+        <div className="mt-3 rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-zinc-300">
+              {isVi ? "Danh sách thành viên" : "Member Roster"} ({club.memberAddresses.length}/{club.maxMembers.toString()})
+            </span>
+          </div>
+          {club.memberAddresses.length === 0 ? (
+            <p className="text-xs text-zinc-500 italic">
+              {isVi ? "Chưa có thành viên nào tham gia" : "No members have joined yet"}
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {club.memberAddresses.map((m) => {
+                const isCurrent = userAddress && m.toLowerCase() === userAddress.toLowerCase();
+                const isClubOwner = m.toLowerCase() === club.owner.toLowerCase();
+                return (
+                  <div
+                    key={m}
+                    className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1 text-xs text-zinc-300"
+                  >
+                    <a
+                      href={buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, m)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-mono hover:text-amber-300 underline"
+                    >
+                      {m.slice(0, 6)}...{m.slice(-4)}
+                    </a>
+                    {isCurrent && (
+                      <span className="rounded bg-amber-500/20 px-1 py-0.5 text-xs text-amber-300">
+                        {isVi ? "Bạn" : "You"}
+                      </span>
+                    )}
+                    {isClubOwner && (
+                      <span className="rounded bg-zinc-700/50 px-1 py-0.5 text-xs text-zinc-300">
+                        Owner
+                      </span>
+                    )}
+                    {club.state === BONDED_STATE.OPEN && isOwner && (
+                      <button
+                        type="button"
+                        onClick={() => setRemoveMemberInput(m)}
+                        className="ml-1 rounded border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-xs text-red-300 hover:bg-red-500/20 cursor-pointer"
+                        title={isVi ? "Chọn để xóa thành viên" : "Select to remove"}
+                      >
+                        {isVi ? "Chọn xóa" : "Select"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
@@ -1075,15 +1471,30 @@ export function BondedClubWorkspace({
               </button>
             </div>
 
-            {/* Borrow USDC */}
+            {/* Borrow USDC (L3: Max button) */}
             <div className="space-y-1">
               <div className="flex gap-1.5">
-                <input
-                  value={borrowInput}
-                  onChange={(e) => setBorrowInput(e.target.value)}
-                  placeholder="USDC borrow"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-xs text-white"
-                />
+                <div className="relative flex-1">
+                  <input
+                    value={borrowInput}
+                    onChange={(e) => setBorrowInput(e.target.value)}
+                    placeholder="USDC borrow"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 pr-14 text-xs text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const maxBorrow =
+                        club.borrowLimit !== null && club.borrowLimit > club.totalDebt
+                          ? club.borrowLimit - club.totalDebt
+                          : 0n;
+                      setBorrowInput(formatUsdcExact(maxBorrow));
+                    }}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded bg-zinc-800 px-1.5 py-0.5 text-xs font-medium text-amber-300 hover:bg-zinc-700 cursor-pointer"
+                  >
+                    {isVi ? "Tối đa" : "Max"}
+                  </button>
+                </div>
                 <button
                   type="button"
                   disabled={
@@ -1106,14 +1517,25 @@ export function BondedClubWorkspace({
               )}
             </div>
 
-            {/* Repay Principal */}
+            {/* Repay Principal (L3: Max button) */}
             <div className="flex gap-1.5">
-              <input
-                value={repayInput}
-                onChange={(e) => setRepayInput(e.target.value)}
-                placeholder="USDC repay"
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-xs text-white"
-              />
+              <div className="relative flex-1">
+                <input
+                  value={repayInput}
+                  onChange={(e) => setRepayInput(e.target.value)}
+                  placeholder="USDC repay"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 pr-14 text-xs text-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRepayInput(formatUsdcExact(club.totalDebt));
+                  }}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded bg-zinc-800 px-1.5 py-0.5 text-xs font-medium text-amber-300 hover:bg-zinc-700 cursor-pointer"
+                >
+                  {isVi ? "Tối đa" : "Max"}
+                </button>
+              </div>
               <button
                 type="button"
                 disabled={isPending || club.totalDebt === 0n}
@@ -1124,14 +1546,25 @@ export function BondedClubWorkspace({
               </button>
             </div>
 
-            {/* Pay Interest */}
+            {/* Pay Interest (L3: Max button) */}
             <div className="flex gap-1.5">
-              <input
-                value={interestInput}
-                onChange={(e) => setInterestInput(e.target.value)}
-                placeholder={displayUsdc(club.interestOwed)}
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-xs text-white"
-              />
+              <div className="relative flex-1">
+                <input
+                  value={interestInput}
+                  onChange={(e) => setInterestInput(e.target.value)}
+                  placeholder={displayUsdc(club.interestOwed)}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 pr-14 text-xs text-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInterestInput(formatUsdcExact(club.interestOwed));
+                  }}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded bg-zinc-800 px-1.5 py-0.5 text-xs font-medium text-amber-300 hover:bg-zinc-700 cursor-pointer"
+                >
+                  {isVi ? "Tối đa" : "Max"}
+                </button>
+              </div>
               <button
                 type="button"
                 disabled={isPending || club.interestOwed === 0n}
@@ -1142,15 +1575,26 @@ export function BondedClubWorkspace({
               </button>
             </div>
 
-            {/* Withdraw Collateral */}
+            {/* Withdraw Collateral (L3: Max button) */}
             <div className="space-y-1">
               <div className="flex gap-1.5">
-                <input
-                  value={withdrawColInput}
-                  onChange={(e) => setWithdrawColInput(e.target.value)}
-                  placeholder="cirBTC withdraw"
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-xs text-white"
-                />
+                <div className="relative flex-1">
+                  <input
+                    value={withdrawColInput}
+                    onChange={(e) => setWithdrawColInput(e.target.value)}
+                    placeholder="cirBTC withdraw"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 pr-14 text-xs text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWithdrawColInput(formatUnitsExact(club.collateral, 8));
+                    }}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded bg-zinc-800 px-1.5 py-0.5 text-xs font-medium text-amber-300 hover:bg-zinc-700 cursor-pointer"
+                  >
+                    {isVi ? "Tối đa" : "Max"}
+                  </button>
+                </div>
                 <button
                   type="button"
                   disabled={

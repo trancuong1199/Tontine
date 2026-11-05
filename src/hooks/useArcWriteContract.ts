@@ -6,14 +6,18 @@ import { ARC_TESTNET_CHAIN_ID, parseContractError } from "../contract";
 import { ensureArcChain } from "../lib/arcWallet";
 
 /** One guarded entry point for every injected savings write. */
-export function useArcWriteContract(contextKey?: string) {
+export function useArcWriteContract(contextKey?: string, options?: { disableAutoToast?: boolean }) {
   const currentContext = useRef(contextKey);
   currentContext.current = contextKey;
   const config = useConfig();
   const mutation = useWriteContract();
   const mutationPending = useRef(mutation.isPending);
   mutationPending.current = mutation.isPending;
-  useEffect(() => { if (mutation.error) toast.error(parseContractError(mutation.error)); }, [mutation.error]);
+  useEffect(() => {
+    if (mutation.error && !options?.disableAutoToast) {
+      toast.error(parseContractError(mutation.error));
+    }
+  }, [mutation.error, options?.disableAutoToast]);
   const inFlight = useRef(false);
   const asyncInFlight = useRef(false);
   const [isSwitching, setIsSwitching] = useState(false);
