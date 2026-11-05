@@ -227,6 +227,7 @@ export function ClubDirectoryModal({
         ? (stateData[groupIndex * 2].result as number)
         : undefined;
     const hasMember0 =
+      !group.isDefault &&
       stateData?.[groupIndex * 2 + 1]?.status === "success" &&
       Boolean(stateData[groupIndex * 2 + 1].result);
     const isActive =
@@ -255,6 +256,7 @@ export function ClubDirectoryModal({
         ? (stateData[groupIndex * 2].result as number)
         : undefined;
     const hasMember0 =
+      !group.isDefault &&
       stateData?.[groupIndex * 2 + 1]?.status === "success" &&
       Boolean(stateData[groupIndex * 2 + 1].result);
     const isActive =
@@ -277,15 +279,27 @@ export function ClubDirectoryModal({
 
     const isCurrent = group.address.toLowerCase() === currentAddress.toLowerCase();
     if (isCurrent) {
-      const fallbackAddress = updated.length > 0 ? updated[0].address : DEFAULT_SAVINGS_CLUBS[0].address;
-      onSelectGroup(fallbackAddress);
-      if (typeof window !== "undefined") {
-        try {
-          const url = new URL(window.location.href);
-          url.searchParams.set("group", fallbackAddress);
-          window.history.replaceState({}, "", url.toString());
-        } catch {
-          // ignore
+      if (updated.length > 0) {
+        const fallbackAddress = updated[0].address;
+        onSelectGroup(fallbackAddress);
+        if (typeof window !== "undefined") {
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.set("group", fallbackAddress);
+            window.history.replaceState({}, "", url.toString());
+          } catch {
+            // ignore
+          }
+        }
+      } else {
+        if (typeof window !== "undefined") {
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("group");
+            window.history.replaceState({}, "", url.toString());
+          } catch {
+            // ignore
+          }
         }
       }
       const msg = isEn
@@ -362,6 +376,7 @@ export function ClubDirectoryModal({
                   ? (stateData[index * 2].result as number)
                   : undefined;
               const hasMember0 =
+                !group.isDefault &&
                 stateData?.[index * 2 + 1]?.status === "success" &&
                 Boolean(stateData[index * 2 + 1].result);
               const isActive =

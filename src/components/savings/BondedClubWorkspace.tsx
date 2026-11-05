@@ -1230,8 +1230,8 @@ export function BondedClubWorkspace({
             <div className="relative z-10 flex flex-wrap items-start justify-between gap-3 mb-6">
               <div>
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              {/* Quick remove if club is defaulted/completed */}
-              {(club.state === BONDED_STATE.DEFAULTED || club.state === BONDED_STATE.COMPLETED) && (
+              {/* Quick remove if club is defaulted/completed or empty open club */}
+              {(club.memberCount === 0n || club.state === BONDED_STATE.DEFAULTED || club.state === BONDED_STATE.COMPLETED) && (
                 <button
                   type="button"
                   onClick={() => {
