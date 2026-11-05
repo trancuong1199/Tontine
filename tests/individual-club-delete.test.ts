@@ -10,6 +10,7 @@ import {
   removeKnownGroup,
   clearCustomKnownGroups,
   DEFAULT_SAVINGS_CLUBS,
+  syncFactoryBondedClubs,
 } from "../src/lib/savingsClubDirectory.ts";
 import { translations } from "../src/lib/i18n.ts";
 
@@ -183,6 +184,66 @@ test("TC-DEL-06 (AC-03.1 & AC-03.2): Từ điển i18n hỗ trợ song ngữ cho
 
   assert.ok(viModal.deleteClubAndSwitched.includes("chuyển về nhóm mặc định"), "vi deleteClubAndSwitched must be present");
   assert.ok(enModal.deleteClubAndSwitched.includes("switched to default club"), "en deleteClubAndSwitched must be present");
+});
+
+test("TC-DEL-07: syncFactoryBondedClubs không khôi phục nhóm đã bị người dùng xóa (REMOVED_CLUBS_STORAGE_KEY)", async () => {
+  const storageMap = new Map<string, string>();
+  const mockStorage = {
+    getItem: (key: string) => storageMap.get(key) ?? null,
+    setItem: (key: string, val: string) => storageMap.set(key, val),
+    removeItem: (key: string) => storageMap.delete(key),
+    clear: () => storageMap.clear(),
+  };
+
+  const originalWindow = globalThis.window;
+  // @ts-expect-error Mocking window for test
+  globalThis.window = { localStorage: mockStorage };
+
+  try {
+    const deletedAddr = "0x9999999999999999999999999999999999999999";
+    const normalAddr = "0x8888888888888888888888888888888888888888";
+
+    // 1. User deliberately deletes deletedAddr
+    removeKnownGroup(deletedAddr);
+    assert.ok(getKnownGroups().every((g) => g.address.toLowerCase() !== deletedAddr.toLowerCase()));
+
+    // 2. Mock factory reader returns 2 clubs: deletedAddr and normalAddr
+    const mockReader = {
+      readContract: async ({ functionName, args }: { functionName: string; args?: unknown[] }) => {
+        if (functionName === "clubsLength") return 2n;
+        if (functionName === "clubAt") {
+          const idx = Number(args?.[0]);
+          return idx === 0 ? deletedAddr : normalAddr;
+        }
+        if (functionName === "groupName") return "Mock Factory Club";
+        return null;
+      },
+    };
+
+    // 3. Run syncFactoryBondedClubs (simulates page reload / directory open)
+    const synced = await syncFactoryBondedClubs(
+      mockReader as unknown as Parameters<typeof syncFactoryBondedClubs>[0],
+      "0x8cE12D62b0bD565c92164aC7c847620Bfe710eb0",
+      [],
+      []
+    );
+
+    // 4. deletedAddr MUST NOT be in synced, and MUST NOT be revived into getKnownGroups
+    assert.ok(!synced.some((c) => c.address.toLowerCase() === deletedAddr.toLowerCase()));
+    assert.ok(synced.some((c) => c.address.toLowerCase() === normalAddr.toLowerCase()));
+
+    const knownAfterSync = getKnownGroups();
+    assert.ok(
+      !knownAfterSync.some((g) => g.address.toLowerCase() === deletedAddr.toLowerCase()),
+      "Deleted club must NOT be revived by factory sync!"
+    );
+    assert.ok(
+      knownAfterSync.some((g) => g.address.toLowerCase() === normalAddr.toLowerCase()),
+      "Normal non-deleted club should be synced"
+    );
+  } finally {
+    globalThis.window = originalWindow;
+  }
 });
 
 test("TC-MANIFEST-01: File manifest docs/manifests/task-032/manifest.json tồn tại và chứa mã băm hợp lệ", () => {

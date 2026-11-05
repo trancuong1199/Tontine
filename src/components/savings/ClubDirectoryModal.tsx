@@ -23,6 +23,7 @@ import {
 } from "../../contract";
 import {
   getKnownGroups,
+  getRemovedGroups,
   removeKnownGroup,
   updateKnownGroupName,
   clearCustomKnownGroups,
@@ -82,33 +83,36 @@ export function ClubDirectoryModal({
           registerRuntimeBondedClub(item.address);
         }
         if (currentAddress && currentAddress.startsWith("0x")) {
-          const isClub = await publicClient.readContract({
-            address: canonicalFactory,
-            abi: BONDED_TONTINE_FACTORY_ABI,
-            functionName: "isClub",
-            args: [currentAddress as `0x${string}`],
-          });
-          if (isClub) {
-            registerRuntimeBondedClub(currentAddress);
-            let clubName = `Bonded Club ${formatAddress(currentAddress)}`;
-            try {
-              const nameOnChain = await publicClient.readContract({
-                address: currentAddress as `0x${string}`,
-                abi: BONDED_TONTINE_ABI,
-                functionName: "groupName",
-              });
-              if (typeof nameOnChain === "string" && nameOnChain.trim()) {
-                clubName = nameOnChain.trim();
-              }
-            } catch {
-              // ignore
-            }
-            saveKnownGroup({
-              address: currentAddress as `0x${string}`,
-              name: clubName,
-              version: "v2-bonded",
+          const removed = getRemovedGroups();
+          if (!removed.has(currentAddress.toLowerCase())) {
+            const isClub = await publicClient.readContract({
+              address: canonicalFactory,
+              abi: BONDED_TONTINE_FACTORY_ABI,
+              functionName: "isClub",
+              args: [currentAddress as `0x${string}`],
             });
-            onGroupNameUpdated?.(currentAddress as `0x${string}`, clubName);
+            if (isClub) {
+              registerRuntimeBondedClub(currentAddress);
+              let clubName = `Bonded Club ${formatAddress(currentAddress)}`;
+              try {
+                const nameOnChain = await publicClient.readContract({
+                  address: currentAddress as `0x${string}`,
+                  abi: BONDED_TONTINE_ABI,
+                  functionName: "groupName",
+                });
+                if (typeof nameOnChain === "string" && nameOnChain.trim()) {
+                  clubName = nameOnChain.trim();
+                }
+              } catch {
+                // ignore
+              }
+              saveKnownGroup({
+                address: currentAddress as `0x${string}`,
+                name: clubName,
+                version: "v2-bonded",
+              });
+              onGroupNameUpdated?.(currentAddress as `0x${string}`, clubName);
+            }
           }
         }
         if (!cancelled && isOpen) {
@@ -275,6 +279,15 @@ export function ClubDirectoryModal({
     if (isCurrent) {
       const fallbackAddress = updated.length > 0 ? updated[0].address : DEFAULT_SAVINGS_CLUBS[0].address;
       onSelectGroup(fallbackAddress);
+      if (typeof window !== "undefined") {
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.set("group", fallbackAddress);
+          window.history.replaceState({}, "", url.toString());
+        } catch {
+          // ignore
+        }
+      }
       const msg = isEn
         ? t("clubDirectoryModal.deleteClubAndSwitched", language).replace("{name}", group.name)
         : `Đã xóa nhóm "${group.name}" và chuyển về nhóm mặc định!`;

@@ -425,6 +425,7 @@ export async function syncFactoryBondedClubs(
       args: [],
     })) as bigint;
     const count = Number(lengthRaw);
+    const removedAddresses = getRemovedGroups();
     for (let i = 0; i < count; i++) {
       const clubAddr = (await reader.readContract({
         address: factoryAddress,
@@ -433,6 +434,11 @@ export async function syncFactoryBondedClubs(
         args: [BigInt(i)],
       })) as `0x${string}`;
       if (!isValidAddress(clubAddr)) continue;
+      const lower = clubAddr.toLowerCase();
+      // If user previously removed this club, do not revive it on sync
+      if (removedAddresses.has(lower)) {
+        continue;
+      }
       let groupName = `Bonded Club #${i + 1}`;
       try {
         const nameOnChain = (await reader.readContract({
@@ -453,7 +459,7 @@ export async function syncFactoryBondedClubs(
         version: "v2-bonded",
       });
       synced.push({
-        address: clubAddr.toLowerCase() as `0x${string}`,
+        address: lower as `0x${string}`,
         name: groupName,
         version: "v2-bonded",
       });
