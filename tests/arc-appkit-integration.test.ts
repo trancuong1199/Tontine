@@ -88,7 +88,7 @@ test("TC-KIT-02 (AC-02.1, AC-02.2): ArcAppKitModal.tsx cấu trúc 4 Tabs & On-c
   // Router and pool constants
   assert.equal(ARC_ROUTER, "0x509cF58CdA08C7aee83a2BdBb4A1Eac907343D01");
   assert.ok(
-    modalSrc.includes("0xe8f7fA2A412e98C537554643F83DA34DfdD50c23"),
+    modalSrc.includes("addrUrl(ARC_USDC_EURC_POOL)"),
     "ArcAppKitModal must reference verified Uniswap V3 Pool on Arc Testnet"
   );
 });

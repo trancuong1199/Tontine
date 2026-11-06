@@ -75,3 +75,6 @@ export const AGENTIC_COMMERCE_CONTRACT = '0x0747EEf0706327138c69792bF28Cd525089e
 // ─── Explorer helpers ─────────────────────────────────────────────────────────
 export const txUrl = (hash: string) => `${ARC_EXPLORER}/tx/${hash}`;
 export const addrUrl = (addr: string) => `${ARC_EXPLORER}/address/${addr}`;
+
+/** USDC/EURC Uniswap V3 pool shown by Arc AppKit. */
+export const ARC_USDC_EURC_POOL = "0xe8f7fA2A412e98C537554643F83DA34DfdD50c23" as const;

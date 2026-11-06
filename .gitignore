@@ -5,6 +5,8 @@ dist/
 !.env.example
 .DS_Store
 *.log
+# Local source snapshots remain available for audits but do not belong in Git.
+docs/manifests/**/baseline/
 console.jsonl
 scratch_guide.html
 guide_screenshot.webp

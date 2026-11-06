@@ -1,6 +1,6 @@
-import { BondedCollateralSummary } from "./BondedCollateralSummary";
-import { memberErrorMessage } from "../../lib/bondedDisplay";
-import React, { useState } from "react";
+import { BondedCollateralSummary, BondedLiquiditySummary } from "./BondedCollateralSummary";
+import { memberErrorMessage, requiresRiskAcknowledgement, riskAcknowledgementContext, formatAdaptivePercent } from "../../lib/bondedDisplay";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { usePublicClient, useWaitForTransactionReceipt } from "wagmi";
 import { toast } from "sonner";
 import {
@@ -182,6 +182,17 @@ export function BondedClubWorkspace({
   // Confirmation checkbox for unverified clubs (T6.7)
   const [unverifiedConfirmed, setUnverifiedConfirmed] = useState(false);
 
+  const [acknowledgedContext, setAcknowledgedContext] = useState<string | null>(null);
+  const riskContext = riskAcknowledgementContext(club, userAddress, contractAddress);
+  const riskRequired = requiresRiskAcknowledgement(club);
+  const riskAcknowledged = acknowledgedContext === riskContext;
+  const financialsReady = club.financialsAvailable && !club.isLoading && !club.error;
+  const riskBlocked = riskRequired && !riskAcknowledged;
+  const memberActionRef = useRef<{ context: string; join: boolean; contribute: boolean } | null>(null);
+  // Context comparison blocks the first changed render; clearing also prevents an
+  // old acknowledgement resurrecting after A → B → A or a quote reverting.
+  useLayoutEffect(() => { setAcknowledgedContext(null); }, [riskContext]);
+
   // Owner input states
   const [collateralInput, setCollateralInput] = useState("0.05");
   const [withdrawColInput, setWithdrawColInput] = useState("");
@@ -306,20 +317,30 @@ export function BondedClubWorkspace({
     }
   };
 
-  // Member actions (T6.4)
+  const assertMemberAction = (action: "join" | "contribute", expectedContext: string) => {
+    const current = memberActionRef.current;
+    if (!current || current.context !== expectedContext || !current[action]) {
+      throw new Error(isVi ? "Thông tin nhóm hoặc xác nhận rủi ro đã thay đổi. Hãy kiểm tra lại trước khi ký." : "Club details or risk acknowledgement changed. Review again before signing.");
+    }
+  };
+
   const handleJoin = () =>
-    runAction(isVi ? "Tham gia nhóm" : "Join Group", () =>
-      writeContractAsync({
+    runAction(isVi ? "Tham gia nhóm" : "Join Group", async () => {
+      assertMemberAction("join", riskContext);
+      return writeContractAsync({
         address: contractAddress,
         abi: BONDED_TONTINE_ABI,
         functionName: "joinGroup",
         args: [],
-      })
-    );
+      });
+    });
 
   const handleContribute = () =>
     runAction(isVi ? "Đóng tiền vòng hiện tại" : "Contribute Round", async () => {
+      assertMemberAction("contribute", riskContext);
       await ensureExactUsdcApproval(club.contributionAmount);
+      // Approval may outlive account/club/quote changes or checkbox withdrawal.
+      assertMemberAction("contribute", riskContext);
       return writeContractAsync({
         address: contractAddress,
         abi: BONDED_TONTINE_ABI,
@@ -592,6 +613,13 @@ export function BondedClubWorkspace({
     nowSec >= club.nextInterestDeadline;
 
   const contributeBlockedByVerification = !club.isVerifiedClub && !unverifiedConfirmed;
+  const canJoinWithAcknowledgement = Boolean(userAddress) && financialsReady && !riskBlocked && club.state === BONDED_STATE.OPEN && !isOwner && !club.isMember;
+  const canContributeWithAcknowledgement = Boolean(userAddress) && financialsReady && !riskBlocked && club.state === BONDED_STATE.ACTIVE && club.isMember && !isPasskeyUser && !club.hasContributedCurrentRound && !contributeBlockedByVerification && !club.cycleEnded && !canDeclareDefault && !canLiquidate;
+  useLayoutEffect(() => {
+    memberActionRef.current = { context: riskContext, join: canJoinWithAcknowledgement, contribute: canContributeWithAcknowledgement };
+    return () => { memberActionRef.current = null; };
+  }, [riskContext, canJoinWithAcknowledgement, canContributeWithAcknowledgement]);
+  const financialPlaceholder = club.isLoading ? (isVi ? "Đang tải…" : "Loading…") : (isVi ? "Chưa có dữ liệu" : "Unavailable");
   const isOracleRelevant =
     club.state === BONDED_STATE.OPEN || club.state === BONDED_STATE.ACTIVE;
   const staleBlocksPriceAction = isOracleRelevant && club.oracleError;
@@ -690,15 +718,13 @@ export function BondedClubWorkspace({
       : 0;
 
   const healthRatioDisplay =
-    club.healthBps === null
+    !financialsReady || club.healthBps === null
       ? "N/A"
       : club.totalDebt + club.interestOwed === 0n
         ? isVi
           ? "∞ (Không nợ)"
           : "∞ (No debt)"
-        : Number(club.healthBps) > 100_000
-          ? ">1,000%"
-          : `${(Number(club.healthBps) / 100).toFixed(1)}%`;
+        : `${formatAdaptivePercent(club.healthBps * 10_000n)}%`;
 
   return (
     <div className="space-y-6 text-slate-100">
@@ -965,10 +991,11 @@ export function BondedClubWorkspace({
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl sm:text-4xl font-extrabold tabular-nums tracking-tight text-white">
-                      {displayUsdc(club.totalDeposits)}
+                      {financialsReady ? formatUsdcExact(club.totalDeposits) : financialPlaceholder}
                     </span>
                     <span className="text-lg sm:text-xl font-bold text-cyan-200">USDC</span>
                   </div>
+                  <BondedLiquiditySummary club={club} language={language} />
                   <p className="text-xs sm:text-sm font-medium text-blue-200/90 mt-1.5">
                     {isVi ? "Mức đóng cố định:" : "Fixed contribution:"}{" "}
                     <strong className="text-white font-bold">{displayUsdc(club.contributionAmount)} USDC</strong>{" "}
@@ -1035,7 +1062,7 @@ export function BondedClubWorkspace({
                   {isVi ? "Dư nợ / Hạn mức vay" : "Debt / Borrow Limit"}
                 </div>
                 <p className="text-base sm:text-lg font-bold tabular-nums text-amber-300">
-                  {displayUsdc(club.totalDebt)} / {club.borrowLimit !== null ? `${displayUsdc(club.borrowLimit)} USDC` : "N/A"}
+                  {financialsReady ? formatUsdcExact(club.totalDebt) : financialPlaceholder} / {club.borrowLimit !== null ? `${displayUsdc(club.borrowLimit)} USDC` : "N/A"}
                 </p>
                 <p className="text-xs text-slate-400 mt-0.5">
                   {isVi ? "Lãi nợ:" : "Interest:"} {displayUsdc(club.interestOwed)} USDC
@@ -1396,12 +1423,24 @@ export function BondedClubWorkspace({
               </div>
             </div>
 
+            {riskRequired && (
+              <div role="alert" className="rounded-2xl border-2 border-red-500 bg-red-950/60 p-4 space-y-3 text-red-100" data-testid="contribution-risk-warning">
+                <p className="font-bold">{isVi ? "Cảnh báo: có thể mất vốn gốc" : "Warning: you may lose principal"}</p>
+                <p className="text-sm">{isVi ? "Cọc chưa đủ 100% quỹ tối đa cả chu kỳ, hoặc giá trị cọc chưa được xác nhận bằng giá còn hạn. Bạn có thể không thu hồi đủ tiền đã góp." : "Collateral covers less than 100% of the maximum cycle pool, or its value cannot be verified with a fresh price. You may recover less than you contribute."}</p>
+                <label className="flex items-start gap-2 text-sm font-semibold">
+                  <input type="checkbox" checked={riskAcknowledged} onChange={event => setAcknowledgedContext(event.target.checked ? riskContext : null)} className="mt-1 accent-red-500" />
+                  <span>{isVi ? "Tôi hiểu nguy cơ mất vốn và vẫn muốn tham gia hoặc góp tiền với thông tin hiện tại." : "I understand the risk of principal loss and still want to join or contribute with the current information."}</span>
+                </label>
+                <p className="text-xs text-red-200">{isVi ? "Đây là xác nhận thông tin rủi ro, không thay đổi hạn mức vay hoặc quy tắc hợp đồng." : "This acknowledges disclosed risk; it does not change borrowing limits or contract rules."}</p>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="space-y-3">
               {club.state === BONDED_STATE.OPEN && !isOwner && !club.isMember && (
                 <button
                   type="button"
-                  disabled={isPending || !userAddress}
+                  disabled={isPending || !canJoinWithAcknowledgement}
                   onClick={handleJoin}
                   className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 text-slate-950 font-bold rounded-2xl text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
@@ -1429,6 +1468,7 @@ export function BondedClubWorkspace({
                       isPending ||
                       isPasskeyUser ||
                       club.hasContributedCurrentRound ||
+                      !canContributeWithAcknowledgement ||
                       contributeBlockedByVerification ||
                       club.cycleEnded ||
                       canDeclareDefault ||

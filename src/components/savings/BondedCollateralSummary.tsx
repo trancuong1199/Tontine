@@ -1,19 +1,34 @@
 import type { BondedClubSnapshot } from "../../hooks/useBondedClub";
-import { collateralCoverage } from "../../lib/bondedDisplay";
+import { collateralCoverage, availablePrincipal } from "../../lib/bondedDisplay";
 import { formatUnitsExact } from "../../onchain-money";
 
 export function BondedCollateralSummary({ club, language }: { club: BondedClubSnapshot; language: "vi" | "en" }) {
   const en = language === "en";
   const status = club.oracleStatus;
-  const validEstimate = status === "fresh" || status === "stale";
+  const ready = club.financialsAvailable && !club.isLoading && !club.error;
+  const validEstimate = ready && (status === "fresh" || status === "stale");
   const coverage = collateralCoverage(club.collateral, validEstimate ? club.oraclePriceRaw : 0n, club.oracleDecimals, club.contributionAmount, club.maxMembers);
   const unavailable = en ? "Unavailable" : "Chưa có dữ liệu";
   return <div className="space-y-1 text-xs text-amber-200/90" data-testid="bonded-collateral-summary">
-    <p>{en ? "Owner collateral" : "Cọc chủ nhóm"}: {formatUnitsExact(club.collateral, 8)} cirBTC</p>
+    <p>{en ? "Owner collateral" : "Cọc chủ nhóm"}: {ready ? `${formatUnitsExact(club.collateral, 8)} cirBTC` : unavailable}</p>
     <p>{status === "stale" ? (en ? "Historical estimate (stale price)" : "Ước tính theo giá cũ (quá hạn)") : (en ? "Collateral value" : "Giá trị cọc")}: {coverage.usd === null ? unavailable : `$${coverage.usd}`}</p>
-    <p>{en ? "Maximum cycle pool" : "Quỹ tối đa cả chu kỳ"}: {formatUnitsExact(coverage.maximumPool, 6)} USDC · {en ? "Collateral coverage" : "Tỷ lệ cọc"}: {coverage.percent === null ? unavailable : `${coverage.percent}%`}</p>
+    <p>{en ? "Maximum cycle pool" : "Quỹ tối đa cả chu kỳ"}: {ready ? `${formatUnitsExact(coverage.maximumPool, 6)} USDC` : unavailable} · {en ? "Collateral coverage" : "Tỷ lệ cọc"}: {coverage.percent === null ? unavailable : `${coverage.percent}%`}</p>
     <p>{en ? "Oracle" : "Giá oracle"}: {status === "fresh" ? (en ? "Fresh" : "Còn hạn") : status === "stale" ? (en ? "Stale — operator refresh required" : "Quá hạn — cần bên vận hành cập nhật") : status === "invalid" ? (en ? "Invalid price" : "Giá không hợp lệ") : unavailable} · {en ? "Age / limit" : "Tuổi giá / giới hạn"}: {club.oracleUpdatedAt > 0n ? `${club.priceAgeSeconds}s / ${club.maxPriceAge}s` : unavailable}</p>
     {club.isMockOracle && <p>{en ? "Test price, not market price" : "Giá thử nghiệm, không phải giá thị trường"}</p>}
     <p>{en ? "Collateral does not guarantee full recovery. Historical estimates cannot authorize borrowing." : "Cọc không bảo đảm thu hồi đủ vốn. Ước tính theo giá cũ không dùng để cho phép vay."}</p>
+  </div>;
+}
+
+
+export function BondedLiquiditySummary({ club, language }: { club: BondedClubSnapshot; language: "vi" | "en" }) {
+  const vi = language === "vi";
+  const ready = club.financialsAvailable && !club.isLoading && !club.error;
+  const placeholder = club.isLoading ? (vi ? "Đang tải…" : "Loading…") : (vi ? "Chưa có dữ liệu" : "Unavailable");
+  const amount = (value: bigint) => ready ? `${formatUnitsExact(value, 6)} USDC` : placeholder;
+  return <div className="mt-3 space-y-1 text-sm" data-testid="available-principal">
+    <p>{vi ? "Tổng vốn đã góp" : "Total contributed principal"}: {amount(club.totalDeposits)}</p>
+    <p>{vi ? "Dư nợ gốc" : "Outstanding principal debt"}: {amount(club.totalDebt)}</p>
+    <p className="font-semibold text-amber-200">{vi ? "Thanh khoản khả dụng (vốn góp)" : "Available liquidity (contributed principal)"}: {amount(availablePrincipal(club.totalDeposits, club.totalDebt))}</p>
+    <p className="text-xs text-slate-400">{vi ? "Tiền góp trừ dư nợ; không phải số dư token hay cam kết số có thể rút." : "Deposits minus debt; not the token balance or a promised withdrawable amount."}</p>
   </div>;
 }

@@ -1,4 +1,4 @@
-import { addrUrl } from "../../config/arc-constants.ts";
+import { addrUrl, ARC_USDC_EURC_POOL, ARC_CHAIN_NAME } from "../../config/arc-constants.ts";
 import { isPositiveAmount } from "../../lib/swapSafety";
 import { readArcBalances, formatArcBalance, formatApproximateQuote } from "../../lib/arcBalances";
 import { ARC_RPC, USDC_NATIVE_DECIMALS, EURC_DECIMALS, CIRBTC_DECIMALS } from "../../config/arc-constants";
@@ -158,7 +158,7 @@ export function ArcAppKitModal({
         throw accErr;
       }
 
-      setSwapStatus(isEn ? "Switching to Arc Testnet..." : "Đang chuyển mạng Arc Testnet...");
+      setSwapStatus(isEn ? `Switching to ${ARC_CHAIN_NAME}...` : `Đang chuyển mạng ${ARC_CHAIN_NAME}...`);
       await switchOrAddArcNetwork(provider);
 
       await executeArcSwap(
@@ -454,7 +454,7 @@ export function ArcAppKitModal({
                   className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 disabled:opacity-50 text-slate-950 font-extrabold rounded-2xl text-sm transition-all shadow-md shadow-amber-500/20 cursor-pointer"
                 >
                   {isSwapping
-                    ? (isEn ? "Swapping on Arc Testnet..." : "Đang thực thi Swap...")
+                    ? (isEn ? `Swapping on ${ARC_CHAIN_NAME}...` : "Đang thực thi Swap...")
                     : (isEn ? `Swap ${amount} ${fromToken}` : `Đổi ${amount} ${fromToken}`)}
                 </button>
 
@@ -462,12 +462,12 @@ export function ArcAppKitModal({
                 <div className="pt-2 flex items-center justify-between text-xs text-slate-400">
                   <span>{isEn ? "Verified Arc Pool:" : "Bể thanh khoản Arc:"}</span>
                   <a
-                    href={addrUrl("0xe8f7fA2A412e98C537554643F83DA34DfdD50c23")}
+                    href={addrUrl(ARC_USDC_EURC_POOL)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-mono text-amber-400/90 hover:text-amber-300 flex items-center gap-1"
                   >
-                    <span>0xe8f7...0c23 (Uniswap V3)</span>
+                    <span>{formatAddress(ARC_USDC_EURC_POOL)} (Uniswap V3)</span>
                     <ExternalLink size={12} />
                   </a>
                 </div>

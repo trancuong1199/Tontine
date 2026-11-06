@@ -540,7 +540,7 @@ export function ClubDirectoryModal({
                     <div className="space-y-2 flex-1 min-w-[200px]">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-slate-900 text-base sm:text-lg">
-                          <span className="text-white">{group.name}</span>
+                          <span className="text-white">{group.name} <span className="text-xs font-mono text-amber-300">{formatAddress(group.address)}</span></span>
                         </span>
 
                         <button

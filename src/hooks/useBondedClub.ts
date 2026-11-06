@@ -62,6 +62,7 @@ export interface BondedClubSnapshot {
   maxPriceAge: bigint;
   priceFeed: `0x${string}`;
   memberCount: bigint;
+  financialsAvailable: boolean;
   totalDeposits: bigint;
   totalDebt: bigint;
   collateral: bigint;
@@ -237,6 +238,7 @@ export function useBondedClub(
     maxPriceAge: 3600n,
     priceFeed: "0x0000000000000000000000000000000000000000",
     memberCount: 0n,
+    financialsAvailable: false,
     totalDeposits: 0n,
     totalDebt: 0n,
     collateral: 0n,
@@ -336,7 +338,7 @@ export function useBondedClub(
             })),
           });
 
-          if (results && results.length === fnNames.length) {
+          if (results && results.length === fnNames.length && results.every(result => result.status === "success")) {
             stateRaw = results[0].status === "success" ? Number(results[0].result) : 0;
             owner = results[1].status === "success" ? (results[1].result as `0x${string}`) : owner;
             groupName = results[2].status === "success" ? String(results[2].result) : "";
@@ -629,6 +631,7 @@ export function useBondedClub(
         maxPriceAge,
         priceFeed,
         memberCount,
+        financialsAvailable: true,
         totalDeposits,
         totalDebt,
         collateral,

@@ -1,4 +1,4 @@
-import { BondedCollateralSummary } from "./BondedCollateralSummary";
+import { BondedCollateralSummary, BondedLiquiditySummary } from "./BondedCollateralSummary";
 import { formatRoundDuration } from "../../lib/bondedDisplay";
 import { useState } from "react";
 import { useModal } from "connectkit";
@@ -191,6 +191,7 @@ export function UnauthenticatedBondedClubPreview({
           </div>
         </div>
 
+        <BondedLiquiditySummary club={club} language={language} />
         <BondedCollateralSummary club={club} language={language} />
         {/* Collateral & Risk Summary */}
         <div className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/25 flex items-start gap-2.5 text-xs text-amber-200/90 leading-relaxed">

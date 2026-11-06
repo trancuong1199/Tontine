@@ -14,7 +14,7 @@ import {parseOptions} from '../scripts/refresh-mock-oracle.mjs';
 const A='0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', B='0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 const club='0x1234567890123456789012345678901234567890', club2='0x2345678901234567890123456789012345678901';
 function storage(){const map=new Map<string,string>(); (globalThis as any).window={localStorage:{getItem:(k:string)=>map.get(k)??null,setItem:(k:string,v:string)=>map.set(k,v),removeItem:(k:string)=>map.delete(k)},location:{origin:'http://localhost',pathname:'/'}};return map;}
-const fixture={collateral:20n,oraclePriceRaw:6000000000000n,oracleDecimals:8,contributionAmount:10000000n,maxMembers:4n,memberCount:3n,rateBpsPerRound:125n,state:1,groupName:'Verified live fixture',oracleStatus:'stale',oracleUpdatedAt:100n,priceAgeSeconds:138405n,maxPriceAge:3600n,isMockOracle:true,isLoading:false,error:null};
+const fixture={financialsAvailable:true,collateral:20n,oraclePriceRaw:6000000000000n,oracleDecimals:8,contributionAmount:10000000n,maxMembers:4n,memberCount:3n,rateBpsPerRound:125n,state:1,groupName:'Verified live fixture',oracleStatus:'stale',oracleUpdatedAt:100n,priceAgeSeconds:138405n,maxPriceAge:3600n,isMockOracle:true,isLoading:false,error:null};
 test('BRQ02 exact whole-cycle coverage and decimal/zero boundaries',()=>{
  assert.deepEqual(collateralCoverage(20n,6000000000000n,8,10000000n,4n),{maximumPool:160000000n,value:12000n,usd:'0.012',percent:'0.0075'});
  assert.equal(collateralCoverage(20n,60000000000n,6,10000000n,4n).usd,'0.012');
@@ -114,7 +114,7 @@ test('BRQ03 directory renders same-name addresses distinctly and excludes cancel
  (globalThis as any).__brqStates=[...row(0),...row(4)];
  let html=renderToStaticMarkup(React.createElement(ClubDirectoryModal,{account:A,isOpen:true,currentAddress:'',language:'en',onClose(){},onSelectGroup(){},onOpenCreateModal(){}}));
  assert.ok(html.includes(club2));assert.ok(!html.includes(club));assert.match(html,/1 hour/);assert.doesNotMatch(html,/clubDirectoryModal.subtitle/);
- (globalThis as any).__brqStates=[...row(0),...row(1)];html=renderToStaticMarkup(React.createElement(ClubDirectoryModal,{account:A,isOpen:true,currentAddress:'',language:'en'}));assert.ok(html.includes(club)&&html.includes(club2));assert.equal((html.match(/Same name<\/span>/g)??[]).length,2);
+ (globalThis as any).__brqStates=[...row(0),...row(1)];html=renderToStaticMarkup(React.createElement(ClubDirectoryModal,{account:A,isOpen:true,currentAddress:'',language:'en'}));assert.ok(html.includes(club)&&html.includes(club2));assert.equal((html.match(/Same name /g)??[]).length,2);assert.match(html,/Same name <span[^>]*>0x1234\.\.\.7890<\/span>/);assert.match(html,/Same name <span[^>]*>0x2345\.\.\.8901<\/span>/);
  (globalThis as any).__brqStates=[...row(4),...row(4)];html=renderToStaticMarkup(React.createElement(ClubDirectoryModal,{account:A,isOpen:true,currentAddress:'',language:'en'}));assert.ok(html.includes(t('clubDirectoryModal.noClubs','en')));assert.ok(!html.includes(club));
  delete (globalThis as any).window;delete (globalThis as any).__brqStates;
 });

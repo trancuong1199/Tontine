@@ -1,4 +1,5 @@
-import { addrUrl } from "../../config/arc-constants.ts";
+import { ROTATING_SAVINGS_ADDRESS } from "../../contract";
+import { addrUrl, ARC_CHAIN_NAME } from "../../config/arc-constants.ts";
 import { useState, useRef, useEffect } from "react";
 import { ConnectKitButton } from "connectkit";
 import { PiggyBank, BookOpen, ExternalLink, Plus, Layers, Globe, Zap, ChevronDown, Check, Copy, LogOut } from "lucide-react";
@@ -84,7 +85,7 @@ export function Header({
               <span className="hidden" aria-hidden="true">{t("header.appName", language)}</span>
               <span className="hidden xs:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-950/40 text-amber-300 border border-amber-500/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                Arc Testnet
+                {ARC_CHAIN_NAME}
               </span>
             </div>
             <p className="hidden md:block text-xs text-slate-400 font-medium">
@@ -259,7 +260,7 @@ export function Header({
           )}
 
           <a
-            href={addrUrl("0x6afaa0825d2e05ef00d571d4a043ab5dcc03534b")}
+            href={addrUrl(ROTATING_SAVINGS_ADDRESS)}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden lg:inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors whitespace-nowrap"

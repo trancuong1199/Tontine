@@ -1,0 +1,27 @@
+# Template for an authorized always-on Linux host; not installed by the repository.
+[Unit]
+Description=Tontine Arc Testnet mock oracle heartbeat
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=tontine-oracle
+Group=tontine-oracle
+WorkingDirectory=/opt/tontine
+EnvironmentFile=/etc/tontine/oracle.env
+ExecStart=/usr/bin/node /opt/tontine/scripts/refresh-mock-oracle.mjs --price 60000 --interval 1800
+Restart=always
+RestartSec=15
+TimeoutStopSec=20
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+UMask=0077
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

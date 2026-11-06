@@ -47,6 +47,8 @@ export async function main(args = process.argv.slice(2)) {
   const rawKey = process.env.DEPLOYER_PRIVATE_KEY?.trim();
   if (!rawKey) throw new Error("Missing DEPLOYER_PRIVATE_KEY environment variable");
   const account = privateKeyToAccount(rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`);
+  const admin = await publicClient.readContract({ address: feed, abi: MOCK_AGGREGATOR_V3_ABI, functionName: "admin" });
+  if (admin.toLowerCase() !== account.address.toLowerCase()) throw new Error("Configured signer is not the live oracle admin");
   const wallet = createWalletClient({ account, chain: arcTestnet, transport: http(ARC_RPC) });
   const answer = parseUnitsExact(options.price, decimals);
   const refresh = async () => {

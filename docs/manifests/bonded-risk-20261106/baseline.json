@@ -1,0 +1,77 @@
+{
+  "taskId": "bonded-risk-20261106",
+  "createdAt": "2026-11-06T16:26:35.293Z",
+  "files": {
+    "src/components/savings/BondedClubWorkspace.tsx": {
+      "exists": true,
+      "sha256": "c6ffcce82e15caf7ab713956d27977b01589c14f723acb4c40bf66f2e27106c8",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/src_components_savings_BondedClubWorkspace.tsx"
+    },
+    "src/components/savings/BondedCollateralSummary.tsx": {
+      "exists": true,
+      "sha256": "d25c143ea0a6404f7c99d6f647615c0fb4691f51ba60d074539a877c7fde37e6",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/src_components_savings_BondedCollateralSummary.tsx"
+    },
+    "src/components/savings/UnauthenticatedBondedClubPreview.tsx": {
+      "exists": true,
+      "sha256": "9dc61ff06e2d2782f9ebee1c522cecdec042cf37d007116e5bc50d22298ee945",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/src_components_savings_UnauthenticatedBondedClubPreview.tsx"
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "exists": true,
+      "sha256": "cb7c6e8554eb978457574d83cc56f7570b0a2e22572b82c56e33abab0cea60f4",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/src_components_savings_ClubDirectoryModal.tsx"
+    },
+    "src/components/savings/Header.tsx": {
+      "exists": true,
+      "sha256": "33f2786b5a9acd1095e2f34cbae350b40e636b3e6f817e6c4a088187b28f4706",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/src_components_savings_Header.tsx"
+    },
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "exists": true,
+      "sha256": "6e1e391d711b4de61723cc51cbb90f731489dfff702590c6f363edb5d5cb5360",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/src_components_savings_ArcAppKitModal.tsx"
+    },
+    "src/lib/bondedDisplay.ts": {
+      "exists": true,
+      "sha256": "27447e38ba825519c1057a90b9ae158423fe53f30d93a42b6008a0e60bd30715",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/src_lib_bondedDisplay.ts"
+    },
+    "src/hooks/useBondedClub.ts": {
+      "exists": true,
+      "sha256": "b85bbd6c0cb5ed70abcd2a54d7c05b2deb41a7fce01d845fc9873120e94a7422",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/src_hooks_useBondedClub.ts"
+    },
+    "src/config/arc-constants.ts": {
+      "exists": true,
+      "sha256": "fcc4ce5adc2e73e676b82081fd3eb1dfdb8d719a518fffb2f4f194b079110bde",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/src_config_arc-constants.ts"
+    },
+    "src/config/bonded-tontine.ts": {
+      "exists": true,
+      "sha256": "0eef942b6b352e4fa118e2e54915f319fe8bea157b8f22d454ed2ccc256707ee",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/src_config_bonded-tontine.ts"
+    },
+    "scripts/refresh-mock-oracle.mjs": {
+      "exists": true,
+      "sha256": "e55309a32356af8b1f28bcf59cecf4825069f810354b5b88ee498d6685067f05",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/scripts_refresh-mock-oracle.mjs"
+    },
+    "deploy/tontine-oracle.service": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "docs/oracle-operations.md": {
+      "exists": true,
+      "sha256": "f6da9d3d2c774c16fbceddc107715073113a4a170c611c88ee2d4d5764d32626",
+      "snapshot": "docs/manifests/bonded-risk-20261106/baseline/docs_oracle-operations.md"
+    },
+    ".gitignore": {
+      "exists": true,
+      "sha256": "310c81a2e6df9d2e870ec3da989b93d232f1a98dc3f00e61d42e45a3812f66fe",
+      "snapshot": null,
+      "note": "Leader-owned changes already present at dispatch; hashed read-only for final integrity."
+    }
+  }
+}

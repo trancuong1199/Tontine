@@ -1,0 +1,72 @@
+{
+  "taskId": "bonded-risk-20261106",
+  "frozenAt": "2026-11-06T16:30:44.839Z",
+  "status": "FROZEN",
+  "files": {
+    ".gitignore": {
+      "sha256": "310c81a2e6df9d2e870ec3da989b93d232f1a98dc3f00e61d42e45a3812f66fe",
+      "baselineSha256": "310c81a2e6df9d2e870ec3da989b93d232f1a98dc3f00e61d42e45a3812f66fe",
+      "isNew": false
+    },
+    "src/components/savings/BondedClubWorkspace.tsx": {
+      "sha256": "6020fca50259e264fbcb2bd4aa8994f5b66b7592120acb839cf9c0c01ef74459",
+      "baselineSha256": "c6ffcce82e15caf7ab713956d27977b01589c14f723acb4c40bf66f2e27106c8",
+      "isNew": false
+    },
+    "src/components/savings/BondedCollateralSummary.tsx": {
+      "sha256": "f91b8a38b90d867a2a715d82a0b488170a704d155473f30d3716c22e6eb8e537",
+      "baselineSha256": "d25c143ea0a6404f7c99d6f647615c0fb4691f51ba60d074539a877c7fde37e6",
+      "isNew": false
+    },
+    "src/components/savings/UnauthenticatedBondedClubPreview.tsx": {
+      "sha256": "7779cc55837ceef61f8691d21229a306dc570564a02a10dca6b5760cb32014d9",
+      "baselineSha256": "9dc61ff06e2d2782f9ebee1c522cecdec042cf37d007116e5bc50d22298ee945",
+      "isNew": false
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "sha256": "af0d9f69276368616c01d94d6b8b836e6d3aa5b02b3b84f73ac65c1aa6b91d83",
+      "baselineSha256": "cb7c6e8554eb978457574d83cc56f7570b0a2e22572b82c56e33abab0cea60f4",
+      "isNew": false
+    },
+    "src/components/savings/Header.tsx": {
+      "sha256": "2a275c132910243cda9d98ece31723e8d8fdb981f0ad0cf3acb1fe56d06d19b8",
+      "baselineSha256": "33f2786b5a9acd1095e2f34cbae350b40e636b3e6f817e6c4a088187b28f4706",
+      "isNew": false
+    },
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "sha256": "9b4659ede7626bf31d1558360530b1afe6f96667b2a9955112dd5ab94fa6a573",
+      "baselineSha256": "6e1e391d711b4de61723cc51cbb90f731489dfff702590c6f363edb5d5cb5360",
+      "isNew": false
+    },
+    "src/lib/bondedDisplay.ts": {
+      "sha256": "314730ba2b7a49e0f8f8f32d9c54b50d597f8ce586dc9696935fae4644c01c18",
+      "baselineSha256": "27447e38ba825519c1057a90b9ae158423fe53f30d93a42b6008a0e60bd30715",
+      "isNew": false
+    },
+    "src/hooks/useBondedClub.ts": {
+      "sha256": "c67952e3ceb981dbcc172e136458077c8d9263d510cb81bf7a462e78e9fe172f",
+      "baselineSha256": "b85bbd6c0cb5ed70abcd2a54d7c05b2deb41a7fce01d845fc9873120e94a7422",
+      "isNew": false
+    },
+    "src/config/arc-constants.ts": {
+      "sha256": "fe32ef85c1ef4ddf8c3e1d54fd9be6aaf9e611106b0dae11a7d45aa33a0f0ec1",
+      "baselineSha256": "fcc4ce5adc2e73e676b82081fd3eb1dfdb8d719a518fffb2f4f194b079110bde",
+      "isNew": false
+    },
+    "scripts/refresh-mock-oracle.mjs": {
+      "sha256": "7b9513e215b54fd0e280c9e473027c3aa3bd5a7b415a7c987d347c79dfebf782",
+      "baselineSha256": "e55309a32356af8b1f28bcf59cecf4825069f810354b5b88ee498d6685067f05",
+      "isNew": false
+    },
+    "deploy/tontine-oracle.service": {
+      "sha256": "11fa6505d05348a1c7aaaf2b856fccd85a2bfdb94f0f40e6060ba77056fbcc31",
+      "baselineSha256": null,
+      "isNew": true
+    },
+    "docs/oracle-operations.md": {
+      "sha256": "698f317759650ec50615d6d367fbe97a1ded07843fb599097b584ad620a6ce63",
+      "baselineSha256": "f6da9d3d2c774c16fbceddc107715073113a4a170c611c88ee2d4d5764d32626",
+      "isNew": false
+    }
+  }
+}

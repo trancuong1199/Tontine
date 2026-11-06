@@ -1,6 +1,6 @@
 {
   "taskId": "task-059",
-  "frozenAt": "2026-11-06T12:56:07.653Z",
+  "frozenAt": "2026-11-06T16:30:25.726Z",
   "status": "FROZEN",
   "files": {
     "contracts/BondedTontine.sol": {
@@ -49,7 +49,7 @@
       "isNew": false
     },
     "scripts/refresh-mock-oracle.mjs": {
-      "sha256": "c747ed029d920c95ef431d7b8af1f0c7110e2d4f5beeadbec5e26830a865b137",
+      "sha256": "7b9513e215b54fd0e280c9e473027c3aa3bd5a7b415a7c987d347c79dfebf782",
       "baselineSha256": null,
       "isNew": false
     },
@@ -64,12 +64,12 @@
       "isNew": false
     },
     "src/hooks/useBondedClub.ts": {
-      "sha256": "edd6a2df242ed74c3e8717ef8e35c4d0c0959709b78f6ee5860c75537c403f22",
+      "sha256": "c67952e3ceb981dbcc172e136458077c8d9263d510cb81bf7a462e78e9fe172f",
       "baselineSha256": null,
       "isNew": false
     },
     "src/hooks/useIsBondedClub.ts": {
-      "sha256": "153558b5ccc8a52b124bebfd9effa7dedf70e4389d1528307fcd3706b0b0fade",
+      "sha256": "e60833e8a5d831ff3f6011fa3a9333a16ade97da5ae81bc5d82cff03fcf8748e",
       "baselineSha256": null,
       "isNew": false
     },
@@ -79,12 +79,12 @@
       "isNew": false
     },
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "65033f51d84b02f8d2198a0361b6bcb3ddd8d9acd924469a0aefb3ff9e763f5a",
+      "sha256": "6020fca50259e264fbcb2bd4aa8994f5b66b7592120acb839cf9c0c01ef74459",
       "baselineSha256": null,
       "isNew": false
     },
     "src/components/savings/ClubDirectoryModal.tsx": {
-      "sha256": "da1afa57fccec003de534022b3c30b4bca3d0e6c91f43e32da0e96063826726b",
+      "sha256": "af0d9f69276368616c01d94d6b8b836e6d3aa5b02b3b84f73ac65c1aa6b91d83",
       "baselineSha256": null,
       "isNew": false
     },
@@ -99,17 +99,17 @@
       "isNew": false
     },
     "src/App.tsx": {
-      "sha256": "ef5f791f1199f99ae15ef49ddf73a8c917fac1a2c80a8e6caf48627e824f276a",
+      "sha256": "84ad06299e97487492a95909e03b0870e0b7f9b4b545ca4c65d0ad77bddc3f99",
       "baselineSha256": null,
       "isNew": false
     },
     "src/contract.ts": {
-      "sha256": "9cf41730d021a84862be6ceca5a4b151581397a373d18016894928ec58a8ecfe",
+      "sha256": "72784ee59404ae3c74bd7a379ccb6e5a72918451a86db1fc8945e76f9f3544a6",
       "baselineSha256": null,
       "isNew": false
     },
     "src/lib/savingsClubDirectory.ts": {
-      "sha256": "68ae6002c66f7de43c1da2e430635a79b04744bf3594d62e7ae3738c4bbdcd7d",
+      "sha256": "8971d0754bbbed60bfad552fb7459540b85c9d1536432a0ab9bb2ba6d0667171",
       "baselineSha256": "8f5a349ba71d7ba83ae5007f42305adb09e827a9026ad16264fc8f9e95b93f85",
       "isNew": false
     }
