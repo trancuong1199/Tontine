@@ -182,27 +182,28 @@ test("TC-KIT-04 (AC-03.1, AC-03.2): Header & App.tsx tích hợp Arc AppKit Butt
   );
 });
 
-test("TC-KIT-05 (AC-03.3): GroupSwitcher.tsx cung cấp Arc AppKit shortcut bar", () => {
+test("TC-KIT-05 (AC-03.3): Header.tsx và App.tsx tích hợp Arc AppKit, loại bỏ thanh shortcut thừa ở GroupSwitcher theo yêu cầu người dùng", () => {
   const switcherSrc = readSource("src/components/savings/GroupSwitcher.tsx");
+  const headerSrc = readSource("src/components/savings/Header.tsx");
   const appSrc = readSource("src/App.tsx");
 
-  // GroupSwitcherProps has onOpenArcAppKit
+  // Header renders Arc AppKit button
   assert.ok(
-    switcherSrc.includes("onOpenArcAppKit?: () => void;"),
-    "GroupSwitcherProps must declare onOpenArcAppKit"
+    headerSrc.includes("Arc AppKit") && headerSrc.includes("onOpenArcAppKit"),
+    "Header must display Arc AppKit button"
   );
 
-  // GroupSwitcher renders shortcut bar
+  // GroupSwitcher no longer displays Arc AppKit shortcut bar (removed at user request)
   assert.ok(
-    switcherSrc.includes("Arc AppKit (Swap • Bridge • Faucet)"),
-    "GroupSwitcher must display Arc AppKit shortcut bar"
+    !switcherSrc.includes("Arc AppKit (Swap • Bridge • Faucet)"),
+    "GroupSwitcher must not display duplicate Arc AppKit shortcut bar"
   );
 
-  // App.tsx supplies onOpenArcAppKit to GroupSwitcher
+  // App.tsx supplies onOpenArcAppKit to Header
   assert.ok(
-    appSrc.includes("<GroupSwitcher") &&
+    appSrc.includes("<Header") &&
       appSrc.includes("onOpenArcAppKit={() => setShowArcAppKitModal(true)}"),
-    "App.tsx must pass onOpenArcAppKit to GroupSwitcher"
+    "App.tsx must pass onOpenArcAppKit to Header"
   );
 });
 

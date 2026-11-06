@@ -1,30 +1,15 @@
 {
   "taskId": "task-060",
-  "frozenAt": "2026-11-06T03:43:21.313Z",
+  "frozenAt": "2026-11-06T04:06:57.817Z",
   "status": "FROZEN",
   "files": {
-    "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "7d80118f737c8e6916faf796c0c93ab9db91483ec11b4cdf856d1d5eff44bdc8",
+    "src/components/savings/GroupSwitcher.tsx": {
+      "sha256": "f97eb1d617e6854edfa84ff424a626969cdd6cf2d0c97d841a9bd0de2e2b087c",
       "baselineSha256": null,
       "isNew": false
     },
-    "src/hooks/useBondedClub.ts": {
-      "sha256": "ea245129602594ed9abda98260d6006e9d6aded69240b09ed03b34d562d6c7ca",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "tests/task-060-bonded-fixes.test.ts": {
-      "sha256": "38fafe7a5345a24492fcedb4a357d1a62ff35962deec71ef8eae3d3e594cb931",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "docs/ba/task-060/spec-v1.md": {
-      "sha256": "98c2d4cbe0476bf5d4a8fe1749d169b5146c137b21a07d33d28a0d3058884582",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "docs/qa/task-060/test-report.md": {
-      "sha256": "08107dfe803c8e03eaf18a4ee9589bd9efc8ccbafc697fa699987f30e478d7ac",
+    "tests/arc-appkit-integration.test.ts": {
+      "sha256": "f8d7a522f80237f47a2ae9df24e7cf3602f0de458e5b25e4851e25f2827c356c",
       "baselineSha256": null,
       "isNew": false
     }
