@@ -21,6 +21,7 @@ import {
   ChevronUp,
   Settings2,
   Trash2,
+  Share2,
 } from "lucide-react";
 import { useArcWriteContract } from "../../hooks/useArcWriteContract.ts";
 import { useBondedClub } from "../../hooks/useBondedClub.ts";
@@ -54,7 +55,7 @@ import {
   formatUnitsExact,
   parseUnitsExact,
 } from "../../onchain-money.ts";
-import { saveKnownGroup, removeKnownGroup, getKnownGroups } from "../../lib/savingsClubDirectory.ts";
+import { saveKnownGroup, removeKnownGroup, getKnownGroups, buildShareGroupUrl } from "../../lib/savingsClubDirectory.ts";
 import { parseEventLogs } from "viem";
 
 export { BONDED_DISCLOSURE_COPY, MOCK_ORACLE_WARNING_COPY };
@@ -153,6 +154,25 @@ export function BondedClubWorkspace({
     } catch {
       toast.error(
         language === "vi" ? "Không thể sao chép địa chỉ hợp đồng" : "Could not copy contract address"
+      );
+    }
+  };
+
+  const [copiedInviteLink, setCopiedInviteLink] = useState(false);
+  const handleCopyInviteLink = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    try {
+      const shareUrl = buildShareGroupUrl(contractAddress);
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedInviteLink(true);
+      setTimeout(() => setCopiedInviteLink(false), 2000);
+      toast.success(
+        language === "vi" ? "Đã sao chép link mời nhóm!" : "Club invite link copied!",
+        { description: shareUrl }
+      );
+    } catch {
+      toast.error(
+        language === "vi" ? "Không thể sao chép liên kết" : "Could not copy invite link"
       );
     }
   };
@@ -724,6 +744,19 @@ export function BondedClubWorkspace({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyInviteLink}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 px-3.5 py-2 text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+            title={isVi ? "Sao chép link mời thành viên (?group=...)" : "Copy club invite link (?group=...)"}
+          >
+            {copiedInviteLink ? (
+              <Check className="h-3.5 w-3.5 text-emerald-400" />
+            ) : (
+              <Share2 className="h-3.5 w-3.5 text-amber-400" />
+            )}
+            <span>{copiedInviteLink ? (isVi ? "Đã chép link mời!" : "Link Copied!") : (isVi ? "Sao chép link mời" : "Copy Club Link")}</span>
+          </button>
           {onOpenDirectoryModal && (
             <button
               type="button"
@@ -840,10 +873,10 @@ export function BondedClubWorkspace({
                     }
                   }}
                   className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 border border-red-500/40 text-xs font-semibold text-red-300 transition-colors cursor-pointer"
-                  title={isVi ? "Ẩn nhóm khỏi danh sách của tôi" : "Hide club from my list"}
+                  title={isVi ? "Xóa nhóm khỏi danh bạ" : "Remove club from directory"}
                 >
                   <Trash2 size={12} />
-                  <span>{isVi ? "Ẩn khỏi danh sách của tôi" : "Hide from my list"}</span>
+                  <span>{isVi ? "Xóa nhóm" : "Remove club"}</span>
                 </button>
               )}
 
@@ -879,6 +912,16 @@ export function BondedClubWorkspace({
                       <ExternalLink size={12} />
                     </a>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyInviteLink}
+                    className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 px-2.5 py-1 rounded-xl border border-amber-500/30 text-xs font-semibold text-amber-300 transition-colors cursor-pointer"
+                    title={isVi ? "Sao chép link mời thành viên (?group=...)" : "Copy invite link (?group=...)"}
+                  >
+                    {copiedInviteLink ? <Check size={12} className="text-emerald-400" /> : <Share2 size={12} className="text-amber-400" />}
+                    <span>{copiedInviteLink ? (isVi ? "Đã chép link mời!" : "Link Copied!") : (isVi ? "Sao chép link mời" : "Copy Invite Link")}</span>
+                  </button>
                 </div>
 
                 <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-xs">
@@ -1362,6 +1405,17 @@ export function BondedClubWorkspace({
                 >
                   <Users className="h-4 w-4" />
                   {isVi ? "Tham gia nhóm (joinGroup)" : "Join Club (joinGroup)"}
+                </button>
+              )}
+
+              {club.state === BONDED_STATE.OPEN && (
+                <button
+                  type="button"
+                  onClick={handleCopyInviteLink}
+                  className="w-full py-2.5 rounded-2xl border border-amber-500/40 bg-amber-950/30 hover:bg-amber-900/40 text-amber-300 font-semibold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {copiedInviteLink ? <Check size={15} className="text-emerald-400" /> : <Share2 size={15} className="text-amber-400" />}
+                  <span>{copiedInviteLink ? (isVi ? "Đã sao chép link mời!" : "Invite Link Copied!") : (isVi ? "Sao chép link mời bạn bè" : "Copy Club Invite Link")}</span>
                 </button>
               )}
 

@@ -769,22 +769,16 @@ export function ClubDirectoryModal({
               </div>
               <div className="space-y-1.5 flex-1 min-w-0">
                 <h3 id="confirm-delete-title" className="text-base sm:text-lg font-bold text-white tracking-tight">
-                  {confirmingClub.version === "v2-bonded"
-                    ? (isEn ? "Hide from My List?" : "Ẩn khỏi danh sách của tôi?")
-                    : (isEn ? t("clubDirectoryModal.confirmDeleteTitle", language) : "Xác nhận xóa nhóm")}
+                  {isEn ? t("clubDirectoryModal.confirmDeleteTitle", language) : "Xác nhận xóa nhóm"}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  {confirmingClub.version === "v2-bonded"
-                    ? (isEn
-                        ? `Are you sure you want to hide "${confirmingClub.name}" (${formatAddress(confirmingClub.address)}) from your list? It will be hidden from this browser and can be opened again anytime via contract address.`
-                        : `Bạn có chắc muốn ẩn nhóm "${confirmingClub.name}" (${formatAddress(confirmingClub.address)}) khỏi danh sách của mình không? Nhóm sẽ được ẩn khỏi trình duyệt này và bạn có thể mở lại bất cứ lúc nào qua địa chỉ hợp đồng.`)
-                    : (isEn
-                        ? t("clubDirectoryModal.confirmDeleteDesc", language)
-                            .replace("{name}", confirmingClub.name)
-                            .replace("{address}", formatAddress(confirmingClub.address))
-                        : t("clubDirectoryModal.confirmDeleteDesc", "vi")
-                            .replace("{name}", confirmingClub.name)
-                            .replace("{address}", formatAddress(confirmingClub.address)))}
+                  {isEn
+                    ? t("clubDirectoryModal.confirmDeleteDesc", language)
+                        .replace("{name}", confirmingClub.name)
+                        .replace("{address}", formatAddress(confirmingClub.address))
+                    : t("clubDirectoryModal.confirmDeleteDesc", "vi")
+                        .replace("{name}", confirmingClub.name)
+                        .replace("{address}", formatAddress(confirmingClub.address))}
                 </p>
               </div>
             </div>
@@ -816,11 +810,7 @@ export function ClubDirectoryModal({
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-red-950/50 transition-all active:scale-95 cursor-pointer"
               >
                 <Trash2 size={15} />
-                <span>
-                  {confirmingClub.version === "v2-bonded"
-                    ? (isEn ? "Hide from list" : "Ẩn khỏi danh sách")
-                    : (isEn ? t("clubDirectoryModal.confirmDeleteBtn", language) : "Xác nhận xóa")}
-                </span>
+                <span>{isEn ? t("clubDirectoryModal.confirmDeleteBtn", language) : "Xác nhận xóa"}</span>
               </button>
             </div>
           </div>

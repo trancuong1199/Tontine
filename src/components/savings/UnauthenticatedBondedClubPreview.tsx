@@ -12,10 +12,12 @@ import {
   Clock,
   Percent,
   Lock,
+  Share2,
 } from "lucide-react";
 import { formatAddress, formatUsdc, ARC_TESTNET_CHAIN_ID } from "../../contract";
 import { formatUnitsExact } from "../../onchain-money";
 import { buildAddressExplorerUrl } from "../../onchain-facts";
+import { buildShareGroupUrl } from "../../lib/savingsClubDirectory";
 import { useBondedClub } from "../../hooks/useBondedClub";
 import { BONDED_STATE } from "../../lib/bondedTontine";
 import { Language, t } from "../../lib/i18n";
@@ -43,6 +45,7 @@ export function UnauthenticatedBondedClubPreview({
   const club = useBondedClub(contractAddress, undefined, true);
   const { setOpen: openConnectModal } = useModal();
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const isEn = language === "en";
 
   const handleCopy = async () => {
@@ -50,6 +53,17 @@ export function UnauthenticatedBondedClubPreview({
       await navigator.clipboard.writeText(contractAddress);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      const shareUrl = buildShareGroupUrl(contractAddress);
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
     } catch {
       // ignore
     }
@@ -106,6 +120,16 @@ export function UnauthenticatedBondedClubPreview({
                 <ExternalLink size={13} />
               </a>
             </div>
+
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 px-2.5 py-1 rounded-xl border border-amber-500/30 text-xs font-semibold text-amber-300 transition-colors cursor-pointer"
+              title={isEn ? "Copy club invite link (?group=...)" : "Sao chép link mời nhóm (?group=...)"}
+            >
+              {copiedLink ? <Check size={12} className="text-emerald-400" /> : <Share2 size={12} className="text-amber-400" />}
+              <span>{copiedLink ? (isEn ? "Copied!" : "Đã chép link!") : (isEn ? "Copy Club Link" : "Sao chép link mời")}</span>
+            </button>
           </div>
 
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-950/50 px-3 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
