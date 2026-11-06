@@ -52,21 +52,7 @@ const CANONICAL_BONDED_CLUBS: SavingsClubItem[] = [
     address: "0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b",
     name: "Saigon Bonded Club V2",
     version: "v2-bonded",
-  },
-  {
-    address: "0xe74069717317dbB86d423439fb9c219A5c5bf812",
-    name: "Arc Bonded 60s Happy Cycle",
-    version: "v2-bonded",
-  },
-  {
-    address: "0xF9469568ebb287275009fcE3Db224a16273C5d05",
-    name: "Arc Bonded Liquidation Demo",
-    version: "v2-bonded",
-  },
-  {
-    address: "0xe9CcFe9F2D53A5479A17d795635E0795e84d9130",
-    name: "Saigon Bonded Club",
-    version: "v2-bonded",
+    isDefault: true,
   },
 ];
 
@@ -87,12 +73,26 @@ export function ClubDirectoryModal({
   const isEn = language === "en";
 
   const displayedGroups = useMemo(() => {
-    const list = groups.length > 0 ? groups : getKnownGroups();
+    const removed = getRemovedGroups();
+    const rawList = groups.length > 0 ? groups : getKnownGroups();
+    // Exclude old historical testnet demo clubs if user has them lingering in localStorage
+    const legacyDemoAddresses = new Set([
+      "0xe74069717317dbb86d423439fb9c219a5c5bf812",
+      "0xf9469568ebb287275009fce3db224a16273c5d05",
+      "0xe9ccfe9f2d53a5479a17d795635e0795e84d9130",
+    ]);
+    const list = rawList.filter((g) => {
+      const addr = g.address.toLowerCase();
+      if (removed.has(addr)) return false;
+      if (legacyDemoAddresses.has(addr)) return false;
+      // Filter out legacy default V1 clubs so directory stays clean with Bonded V2
+      if (g.isDefault && g.version !== "v2-bonded") return false;
+      return true;
+    });
     const hasBonded = list.some((g) => g.version === "v2-bonded");
     if (!hasBonded) {
-      const existing = new Set(list.map((g) => g.address.toLowerCase()));
       const fallback = CANONICAL_BONDED_CLUBS.filter(
-        (c) => !existing.has(c.address.toLowerCase())
+        (c) => !removed.has(c.address.toLowerCase())
       );
       return [...fallback, ...list];
     }
@@ -171,7 +171,17 @@ export function ClubDirectoryModal({
           }
         }
         if (!cancelled && isOpen) {
-          setGroups(getKnownGroups());
+          const removed = getRemovedGroups();
+          const legacyDemoAddresses = new Set([
+            "0xe74069717317dbb86d423439fb9c219a5c5bf812",
+            "0xf9469568ebb287275009fce3db224a16273c5d05",
+            "0xe9ccfe9f2d53a5479a17d795635e0795e84d9130",
+          ]);
+          setGroups(
+            getKnownGroups().filter(
+              (g) => !removed.has(g.address.toLowerCase()) && !legacyDemoAddresses.has(g.address.toLowerCase())
+            )
+          );
         }
       } catch {
         // Ignore network errors
@@ -307,7 +317,7 @@ export function ClubDirectoryModal({
   const handleConfirmDelete = () => {
     if (!confirmingClub) return;
     const group = confirmingClub;
-    const groupIndex = groups.findIndex(
+    const groupIndex = displayedGroups.findIndex(
       (g) => g.address.toLowerCase() === group.address.toLowerCase()
     );
     const rawState =
@@ -332,7 +342,7 @@ export function ClubDirectoryModal({
       return;
     }
     removeKnownGroup(group.address);
-    const updated = getKnownGroups();
+    const updated = getKnownGroups().filter((g) => g.address.toLowerCase() !== group.address.toLowerCase());
     setGroups(updated);
     setConfirmingClub(null);
 
