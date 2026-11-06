@@ -11,6 +11,7 @@ import {
   clearCustomKnownGroups,
   DEFAULT_SAVINGS_CLUBS,
   syncFactoryBondedClubs,
+  setActiveDirectoryAccount,
 } from "../src/lib/savingsClubDirectory.ts";
 import { translations } from "../src/lib/i18n.ts";
 
@@ -243,6 +244,52 @@ test("TC-DEL-07: syncFactoryBondedClubs không khôi phục nhóm đã bị ngư
     );
   } finally {
     globalThis.window = originalWindow;
+  }
+});
+
+test("TC-DEL-08: Phân tách danh bạ theo ví - Tài khoản 1 xóa club không làm Tài khoản 2 bị xóa theo", () => {
+  const storageMap = new Map<string, string>();
+  const mockStorage = {
+    getItem: (key: string) => storageMap.get(key) ?? null,
+    setItem: (key: string, val: string) => storageMap.set(key, val),
+    removeItem: (key: string) => storageMap.delete(key),
+    clear: () => storageMap.clear(),
+  };
+
+  const originalWindow = globalThis.window;
+  // @ts-expect-error Mocking window
+  globalThis.window = { localStorage: mockStorage };
+
+  try {
+    const clubAddr = "0x2222222222222222222222222222222222222222";
+    const account1 = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const account2 = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
+    saveKnownGroup({ address: clubAddr, name: "Nhóm Chung" });
+
+    // Cả 2 tài khoản đều thấy nhóm ban đầu
+    setActiveDirectoryAccount(account1);
+    assert.ok(getKnownGroups().some((g) => g.address.toLowerCase() === clubAddr.toLowerCase()));
+
+    setActiveDirectoryAccount(account2);
+    assert.ok(getKnownGroups().some((g) => g.address.toLowerCase() === clubAddr.toLowerCase()));
+
+    // Tài khoản 1 xóa nhóm
+    setActiveDirectoryAccount(account1);
+    removeKnownGroup(clubAddr);
+
+    // Tài khoản 1 không còn thấy nhóm
+    assert.ok(!getKnownGroups().some((g) => g.address.toLowerCase() === clubAddr.toLowerCase()));
+
+    // Chuyển sang Tài khoản 2: Tài khoản 2 VẪN THẤY nhóm bình thường!
+    setActiveDirectoryAccount(account2);
+    assert.ok(
+      getKnownGroups().some((g) => g.address.toLowerCase() === clubAddr.toLowerCase()),
+      "Tài khoản 2 vẫn phải thấy nhóm khi Tài khoản 1 xóa!"
+    );
+  } finally {
+    globalThis.window = originalWindow;
+    setActiveDirectoryAccount(null);
   }
 });
 

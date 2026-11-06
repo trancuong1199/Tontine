@@ -55,14 +55,21 @@ export function getGroupCollateralAmount(address: string): bigint | undefined {
   }
 }
 
-export function getRemovedGroups(): Set<string> {
+export function getRemovedGroups(account?: string): Set<string> {
   if (typeof window === "undefined" || !window.localStorage) {
     return new Set<string>();
   }
   try {
-    const raw = window.localStorage.getItem(REMOVED_CLUBS_STORAGE_KEY);
-    if (!raw) return new Set<string>();
-    const parsed = JSON.parse(raw);
+    const acc = resolveAccount(account);
+    const key = getAccountRemovedStorageKey(acc ?? undefined);
+    const raw = window.localStorage.getItem(key);
+    let parsed: any = null;
+    if (raw) {
+      parsed = JSON.parse(raw);
+    } else if (!acc) {
+      const globalRaw = window.localStorage.getItem(REMOVED_CLUBS_STORAGE_KEY);
+      if (globalRaw) parsed = JSON.parse(globalRaw);
+    }
     if (Array.isArray(parsed)) {
       return new Set(
         parsed
@@ -74,6 +81,33 @@ export function getRemovedGroups(): Set<string> {
   } catch (_err) {
     return new Set<string>();
   }
+}
+
+let activeDirectoryAccount: string | null = null;
+
+export function setActiveDirectoryAccount(account?: string | null): void {
+  activeDirectoryAccount = account && isValidAddress(account) ? account.toLowerCase() : null;
+}
+
+export function getActiveDirectoryAccount(): string | null {
+  return activeDirectoryAccount;
+}
+
+export function resolveAccount(explicitAccount?: string): string | null {
+  if (explicitAccount && isValidAddress(explicitAccount)) {
+    return explicitAccount.toLowerCase();
+  }
+  return activeDirectoryAccount;
+}
+
+export function getAccountRemovedStorageKey(account?: string): string {
+  const acc = resolveAccount(account);
+  return acc ? `${REMOVED_CLUBS_STORAGE_KEY}_${acc}` : REMOVED_CLUBS_STORAGE_KEY;
+}
+
+export function getAccountKnownStorageKey(account?: string): string {
+  const acc = resolveAccount(account);
+  return acc ? `${SAVINGS_CLUBS_STORAGE_KEY}_${acc}` : SAVINGS_CLUBS_STORAGE_KEY;
 }
 
 export const DEFAULT_SAVINGS_CLUBS: SavingsClubItem[] = [
@@ -89,14 +123,18 @@ export const DEFAULT_SAVINGS_CLUBS: SavingsClubItem[] = [
   },
 ];
 
-export function getKnownGroups(): SavingsClubItem[] {
+export function getKnownGroups(account?: string): SavingsClubItem[] {
   if (typeof window === "undefined" || !window.localStorage) {
     return [...DEFAULT_SAVINGS_CLUBS];
   }
 
   try {
-    const removedAddresses = getRemovedGroups();
-    const raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
+    const acc = resolveAccount(account);
+    const removedAddresses = getRemovedGroups(acc ?? undefined);
+    let raw = acc ? window.localStorage.getItem(getAccountKnownStorageKey(acc)) : null;
+    if (!raw) {
+      raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
+    }
     if (!raw) {
       return DEFAULT_SAVINGS_CLUBS.filter(
         (def) => !removedAddresses.has(def.address.toLowerCase())
@@ -297,29 +335,53 @@ export function clearCustomKnownGroups(): void {
 /**
  * Xóa một nhóm cụ thể khỏi danh bạ đã lưu (bao gồm nhóm đã hủy, hết hạn, hoặc không chơi nữa).
  */
-export function removeKnownGroup(address: string): void {
+export function removeKnownGroup(address: string, account?: string): void {
   if (!address || typeof window === "undefined" || !window.localStorage) return;
   const target = address.toLowerCase();
+  const acc = resolveAccount(account);
   try {
-    // 1. Loại bỏ khỏi danh sách nhóm đã lưu hui_known_groups
-    const raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        const filtered = parsed.filter(
-          (g) => g && typeof g.address === "string" && g.address.toLowerCase() !== target
-        );
-        window.localStorage.setItem(SAVINGS_CLUBS_STORAGE_KEY, JSON.stringify(filtered));
+    // 1. Loại bỏ khỏi danh sách nhóm đã lưu của tài khoản (hoặc toàn cục nếu không có tài khoản)
+    if (!acc) {
+      const raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter(
+            (g) => g && typeof g.address === "string" && g.address.toLowerCase() !== target
+          );
+          window.localStorage.setItem(SAVINGS_CLUBS_STORAGE_KEY, JSON.stringify(filtered));
+        }
+      }
+    } else {
+      const accKey = getAccountKnownStorageKey(acc);
+      const raw = window.localStorage.getItem(accKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter(
+            (g) => g && typeof g.address === "string" && g.address.toLowerCase() !== target
+          );
+          window.localStorage.setItem(accKey, JSON.stringify(filtered));
+        }
       }
     }
 
-    // 2. Ghi nhận vào danh sách nhóm đã xóa hui_removed_groups để không bị tự động nạp lại
-    const removed = getRemovedGroups();
+    // 2. Ghi nhận vào danh sách nhóm đã xóa của tài khoản (hoặc toàn cục nếu không có tài khoản)
+    const removedKey = getAccountRemovedStorageKey(acc ?? undefined);
+    const removed = getRemovedGroups(acc ?? undefined);
     removed.add(target);
     window.localStorage.setItem(
-      REMOVED_CLUBS_STORAGE_KEY,
+      removedKey,
       JSON.stringify(Array.from(removed))
     );
+
+    // Luôn duy trì đồng bộ REMOVED_CLUBS_STORAGE_KEY toàn cục khi acc là null để các test cũ pass 100%
+    if (!acc) {
+      window.localStorage.setItem(
+        REMOVED_CLUBS_STORAGE_KEY,
+        JSON.stringify(Array.from(removed))
+      );
+    }
   } catch (_err) {
     // Graceful catch
   }
