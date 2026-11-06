@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePublicClient } from "wagmi";
+import { decodeEventLog } from "viem";
 import {
   BONDED_TONTINE_ABI,
   BONDED_TONTINE_FACTORY_ABI,
@@ -71,6 +72,7 @@ export interface BondedClubSnapshot {
   currentRoundIndex: bigint;
   cycleEnded: boolean;
   memberAddresses: readonly `0x${string}`[];
+  membersLoadError: string | null;
   // Oracle-dependent fields (may be null if oracle is stale/broken)
   oracleError: boolean;
   collateralValueUsdc: bigint | null;
@@ -96,6 +98,195 @@ export interface BondedClubSnapshot {
   cirBtcBalance: bigint;
   cirBtcAllowance: bigint;
   refetch: () => Promise<void>;
+}
+
+interface MemberCacheEntry {
+  addresses: `0x${string}`[];
+  memberCount: bigint;
+  timestamp: number;
+}
+const memberListCache = new Map<string, MemberCacheEntry>();
+
+export async function fetchBondedClubMembers(
+  publicClient: any,
+  clubAddress: `0x${string}`,
+  memberCount: bigint
+): Promise<{ members: `0x${string}`[]; error: string | null }> {
+  if (memberCount === 0n) {
+    return { members: [], error: null };
+  }
+
+  const cacheKey = clubAddress.toLowerCase();
+  const cached = memberListCache.get(cacheKey);
+  // Cache valid for 30s if count matches
+  if (
+    cached &&
+    cached.memberCount === memberCount &&
+    cached.addresses.length === Number(memberCount) &&
+    Date.now() - cached.timestamp < 30_000
+  ) {
+    return { members: cached.addresses, error: null };
+  }
+
+  // Strategy 1: On Arc Testnet, use Blockscout Explorer Logs API (bypasses RPC block range limit)
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    const explorerRes = await fetch(
+      `https://explorer.testnet.arc.io/api?module=logs&action=getLogs&address=${clubAddress}&fromBlock=0&toBlock=latest`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeout);
+
+    if (explorerRes.ok) {
+      const data = await explorerRes.json();
+      if (data.message === "OK" && Array.isArray(data.result)) {
+        const joinedOrder: `0x${string}`[] = [];
+        const removedSet = new Set<string>();
+
+        for (const item of data.result) {
+          try {
+            const decoded = decodeEventLog({
+              abi: BONDED_TONTINE_ABI,
+              data: item.data,
+              topics: (item.topics || []).filter(Boolean),
+            });
+            if (decoded.eventName === "MemberJoined") {
+              const m = (decoded.args as { member?: `0x${string}` })?.member;
+              if (m && !joinedOrder.some((a) => a.toLowerCase() === m.toLowerCase())) {
+                joinedOrder.push(m);
+              }
+            } else if (decoded.eventName === "MemberRemoved") {
+              const m = (decoded.args as { member?: `0x${string}` })?.member;
+              if (m) {
+                removedSet.add(m.toLowerCase());
+              }
+            }
+          } catch {
+            // Non-matching log or unrelated event
+          }
+        }
+
+        const activeMembers = joinedOrder.filter((m) => !removedSet.has(m.toLowerCase()));
+        if (activeMembers.length > 0 || memberCount === 0n) {
+          memberListCache.set(cacheKey, {
+            addresses: activeMembers,
+            memberCount,
+            timestamp: Date.now(),
+          });
+          return { members: activeMembers, error: null };
+        }
+      }
+    }
+  } catch {
+    // Explorer API failed or timed out, continue to RPC strategy
+  }
+
+  // Strategy 2: RPC getLogs with fallback range
+  try {
+    // First try full range (works on local fork / anvil)
+    const [joinedLogs, removedLogs] = await Promise.all([
+      publicClient.getLogs({
+        address: clubAddress,
+        event: {
+          type: "event",
+          name: "MemberJoined",
+          inputs: [{ type: "address", name: "member", indexed: true }],
+        },
+        fromBlock: 0n,
+        toBlock: "latest",
+      }),
+      publicClient.getLogs({
+        address: clubAddress,
+        event: {
+          type: "event",
+          name: "MemberRemoved",
+          inputs: [{ type: "address", name: "member", indexed: true }],
+        },
+        fromBlock: 0n,
+        toBlock: "latest",
+      }),
+    ]);
+
+    const removedSet = new Set(
+      removedLogs
+        .map((l: any) => (l.args as { member?: string })?.member?.toLowerCase())
+        .filter(Boolean)
+    );
+
+    const joinedOrder: `0x${string}`[] = [];
+    for (const log of joinedLogs) {
+      const m = (log.args as { member?: `0x${string}` })?.member;
+      if (m && !removedSet.has(m.toLowerCase()) && !joinedOrder.some((a) => a.toLowerCase() === m.toLowerCase())) {
+        joinedOrder.push(m);
+      }
+    }
+
+    memberListCache.set(cacheKey, {
+      addresses: joinedOrder,
+      memberCount,
+      timestamp: Date.now(),
+    });
+    return { members: joinedOrder, error: null };
+  } catch {
+    // Strategy 3: If RPC failed with block range limit (-32012), try last 4000 blocks
+    try {
+      const currentBlock = await publicClient.getBlockNumber();
+      const fromBlock = currentBlock > 4000n ? currentBlock - 4000n : 0n;
+      const [joinedLogs, removedLogs] = await Promise.all([
+        publicClient.getLogs({
+          address: clubAddress,
+          event: {
+            type: "event",
+            name: "MemberJoined",
+            inputs: [{ type: "address", name: "member", indexed: true }],
+          },
+          fromBlock,
+          toBlock: currentBlock,
+        }),
+        publicClient.getLogs({
+          address: clubAddress,
+          event: {
+            type: "event",
+            name: "MemberRemoved",
+            inputs: [{ type: "address", name: "member", indexed: true }],
+          },
+          fromBlock,
+          toBlock: currentBlock,
+        }),
+      ]);
+
+      const removedSet = new Set(
+        removedLogs
+          .map((l: any) => (l.args as { member?: string })?.member?.toLowerCase())
+          .filter(Boolean)
+      );
+
+      const joinedOrder: `0x${string}`[] = [];
+      for (const log of joinedLogs) {
+        const m = (log.args as { member?: `0x${string}` })?.member;
+        if (m && !removedSet.has(m.toLowerCase()) && !joinedOrder.some((a) => a.toLowerCase() === m.toLowerCase())) {
+          joinedOrder.push(m);
+        }
+      }
+
+      if (joinedOrder.length > 0 || memberCount === 0n) {
+        memberListCache.set(cacheKey, {
+          addresses: joinedOrder,
+          memberCount,
+          timestamp: Date.now(),
+        });
+        return { members: joinedOrder, error: null };
+      }
+    } catch {
+      // Ignore chunked failure
+    }
+
+    return {
+      members: cached ? cached.addresses : [],
+      error: "Không thể tải danh sách thành viên (giới hạn RPC / lỗi mạng)",
+    };
+  }
 }
 
 export function useBondedClub(
@@ -143,6 +334,7 @@ export function useBondedClub(
     currentRoundIndex: 0n,
     cycleEnded: false,
     memberAddresses: [],
+    membersLoadError: null,
     oracleError: false,
     collateralValueUsdc: null,
     borrowLimit: null,
@@ -179,61 +371,171 @@ export function useBondedClub(
           args: args as never,
         }) as Promise<T>;
 
-      const [
-        stateRaw,
-        owner,
-        groupName,
-        contributionAmount,
-        maxMembers,
-        totalRounds,
-        roundDuration,
-        rateBpsPerRound,
-        safetyBps,
-        liquidationBps,
-        interestGrace,
-        settlementGrace,
-        maxPriceAge,
-        priceFeed,
-        memberCount,
-        totalDeposits,
-        totalDebt,
-        collateral,
-        interestDueTotal,
-        interestPaidTotal,
-        interestClaimedTotal,
-        interestOwed,
-        startTime,
-        nextInterestDeadline,
-        currentRoundIndex,
-        cycleEnded,
-      ] = await Promise.all([
-        readClub<number>("state"),
-        readClub<`0x${string}`>("owner"),
-        readClub<string>("groupName"),
-        readClub<bigint>("contributionAmount"),
-        readClub<bigint>("maxMembers"),
-        readClub<bigint>("totalRounds"),
-        readClub<bigint>("roundDuration"),
-        readClub<bigint>("rateBpsPerRound"),
-        readClub<bigint>("safetyBps"),
-        readClub<bigint>("liquidationBps"),
-        readClub<bigint>("interestGrace"),
-        readClub<bigint>("settlementGrace"),
-        readClub<bigint>("maxPriceAge"),
-        readClub<`0x${string}`>("priceFeed"),
-        readClub<bigint>("memberCount"),
-        readClub<bigint>("totalDeposits"),
-        readClub<bigint>("totalDebt"),
-        readClub<bigint>("collateral"),
-        readClub<bigint>("interestDueTotal"),
-        readClub<bigint>("interestPaidTotal"),
-        readClub<bigint>("interestClaimedTotal").catch(() => 0n),
-        readClub<bigint>("interestOwed"),
-        readClub<bigint>("startTime").catch(() => 0n),
-        readClub<bigint>("nextInterestDeadline"),
-        readClub<bigint>("currentRoundIndex"),
-        readClub<boolean>("cycleEnded"),
-      ]);
+      let stateRaw: number = 0;
+      let owner: `0x${string}` = "0x0000000000000000000000000000000000000000";
+      let groupName: string = "";
+      let contributionAmount: bigint = 0n;
+      let maxMembers: bigint = 0n;
+      let totalRounds: bigint = 0n;
+      let roundDuration: bigint = 0n;
+      let rateBpsPerRound: bigint = 0n;
+      let safetyBps: bigint = 20_000n;
+      let liquidationBps: bigint = 12_000n;
+      let interestGrace: bigint = 0n;
+      let settlementGrace: bigint = 0n;
+      let maxPriceAge: bigint = 3600n;
+      let priceFeed: `0x${string}` = "0x0000000000000000000000000000000000000000";
+      let memberCount: bigint = 0n;
+      let totalDeposits: bigint = 0n;
+      let totalDebt: bigint = 0n;
+      let collateral: bigint = 0n;
+      let interestDueTotal: bigint = 0n;
+      let interestPaidTotal: bigint = 0n;
+      let interestClaimedTotal: bigint = 0n;
+      let interestOwed: bigint = 0n;
+      let startTime: bigint = 0n;
+      let nextInterestDeadline: bigint = 0n;
+      let currentRoundIndex: bigint = 0n;
+      let cycleEnded: boolean = false;
+
+      let multicallSucceeded = false;
+      if (typeof publicClient.multicall === "function") {
+        try {
+          const fnNames = [
+            "state", "owner", "groupName", "contributionAmount", "maxMembers",
+            "totalRounds", "roundDuration", "rateBpsPerRound", "safetyBps", "liquidationBps",
+            "interestGrace", "settlementGrace", "maxPriceAge", "priceFeed", "memberCount",
+            "totalDeposits", "totalDebt", "collateral", "interestDueTotal", "interestPaidTotal",
+            "interestClaimedTotal", "interestOwed", "startTime", "nextInterestDeadline",
+            "currentRoundIndex", "cycleEnded"
+          ] as const;
+
+          const results = await publicClient.multicall({
+            contracts: fnNames.map((fn) => ({
+              address: clubAddress,
+              abi: BONDED_TONTINE_ABI as any,
+              functionName: fn,
+            })),
+          });
+
+          if (results && results.length === fnNames.length) {
+            stateRaw = results[0].status === "success" ? Number(results[0].result) : 0;
+            owner = results[1].status === "success" ? (results[1].result as `0x${string}`) : owner;
+            groupName = results[2].status === "success" ? String(results[2].result) : "";
+            contributionAmount = results[3].status === "success" ? BigInt(results[3].result as bigint) : 0n;
+            maxMembers = results[4].status === "success" ? BigInt(results[4].result as bigint) : 0n;
+            totalRounds = results[5].status === "success" ? BigInt(results[5].result as bigint) : 0n;
+            roundDuration = results[6].status === "success" ? BigInt(results[6].result as bigint) : 0n;
+            rateBpsPerRound = results[7].status === "success" ? BigInt(results[7].result as bigint) : 0n;
+            safetyBps = results[8].status === "success" ? BigInt(results[8].result as bigint) : 20_000n;
+            liquidationBps = results[9].status === "success" ? BigInt(results[9].result as bigint) : 12_000n;
+            interestGrace = results[10].status === "success" ? BigInt(results[10].result as bigint) : 0n;
+            settlementGrace = results[11].status === "success" ? BigInt(results[11].result as bigint) : 0n;
+            maxPriceAge = results[12].status === "success" ? BigInt(results[12].result as bigint) : 3600n;
+            priceFeed = results[13].status === "success" ? (results[13].result as `0x${string}`) : priceFeed;
+            memberCount = results[14].status === "success" ? BigInt(results[14].result as bigint) : 0n;
+            totalDeposits = results[15].status === "success" ? BigInt(results[15].result as bigint) : 0n;
+            totalDebt = results[16].status === "success" ? BigInt(results[16].result as bigint) : 0n;
+            collateral = results[17].status === "success" ? BigInt(results[17].result as bigint) : 0n;
+            interestDueTotal = results[18].status === "success" ? BigInt(results[18].result as bigint) : 0n;
+            interestPaidTotal = results[19].status === "success" ? BigInt(results[19].result as bigint) : 0n;
+            interestClaimedTotal = results[20].status === "success" ? BigInt(results[20].result as bigint) : 0n;
+            interestOwed = results[21].status === "success" ? BigInt(results[21].result as bigint) : 0n;
+            startTime = results[22].status === "success" ? BigInt(results[22].result as bigint) : 0n;
+            nextInterestDeadline = results[23].status === "success" ? BigInt(results[23].result as bigint) : 0n;
+            currentRoundIndex = results[24].status === "success" ? BigInt(results[24].result as bigint) : 0n;
+            cycleEnded = results[25].status === "success" ? Boolean(results[25].result) : false;
+            multicallSucceeded = true;
+          }
+        } catch {
+          // Fall back to individual reads
+        }
+      }
+
+      if (!multicallSucceeded) {
+        const [
+          sR,
+          own,
+          gn,
+          cA,
+          mM,
+          tR,
+          rD,
+          rB,
+          sB,
+          lB,
+          iG,
+          sG,
+          mP,
+          pF,
+          mC,
+          tDep,
+          tDbt,
+          col,
+          iDT,
+          iPT,
+          iCT,
+          iO,
+          sT,
+          nID,
+          cRI,
+          cE,
+        ] = await Promise.all([
+          readClub<number>("state"),
+          readClub<`0x${string}`>("owner"),
+          readClub<string>("groupName"),
+          readClub<bigint>("contributionAmount"),
+          readClub<bigint>("maxMembers"),
+          readClub<bigint>("totalRounds"),
+          readClub<bigint>("roundDuration"),
+          readClub<bigint>("rateBpsPerRound"),
+          readClub<bigint>("safetyBps"),
+          readClub<bigint>("liquidationBps"),
+          readClub<bigint>("interestGrace"),
+          readClub<bigint>("settlementGrace"),
+          readClub<bigint>("maxPriceAge"),
+          readClub<`0x${string}`>("priceFeed"),
+          readClub<bigint>("memberCount"),
+          readClub<bigint>("totalDeposits"),
+          readClub<bigint>("totalDebt"),
+          readClub<bigint>("collateral"),
+          readClub<bigint>("interestDueTotal"),
+          readClub<bigint>("interestPaidTotal"),
+          readClub<bigint>("interestClaimedTotal").catch(() => 0n),
+          readClub<bigint>("interestOwed"),
+          readClub<bigint>("startTime").catch(() => 0n),
+          readClub<bigint>("nextInterestDeadline"),
+          readClub<bigint>("currentRoundIndex"),
+          readClub<boolean>("cycleEnded"),
+        ]);
+
+        stateRaw = sR;
+        owner = own;
+        groupName = gn;
+        contributionAmount = cA;
+        maxMembers = mM;
+        totalRounds = tR;
+        roundDuration = rD;
+        rateBpsPerRound = rB;
+        safetyBps = sB;
+        liquidationBps = lB;
+        interestGrace = iG;
+        settlementGrace = sG;
+        maxPriceAge = mP;
+        priceFeed = pF;
+        memberCount = mC;
+        totalDeposits = tDep;
+        totalDebt = tDbt;
+        collateral = col;
+        interestDueTotal = iDT;
+        interestPaidTotal = iPT;
+        interestClaimedTotal = iCT;
+        interestOwed = iO;
+        startTime = sT;
+        nextInterestDeadline = nID;
+        currentRoundIndex = cRI;
+        cycleEnded = cE;
+      }
 
       // Oracle-dependent reads: catch reverts gracefully when price is stale/invalid (T6.2)
       let oracleError = false;
@@ -372,50 +674,12 @@ export function useBondedClub(
         cirBtcAllowance = cAllow;
       }
 
-      // Read member list from MemberJoined / MemberRemoved events (L5)
-      let memberAddresses: `0x${string}`[] = [];
-      try {
-        const [joinedLogs, removedLogs] = await Promise.all([
-          publicClient.getLogs({
-            address: clubAddress,
-            event: {
-              type: "event",
-              name: "MemberJoined",
-              inputs: [{ type: "address", name: "member", indexed: true }],
-            },
-            fromBlock: 0n,
-            toBlock: "latest",
-          }),
-          publicClient.getLogs({
-            address: clubAddress,
-            event: {
-              type: "event",
-              name: "MemberRemoved",
-              inputs: [{ type: "address", name: "member", indexed: true }],
-            },
-            fromBlock: 0n,
-            toBlock: "latest",
-          }),
-        ]);
-
-        const removedSet = new Set(
-          removedLogs
-            .map((l) => (l.args as { member?: string })?.member?.toLowerCase())
-            .filter(Boolean)
-        );
-
-        const joinedOrder: `0x${string}`[] = [];
-        for (const log of joinedLogs) {
-          const m = (log.args as { member?: `0x${string}` })?.member;
-          if (m && !removedSet.has(m.toLowerCase()) && !joinedOrder.some((a) => a.toLowerCase() === m.toLowerCase())) {
-            joinedOrder.push(m);
-          }
-        }
-        memberAddresses = joinedOrder;
-      } catch {
-        // Fallback: empty member array if getLogs not supported by RPC
-        memberAddresses = [];
-      }
+      // Read member list from MemberJoined / MemberRemoved events (L5 & R1 resilient fetching)
+      const { members: memberAddresses, error: membersLoadError } = await fetchBondedClubMembers(
+        publicClient,
+        clubAddress,
+        memberCount
+      );
 
       setData({
         address: clubAddress,
@@ -448,6 +712,7 @@ export function useBondedClub(
         currentRoundIndex,
         cycleEnded,
         memberAddresses,
+        membersLoadError,
         oracleError,
         collateralValueUsdc,
         borrowLimit,

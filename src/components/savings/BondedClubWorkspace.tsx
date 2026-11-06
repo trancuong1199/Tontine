@@ -160,9 +160,9 @@ export function BondedClubWorkspace({
 
   // Owner input states
   const [collateralInput, setCollateralInput] = useState("0.05");
-  const [withdrawColInput, setWithdrawColInput] = useState("0.01");
-  const [borrowInput, setBorrowInput] = useState("10");
-  const [repayInput, setRepayInput] = useState("10");
+  const [withdrawColInput, setWithdrawColInput] = useState("");
+  const [borrowInput, setBorrowInput] = useState("");
+  const [repayInput, setRepayInput] = useState("");
   const [interestInput, setInterestInput] = useState("");
   const [removeMemberInput, setRemoveMemberInput] = useState("");
   const [mockBtcPriceInput, setMockBtcPriceInput] = useState("60000");
@@ -206,10 +206,11 @@ export function BondedClubWorkspace({
   const runAction = async (label: string, fn: () => Promise<`0x${string}`>) => {
     if (isActionPending) return;
     setIsActionPending(true);
+    let submittingToastId: string | number | undefined;
     try {
       const hash = await fn();
       setTxHash(hash);
-      const submittingToastId = toast.loading(
+      submittingToastId = toast.loading(
         isVi
           ? `Đang chờ xác nhận giao dịch: ${label}...`
           : `Waiting for on-chain confirmation: ${label}...`
@@ -217,7 +218,10 @@ export function BondedClubWorkspace({
 
       if (publicClient) {
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
-        toast.dismiss(submittingToastId);
+        if (submittingToastId !== undefined) {
+          toast.dismiss(submittingToastId);
+          submittingToastId = undefined;
+        }
         if (receipt.status === "success") {
           toast.success(
             <div className="space-y-1">
@@ -241,7 +245,10 @@ export function BondedClubWorkspace({
           );
         }
       } else {
-        toast.dismiss(submittingToastId);
+        if (submittingToastId !== undefined) {
+          toast.dismiss(submittingToastId);
+          submittingToastId = undefined;
+        }
         toast.success(isVi ? `Đã gửi giao dịch: ${label}` : `Submitted: ${label}`);
       }
 
@@ -249,6 +256,9 @@ export function BondedClubWorkspace({
     } catch (err) {
       toast.error(parseBondedTontineError(err, language));
     } finally {
+      if (submittingToastId !== undefined) {
+        toast.dismiss(submittingToastId);
+      }
       setIsActionPending(false);
     }
   };
@@ -1516,7 +1526,7 @@ export function BondedClubWorkspace({
                             : `${remainingSec}s ${isVi ? "còn lại" : "left"}`}
                       </div>
                       <div className="mt-1 text-slate-400">
-                        {deadline > 0n ? new Date(Number(deadline) * 1000).toLocaleTimeString() : ""} (ân hạn:{" "}
+                        {deadline > 0n ? new Date(Number(deadline) * 1000).toLocaleTimeString() : ""} ({isVi ? "ân hạn" : "grace"}:{" "}
                         {Number(club.interestGrace)}s)
                       </div>
                     </div>
@@ -1564,7 +1574,7 @@ export function BondedClubWorkspace({
                         {settlementDeadline > 0n
                           ? new Date(Number(settlementDeadline) * 1000).toLocaleTimeString()
                           : ""}{" "}
-                        (ân hạn: {Number(club.settlementGrace)}s)
+                        ({isVi ? "ân hạn" : "grace"}: {Number(club.settlementGrace)}s)
                       </div>
                     </div>
                   );
@@ -1593,14 +1603,34 @@ export function BondedClubWorkspace({
             <div className="flex items-center justify-between border-b border-amber-500/15 pb-3">
               <h3 className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
                 <Users className="h-4 w-4 text-amber-400" />
-                {isVi ? "Danh sách thành viên" : "Member Roster"} ({club.memberAddresses.length}/{club.maxMembers.toString()})
+                {isVi ? "Danh sách thành viên" : "Member Roster"} ({(club.memberAddresses.length || club.memberCount).toString()}/{club.maxMembers.toString()})
               </h3>
             </div>
 
             {club.memberAddresses.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">
-                {isVi ? "Chưa có thành viên nào tham gia" : "No members have joined yet"}
-              </p>
+              club.memberCount > 0n ? (
+                <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-3.5 text-xs text-amber-200 flex items-center justify-between gap-3">
+                  <div>
+                    <span className="font-semibold text-amber-300">
+                      {isVi ? "Không thể tải danh sách địa chỉ" : "Failed to load member addresses"}:
+                    </span>{" "}
+                    {isVi
+                      ? "Do giới hạn truy vấn RPC Arc Testnet. Nhóm hiện có " + club.memberCount.toString() + " thành viên on-chain."
+                      : "Due to Arc Testnet RPC block range limit. Club has " + club.memberCount.toString() + " on-chain members."}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void club.refetch()}
+                    className="shrink-0 rounded-xl bg-amber-500/20 px-3 py-1.5 font-semibold text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 cursor-pointer transition-all"
+                  >
+                    {isVi ? "Thử lại" : "Retry"}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 italic">
+                  {isVi ? "Chưa có thành viên nào tham gia" : "No members have joined yet"}
+                </p>
+              )
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {club.memberAddresses.map((m, idx) => {
@@ -1665,7 +1695,7 @@ export function BondedClubWorkspace({
                     Oracle ({club.oracleDescription || "BTC/USD"}):
                   </span>
                   <span className="font-mono text-amber-300 font-bold">
-                    $${club.oraclePriceRaw > 0n ? formatUnitsExact(club.oraclePriceRaw, 8) : "N/A"}
+                    {club.oraclePriceRaw > 0n ? "$" + formatUnitsExact(club.oraclePriceRaw, 8) : "N/A"}
                   </span>
                   {club.isMockOracle && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 px-2.5 py-0.5 text-xs font-semibold text-orange-300 border border-orange-500/30">
@@ -1876,10 +1906,21 @@ export function BondedClubWorkspace({
                       <button
                         type="button"
                         onClick={() => {
-                          const maxBorrow =
-                            club.borrowLimit !== null && club.borrowLimit > club.totalDebt
-                              ? club.borrowLimit - club.totalDebt
+                          const liquidityLimit =
+                            club.totalDeposits > club.totalDebt
+                              ? club.totalDeposits - club.totalDebt
                               : 0n;
+                          let collateralLimit = 0n;
+                          if (club.borrowLimit !== null && club.borrowLimit > club.interestOwed) {
+                            const maxDebt =
+                              ((club.borrowLimit - club.interestOwed) * 10000n) /
+                              (10000n + club.rateBpsPerRound);
+                            if (maxDebt > club.totalDebt) {
+                              collateralLimit = maxDebt - club.totalDebt;
+                            }
+                          }
+                          const maxBorrow =
+                            liquidityLimit < collateralLimit ? liquidityLimit : collateralLimit;
                           setBorrowInput(formatUsdcExact(maxBorrow));
                         }}
                         className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
