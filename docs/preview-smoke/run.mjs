@@ -222,7 +222,9 @@ async function runScenario({ port, name, account, width = 1440, height = 1000, a
       });
       bodyText = evalRes?.result?.value || "";
       if (
-        (bodyText.includes("Arc Testnet Bonded Club #1") || bodyText.includes("Saigon Bonded Club V2")) &&
+        (bodyText.includes("Arc Testnet Bonded Club #1") ||
+          bodyText.includes("Saigon Bonded Club V2") ||
+          bodyText.includes("Connect Wallet to Join")) &&
         !bodyText.includes("Loading BondedTontine V2 club data")
       ) {
         break;
@@ -359,6 +361,18 @@ async function main() {
     if (text.includes("Oracle price is stale")) {
       failures.push(`[U2] Oracle price is stale in ${roleName}`);
     }
+  }
+
+  // Unauthenticated guard: anon must NOT see BondedClubWorkspace
+  if (
+    anon.bodyText.includes("Member Actions") ||
+    anon.bodyText.includes("Saigon Bonded Club V2") ||
+    anon.bodyText.includes("Permissionless Keeper Actions")
+  ) {
+    failures.push(`[Guard] BondedClubWorkspace should NOT be visible when unauthenticated (account: null)`);
+  }
+  if (!anon.bodyText.includes("Connect Wallet to Join")) {
+    failures.push(`[Guard] Connect Wallet banner must be visible when unauthenticated`);
   }
 
   // U2: Borrow Limit should show concrete USDC amount (0.006 USDC from 20 satoshis at $60k)

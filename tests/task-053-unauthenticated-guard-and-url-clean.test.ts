@@ -29,6 +29,20 @@ test("TC-GUARD-02 (AC-01.2): App.tsx luôn render Unauthenticated View khi !addr
   );
 });
 
+test("TC-GUARD-03 (BondedTontine): App.tsx không bao giờ render BondedClubWorkspace khi !address", () => {
+  const appSrc = readSource("src/App.tsx");
+
+  assert.ok(
+    appSrc.includes("{isBondedClub ? (\n          !address ? ("),
+    "BondedClub must show connect banner when !address"
+  );
+  assert.ok(
+    !appSrc.includes("<BondedClubWorkspace") ||
+    appSrc.includes("!address ? (\n            <div className=\"bg-gradient-to-br"),
+    "BondedClubWorkspace must be gated strictly on address being connected"
+  );
+});
+
 test("TC-CLEAN-01 (AC-02.1): App.tsx tự động dọn sạch query param về pathname khi chưa kết nối ví", () => {
   const appSrc = readSource("src/App.tsx");
 
