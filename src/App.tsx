@@ -760,15 +760,28 @@ export default function App() {
 
   const knownClub = getKnownGroups().find((c) => c.address.toLowerCase() === contractAddress.toLowerCase());
   const knownGroupsList = getKnownGroups();
-  const isCurrentRemoved = getRemovedGroups().has(contractAddress.toLowerCase());
-  const hasNoActiveClub = isCurrentRemoved || (knownGroupsList.length === 0 && !clubInfo.groupName);
+  const removedGroupsSet = getRemovedGroups();
+  const activeDirectoryClubs = knownGroupsList.filter((g) => {
+    const addr = g.address.toLowerCase();
+    if (removedGroupsSet.has(addr)) return false;
+    if (g.isDefault && g.version !== "v2-bonded") return false;
+    return true;
+  });
+  const hasBondedCanonical = !removedGroupsSet.has(ARC_TESTNET_DEFAULT_BONDED_CLUB.toLowerCase());
+  const effectiveAvailableClubsCount =
+    activeDirectoryClubs.length +
+    (hasBondedCanonical && !activeDirectoryClubs.some((g) => g.version === "v2-bonded") ? 1 : 0);
+
+  const isCurrentRemoved = removedGroupsSet.has(contractAddress.toLowerCase());
+  const hasNoActiveClub = isCurrentRemoved || effectiveAvailableClubsCount === 0 || (knownGroupsList.length === 0 && !clubInfo.groupName);
   const activeCollateralAmount = clubInfo.collateralAmount;
 
   useEffect(() => {
-    if (isCurrentRemoved && knownGroupsList.length > 0) {
-      setContractAddress(knownGroupsList[0].address);
+    if (isCurrentRemoved && effectiveAvailableClubsCount > 0) {
+      const nextAddr = activeDirectoryClubs[0]?.address || ARC_TESTNET_DEFAULT_BONDED_CLUB;
+      setContractAddress(nextAddr);
     }
-  }, [isCurrentRemoved, knownGroupsList, nameUpdateTrigger]);
+  }, [isCurrentRemoved, effectiveAvailableClubsCount, nameUpdateTrigger]);
 
   const displayedGroupName = (knownClub && knownClub.name && !knownClub.name.startsWith("Nhóm Hụi 0x") && !knownClub.name.startsWith("Savings Club 0x"))
     ? knownClub.name
@@ -1234,7 +1247,42 @@ export default function App() {
         />
       ) : (
         <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 relative z-10">
-        {isBondedClub ? (
+        {hasNoActiveClub ? (
+          <div className="bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] rounded-3xl p-10 sm:p-14 text-center border border-amber-500/30 shadow-xl max-w-2xl mx-auto my-8 space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400 shadow-lg shadow-amber-500/10">
+              <PiggyBank size={34} />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                {isEn ? "No Savings Clubs Available" : "Chưa có nhóm Hụi nào trong danh sách"}
+              </h2>
+              <p className="text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+                {isEn
+                  ? "You have removed all clubs from your directory. Create a new Savings Club or open the directory to join via contract address."
+                  : "Bạn đã xóa toàn bộ nhóm Hụi khỏi danh sách. Hãy tạo một nhóm Hụi mới hoặc mở danh sách nhóm để tham gia qua địa chỉ hợp đồng."}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCreateModalMode("bonded");
+                  setShowCreateModal(true);
+                }}
+                className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+              >
+                {isEn ? "+ Create Savings Club" : "+ Tạo nhóm Hụi mới"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDirectoryModal(true)}
+                className="px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-sm border border-amber-500/30 transition-all cursor-pointer"
+              >
+                {isEn ? "Open Club Directory" : "Mở Danh sách nhóm"}
+              </button>
+            </div>
+          </div>
+        ) : isBondedClub ? (
           !address ? (
             <div className="bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] rounded-3xl p-8 sm:p-10 text-center border border-amber-500/30 shadow-xl max-w-2xl mx-auto my-6 space-y-5">
               <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400 shadow-lg shadow-amber-500/10">

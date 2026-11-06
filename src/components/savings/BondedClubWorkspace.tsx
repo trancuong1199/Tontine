@@ -1256,8 +1256,18 @@ export function BondedClubWorkspace({
                     removeKnownGroup(contractAddress);
                     toast.success(isVi ? "Đã xóa nhóm khỏi danh bạ!" : "Removed club from directory!");
                     const known = getKnownGroups().filter((g) => g.address.toLowerCase() !== contractAddress.toLowerCase());
-                    const fallback = (known.length > 0 ? known[0].address : "0x6afaa0825d2e05ef00d571d4a043ab5dcc03534b") as `0x${string}`;
-                    onSelectGroup?.(fallback);
+                    if (known.length > 0) {
+                      onSelectGroup?.(known[0].address as `0x${string}`);
+                    } else {
+                      if (typeof window !== "undefined") {
+                        try {
+                          const url = new URL(window.location.href);
+                          url.searchParams.delete("group");
+                          window.history.replaceState({}, "", url.toString());
+                        } catch {}
+                      }
+                      onSelectGroup?.(contractAddress);
+                    }
                   }}
                   className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 border border-red-500/40 text-xs font-semibold text-red-300 transition-colors cursor-pointer"
                   title={isVi ? "Xóa nhóm đã kết thúc / vỡ nợ khỏi danh bạ" : "Remove finished/defaulted club from directory"}

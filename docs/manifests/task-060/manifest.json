@@ -1,15 +1,25 @@
 {
   "taskId": "task-060",
-  "frozenAt": "2026-11-06T09:18:17.934Z",
+  "frozenAt": "2026-11-06T10:22:42.747Z",
   "status": "FROZEN",
   "files": {
     "src/App.tsx": {
-      "sha256": "3e2d96dadb76e918f32039528408f71497cc5b7a3cb1a0af1b5801c2335792cb",
+      "sha256": "43102abcf688514792be8018a87d3cab0c6117077ce202633f19d9a06980a4aa",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "sha256": "6f010cee0326d369177632d66ad339ecf0b0371f6f384ccf2ce6c1c314074706",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/BondedClubWorkspace.tsx": {
+      "sha256": "79a60353f32341ef8a374d8b5de5cdf0a380834a61a369acd15b2b4a90115783",
       "baselineSha256": null,
       "isNew": false
     },
     "tests/task-053-unauthenticated-guard-and-url-clean.test.ts": {
-      "sha256": "abcd6e4ca401637a10fc25d49e4eabc980207f8b371f10d826a5e97dd9d1e930",
+      "sha256": "1d50694c445e492befbc214ab42452a122209ac443f41ab8ef9854a87f2db60e",
       "baselineSha256": null,
       "isNew": false
     }

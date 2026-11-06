@@ -33,7 +33,7 @@ test("TC-GUARD-03 (BondedTontine): App.tsx không bao giờ render BondedClubWor
   const appSrc = readSource("src/App.tsx");
 
   assert.ok(
-    appSrc.includes("{isBondedClub ? (\n          !address ? ("),
+    appSrc.includes("isBondedClub ? (\n          !address ? ("),
     "BondedClub must show connect banner when !address"
   );
   assert.ok(

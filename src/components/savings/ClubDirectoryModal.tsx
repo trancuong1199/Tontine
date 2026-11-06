@@ -47,7 +47,7 @@ interface ClubDirectoryModalProps {
   language?: Language;
 }
 
-const CANONICAL_BONDED_CLUBS: SavingsClubItem[] = [
+export const CANONICAL_BONDED_CLUBS: SavingsClubItem[] = [
   {
     address: "0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b",
     name: "Saigon Bonded Club V2",
@@ -345,6 +345,7 @@ export function ClubDirectoryModal({
     const updated = getKnownGroups().filter((g) => g.address.toLowerCase() !== group.address.toLowerCase());
     setGroups(updated);
     setConfirmingClub(null);
+    onGroupNameUpdated?.(group.address, group.name);
 
     const isCurrent = group.address.toLowerCase() === currentAddress.toLowerCase();
     if (isCurrent) {
