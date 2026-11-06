@@ -57,6 +57,7 @@ export function ClubDirectoryModal({
   language = "vi",
 }: ClubDirectoryModalProps) {
   const [groups, setGroups] = useState<SavingsClubItem[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [confirmingClub, setConfirmingClub] = useState<SavingsClubItem | null>(null);
   const [editingClub, setEditingClub] = useState<SavingsClubItem | null>(null);
@@ -67,10 +68,34 @@ export function ClubDirectoryModal({
 
   useEffect(() => {
     if (isOpen) {
-      setGroups(getKnownGroups());
+      let currentKnown = getKnownGroups();
+      // Ensure canonical Bonded clubs are immediately present in known groups if not previously removed
+      const hasBonded = currentKnown.some((g) => g.version === "v2-bonded");
+      if (!hasBonded) {
+        const removed = getRemovedGroups();
+        const canonicalBonded: Array<{ address: `0x${string}`; name: string }> = [
+          { address: "0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b", name: "Saigon Bonded Club V2" },
+          { address: "0xe74069717317dbB86d423439fb9c219A5c5bf812", name: "Arc Bonded 60s Happy Cycle" },
+          { address: "0xF9469568ebb287275009fcE3Db224a16273C5d05", name: "Arc Bonded Liquidation Demo" },
+          { address: "0xe9CcFe9F2D53A5479A17d795635E0795e84d9130", name: "Saigon Bonded Club" },
+        ];
+        for (const item of canonicalBonded) {
+          if (!removed.has(item.address.toLowerCase())) {
+            saveKnownGroup({
+              address: item.address,
+              name: item.name,
+              version: "v2-bonded",
+            });
+            registerRuntimeBondedClub(item.address);
+          }
+        }
+        currentKnown = getKnownGroups();
+      }
+      setGroups(currentKnown);
     }
     if (!publicClient || !canonicalFactory) return;
     let cancelled = false;
+    setIsSyncing(true);
     void (async () => {
       try {
         const synced = await syncFactoryBondedClubs(
@@ -120,6 +145,10 @@ export function ClubDirectoryModal({
         }
       } catch {
         // Ignore network errors
+      } finally {
+        if (!cancelled) {
+          setIsSyncing(false);
+        }
       }
     })();
     return () => {
@@ -365,7 +394,14 @@ export function ClubDirectoryModal({
         <div className="p-5 sm:p-6 overflow-y-auto space-y-3.5 flex-1">
           {groups.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-sm">
-              <p>{isEn ? t("clubDirectoryModal.emptyList", language) : "Chưa có nhóm nào trong danh sách."}</p>
+              {isSyncing ? (
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                  <p>{isEn ? "Loading savings clubs from Arc Testnet..." : "Đang tải danh sách nhóm từ Arc Testnet..."}</p>
+                </div>
+              ) : (
+                <p>{isEn ? t("clubDirectoryModal.emptyList", language) : "Chưa có nhóm nào trong danh sách."}</p>
+              )}
             </div>
           ) : (
             groups.map((group, index) => {

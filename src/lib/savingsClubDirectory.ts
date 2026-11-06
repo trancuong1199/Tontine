@@ -426,33 +426,47 @@ export async function syncFactoryBondedClubs(
     })) as bigint;
     const count = Number(lengthRaw);
     const removedAddresses = getRemovedGroups();
-    for (let i = 0; i < count; i++) {
-      const clubAddr = (await reader.readContract({
-        address: factoryAddress,
-        abi: factoryAbi,
-        functionName: "clubAt",
-        args: [BigInt(i)],
-      })) as `0x${string}`;
-      if (!isValidAddress(clubAddr)) continue;
+
+    // Query all club addresses in parallel for blazing-fast sync
+    const clubAddresses = await Promise.all(
+      Array.from({ length: count }, (_, i) =>
+        reader
+          .readContract({
+            address: factoryAddress,
+            abi: factoryAbi,
+            functionName: "clubAt",
+            args: [BigInt(i)],
+          })
+          .catch(() => undefined) as Promise<`0x${string}` | undefined>
+      )
+    );
+
+    const validEntries = clubAddresses
+      .map((addr, i) => ({ addr, i }))
+      .filter((entry): entry is { addr: `0x${string}`; i: number } => Boolean(entry.addr && isValidAddress(entry.addr)));
+
+    // Query all group names in parallel
+    const names = await Promise.all(
+      validEntries.map((entry) =>
+        reader
+          .readContract({
+            address: entry.addr,
+            abi: tontineAbi,
+            functionName: "groupName",
+            args: [],
+          })
+          .catch(() => undefined) as Promise<string | undefined>
+      )
+    );
+
+    for (let j = 0; j < validEntries.length; j++) {
+      const clubAddr = validEntries[j].addr;
       const lower = clubAddr.toLowerCase();
       // If user previously removed this club, do not revive it on sync
       if (removedAddresses.has(lower)) {
         continue;
       }
-      let groupName = `Bonded Club #${i + 1}`;
-      try {
-        const nameOnChain = (await reader.readContract({
-          address: clubAddr,
-          abi: tontineAbi,
-          functionName: "groupName",
-          args: [],
-        })) as string;
-        if (typeof nameOnChain === "string" && nameOnChain.trim()) {
-          groupName = nameOnChain.trim();
-        }
-      } catch {
-        // Fallback name
-      }
+      let groupName = names[j]?.trim() || `Bonded Club #${validEntries[j].i + 1}`;
       saveKnownGroup({
         address: clubAddr,
         name: groupName,

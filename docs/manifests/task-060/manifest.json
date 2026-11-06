@@ -1,30 +1,15 @@
 {
   "taskId": "task-060",
-  "frozenAt": "2026-11-06T04:32:04.156Z",
+  "frozenAt": "2026-11-06T08:17:46.922Z",
   "status": "FROZEN",
   "files": {
-    "src/App.tsx": {
-      "sha256": "d87eef7dcc9013ac76b88e01570853a378ccd4774eb6227775d71bfc613cf369",
+    "src/lib/savingsClubDirectory.ts": {
+      "sha256": "1a40a77d6e4c6316f86153f19b5e8796759daa1117d498676fe1f3e2667759ea",
       "baselineSha256": null,
       "isNew": false
     },
-    "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "ce05413c309f376471b0992b41ee64024630c2ed0486a68ecfa0de1a3b02e7c1",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "src/components/savings/GroupSwitcher.tsx": {
-      "sha256": "a597c22ceaddd1548e2cd04e29a2353b04d2dc2e47431c25c7fba59fd2aafaf5",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "src/components/savings/CreateBondedClubModal.tsx": {
-      "sha256": "e839882f7f6d0aadf3c2731be85b70e4bb0f4769329404a19786bba2b543b49a",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "tests/arc-appkit-integration.test.ts": {
-      "sha256": "f8d7a522f80237f47a2ae9df24e7cf3602f0de458e5b25e4851e25f2827c356c",
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "sha256": "acc59912020c8c0cc4182239f5c319e32d0543a584f402412048abd2bc3de065",
       "baselineSha256": null,
       "isNew": false
     }
