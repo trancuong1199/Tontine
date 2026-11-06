@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Share2, Check, Shuffle, Plus, Layers, Zap, Copy, ExternalLink, ShieldCheck } from "lucide-react";
+import { ArrowRight, Share2, Check, Shuffle, Plus, Layers, Zap, Copy, ExternalLink } from "lucide-react";
 import { isValidAddress, formatAddress, ARC_TESTNET_CHAIN_ID } from "../../contract";
 import { buildAddressExplorerUrl } from "@/onchain-facts";
 import { saveKnownGroup, buildShareGroupUrl } from "../../lib/savingsClubDirectory";
 import { Language, t } from "../../lib/i18n";
-import { ARC_TESTNET_DEFAULT_BONDED_CLUB, isKnownBondedClubAddress } from "@/config/bonded-tontine";
 
 interface GroupSwitcherProps {
   currentAddress: `0x${string}`;
@@ -182,24 +181,6 @@ export function GroupSwitcher({
           </span>
         </button>
       </div>
-
-      {/* Shortcut to switch to BondedTontine V2 if currently on a legacy club */}
-      {!isKnownBondedClubAddress(currentAddress) && (
-        <button
-          type="button"
-          onClick={() => onSwitchGroup(ARC_TESTNET_DEFAULT_BONDED_CLUB)}
-          className="w-full mt-3 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-amber-500/25 to-yellow-500/15 hover:from-amber-500/30 hover:to-yellow-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-between transition-all active:scale-98 cursor-pointer shadow-md shadow-amber-500/10"
-          title={isEn ? "Switch to BondedTontine V2" : "Chuyển sang nhóm BondedTontine V2"}
-        >
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck size={15} className="text-amber-400 shrink-0" />
-            <span>{isEn ? "Switch to BondedTontine V2" : "Chuyển sang BondedTontine V2"}</span>
-          </span>
-          <span className="text-xs bg-amber-500/30 text-amber-200 px-2 py-0.5 rounded-full font-mono font-semibold border border-amber-500/40">
-            CirBTC
-          </span>
-        </button>
-      )}
 
       {/* Expandable Switch Form */}
       {isExpanded && (

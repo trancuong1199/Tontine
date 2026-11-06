@@ -118,6 +118,7 @@ export interface BondedClubWorkspaceProps {
   isPasskeyUser?: boolean;
   onSelectGroup?: (address: `0x${string}`) => void;
   onOpenDirectoryModal?: () => void;
+  onOpenCreateModal?: () => void;
 }
 
 export function BondedClubWorkspace({
@@ -127,6 +128,7 @@ export function BondedClubWorkspace({
   isPasskeyUser = false,
   onSelectGroup,
   onOpenDirectoryModal,
+  onOpenCreateModal,
 }: BondedClubWorkspaceProps) {
   const club = useBondedClub(contractAddress, userAddress, true);
   const usdcBalance = useUsdcBalance(userAddress);
@@ -867,7 +869,13 @@ export function BondedClubWorkspace({
           </button>
           <button
             type="button"
-            onClick={() => setShowCreateForm((v) => !v)}
+            onClick={() => {
+              if (onOpenCreateModal) {
+                onOpenCreateModal();
+              } else {
+                setShowCreateForm((v) => !v);
+              }
+            }}
             className="rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 text-slate-950 font-bold px-4 py-2 text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer"
           >
             {isVi ? "+ Tạo nhóm Bonded V2" : "+ Create Bonded V2 Club"}

@@ -1,10 +1,25 @@
 {
   "taskId": "task-060",
-  "frozenAt": "2026-11-06T04:06:57.817Z",
+  "frozenAt": "2026-11-06T04:22:00.725Z",
   "status": "FROZEN",
   "files": {
+    "src/App.tsx": {
+      "sha256": "02c98c8e03cf3a7496ad902d34b534d4f54e8485b5028a9a7f998ad2a879f416",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/BondedClubWorkspace.tsx": {
+      "sha256": "ce05413c309f376471b0992b41ee64024630c2ed0486a68ecfa0de1a3b02e7c1",
+      "baselineSha256": null,
+      "isNew": false
+    },
     "src/components/savings/GroupSwitcher.tsx": {
-      "sha256": "f97eb1d617e6854edfa84ff424a626969cdd6cf2d0c97d841a9bd0de2e2b087c",
+      "sha256": "a597c22ceaddd1548e2cd04e29a2353b04d2dc2e47431c25c7fba59fd2aafaf5",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/components/savings/CreateBondedClubModal.tsx": {
+      "sha256": "e839882f7f6d0aadf3c2731be85b70e4bb0f4769329404a19786bba2b543b49a",
       "baselineSha256": null,
       "isNew": false
     },

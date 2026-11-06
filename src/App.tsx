@@ -19,6 +19,7 @@ import { RoundHistory } from "./components/savings/RoundHistory";
 import { ClubMembersRoster } from "./components/savings/ClubMembersRoster";
 import { HowItWorksCard } from "./components/savings/HowItWorksCard";
 import { CreateClubModal } from "./components/savings/CreateClubModal";
+import { CreateBondedClubModal } from "./components/savings/CreateBondedClubModal";
 import { ClubDirectoryModal } from "./components/savings/ClubDirectoryModal";
 import { EditClubNameModal } from "./components/savings/EditClubNameModal";
 import { GuideModal } from "./components/savings/GuideModal";
@@ -293,6 +294,7 @@ export default function App() {
   const [countdown, setCountdown] = useState("—");
   const [showGuide, setShowGuide] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createModalMode, setCreateModalMode] = useState<"bonded" | "legacy">("bonded");
   const [showDirectoryModal, setShowDirectoryModal] = useState(false);
   const [showEditCurrentClubModal, setShowEditCurrentClubModal] = useState(false);
   const [showArcAppKitModal, setShowArcAppKitModal] = useState(false);
@@ -1266,6 +1268,10 @@ export default function App() {
                 isPasskeyUser={Boolean(passkeyAddress)}
                 onSelectGroup={handleSwitchGroup}
                 onOpenDirectoryModal={() => setShowDirectoryModal(true)}
+                onOpenCreateModal={() => {
+                  setCreateModalMode("bonded");
+                  setShowCreateModal(true);
+                }}
               />
             </div>
           </>
@@ -1824,7 +1830,20 @@ export default function App() {
       </main>
       )}
 
-      {showCreateModal && (
+      {showCreateModal && createModalMode === "bonded" && (
+        <CreateBondedClubModal
+          isOpen={showCreateModal}
+          onClose={() => {
+            setShowCreateModal(false);
+            setCreateModalMode("bonded");
+          }}
+          onSuccess={handleClubCreated}
+          language={language}
+          onSwitchToLegacy={() => setCreateModalMode("legacy")}
+        />
+      )}
+
+      {showCreateModal && createModalMode === "legacy" && (
         <CreateClubModal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
