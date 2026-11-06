@@ -43,7 +43,6 @@ export interface CreateBondedClubModalProps {
   onClose: () => void;
   onSuccess: (newAddress: `0x${string}`) => void;
   language?: Language;
-  onSwitchToLegacy?: () => void;
 }
 
 const AMOUNT_PRESETS = ["5", "10", "20", "50"];
@@ -60,7 +59,6 @@ export function CreateBondedClubModal({
   onClose,
   onSuccess,
   language = "vi",
-  onSwitchToLegacy,
 }: CreateBondedClubModalProps) {
   const { isConnected, chainId, address: userAddress } = useAccount();
   const { setOpen: openConnectModal } = useModal();
@@ -269,16 +267,6 @@ export function CreateBondedClubModal({
                   : "Tiêu chuẩn: Bonded V2 (Khuyên dùng với bảo chứng CirBTC)"}
               </span>
             </div>
-            {onSwitchToLegacy && (
-              <button
-                type="button"
-                onClick={onSwitchToLegacy}
-                disabled={isDeploying}
-                className="text-amber-400 hover:text-amber-300 font-semibold underline underline-offset-2 shrink-0 cursor-pointer ml-2"
-              >
-                {isEn ? "Switch to Legacy V1" : "Đổi sang V1 cũ"}
-              </button>
-            )}
           </div>
 
           {/* Field 1: Group Name */}

@@ -47,6 +47,29 @@ interface ClubDirectoryModalProps {
   language?: Language;
 }
 
+const CANONICAL_BONDED_CLUBS: SavingsClubItem[] = [
+  {
+    address: "0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b",
+    name: "Saigon Bonded Club V2",
+    version: "v2-bonded",
+  },
+  {
+    address: "0xe74069717317dbB86d423439fb9c219A5c5bf812",
+    name: "Arc Bonded 60s Happy Cycle",
+    version: "v2-bonded",
+  },
+  {
+    address: "0xF9469568ebb287275009fcE3Db224a16273C5d05",
+    name: "Arc Bonded Liquidation Demo",
+    version: "v2-bonded",
+  },
+  {
+    address: "0xe9CcFe9F2D53A5479A17d795635E0795e84d9130",
+    name: "Saigon Bonded Club",
+    version: "v2-bonded",
+  },
+];
+
 export function ClubDirectoryModal({
   isOpen,
   onClose,
@@ -63,6 +86,19 @@ export function ClubDirectoryModal({
   const [editingClub, setEditingClub] = useState<SavingsClubItem | null>(null);
   const isEn = language === "en";
 
+  const displayedGroups = useMemo(() => {
+    const list = groups.length > 0 ? groups : getKnownGroups();
+    const hasBonded = list.some((g) => g.version === "v2-bonded");
+    if (!hasBonded) {
+      const existing = new Set(list.map((g) => g.address.toLowerCase()));
+      const fallback = CANONICAL_BONDED_CLUBS.filter(
+        (c) => !existing.has(c.address.toLowerCase())
+      );
+      return [...fallback, ...list];
+    }
+    return list;
+  }, [groups]);
+
   const publicClient = usePublicClient({ chainId: ARC_TESTNET_CHAIN_ID });
   const canonicalFactory = CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
 
@@ -73,13 +109,7 @@ export function ClubDirectoryModal({
       const hasBonded = currentKnown.some((g) => g.version === "v2-bonded");
       if (!hasBonded) {
         const removed = getRemovedGroups();
-        const canonicalBonded: Array<{ address: `0x${string}`; name: string }> = [
-          { address: "0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b", name: "Saigon Bonded Club V2" },
-          { address: "0xe74069717317dbB86d423439fb9c219A5c5bf812", name: "Arc Bonded 60s Happy Cycle" },
-          { address: "0xF9469568ebb287275009fcE3Db224a16273C5d05", name: "Arc Bonded Liquidation Demo" },
-          { address: "0xe9CcFe9F2D53A5479A17d795635E0795e84d9130", name: "Saigon Bonded Club" },
-        ];
-        for (const item of canonicalBonded) {
+        for (const item of CANONICAL_BONDED_CLUBS) {
           if (!removed.has(item.address.toLowerCase())) {
             saveKnownGroup({
               address: item.address,
@@ -157,7 +187,7 @@ export function ClubDirectoryModal({
   }, [isOpen, publicClient, canonicalFactory, currentAddress]);
 
   const stateContracts = useMemo(() => {
-    return groups.flatMap((g) => [
+    return displayedGroups.flatMap((g) => [
       {
         address: g.address,
         abi: ROTATING_SAVINGS_ABI as Abi,
@@ -172,12 +202,12 @@ export function ClubDirectoryModal({
         chainId: ARC_TESTNET_CHAIN_ID,
       },
     ]);
-  }, [groups]);
+  }, [displayedGroups]);
 
   const { data: stateData } = useReadContracts({
     contracts: stateContracts,
     query: {
-      enabled: isOpen && groups.length > 0,
+      enabled: isOpen && displayedGroups.length > 0,
     },
   });
 
@@ -248,7 +278,7 @@ export function ClubDirectoryModal({
 
   const handleDeleteGroup = (group: SavingsClubItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    const groupIndex = groups.findIndex(
+    const groupIndex = displayedGroups.findIndex(
       (g) => g.address.toLowerCase() === group.address.toLowerCase()
     );
     const rawState =
@@ -392,7 +422,7 @@ export function ClubDirectoryModal({
 
         {/* Directory List Body */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-3.5 flex-1">
-          {groups.length === 0 ? (
+          {displayedGroups.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-sm">
               {isSyncing ? (
                 <div className="flex flex-col items-center justify-center gap-2">
@@ -404,7 +434,7 @@ export function ClubDirectoryModal({
               )}
             </div>
           ) : (
-            groups.map((group, index) => {
+            displayedGroups.map((group, index) => {
               const isCurrent =
                 group.address.toLowerCase() === currentAddress.toLowerCase();
               const rawState =
@@ -587,8 +617,8 @@ export function ClubDirectoryModal({
           <div className="flex items-center gap-3">
             <p className="text-xs sm:text-sm text-slate-400 font-medium">
               {isEn
-                ? `${groups.length} savings clubs available`
-                : `${groups.length} nhóm hụi khả dụng`}
+                ? `${displayedGroups.length} savings clubs available`
+                : `${displayedGroups.length} nhóm hụi khả dụng`}
             </p>
             {customGroupsCount > 0 && (
               <button
