@@ -23,6 +23,43 @@ export const KNOWN_BONDED_TONTINE_CLUBS: readonly `0x${string}`[] = [
   "0xF9469568ebb287275009fcE3Db224a16273C5d05",
 ] as const;
 
+/**
+ * Historical demo clubs excluded from public directory list to prevent confusion.
+ */
+export const HIDDEN_DEMO_CLUBS: readonly `0x${string}`[] = [
+  "0xe74069717317dbB86d423439fb9c219A5c5bf812", // Completed E2E demo club
+  "0xF9469568ebb287275009fcE3Db224a16273C5d05", // Defaulted/Liquidated E2E demo club
+  "0xe9ccfe9f2d53a5479a17d795635e0795e84d9130", // Old testnet demo club
+] as const;
+
+/**
+ * Legacy test club addresses across tests and directories.
+ */
+export const LEGACY_TEST_CLUB_ADDRESS = "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b" as const;
+export const LEGACY_TEST_CLUB_ADDRESSES: readonly `0x${string}`[] = [
+  LEGACY_TEST_CLUB_ADDRESS,
+] as const;
+
+// Shared BondedTontine configuration presets
+export const DEFAULT_SAFETY_RATIO_BPS = 20000; // 200% recommended default (design)
+export const DEFAULT_LIQUIDATION_RATIO_BPS = 12000; // 120%
+export const DEFAULT_INTEREST_RATE_BPS = 50; // 0.5% per round
+export const TESTNET_MAX_PRICE_AGE = 3600; // 1 hour testnet heartbeat
+
+export const BONDED_SAFETY_RATIO_PRESETS = [
+  { label: "150% (Minimum)", value: 15000 },
+  { label: "175%", value: 17500 },
+  { label: "200% (Recommended)", value: 20000 },
+  { label: "250%", value: 25000 },
+] as const;
+
+export const BONDED_ROUND_DURATION_PRESETS = [
+  { labelVi: "1 giờ", labelEn: "1 hour", value: 3600, hintVi: "Thử nghiệm nhanh", hintEn: "Quick test" },
+  { labelVi: "1 ngày", labelEn: "1 day", value: 86400, hintVi: "Tiêu chuẩn", hintEn: "Standard" },
+  { labelVi: "3 ngày", labelEn: "3 days", value: 259200, hintVi: "Vừa phải", hintEn: "Moderate" },
+  { labelVi: "7 ngày", labelEn: "7 days", value: 604800, hintVi: "1 tuần", hintEn: "1 week" },
+] as const;
+
 const runtimeBondedClubSet = new Set<string>(
   KNOWN_BONDED_TONTINE_CLUBS.map((a) => a.toLowerCase())
 );
@@ -60,7 +97,7 @@ export const ORACLE_INFO: Record<number, ChainOracleInfo> = {
     feedAddress: ARC_TESTNET_MOCK_FEED,
     isMock: true,
     description: "MOCK BTC / USD",
-    maxPriceAge: 3600,
+    maxPriceAge: TESTNET_MAX_PRICE_AGE,
   },
   [ARC_MAINNET_CHAIN_ID]: {
     feedAddress: undefined,
@@ -71,7 +108,7 @@ export const ORACLE_INFO: Record<number, ChainOracleInfo> = {
 };
 
 /**
- * Audited mainnet oracle allowlist.
+ * Mainnet oracle allowlist.
  * Must be populated from official Chainlink Price Feed Contract Addresses for Arc Mainnet before mainnet deployment.
  */
 export const MAINNET_ORACLE_ALLOWLIST: Record<number, readonly `0x${string}`[]> = {
@@ -87,4 +124,3 @@ export const MOCK_ORACLE_WARNING_COPY = {
   vi: "Giá thử nghiệm, không phải giá thị trường",
   en: "Test price, not market price",
 } as const;
-

@@ -1,3 +1,5 @@
+import { LEGACY_TEST_CLUB_ADDRESS } from "../config/bonded-tontine.ts";
+
 export function isValidAddress(address: unknown): address is `0x${string}` {
   return typeof address === "string" && /^0x[a-fA-F0-9]{40}$/.test(address);
 }
@@ -81,7 +83,7 @@ export const DEFAULT_SAVINGS_CLUBS: SavingsClubItem[] = [
     isDefault: true,
   },
   {
-    address: "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b",
+    address: LEGACY_TEST_CLUB_ADDRESS,
     name: "Nhóm Hụi Arc Alpha",
     isDefault: true,
   },

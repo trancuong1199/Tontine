@@ -18,6 +18,7 @@ import {
   isKnownBondedClubAddress,
 } from "../config/bonded-tontine.ts";
 import { getKnownGroups } from "../lib/savingsClubDirectory.ts";
+import { requireChain } from "../onchain-facts.ts";
 
 const ERC20_READ_ABI = [
   {
@@ -132,8 +133,9 @@ export async function fetchBondedClubMembers(
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
+    const explorerApi = `${requireChain(ARC_TESTNET_CHAIN_ID).explorerBase}/api`;
     const explorerRes = await fetch(
-      `https://explorer.testnet.arc.io/api?module=logs&action=getLogs&address=${clubAddress}&fromBlock=0&toBlock=latest`,
+      `${explorerApi}?module=logs&action=getLogs&address=${clubAddress}&fromBlock=0&toBlock=latest`,
       { signal: controller.signal }
     );
     clearTimeout(timeout);

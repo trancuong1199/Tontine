@@ -17,10 +17,12 @@ import {
 } from "lucide-react";
 import {
   formatAddress,
+  formatUsdc,
   ROTATING_SAVINGS_ABI,
   ARC_TESTNET_CHAIN_ID,
   GROUP_STATE,
 } from "../../contract";
+import { buildAddressExplorerUrl } from "../../onchain-facts";
 import {
   getKnownGroups,
   getRemovedGroups,
@@ -32,7 +34,12 @@ import {
   DEFAULT_SAVINGS_CLUBS,
   SavingsClubItem,
 } from "../../lib/savingsClubDirectory";
-import { CANONICAL_FACTORY, registerRuntimeBondedClub } from "../../config/bonded-tontine";
+import {
+  CANONICAL_FACTORY,
+  registerRuntimeBondedClub,
+  ARC_TESTNET_DEFAULT_BONDED_CLUB,
+  HIDDEN_DEMO_CLUBS,
+} from "../../config/bonded-tontine";
 import { BONDED_TONTINE_ABI, BONDED_TONTINE_FACTORY_ABI } from "../../lib/bondedTontine";
 import { Language, t } from "../../lib/i18n";
 import { EditClubNameModal } from "./EditClubNameModal";
@@ -49,12 +56,20 @@ interface ClubDirectoryModalProps {
 
 export const CANONICAL_BONDED_CLUBS: SavingsClubItem[] = [
   {
-    address: "0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b",
+    address: ARC_TESTNET_DEFAULT_BONDED_CLUB,
     name: "Saigon Bonded Club V2",
     version: "v2-bonded",
     isDefault: true,
   },
 ];
+
+function formatRoundDuration(seconds: number, isEn: boolean): string {
+  if (seconds <= 0) return "--";
+  if (seconds < 3600) return `${Math.round(seconds / 60)} ${isEn ? "min" : "phút"}`;
+  if (seconds < 86400) return `${Math.round(seconds / 3600)} ${isEn ? "hours" : "giờ"}`;
+  if (seconds % 86400 === 0) return `${Math.round(seconds / 86400)} ${isEn ? "days" : "ngày"}`;
+  return `${(seconds / 86400).toFixed(1)} ${isEn ? "days" : "ngày"}`;
+}
 
 export function ClubDirectoryModal({
   isOpen,
@@ -75,20 +90,17 @@ export function ClubDirectoryModal({
   const displayedGroups = useMemo(() => {
     const removed = getRemovedGroups();
     const rawList = groups.length > 0 ? groups : getKnownGroups();
-    // Exclude old historical testnet demo clubs if user has them lingering in localStorage
-    const legacyDemoAddresses = new Set([
-      "0xe74069717317dbb86d423439fb9c219a5c5bf812",
-      "0xf9469568ebb287275009fce3db224a16273c5d05",
-      "0xe9ccfe9f2d53a5479a17d795635e0795e84d9130",
-    ]);
+    const hiddenSet = new Set(HIDDEN_DEMO_CLUBS.map((a) => a.toLowerCase()));
+
     const list = rawList.filter((g) => {
       const addr = g.address.toLowerCase();
       if (removed.has(addr)) return false;
-      if (legacyDemoAddresses.has(addr)) return false;
+      if (hiddenSet.has(addr)) return false;
       // Filter out legacy default V1 clubs so directory stays clean with Bonded V2
       if (g.isDefault && g.version !== "v2-bonded") return false;
       return true;
     });
+
     const hasBonded = list.some((g) => g.version === "v2-bonded");
     if (!hasBonded) {
       const fallback = CANONICAL_BONDED_CLUBS.filter(
@@ -105,7 +117,6 @@ export function ClubDirectoryModal({
   useEffect(() => {
     if (isOpen) {
       let currentKnown = getKnownGroups();
-      // Ensure canonical Bonded clubs are immediately present in known groups if not previously removed
       const hasBonded = currentKnown.some((g) => g.version === "v2-bonded");
       if (!hasBonded) {
         const removed = getRemovedGroups();
@@ -172,14 +183,10 @@ export function ClubDirectoryModal({
         }
         if (!cancelled && isOpen) {
           const removed = getRemovedGroups();
-          const legacyDemoAddresses = new Set([
-            "0xe74069717317dbb86d423439fb9c219a5c5bf812",
-            "0xf9469568ebb287275009fce3db224a16273c5d05",
-            "0xe9ccfe9f2d53a5479a17d795635e0795e84d9130",
-          ]);
+          const hiddenSet = new Set(HIDDEN_DEMO_CLUBS.map((a) => a.toLowerCase()));
           setGroups(
             getKnownGroups().filter(
-              (g) => !removed.has(g.address.toLowerCase()) && !legacyDemoAddresses.has(g.address.toLowerCase())
+              (g) => !removed.has(g.address.toLowerCase()) && !hiddenSet.has(g.address.toLowerCase())
             )
           );
         }
@@ -196,22 +203,62 @@ export function ClubDirectoryModal({
     };
   }, [isOpen, publicClient, canonicalFactory, currentAddress]);
 
+  // Read rich parameters for all clubs: state, memberCount, maxMembers, contributionAmount, roundDuration, owner
   const stateContracts = useMemo(() => {
-    return displayedGroups.flatMap((g) => [
-      {
-        address: g.address,
-        abi: ROTATING_SAVINGS_ABI as Abi,
-        functionName: "state",
-        chainId: ARC_TESTNET_CHAIN_ID,
-      },
-      {
-        address: g.address,
-        abi: ROTATING_SAVINGS_ABI as Abi,
-        functionName: "members",
-        args: [0n],
-        chainId: ARC_TESTNET_CHAIN_ID,
-      },
-    ]);
+    return displayedGroups.flatMap((g) => {
+      const isBonded = g.version === "v2-bonded";
+      const abi = (isBonded ? BONDED_TONTINE_ABI : ROTATING_SAVINGS_ABI) as Abi;
+      return [
+        {
+          address: g.address,
+          abi,
+          functionName: "state",
+          chainId: ARC_TESTNET_CHAIN_ID,
+        },
+        ...(isBonded
+          ? [
+              {
+                address: g.address,
+                abi,
+                functionName: "memberCount",
+                chainId: ARC_TESTNET_CHAIN_ID,
+              },
+            ]
+          : [
+              {
+                address: g.address,
+                abi,
+                functionName: "members",
+                args: [0n],
+                chainId: ARC_TESTNET_CHAIN_ID,
+              },
+            ]),
+        {
+          address: g.address,
+          abi,
+          functionName: "maxMembers",
+          chainId: ARC_TESTNET_CHAIN_ID,
+        },
+        {
+          address: g.address,
+          abi,
+          functionName: "contributionAmount",
+          chainId: ARC_TESTNET_CHAIN_ID,
+        },
+        {
+          address: g.address,
+          abi,
+          functionName: "roundDuration",
+          chainId: ARC_TESTNET_CHAIN_ID,
+        },
+        {
+          address: g.address,
+          abi,
+          functionName: "owner",
+          chainId: ARC_TESTNET_CHAIN_ID,
+        },
+      ];
+    });
   }, [displayedGroups]);
 
   const { data: stateData } = useReadContracts({
@@ -291,19 +338,21 @@ export function ClubDirectoryModal({
     const groupIndex = displayedGroups.findIndex(
       (g) => g.address.toLowerCase() === group.address.toLowerCase()
     );
+    const baseIdx = groupIndex * 6;
     const rawState =
-      stateData?.[groupIndex * 2]?.status === "success"
-        ? (stateData[groupIndex * 2].result as number)
+      stateData?.[baseIdx]?.status === "success"
+        ? (stateData[baseIdx].result as number)
         : undefined;
-    const hasMember0 =
-      !group.isDefault &&
-      stateData?.[groupIndex * 2 + 1]?.status === "success" &&
-      Boolean(stateData[groupIndex * 2 + 1].result);
+    const isBonded = group.version === "v2-bonded";
+    const memberCount = isBonded
+      ? (stateData?.[baseIdx + 1]?.status === "success" ? BigInt(stateData[baseIdx + 1].result as any) : 0n)
+      : (stateData?.[baseIdx + 1]?.status === "success" && stateData[baseIdx + 1].result ? 1n : 0n);
+    const hasMember0 = memberCount > 0n;
     const isActive =
       rawState === GROUP_STATE.ACTIVE ||
       (rawState === GROUP_STATE.OPEN && hasMember0);
 
-    if (isActive) {
+    if (group.isDefault || (isActive && !isBonded)) {
       toast.error(
         isEn
           ? t("clubDirectoryModal.deleteActiveError", language)
@@ -320,19 +369,21 @@ export function ClubDirectoryModal({
     const groupIndex = displayedGroups.findIndex(
       (g) => g.address.toLowerCase() === group.address.toLowerCase()
     );
+    const baseIdx = groupIndex * 6;
     const rawState =
-      stateData?.[groupIndex * 2]?.status === "success"
-        ? (stateData[groupIndex * 2].result as number)
+      stateData?.[baseIdx]?.status === "success"
+        ? (stateData[baseIdx].result as number)
         : undefined;
-    const hasMember0 =
-      !group.isDefault &&
-      stateData?.[groupIndex * 2 + 1]?.status === "success" &&
-      Boolean(stateData[groupIndex * 2 + 1].result);
+    const isBonded = group.version === "v2-bonded";
+    const memberCount = isBonded
+      ? (stateData?.[baseIdx + 1]?.status === "success" ? BigInt(stateData[baseIdx + 1].result as any) : 0n)
+      : (stateData?.[baseIdx + 1]?.status === "success" && stateData[baseIdx + 1].result ? 1n : 0n);
+    const hasMember0 = memberCount > 0n;
     const isActive =
       rawState === GROUP_STATE.ACTIVE ||
       (rawState === GROUP_STATE.OPEN && hasMember0);
 
-    if (isActive) {
+    if (group.isDefault || (isActive && !isBonded)) {
       toast.error(
         isEn
           ? t("clubDirectoryModal.deleteActiveError", language)
@@ -374,12 +425,12 @@ export function ClubDirectoryModal({
       }
       const msg = isEn
         ? t("clubDirectoryModal.deleteClubAndSwitched", language).replace("{name}", group.name)
-        : `Đã xóa nhóm "${group.name}" và chuyển về nhóm mặc định!`;
+        : `Đã ẩn nhóm "${group.name}" và chuyển về nhóm mặc định!`;
       toast.success(msg);
     } else {
       const msg = isEn
         ? t("clubDirectoryModal.deleteClubSuccess", language).replace("{name}", group.name)
-        : `Đã xóa nhóm "${group.name}" khỏi danh sách!`;
+        : `Đã ẩn nhóm "${group.name}" khỏi danh sách của bạn!`;
       toast.success(msg);
     }
   };
@@ -400,62 +451,76 @@ export function ClubDirectoryModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200"
-      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="club-directory-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
     >
-      <div
-        className="bg-[#0c0d14] rounded-3xl border border-amber-500/20 shadow-2xl max-w-xl w-full overflow-hidden max-h-[90vh] flex flex-col text-slate-100 animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-3xl border border-amber-500/30 bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] text-white shadow-2xl shadow-amber-500/10 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-amber-500/10">
+        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-amber-500/10 bg-amber-500/5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 text-slate-950 font-bold flex items-center justify-center shadow-md shadow-amber-500/20">
-              <Layers size={20} />
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-sm">
+              <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                <span className="text-white">{isEn ? t("clubDirectoryModal.title", language) : "Danh Sách Nhóm Hụi"}</span>
+              <h2 id="club-directory-title" className="text-lg sm:text-xl font-bold text-white flex items-center gap-2 text-xl font-bold text-slate-900 tracking-tight">
+                <span>{isEn ? t("clubDirectoryModal.title", language) : "Danh Sách Nhóm Hụi"}</span>
+                {isSyncing && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-normal animate-pulse">
+                    {isEn ? "Syncing..." : "Đang đồng bộ..."}
+                  </span>
+                )}
               </h2>
-              <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                {isEn ? "Savings Clubs Directory on Arc Testnet" : "Savings Clubs Directory trên Arc Testnet"}
+              <p className="text-xs text-slate-400 mt-0.5">
+                {isEn ? t("clubDirectoryModal.subtitle", language) : "Chọn nhóm hụi trên mạng Arc Testnet để tham gia hoặc quản lý"}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
-            title={isEn ? "Close modal" : "Đóng modal"}
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label={isEn ? t("clubDirectoryModal.closeBtn", language) : "Đóng"}
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Directory List Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-3.5 flex-1">
+        {/* Club List */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
           {displayedGroups.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 text-sm">
-              {isSyncing ? (
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                  <p>{isEn ? "Loading savings clubs from Arc Testnet..." : "Đang tải danh sách nhóm từ Arc Testnet..."}</p>
-                </div>
-              ) : (
-                <p>{isEn ? t("clubDirectoryModal.emptyList", language) : "Chưa có nhóm nào trong danh sách."}</p>
-              )}
+            <div className="text-center py-12 text-slate-400 text-xs sm:text-sm">
+              {isEn ? t("clubDirectoryModal.noClubs", language) : "Chưa có nhóm nào trong danh sách."}
             </div>
           ) : (
-            displayedGroups.map((group, index) => {
-              const isCurrent =
-                group.address.toLowerCase() === currentAddress.toLowerCase();
+            displayedGroups.map((group, groupIndex) => {
+              const isCurrent = group.address.toLowerCase() === currentAddress.toLowerCase();
+              const baseIdx = groupIndex * 6;
               const rawState =
-                stateData?.[index * 2]?.status === "success"
-                  ? (stateData[index * 2].result as number)
+                stateData?.[baseIdx]?.status === "success"
+                  ? (stateData[baseIdx].result as number)
                   : undefined;
-              const hasMember0 =
-                !group.isDefault &&
-                stateData?.[index * 2 + 1]?.status === "success" &&
-                Boolean(stateData[index * 2 + 1].result);
+              const isBonded = group.version === "v2-bonded";
+              const memberCount = isBonded
+                ? (stateData?.[baseIdx + 1]?.status === "success" ? BigInt(stateData[baseIdx + 1].result as any) : 0n)
+                : (stateData?.[baseIdx + 1]?.status === "success" && stateData[baseIdx + 1].result ? 1n : 0n);
+              const maxMembers =
+                stateData?.[baseIdx + 2]?.status === "success"
+                  ? BigInt(stateData[baseIdx + 2].result as any)
+                  : 0n;
+              const contributionAmount =
+                stateData?.[baseIdx + 3]?.status === "success"
+                  ? BigInt(stateData[baseIdx + 3].result as any)
+                  : 0n;
+              const roundDuration =
+                stateData?.[baseIdx + 4]?.status === "success"
+                  ? Number(stateData[baseIdx + 4].result as any)
+                  : 0;
+              const owner =
+                stateData?.[baseIdx + 5]?.status === "success"
+                  ? String(stateData[baseIdx + 5].result)
+                  : undefined;
+              const hasMember0 = memberCount > 0n;
               const isActive =
                 rawState === GROUP_STATE.ACTIVE ||
                 (rawState === GROUP_STATE.OPEN && hasMember0);
@@ -463,10 +528,10 @@ export function ClubDirectoryModal({
               return (
                 <div
                   key={group.address}
-                  className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                  className={`p-4 rounded-2xl border transition-all ${
                     isCurrent
-                      ? "bg-amber-950/20 border-amber-500/40 shadow-lg ring-1 ring-amber-500/20"
-                      : "bg-black/40 border-slate-800 hover:bg-black/60 hover:border-amber-500/30"
+                      ? "border-amber-500/50 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent shadow-md shadow-amber-500/5"
+                      : "border-slate-800 bg-[#0c0d14]/70 hover:border-amber-500/30 hover:bg-[#0c0d14]"
                   }`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -488,19 +553,19 @@ export function ClubDirectoryModal({
                           <Pencil size={14} />
                         </button>
 
-                        {/* On-chain Status Badge */}
+                        {/* On-chain Status Badge with Real Member Count */}
                         {rawState === GROUP_STATE.OPEN && (
                           <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-950/40 text-emerald-300 border border-emerald-500/30">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            {hasMember0
-                              ? (isEn ? "Open" : "Mở tham gia")
+                            {memberCount > 0n
+                              ? (isEn ? `Open (${memberCount}${maxMembers > 0n ? `/${maxMembers}` : ""} members)` : `Mở tham gia (${memberCount}${maxMembers > 0n ? `/${maxMembers}` : ""} tv)`)
                               : (isEn ? "Open (0 members)" : "Mở tham gia (0 tv)")}
                           </span>
                         )}
                         {rawState === GROUP_STATE.ACTIVE && (
                           <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-950/40 text-amber-300 border border-amber-500/30">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                            {isEn ? "Active" : "Đang chạy"}
+                            {isEn ? `Active (${memberCount} members)` : `Đang chạy (${memberCount} tv)`}
                           </span>
                         )}
                         {rawState === GROUP_STATE.COMPLETED && (
@@ -542,6 +607,7 @@ export function ClubDirectoryModal({
                         )}
                       </div>
 
+                      {/* Address and Explorer */}
                       <div className="flex items-center gap-2 text-xs sm:text-sm">
                         <span className="font-mono text-amber-300 bg-black/60 px-2.5 py-1 rounded-lg border border-amber-500/20 font-semibold">
                           {formatAddress(group.address)}
@@ -560,7 +626,7 @@ export function ClubDirectoryModal({
                         </button>
 
                         <a
-                          href={`https://explorer.testnet.arc.io/address/${group.address}`}
+                          href={buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, group.address)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-slate-400 hover:text-amber-300 transition-colors p-1.5"
@@ -569,6 +635,30 @@ export function ClubDirectoryModal({
                           <ExternalLink size={14} />
                         </a>
                       </div>
+
+                      {/* Distinct specs row to disambiguate clubs with identical names */}
+                      {(owner || contributionAmount > 0n || roundDuration > 0) && (
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 pt-1.5 border-t border-slate-800/60 mt-1.5">
+                          {owner && (
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-slate-500 font-medium">{isEn ? "Owner:" : "Chủ nhóm:"}</span>
+                              <span className="font-mono text-slate-300">{formatAddress(owner)}</span>
+                            </span>
+                          )}
+                          {contributionAmount > 0n && (
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-slate-500 font-medium">{isEn ? "Contrib:" : "Mức góp:"}</span>
+                              <span className="text-amber-300 font-semibold">{formatUsdc(contributionAmount)} USDC</span>
+                            </span>
+                          )}
+                          {roundDuration > 0 && (
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-slate-500 font-medium">{isEn ? "Round:" : "Vòng:"}</span>
+                              <span className="text-slate-300 font-medium">{formatRoundDuration(roundDuration, isEn)}</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="shrink-0 flex items-center gap-2">
@@ -586,7 +676,7 @@ export function ClubDirectoryModal({
                         </button>
                       )}
 
-                      {/* Icon xóa cho từng club (cancle, hết hạn, hoặc không chơi nữa) */}
+                      {/* Icon xóa / ẩn cho từng club */}
                       {isActive ? (
                         <button
                           type="button"
@@ -647,48 +737,54 @@ export function ClubDirectoryModal({
             onClick={handleCreateNew}
             className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm transition-all active:scale-95 shadow-md shadow-amber-500/20 cursor-pointer"
             title="Tạo nhóm Hụi mới"
+            aria-label="+ Tạo nhóm mới"
           >
             <Plus size={15} />
             <span>{isEn ? t("clubDirectoryModal.createShortcutBtn", language) : "Tạo nhóm mới"}</span>
-            <span className="hidden">+ Tạo nhóm mới</span>
+            {/* + Tạo nhóm mới */}
           </button>
         </div>
       </div>
 
-      {/* Popup Xác Nhận Xóa Nhóm (Confirmation Modal) */}
+      {/* Confirmation Modal khi Ẩn / Xóa Nhóm */}
       {confirmingClub && (
         <div
-          className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-150"
-          style={{ zIndex: 100 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            setConfirmingClub(null);
-          }}
           role="dialog"
           aria-modal="true"
+          aria-labelledby="confirm-delete-title"
+          className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-150"
+          style={{ zIndex: 100 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmingClub(null);
+          }}
         >
           <div
-            className="bg-[#10111a] rounded-2xl border border-red-500/30 shadow-2xl max-w-md w-full p-5 sm:p-6 text-slate-100 animate-in zoom-in-95 duration-150 relative space-y-4"
-            onClick={(e) => e.stopPropagation()}
             role="alertdialog"
             aria-labelledby="confirm-delete-title"
+            className="w-full max-w-md rounded-2xl border border-red-500/40 bg-[#12131c] p-5 sm:p-6 text-white shadow-2xl shadow-red-950/40 space-y-4 animate-in zoom-in-95 duration-150"
           >
-            <div className="flex items-start gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center shrink-0">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-950/60 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0">
                 <AlertTriangle size={22} />
               </div>
               <div className="space-y-1.5 flex-1 min-w-0">
                 <h3 id="confirm-delete-title" className="text-base sm:text-lg font-bold text-white tracking-tight">
-                  {isEn ? t("clubDirectoryModal.confirmDeleteTitle", language) : "Xác nhận xóa nhóm"}
+                  {confirmingClub.version === "v2-bonded"
+                    ? (isEn ? "Hide from My List?" : "Ẩn khỏi danh sách của tôi?")
+                    : (isEn ? t("clubDirectoryModal.confirmDeleteTitle", language) : "Xác nhận xóa nhóm")}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  {isEn
-                    ? t("clubDirectoryModal.confirmDeleteDesc", language)
-                        .replace("{name}", confirmingClub.name)
-                        .replace("{address}", formatAddress(confirmingClub.address))
-                    : t("clubDirectoryModal.confirmDeleteDesc", "vi")
-                        .replace("{name}", confirmingClub.name)
-                        .replace("{address}", formatAddress(confirmingClub.address))}
+                  {confirmingClub.version === "v2-bonded"
+                    ? (isEn
+                        ? `Are you sure you want to hide "${confirmingClub.name}" (${formatAddress(confirmingClub.address)}) from your list? It will be hidden from this browser and can be opened again anytime via contract address.`
+                        : `Bạn có chắc muốn ẩn nhóm "${confirmingClub.name}" (${formatAddress(confirmingClub.address)}) khỏi danh sách của mình không? Nhóm sẽ được ẩn khỏi trình duyệt này và bạn có thể mở lại bất cứ lúc nào qua địa chỉ hợp đồng.`)
+                    : (isEn
+                        ? t("clubDirectoryModal.confirmDeleteDesc", language)
+                            .replace("{name}", confirmingClub.name)
+                            .replace("{address}", formatAddress(confirmingClub.address))
+                        : t("clubDirectoryModal.confirmDeleteDesc", "vi")
+                            .replace("{name}", confirmingClub.name)
+                            .replace("{address}", formatAddress(confirmingClub.address)))}
                 </p>
               </div>
             </div>
@@ -720,7 +816,11 @@ export function ClubDirectoryModal({
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-red-950/50 transition-all active:scale-95 cursor-pointer"
               >
                 <Trash2 size={15} />
-                <span>{isEn ? t("clubDirectoryModal.confirmDeleteBtn", language) : "Xác nhận xóa"}</span>
+                <span>
+                  {confirmingClub.version === "v2-bonded"
+                    ? (isEn ? "Hide from list" : "Ẩn khỏi danh sách")
+                    : (isEn ? t("clubDirectoryModal.confirmDeleteBtn", language) : "Xác nhận xóa")}
+                </span>
               </button>
             </div>
           </div>

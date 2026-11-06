@@ -1,5 +1,6 @@
 import { useState, useId } from "react";
-import { useAccount, useWriteContract, usePublicClient, useSwitchChain } from "wagmi";
+import { useAccount, usePublicClient } from "wagmi";
+import { useArcWriteContract } from "../../hooks/useArcWriteContract";
 import { useModal } from "connectkit";
 import { toast } from "sonner";
 import { parseEventLogs } from "viem";
@@ -28,12 +29,16 @@ import { buildAddressExplorerUrl } from "../../onchain-facts";
 import {
   ARC_TESTNET_BONDED_FACTORY,
   registerRuntimeBondedClub,
+  DEFAULT_SAFETY_RATIO_BPS,
+  DEFAULT_LIQUIDATION_RATIO_BPS,
+  DEFAULT_INTEREST_RATE_BPS,
 } from "@/config/bonded-tontine";
 import {
   BONDED_TONTINE_FACTORY_ABI,
   DEFAULT_BONDED_PARAMS,
   validateBondedClubParams,
   calculateAnnualizedAprPct,
+  parseBondedTontineError,
 } from "../../lib/bondedTontine";
 import { saveKnownGroup } from "../../lib/savingsClubDirectory";
 import { Language, t } from "../../lib/i18n";
@@ -62,8 +67,7 @@ export function CreateBondedClubModal({
 }: CreateBondedClubModalProps) {
   const { isConnected, chainId, address: userAddress } = useAccount();
   const { setOpen: openConnectModal } = useModal();
-  const { switchChainAsync } = useSwitchChain();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useArcWriteContract(undefined, { disableAutoToast: true });
   const publicClient = usePublicClient();
   const isEn = language === "en";
 
@@ -72,13 +76,14 @@ export function CreateBondedClubModal({
   const [maxMembers, setMaxMembers] = useState(5);
   const [roundDuration, setRoundDuration] = useState(86400);
 
-  // Advanced configurations (with audited defaults)
+  // Advanced configurations (recommended defaults: 200% safety ratio)
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [rateBps, setRateBps] = useState(50); // 0.5% per round
-  const [safetyBps, setSafetyBps] = useState(15000); // 150%
-  const [liquidationBps, setLiquidationBps] = useState(12000); // 120%
+  const [rateBps, setRateBps] = useState(DEFAULT_INTEREST_RATE_BPS); // 0.5% per round
+  const [safetyBps, setSafetyBps] = useState(DEFAULT_SAFETY_RATIO_BPS); // 200%
+  const [liquidationBps, setLiquidationBps] = useState(DEFAULT_LIQUIDATION_RATIO_BPS); // 120%
   const [interestGraceSec, setInterestGraceSec] = useState(86400);
   const [settlementGraceSec, setSettlementGraceSec] = useState(86400);
+  const [hasConfirmedCollateralSeizure, setHasConfirmedCollateralSeizure] = useState(false);
 
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployStep, setDeployStep] = useState<string>("");
@@ -98,22 +103,20 @@ export function CreateBondedClubModal({
 
   const handleDeploy = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!isNameValid || !isAmountValid || !isMembersValid || !isDurationValid || isDeploying) {
+    if (!isNameValid || !isAmountValid || !isMembersValid || !isDurationValid || !hasConfirmedCollateralSeizure || isDeploying) {
+      if (!hasConfirmedCollateralSeizure) {
+        toast.error(
+          isEn
+            ? "Please confirm you understand 100% of CirBTC collateral is seized upon default"
+            : "Vui lòng xác nhận bạn hiểu 100% tiền cọc CirBTC sẽ bị tịch thu nếu vỡ nợ"
+        );
+      }
       return;
     }
 
     if (!isConnected) {
       openConnectModal?.(true);
       return;
-    }
-
-    if (chainId !== ARC_TESTNET_CHAIN_ID && switchChainAsync) {
-      try {
-        await switchChainAsync({ chainId: ARC_TESTNET_CHAIN_ID });
-      } catch {
-        toast.error(isEn ? "Please switch to Arc Testnet" : "Vui lòng chuyển sang mạng Arc Testnet");
-        return;
-      }
     }
 
     const params = {
@@ -209,11 +212,7 @@ export function CreateBondedClubModal({
       onClose();
     } catch (err: any) {
       console.error("Bonded club creation failed:", err);
-      toast.error(
-        err?.shortMessage ||
-          err?.message ||
-          (isEn ? "Failed to create club" : "Không thể tạo nhóm, vui lòng thử lại")
-      );
+      toast.error(parseBondedTontineError(err, language));
     } finally {
       setIsDeploying(false);
       setDeployStep("");
@@ -477,7 +476,7 @@ export function CreateBondedClubModal({
           {/* Summary Box */}
           <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-yellow-500/10 border border-amber-500/30 space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">{isEn ? "Total Pot each Round:" : "Quỹ Pot mỗi vòng:"}</span>
+              <span className="text-slate-400">{isEn ? "Total Contributions per Round:" : "Vốn huy động mỗi vòng:"}</span>
               <span className="text-base font-extrabold text-amber-300">
                 {isAmountValid && isMembersValid ? `${formatUsdc(totalPot)} USDC` : "--"}
               </span>
@@ -499,6 +498,36 @@ export function CreateBondedClubModal({
             </div>
           </div>
 
+          {/* Mandatory Collateral Seizure Confirmation Checkbox */}
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-3.5">
+            <label className="flex items-start gap-2.5 cursor-pointer text-xs select-none">
+              <input
+                type="checkbox"
+                checked={hasConfirmedCollateralSeizure}
+                onChange={(e) => setHasConfirmedCollateralSeizure(e.target.checked)}
+                disabled={isDeploying}
+                className="mt-0.5 h-4 w-4 rounded border-amber-500/40 text-amber-500 focus:ring-amber-400 focus:ring-offset-0 bg-black/60 cursor-pointer shrink-0"
+              />
+              <span className="text-slate-300 leading-relaxed">
+                {isEn ? (
+                  <>
+                    I have reviewed the grace periods (Interest grace:{" "}
+                    <span className="text-amber-300 font-semibold">{Math.round(interestGraceSec / 3600)}h</span>, Settlement grace:{" "}
+                    <span className="text-amber-300 font-semibold">{Math.round(settlementGraceSec / 3600)}h</span>) and understand{" "}
+                    <strong className="text-amber-300 font-bold">100% of CirBTC collateral is seized upon default</strong> if interest or settlement is overdue.
+                  </>
+                ) : (
+                  <>
+                    Tôi đã xem xét thời gian ân hạn (Ân hạn trả lãi:{" "}
+                    <span className="text-amber-300 font-semibold">{Math.round(interestGraceSec / 3600)} giờ</span>, Ân hạn tất toán:{" "}
+                    <span className="text-amber-300 font-semibold">{Math.round(settlementGraceSec / 3600)} giờ</span>) và hiểu rằng{" "}
+                    <strong className="text-amber-300 font-bold">100% tiền cọc CirBTC sẽ bị tịch thu nếu vỡ nợ</strong> khi quá hạn trả lãi hoặc tất toán.
+                  </>
+                )}
+              </span>
+            </label>
+          </div>
+
           {/* Deploy status banner if in progress */}
           {isDeploying && (
             <div className="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-500/40 flex items-center gap-3 text-xs text-blue-200">
@@ -516,7 +545,7 @@ export function CreateBondedClubModal({
           <div className="pt-2">
             <button
               type="submit"
-              disabled={!isNameValid || !isAmountValid || !isMembersValid || !isDurationValid || isDeploying}
+              disabled={!isNameValid || !isAmountValid || !isMembersValid || !isDurationValid || !hasConfirmedCollateralSeizure || isDeploying}
               className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
             >
               {isDeploying ? (

@@ -169,21 +169,6 @@ export function BondedClubWorkspace({
   const [removeMemberInput, setRemoveMemberInput] = useState("");
   const [mockBtcPriceInput, setMockBtcPriceInput] = useState("60000");
 
-  // Create new BondedTontine club via Factory (T6.1 & U5)
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newName, setNewName] = useState("Saigon Bonded Club");
-  const [newContribUsdc, setNewContribUsdc] = useState("10");
-  const [newMaxMembers, setNewMaxMembers] = useState("4");
-  const [newRoundDurationSec, setNewRoundDurationSec] = useState("120");
-  const [newRateBps, setNewRateBps] = useState("200");
-  const [newSafetyBps, setNewSafetyBps] = useState("20000");
-  const [newLiquidationBps, setNewLiquidationBps] = useState("12000");
-  const [newInterestGraceSec, setNewInterestGraceSec] = useState("120");
-  const [newSettlementGraceSec, setNewSettlementGraceSec] = useState("3600");
-  const [expectedCollateralInput, setExpectedCollateralInput] = useState("0.05");
-  const [createConfirmed, setCreateConfirmed] = useState(false);
-  const [showAdvancedCreate, setShowAdvancedCreate] = useState(false);
-
   const isVi = language === "vi";
   const isOwner =
     Boolean(userAddress) &&
@@ -551,106 +536,6 @@ export function BondedClubWorkspace({
       }
     );
 
-  // Create BondedTontine club via Factory (T6.1 & T6.10 & U5)
-  const handleCreateBondedClub = async () => {
-    if (isActionPending) return;
-    const factoryAddr = CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
-    if (!factoryAddr) {
-      toast.error(isVi ? "Chưa cấu hình Factory trên mạng này" : "Factory not configured on this chain");
-      return;
-    }
-    if (!createConfirmed) {
-      toast.error(
-        isVi
-          ? "Vui lòng tích xác nhận đã hiểu quy tắc ân hạn và tịch thu cọc trước khi tạo nhóm"
-          : "Please confirm you understand the grace periods and collateral seizure rules before creating"
-      );
-      return;
-    }
-    setIsActionPending(true);
-    try {
-      const contributionAmount = parseUsdc(newContribUsdc);
-      const params = {
-        groupName: newName.trim() || DEFAULT_BONDED_PARAMS.groupName,
-        contributionAmount,
-        maxMembers: Number(newMaxMembers),
-        roundDuration: Number(newRoundDurationSec),
-        rateBpsPerRound: Number(newRateBps),
-        safetyBps: Number(newSafetyBps),
-        liquidationBps: Number(newLiquidationBps),
-        interestGrace: Number(newInterestGraceSec),
-        settlementGrace: Number(newSettlementGraceSec),
-      };
-      const check = validateBondedClubParams(params);
-      if (!check.valid) {
-        toast.error(check.reason ?? "Invalid parameters");
-        return;
-      }
-
-      const hash = await writeContractAsync({
-        address: factoryAddr,
-        abi: BONDED_TONTINE_FACTORY_ABI,
-        functionName: "createClub",
-        args: [
-          params.groupName,
-          params.contributionAmount,
-          BigInt(params.maxMembers),
-          BigInt(params.roundDuration),
-          BigInt(params.rateBpsPerRound),
-          BigInt(params.safetyBps),
-          BigInt(params.liquidationBps),
-          BigInt(params.interestGrace),
-          BigInt(params.settlementGrace),
-        ],
-      });
-      setTxHash(hash);
-      toast.success(
-        isVi
-          ? "Đã gửi giao dịch tạo nhóm BondedTontine qua Factory!"
-          : "Submitted BondedTontine creation via Factory!"
-      );
-      setShowCreateForm(false);
-
-      // R6: wait for the receipt, read ClubCreated, register the new club and switch to it.
-      if (!publicClient) return;
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      if (receipt.status !== "success") {
-        throw new Error("Create club transaction reverted");
-      }
-      const created = parseEventLogs({
-        abi: BONDED_TONTINE_FACTORY_ABI,
-        eventName: "ClubCreated",
-        logs: receipt.logs,
-      }).find((log) => log.address.toLowerCase() === factoryAddr.toLowerCase());
-      const newClubAddress = (created as unknown as { args?: { club?: `0x${string}` } } | undefined)?.args?.club;
-      if (!newClubAddress) {
-        toast.error(
-          isVi
-            ? "Đã tạo nhóm nhưng không đọc được địa chỉ nhóm mới từ sự kiện ClubCreated"
-            : "Club created but the new club address could not be read from ClubCreated"
-        );
-        return;
-      }
-      registerRuntimeBondedClub(newClubAddress);
-      saveKnownGroup({
-        address: newClubAddress,
-        name: params.groupName,
-        creator: userAddress?.toLowerCase(),
-        version: "v2-bonded",
-      });
-      toast.success(
-        isVi
-          ? `Nhóm mới đã sẵn sàng: ${params.groupName}`
-          : `New club ready: ${params.groupName}`
-      );
-      onSelectGroup?.(newClubAddress);
-    } catch (err) {
-      toast.error(parseBondedTontineError(err, language));
-    } finally {
-      setIsActionPending(false);
-    }
-  };
-
   const aprPct = calculateAnnualizedAprPct(
     Number(club.rateBpsPerRound),
     Number(club.roundDuration)
@@ -663,18 +548,6 @@ export function BondedClubWorkspace({
       ? club.priceFeed
       : ARC_TESTNET_MOCK_FEED;
   const feedExplorerUrl = buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, activeFeedAddress);
-
-  // U5: Estimate borrow limit for the create form's expected collateral
-  let estimatedNewBorrowLimitUsdc: bigint | null = null;
-  try {
-    const expSats = parseUnitsExact(expectedCollateralInput || "0", 8);
-    const priceRaw = club.oraclePriceRaw > 0n ? club.oraclePriceRaw : 60_000_00000000n;
-    const safety = BigInt(Math.max(15000, Number(newSafetyBps) || 20000));
-    const colValUsdc = (expSats * priceRaw) / 10_000_000_000n;
-    estimatedNewBorrowLimitUsdc = (colValUsdc * 10_000n) / safety;
-  } catch {
-    estimatedNewBorrowLimitUsdc = null;
-  }
 
   const canFinalize =
     club.state === BONDED_STATE.ACTIVE &&
@@ -697,7 +570,9 @@ export function BondedClubWorkspace({
     nowSec >= club.nextInterestDeadline;
 
   const contributeBlockedByVerification = !club.isVerifiedClub && !unverifiedConfirmed;
-  const staleBlocksPriceAction = club.oracleError;
+  const isOracleRelevant =
+    club.state === BONDED_STATE.OPEN || club.state === BONDED_STATE.ACTIVE;
+  const staleBlocksPriceAction = isOracleRelevant && club.oracleError;
 
   // U3.3: Short reasons for disabled Keeper actions
   const finalizeDisabledReason = canFinalize
@@ -869,13 +744,7 @@ export function BondedClubWorkspace({
           </button>
           <button
             type="button"
-            onClick={() => {
-              if (onOpenCreateModal) {
-                onOpenCreateModal();
-              } else {
-                setShowCreateForm((v) => !v);
-              }
-            }}
+            onClick={() => onOpenCreateModal?.()}
             className="rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 text-slate-950 font-bold px-4 py-2 text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer"
           >
             {isVi ? "+ Tạo nhóm Bonded V2" : "+ Create Bonded V2 Club"}
@@ -934,305 +803,6 @@ export function BondedClubWorkspace({
         </div>
       )}
 
-      {/* Create BondedTontine Club Modal/Section (Streamlined & User-Friendly) */}
-      {showCreateForm && (
-        <div className="space-y-5 rounded-3xl border border-amber-500/40 bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] p-6 sm:p-7 shadow-2xl animate-in fade-in duration-200">
-          <div className="flex items-center justify-between border-b border-amber-500/20 pb-4">
-            <h3 className="text-base sm:text-lg font-bold text-amber-300 flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-amber-400" />
-              {isVi
-                ? "Tạo nhóm BondedTontine V2 mới"
-                : "Create New BondedTontine V2 Club"}
-            </h3>
-            <button
-              type="button"
-              onClick={() => setShowCreateForm(false)}
-              className="text-slate-400 hover:text-white text-xs px-2.5 py-1 rounded-lg border border-slate-800 hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              ✕ {isVi ? "Đóng" : "Close"}
-            </button>
-          </div>
-
-          {/* Section 1: Thông tin cơ bản (Basic Info - 3 fields) */}
-          <div>
-            <div className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2.5">
-              1. {isVi ? "Thông tin cơ bản" : "Basic Information"}
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <label className="text-xs">
-                <span className="text-slate-300 font-medium">{isVi ? "Tên nhóm" : "Group Name"}</span>
-                <input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Saigon Bonded Club"
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2.5 text-xs text-white focus:border-amber-500 focus:outline-none"
-                />
-              </label>
-              <label className="text-xs">
-                <span className="text-slate-300 font-medium">
-                  {isVi ? "Mức góp / vòng (USDC)" : "Contribution / round (USDC)"}
-                </span>
-                <input
-                  type="number"
-                  value={newContribUsdc}
-                  onChange={(e) => setNewContribUsdc(e.target.value)}
-                  placeholder="10"
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2.5 text-xs text-white focus:border-amber-500 focus:outline-none"
-                />
-              </label>
-              <label className="text-xs">
-                <span className="text-slate-300 font-medium">
-                  {isVi ? "Số thành viên (2..20)" : "Max Members (2..20)"}
-                </span>
-                <input
-                  type="number"
-                  min="2"
-                  max="20"
-                  value={newMaxMembers}
-                  onChange={(e) => setNewMaxMembers(e.target.value)}
-                  placeholder="4"
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2.5 text-xs text-white focus:border-amber-500 focus:outline-none"
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Section 2: Chu kỳ vòng & Lãi suất (Friendly Presets) */}
-          <div className="space-y-3 pt-1 border-t border-slate-800/80">
-            <div className="text-xs font-semibold text-amber-400 uppercase tracking-wider">
-              2. {isVi ? "Chu kỳ & Lãi suất mỗi vòng" : "Round Duration & Interest Rate"}
-            </div>
-
-            {/* Presets Thời lượng vòng */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-300 font-medium">
-                  {isVi ? "Chọn thời lượng một vòng:" : "Select round duration:"}
-                </span>
-                <span className="text-amber-300 font-semibold">
-                  {isVi ? "Chu kỳ:" : "Duration:"} {formatFriendlyDuration(Number(newRoundDurationSec) || 0, isVi)} / {isVi ? "vòng" : "round"}
-                  {Number(newMaxMembers) > 0 && (
-                    <span className="text-slate-400 font-normal">
-                      {" • "}
-                      {isVi ? "Tổng cả chu kỳ:" : "Total cycle:"}{" "}
-                      {formatFriendlyDuration((Number(newRoundDurationSec) || 0) * (Number(newMaxMembers) || 1), isVi)}
-                    </span>
-                  )}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {DURATION_PRESETS.map((preset) => {
-                  const isSelected = Number(newRoundDurationSec) === preset.sec;
-                  return (
-                    <button
-                      key={preset.sec}
-                      type="button"
-                      onClick={() => {
-                        setNewRoundDurationSec(preset.sec.toString());
-                        setNewInterestGraceSec(preset.interestGrace.toString());
-                        setNewSettlementGraceSec(preset.settleGrace.toString());
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        isSelected
-                          ? "bg-amber-950/70 border-amber-500 text-amber-300 shadow-md ring-1 ring-amber-500"
-                          : "bg-black/50 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-900"
-                      }`}
-                    >
-                      <div className="text-xs font-bold">{isVi ? preset.labelVi : preset.labelEn}</div>
-                      <div className="text-xs text-slate-400 mt-0.5 font-mono">
-                        {preset.sec.toLocaleString()}s
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Lãi suất mỗi vòng */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-300 font-medium">
-                    {isVi ? "Lãi suất cố định mỗi vòng (%):" : "Fixed rate per round (%):"}
-                  </span>
-                  <span className="text-amber-300 font-semibold font-mono">
-                    {(Number(newRateBps) / 100).toFixed(2)}% ({newRateBps} bps)
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {RATE_PRESETS.map((preset) => {
-                    const isSelected = newRateBps === preset.bps;
-                    return (
-                      <button
-                        key={preset.bps}
-                        type="button"
-                        onClick={() => setNewRateBps(preset.bps)}
-                        className={`flex-1 py-1.5 rounded-xl border text-center text-xs font-bold transition-all cursor-pointer ${
-                          isSelected
-                            ? "bg-amber-950/70 border-amber-500 text-amber-300 shadow-xs ring-1 ring-amber-500"
-                            : "bg-black/50 border-slate-800 text-slate-300 hover:bg-slate-900"
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Cọc CirBTC dự kiến */}
-              <label className="text-xs space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-300 font-medium">
-                    {isVi ? "Cọc CirBTC dự kiến nạp:" : "Expected CirBTC Collateral:"}
-                  </span>
-                  {estimatedNewBorrowLimitUsdc !== null && (
-                    <span className="text-emerald-300 font-semibold">
-                      {isVi ? "Hạn mức:" : "Limit:"} {displayUsdc(estimatedNewBorrowLimitUsdc)} USDC
-                    </span>
-                  )}
-                </div>
-                <input
-                  value={expectedCollateralInput}
-                  onChange={(e) => setExpectedCollateralInput(e.target.value)}
-                  placeholder="0.05"
-                  className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none"
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Section 3: Tùy chọn nâng cao (Collapsed Accordion) */}
-          <div className="pt-2 border-t border-slate-800/80">
-            <button
-              type="button"
-              onClick={() => setShowAdvancedCreate((prev) => !prev)}
-              className="flex items-center gap-2 text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors py-1 cursor-pointer"
-            >
-              <Settings2 size={14} />
-              <span>
-                {isVi
-                  ? "Cài đặt nâng cao (Hệ số an toàn, Ân hạn trả lãi/tất toán...)"
-                  : "Advanced Settings (Safety ratio, Grace periods...)"}
-              </span>
-              {showAdvancedCreate ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-
-            {showAdvancedCreate && (
-              <div className="mt-3 p-4 rounded-2xl bg-black/50 border border-slate-800 space-y-3 animate-in fade-in duration-150">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <label className="text-xs">
-                    <span className="text-slate-300">{isVi ? "Thời lượng vòng (giây thô, >=60)" : "Round Duration (raw sec)"}</span>
-                    <input
-                      value={newRoundDurationSec}
-                      onChange={(e) => setNewRoundDurationSec(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white"
-                    />
-                  </label>
-                  <label className="text-xs">
-                    <span className="text-slate-300">{isVi ? "Hệ số an toàn / Thanh lý (bps)" : "Safety / Liquidation (bps)"}</span>
-                    <div className="mt-1 flex gap-2">
-                      <input
-                        value={newSafetyBps}
-                        onChange={(e) => setNewSafetyBps(e.target.value)}
-                        placeholder="20000"
-                        title="Safety BPS (20000 = 200%)"
-                        className="w-1/2 rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white"
-                      />
-                      <input
-                        value={newLiquidationBps}
-                        onChange={(e) => setNewLiquidationBps(e.target.value)}
-                        placeholder="12000"
-                        title="Liquidation BPS (12000 = 120%)"
-                        className="w-1/2 rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white"
-                      />
-                    </div>
-                  </label>
-                  <label className="text-xs">
-                    <span className="text-slate-300">{isVi ? "Ân hạn trả lãi (giây, 0..604800)" : "Interest Grace (sec)"}</span>
-                    <input
-                      value={newInterestGraceSec}
-                      onChange={(e) => setNewInterestGraceSec(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white"
-                    />
-                  </label>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label className="text-xs">
-                    <span className="text-slate-300">{isVi ? "Ân hạn tất toán (giây, >=3600)" : "Settlement Grace (sec)"}</span>
-                    <input
-                      value={newSettlementGraceSec}
-                      onChange={(e) => setNewSettlementGraceSec(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white"
-                    />
-                  </label>
-                  <label className="text-xs">
-                    <span className="text-slate-300">{isVi ? "Lãi mỗi vòng (bps thô, 200 = 2%)" : "Rate per round (raw bps)"}</span>
-                    <input
-                      value={newRateBps}
-                      onChange={(e) => setNewRateBps(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white"
-                    />
-                  </label>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Section 4: Hộp xác nhận & Điều khoản an toàn (Disclosure) */}
-          <div className="space-y-2 rounded-2xl border border-amber-500/30 bg-black/60 p-4 text-xs text-slate-300">
-            <div className="font-semibold text-amber-300">
-              {isVi
-                ? `Ân hạn trả lãi: ${formatFriendlyDuration(Number(newInterestGraceSec) || 0, isVi)} • Ân hạn tất toán: ${formatFriendlyDuration(Number(newSettlementGraceSec) || 0, isVi)}. Quá hạn thì cọc CirBTC bị tịch thu toàn bộ để bảo vệ thành viên.`
-                : `Interest grace: ${formatFriendlyDuration(Number(newInterestGraceSec) || 0, false)} • Settlement grace: ${formatFriendlyDuration(Number(newSettlementGraceSec) || 0, false)}. If overdue or undercollateralized, 100% of CirBTC collateral is seized.`}
-            </div>
-            <div className="text-xs text-slate-400">
-              {isVi ? "Nguồn giá Factory:" : "Factory Price Feed:"}{" "}
-              <a
-                href={feedExplorerUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="font-mono text-amber-300 underline"
-              >
-                {activeFeedAddress}
-              </a>
-            </div>
-            <label className="mt-2 flex cursor-pointer items-center gap-2 text-slate-200">
-              <input
-                type="checkbox"
-                checked={createConfirmed}
-                onChange={(e) => setCreateConfirmed(e.target.checked)}
-                className="rounded border-amber-400 h-4 w-4 accent-amber-500"
-              />
-              <span className="font-medium text-xs">
-                {isVi
-                  ? "Tôi đã đọc rõ thời gian ân hạn và hiểu rằng toàn bộ cọc CirBTC sẽ bị tịch thu nếu vỡ nợ"
-                  : "I have reviewed the grace periods and understand 100% of CirBTC collateral is seized upon default"}
-              </span>
-            </label>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex justify-end gap-2.5 pt-1">
-            <button
-              type="button"
-              onClick={() => setShowCreateForm(false)}
-              className="rounded-xl border border-slate-700 px-4 py-2 text-xs text-slate-300 hover:bg-slate-800 transition-all cursor-pointer font-semibold"
-            >
-              {isVi ? "Đóng" : "Cancel"}
-            </button>
-            <button
-              type="button"
-              disabled={isPending || !createConfirmed}
-              onClick={() => void handleCreateBondedClub()}
-              className="rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 disabled:opacity-50 text-slate-950 font-bold px-5 py-2.5 text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer"
-            >
-              {isVi ? "Xác nhận tạo qua Factory" : "Create via Factory"}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Main 2-Column Grid (Grid 12 cols: 7/8 Left, 5/4 Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -1270,10 +840,10 @@ export function BondedClubWorkspace({
                     }
                   }}
                   className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 border border-red-500/40 text-xs font-semibold text-red-300 transition-colors cursor-pointer"
-                  title={isVi ? "Xóa nhóm đã kết thúc / vỡ nợ khỏi danh bạ" : "Remove finished/defaulted club from directory"}
+                  title={isVi ? "Ẩn nhóm khỏi danh sách của tôi" : "Hide club from my list"}
                 >
                   <Trash2 size={12} />
-                  <span>{isVi ? "Xóa nhóm lỗi / đã đóng" : "Remove club"}</span>
+                  <span>{isVi ? "Ẩn khỏi danh sách của tôi" : "Hide from my list"}</span>
                 </button>
               )}
 
@@ -1721,7 +1291,7 @@ export function BondedClubWorkspace({
                       {MOCK_ORACLE_WARNING_COPY[language]}
                     </span>
                   )}
-                  {club.oracleError && (
+                  {isOracleRelevant && club.oracleError && (
                     <span className="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs font-semibold text-red-300 border border-red-500/30">
                       {isVi ? "Giá oracle đã quá hạn, cần làm mới giá" : "Oracle price is stale; refresh price first"}
                     </span>

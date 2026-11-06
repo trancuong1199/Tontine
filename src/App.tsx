@@ -13,8 +13,9 @@ import { MemberStatus } from "./components/savings/MemberStatus";
 import { ActionPanel } from "./components/savings/ActionPanel";
 import { PasskeyActionPanel } from "./components/savings/PasskeyActionPanel";
 import { BondedClubWorkspace } from "./components/savings/BondedClubWorkspace";
+import { UnauthenticatedBondedClubPreview } from "./components/savings/UnauthenticatedBondedClubPreview";
 import { useIsBondedClub } from "./hooks/useIsBondedClub";
-import { ARC_TESTNET_DEFAULT_BONDED_CLUB } from "./config/bonded-tontine";
+import { ARC_TESTNET_DEFAULT_BONDED_CLUB, LEGACY_TEST_CLUB_ADDRESS } from "./config/bonded-tontine";
 import { GroupSwitcher } from "./components/savings/GroupSwitcher";
 import { RoundHistory } from "./components/savings/RoundHistory";
 import { ClubMembersRoster } from "./components/savings/ClubMembersRoster";
@@ -111,7 +112,7 @@ export default function App() {
       if (
         isValidAddress(group) &&
         !removed.has(group.toLowerCase()) &&
-        group.toLowerCase() !== "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b" &&
+        group.toLowerCase() !== LEGACY_TEST_CLUB_ADDRESS.toLowerCase() &&
         group.toLowerCase() !== ROTATING_SAVINGS_ADDRESS.toLowerCase()
       ) {
         return group.toLowerCase() as `0x${string}`;
@@ -128,7 +129,7 @@ export default function App() {
       const group = params.get("group");
       return Boolean(
         isValidAddress(group) &&
-        group.toLowerCase() !== "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b" &&
+        group.toLowerCase() !== LEGACY_TEST_CLUB_ADDRESS.toLowerCase() &&
         group.toLowerCase() !== ROTATING_SAVINGS_ADDRESS.toLowerCase()
       );
     }
@@ -239,7 +240,7 @@ export default function App() {
         if (activeTab === "home") {
           window.history.replaceState({}, "", window.location.pathname);
         }
-      } else if (group && group.toLowerCase() === "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b") {
+      } else if (group && group.toLowerCase() === LEGACY_TEST_CLUB_ADDRESS.toLowerCase()) {
         // Tự động thanh lọc địa chỉ test cũ để URL luôn gọn gàng và chuyển sang BondedTontine V2
         const cleanUrl = new URL(window.location.href);
         cleanUrl.searchParams.set("group", ARC_TESTNET_DEFAULT_BONDED_CLUB);
@@ -1284,30 +1285,12 @@ export default function App() {
           </div>
         ) : isBondedClub ? (
           !address ? (
-            <div className="bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] rounded-3xl p-8 sm:p-10 text-center border border-amber-500/30 shadow-xl max-w-2xl mx-auto my-6 space-y-5">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400 shadow-lg shadow-amber-500/10">
-                <Wallet size={30} />
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                  {isEn ? "Connect Wallet to Join BondedTontine V2" : "Kết nối ví để tham gia BondedTontine V2"}
-                </h2>
-                <p className="text-slate-300 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed">
-                  {isEn
-                    ? "Connect your wallet to join this BondedTontine V2 club, contribute USDC each round, or claim fixed interest."
-                    : "Kết nối ví của bạn để tham gia nhóm BondedTontine V2, góp USDC mỗi vòng và nhận lãi cố định."}
-                </p>
-              </div>
-              <div className="flex items-center justify-center pt-1">
-                <button
-                  type="button"
-                  onClick={() => openConnectModal?.(true)}
-                  className="px-7 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center gap-2"
-                >
-                  <Wallet size={18} />
-                  <span>{isEn ? "Connect Wallet to Join" : "Kết nối ví để tham gia ngay"}</span>
-                </button>
-              </div>
+            <div className="bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] rounded-3xl p-6 sm:p-8 border border-amber-500/30 shadow-xl max-w-3xl mx-auto my-6 space-y-5">
+              <UnauthenticatedBondedClubPreview
+                contractAddress={contractAddress}
+                displayedGroupName={displayedGroupName}
+                language={language}
+              />
             </div>
           ) : (
             <div className="my-6">

@@ -203,7 +203,7 @@ async function runDeploy() {
   );
 
   let priceFeedAddress = process.env.PRICE_FEED_ADDRESS;
-  const maxPriceAge = env === "testnet" ? 86_400 : 90_000;
+  const maxPriceAge = env === "testnet" ? 3600 : 90_000;
 
   if (env === "testnet" && !priceFeedAddress) {
     console.log(`[Deploy] Deploying MockAggregatorV3 (8 decimals, $60,000, "MOCK BTC / USD")...`);

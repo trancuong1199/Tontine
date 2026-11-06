@@ -24,6 +24,7 @@ import {
   DEFAULT_SAVINGS_CLUBS,
   formatAddress,
 } from "../../lib/savingsClubDirectory";
+import { ARC_TESTNET_DEFAULT_BONDED_CLUB } from "../../config/bonded-tontine";
 
 // Mathematical Bezier calculations for orbital arcs (Task-028: Absolute Parametric Center Lock)
 // Left Outer Arc: M -50,50 C 320,120 380,630 -50,700
@@ -701,6 +702,59 @@ export function LandingPage({
             <p className="text-sm sm:text-base text-slate-400 font-normal leading-relaxed">
               {t("landingPage.featuredSubtitle", language)}
             </p>
+          </div>
+
+          {/* Featured Bonded V2 Club (Primary) */}
+          <div className="max-w-4xl mx-auto mb-8">
+            <div className="rounded-3xl border border-amber-500/40 bg-gradient-to-br from-[#1a1b26] via-[#10121d] to-[#0a0b12] p-6 sm:p-8 shadow-2xl shadow-amber-500/10 hover:border-amber-400 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-3 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wide">
+                    <ShieldCheck size={14} className="text-amber-400" />
+                    BondedTontine V2
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-950/40 text-emerald-300 border border-emerald-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    {isEn ? "Open for Registration" : "Đang mở tham gia"}
+                  </span>
+                  <span className="text-xs font-mono text-amber-300/80 bg-black/60 px-2.5 py-0.5 rounded-md border border-amber-500/20">
+                    {formatAddress(ARC_TESTNET_DEFAULT_BONDED_CLUB)}
+                  </span>
+                </div>
+                <h3 className="text-2xl font-extrabold text-white">
+                  Saigon Bonded Club V2
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300">
+                  {isEn
+                    ? "Overcollateralized CirBTC savings club. Earn 2.0% fixed yield per round, protected by automated liquidation & 100% collateral seizure upon default."
+                    : "Mô hình hụi thế chấp tài sản CirBTC. Hưởng lãi cố định 2.0%/vòng từ chủ nhóm, bảo vệ bằng cơ chế thanh lý tự động và tịch thu 100% cọc nếu vỡ nợ."}
+                </p>
+                <div className="grid grid-cols-3 gap-2 py-2.5 px-3.5 bg-black/50 rounded-2xl border border-amber-500/20 text-center">
+                  <div>
+                    <div className="text-xs text-slate-400 uppercase">{isEn ? "Contribution" : "Mức góp"}</div>
+                    <div className="text-sm font-bold text-amber-300">10 USDC</div>
+                  </div>
+                  <div className="border-x border-slate-800">
+                    <div className="text-xs text-slate-400 uppercase">{isEn ? "Yield / Round" : "Lãi / vòng"}</div>
+                    <div className="text-sm font-bold text-emerald-400">2.00%</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-400 uppercase">{isEn ? "Capacity" : "Sức chứa"}</div>
+                    <div className="text-sm font-bold text-amber-300">4 {isEn ? "members" : "thành viên"}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="shrink-0 flex md:flex-col justify-end">
+                <button
+                  type="button"
+                  onClick={() => onSelectClub(ARC_TESTNET_DEFAULT_BONDED_CLUB)}
+                  className="w-full md:w-auto px-6 py-3.5 rounded-xl text-sm font-bold text-slate-950 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <span>{isEn ? "Enter Bonded V2 Club" : "Vào nhóm Bonded V2"}</span>
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
