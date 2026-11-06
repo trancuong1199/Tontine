@@ -14,6 +14,7 @@ import { ActionPanel } from "./components/savings/ActionPanel";
 import { PasskeyActionPanel } from "./components/savings/PasskeyActionPanel";
 import { BondedClubWorkspace } from "./components/savings/BondedClubWorkspace";
 import { useIsBondedClub } from "./hooks/useIsBondedClub";
+import { ARC_TESTNET_DEFAULT_BONDED_CLUB } from "./config/bonded-tontine";
 import { GroupSwitcher } from "./components/savings/GroupSwitcher";
 import { RoundHistory } from "./components/savings/RoundHistory";
 import { ClubMembersRoster } from "./components/savings/ClubMembersRoster";
@@ -50,7 +51,7 @@ import {
   parseContractError,
 } from "./contract";
 import { buildTxExplorerUrl, buildAddressExplorerUrl } from "@/onchain-facts";
-import { ExternalLink, RefreshCw, Info, Shield, Crown, Layers, Globe, Plus, BookOpen, PiggyBank, Users, Calendar, Zap, Wallet, ChevronDown, Check, Copy, LogOut } from "lucide-react";
+import { ExternalLink, RefreshCw, Info, Shield, Crown, Layers, Globe, Plus, BookOpen, PiggyBank, Users, Calendar, Zap, Wallet, ChevronDown, Check, Copy, LogOut, ShieldCheck } from "lucide-react";
 import { Language, getStoredLanguage, setStoredLanguage, t } from "./lib/i18n";
 
 export default function App() {
@@ -101,7 +102,7 @@ export default function App() {
   // Active address: passkey takes priority over wagmi
   const address = passkeyAddress ?? wagmiAddress;
 
-  // Dynamic contract address: initialized from ?group= URL query param or official default ROTATING_SAVINGS_ADDRESS
+  // Dynamic contract address: initialized from ?group= URL query param or official default BondedTontine V2 club
   const [contractAddress, setContractAddress] = useState<`0x${string}`>(() => {
     if (typeof window !== "undefined") {
       const removed = getRemovedGroups();
@@ -110,10 +111,13 @@ export default function App() {
       if (
         isValidAddress(group) &&
         !removed.has(group.toLowerCase()) &&
-        group.toLowerCase() !== "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b"
+        group.toLowerCase() !== "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b" &&
+        group.toLowerCase() !== "0xd59f34dd169dcd37bc54f68c4167cad93aff62ca" &&
+        group.toLowerCase() !== ROTATING_SAVINGS_ADDRESS.toLowerCase()
       ) {
         return group.toLowerCase() as `0x${string}`;
       }
+      return (ARC_TESTNET_DEFAULT_BONDED_CLUB ?? ROTATING_SAVINGS_ADDRESS) as `0x${string}`;
     }
     return ROTATING_SAVINGS_ADDRESS;
   });
@@ -125,7 +129,9 @@ export default function App() {
       const group = params.get("group");
       return Boolean(
         isValidAddress(group) &&
-        group.toLowerCase() !== "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b"
+        group.toLowerCase() !== "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b" &&
+        group.toLowerCase() !== "0xd59f34dd169dcd37bc54f68c4167cad93aff62ca" &&
+        group.toLowerCase() !== ROTATING_SAVINGS_ADDRESS.toLowerCase()
       );
     }
     return false;
@@ -235,14 +241,13 @@ export default function App() {
         if (activeTab === "home") {
           window.history.replaceState({}, "", window.location.pathname);
         }
-      } else if (group && group.toLowerCase() === "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b") {
-        // Tự động thanh lọc địa chỉ test cũ để URL luôn gọn gàng
+      } else if (group && (group.toLowerCase() === "0xe536ab0afa098cb6841781d7aa95f7b0fab7095b" || group.toLowerCase() === "0xd59f34dd169dcd37bc54f68c4167cad93aff62ca")) {
+        // Tự động thanh lọc địa chỉ test cũ để URL luôn gọn gàng và chuyển sang BondedTontine V2
         const cleanUrl = new URL(window.location.href);
-        cleanUrl.searchParams.delete("group");
-        cleanUrl.searchParams.set("tab", "app");
+        cleanUrl.searchParams.set("group", ARC_TESTNET_DEFAULT_BONDED_CLUB);
         window.history.replaceState({}, "", cleanUrl.toString());
-        setContractAddress(ROTATING_SAVINGS_ADDRESS);
-        setHasExplicitGroup(false);
+        setContractAddress(ARC_TESTNET_DEFAULT_BONDED_CLUB);
+        setHasExplicitGroup(true);
       } else if (activeTab === "app" && view) {
         // Dọn view param, chỉ giữ ?group=...
         const cleanUrl = new URL(window.location.href);
@@ -1304,6 +1309,30 @@ export default function App() {
           </div>
         ) : (
           <>
+          {/* Legacy V1 Deprecation & Upgrade Banner */}
+          <div className="bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-600/20 border border-amber-500/40 rounded-2xl p-4 text-xs text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 shadow-md">
+            <div className="flex items-center gap-2.5">
+              <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0" />
+              <div>
+                <div className="font-bold text-amber-300">
+                  {isEn ? "Viewing Legacy V1 Club (No Collateral)" : "Bạn đang xem Nhóm Hụi V1 Cũ (Không Thế Chấp)"}
+                </div>
+                <div className="text-slate-300 text-xs mt-0.5">
+                  {isEn
+                    ? "Dự án đã nâng cấp toàn diện sang BondedTontine V2 với thế chấp CirBTC, Oracle và Vay vốn."
+                    : "Hệ thống đã nâng cấp toàn diện sang phiên bản BondedTontine V2 với thế chấp CirBTC, Oracle và Vay vốn."}
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleSwitchGroup(ARC_TESTNET_DEFAULT_BONDED_CLUB)}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs shrink-0 transition-all cursor-pointer shadow-md"
+            >
+              {isEn ? "Upgrade to Bonded V2" : "Chuyển sang Bonded V2"}
+            </button>
+          </div>
+
         {/* Loading Spinner */}
         {isLoading && (
           <div className="bg-slate-900/90 rounded-3xl p-16 text-center border border-slate-800/80 shadow-xs max-w-lg mx-auto my-12">
