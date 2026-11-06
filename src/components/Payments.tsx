@@ -1,3 +1,4 @@
+import { ARC_EXPLORER, ARC_RPC, txUrl } from "../config/arc-constants.ts";
 import React, { useState } from 'react';
 import { Send, Zap, Fuel, ExternalLink, CheckCircle2, AlertCircle, QrCode, X, Plus, Trash2, Users, User } from 'lucide-react';
 import { BrowserProvider, parseUnits, Contract, isAddress, getAddress } from 'ethers';
@@ -32,7 +33,7 @@ const TOKEN_CONFIGS = {
 
 const getFriendlyErrorMessage = (err: any, token: string): string => {
   const errMsg = err.message || '';
-  
+
   if (errMsg.includes('4001') || errMsg.toLowerCase().includes('user rejected') || errMsg.toLowerCase().includes('user denied')) {
     return 'Transaction cancelled. You rejected the transaction in MetaMask.';
   }
@@ -40,19 +41,19 @@ const getFriendlyErrorMessage = (err: any, token: string): string => {
   if (errMsg.includes('getEnsAddress') || errMsg.includes('ENS') || errMsg.includes('UNSUPPORTED_OPERATION')) {
     return 'Invalid wallet address. Please check your recipient address format (must start with 0x and be 42 characters long).';
   }
-  
+
   if (errMsg.toLowerCase().includes('transfer amount exceeds balance') || errMsg.toLowerCase().includes('exceeds balance')) {
     return `Insufficient ${token} balance. You do not have enough ${token} in your wallet to complete this transfer.`;
   }
-  
+
   if (errMsg.toLowerCase().includes('insufficient funds') || errMsg.toLowerCase().includes('insufficient_funds')) {
     return `Insufficient USDC gas. Ensure you have enough native USDC in your wallet to cover the transaction value and network fees.`;
   }
-  
+
   if (err.reason) {
     return `Transaction reverted: ${err.reason}`;
   }
-  
+
   return errMsg || `Payment failed. Please ensure you have enough ${token} and native USDC gas, and the recipient address is valid.`;
 };
 
@@ -158,8 +159,8 @@ export const Payments: React.FC<PaymentsProps> = ({ walletProvider, address }) =
               chainId: ARC_CHAIN_ID,
               chainName: 'Arc Testnet',
               nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
-              rpcUrls: ['https://rpc.testnet.arc.io'],
-              blockExplorerUrls: ['https://explorer.testnet.arc.io'],
+              rpcUrls: [ARC_RPC],
+              blockExplorerUrls: [ARC_EXPLORER],
             }],
           });
         } else if (switchErr.code !== 4001) {
@@ -201,7 +202,7 @@ export const Payments: React.FC<PaymentsProps> = ({ walletProvider, address }) =
             to: formattedAddr,
             txHash: receipt.hash,
             status: 'COMPLETE',
-            explorerUrl: `https://testnet.arcscan.app/tx/${receipt.hash}`,
+            explorerUrl: txUrl(String(receipt.hash)),
             timestamp: Date.now(),
             tokenSymbol: selectedToken
           });
@@ -246,7 +247,7 @@ export const Payments: React.FC<PaymentsProps> = ({ walletProvider, address }) =
               to: formattedAddr,
               txHash: receipt.hash,
               status: 'COMPLETE',
-              explorerUrl: `https://testnet.arcscan.app/tx/${receipt.hash}`,
+              explorerUrl: txUrl(String(receipt.hash)),
               timestamp: Date.now(),
               tokenSymbol: selectedToken
             });
@@ -357,11 +358,11 @@ export const Payments: React.FC<PaymentsProps> = ({ walletProvider, address }) =
                 </span>
               </div>
             </div>
-            
+
             <div className="receipt-actions">
-              <a 
-                href={`https://testnet.arcscan.app/tx/${txHash}`} 
-                target="_blank" 
+              <a
+                href={txUrl(txHash)}
+                target="_blank"
                 rel="noreferrer"
                 className="btn-explorer"
               >
@@ -415,8 +416,8 @@ export const Payments: React.FC<PaymentsProps> = ({ walletProvider, address }) =
                       onChange={(e) => setRecipient(e.target.value)}
                       className="arc-input pr-12"
                     />
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => setShowQRScanner(true)}
                       className="qr-scan-btn"
                       title="Scan QR Code"
@@ -425,7 +426,7 @@ export const Payments: React.FC<PaymentsProps> = ({ walletProvider, address }) =
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="input-group">
                   <label>Amount ({selectedToken})</label>
                   <div className="amount-input-wrapper">
@@ -565,8 +566,8 @@ export const Payments: React.FC<PaymentsProps> = ({ walletProvider, address }) =
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn-send-payment"
               disabled={isSending || !walletProvider}
               style={{
@@ -598,8 +599,8 @@ export const Payments: React.FC<PaymentsProps> = ({ walletProvider, address }) =
               </button>
             </div>
             <div className="qr-scanner-container">
-              <Scanner 
-                onScan={(result) => handleQRScan(result[0].rawValue)} 
+              <Scanner
+                onScan={(result) => handleQRScan(result[0].rawValue)}
                 onError={(err) => console.log('QR Scan Error:', err)}
               />
               <div className="qr-scanner-overlay-target"></div>

@@ -104,7 +104,7 @@ export function GuideModal({
                 Code Is Law
               </span>
               <span className="px-2.5 py-1 rounded-lg bg-emerald-950/40 text-emerald-300 border border-emerald-500/30">
-                100% Non-Custodial
+                Contract-managed deposits
               </span>
             </div>
           </section>
@@ -181,7 +181,7 @@ export function GuideModal({
                 </div>
                 <div className="mt-4 pt-2 border-t border-amber-500/20 text-xs font-semibold text-amber-300 flex items-center gap-1.5">
                   <CheckCircle2 size={14} className="text-amber-400" />
-                  <span>{isEn ? "100% Secure, enforced strictly by code" : "An toàn tuyệt đối, thực thi bằng code"}</span>
+                  <span>{isEn ? "Contract rules with remaining price, oracle and token risks" : "Quy tắc hợp đồng; vẫn có rủi ro giá, oracle và token"}</span>
                 </div>
               </div>
             </div>

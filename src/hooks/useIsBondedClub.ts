@@ -26,7 +26,7 @@ export interface IsBondedClubResult {
  * 2. Otherwise: reads `factory.isClub(address)` from the canonical factory (R7).
  * The global registry is only updated inside an effect (never during render).
  */
-export function useIsBondedClub(address?: `0x${string}`): IsBondedClubResult {
+export function useIsBondedClub(address?: `0x${string}`, account?: string): IsBondedClubResult {
   const factory = CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
   const lower = address?.toLowerCase();
 
@@ -34,7 +34,7 @@ export function useIsBondedClub(address?: `0x${string}`): IsBondedClubResult {
     lower &&
       (lower === ARC_TESTNET_DEFAULT_BONDED_CLUB.toLowerCase() ||
         isKnownBondedClubAddress(lower) ||
-        getKnownGroups().find((g) => g.address.toLowerCase() === lower)?.version === "v2-bonded")
+        getKnownGroups(account).find((g) => g.address.toLowerCase() === lower)?.version === "v2-bonded")
   );
 
   const shouldCheckOnChain = Boolean(address && factory && !locallyKnown);

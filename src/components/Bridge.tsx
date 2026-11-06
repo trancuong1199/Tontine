@@ -1,3 +1,4 @@
+import { ARC_EXPLORER, ARC_RPC } from "../config/arc-constants.ts";
 import React, { useState, useEffect, useRef } from "react";
 import { BridgeKit } from "@circle-fin/bridge-kit";
 import { createViemAdapterFromProvider } from "@circle-fin/adapter-viem-v2";
@@ -174,9 +175,9 @@ export const Bridge: React.FC<BridgeProps> = ({ connectedAccount, getProvider })
               networkParams.nativeCurrency = { name: "AVAX", symbol: "AVAX", decimals: 18 };
               networkParams.blockExplorerUrls = ["https://testnet.snowtrace.io"];
             } else if (selectedSrcChainObj.id === "Arc_Testnet") {
-              networkParams.rpcUrls = ["https://rpc.testnet.arc.io"];
+              networkParams.rpcUrls = [ARC_RPC];
               networkParams.nativeCurrency = { name: "USDC", symbol: "USDC", decimals: 18 };
-              networkParams.blockExplorerUrls = ["https://explorer.testnet.arc.io"];
+              networkParams.blockExplorerUrls = [ARC_EXPLORER];
             }
             
             await eth.request({

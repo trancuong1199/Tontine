@@ -1,3 +1,4 @@
+import { ARC_EXPLORER, ARC_RPC, txUrl } from "../config/arc-constants.ts";
 import React, { useState, useEffect } from 'react';
 import { FileText, Tag, Hash, Send, CheckCircle2, AlertCircle, ExternalLink, Info, Copy, RefreshCw } from 'lucide-react';
 import { BrowserProvider, parseUnits, Interface, id, toUtf8Bytes, getBytes, Contract, formatUnits } from 'ethers';
@@ -283,8 +284,8 @@ export const TransactionMemos: React.FC<TransactionMemosProps> = ({ walletProvid
               chainId: ARC_CHAIN_ID,
               chainName: 'Arc Testnet',
               nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
-              rpcUrls: ['https://rpc.testnet.arc.io'],
-              blockExplorerUrls: ['https://explorer.testnet.arc.io'],
+              rpcUrls: [ARC_RPC],
+              blockExplorerUrls: [ARC_EXPLORER],
             }],
           });
         } else if (switchErr.code !== 4001) {
@@ -370,7 +371,7 @@ export const TransactionMemos: React.FC<TransactionMemosProps> = ({ walletProvid
           to: recipient.trim(),
           txHash: receipt.hash,
           status: 'COMPLETE',
-          explorerUrl: `https://testnet.arcscan.app/tx/${receipt.hash}`,
+          explorerUrl: txUrl(receipt.hash),
           timestamp: Date.now(),
           tokenSymbol: 'USDC',
         });
@@ -645,7 +646,7 @@ export const TransactionMemos: React.FC<TransactionMemosProps> = ({ walletProvid
                 {txStatus.type === 'success' ? <CheckCircle2 size={14} style={{ flexShrink: 0, marginTop: 1 }} /> : txStatus.type === 'error' ? <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} /> : <RefreshCw size={14} style={{ flexShrink: 0, marginTop: 1, animation: 'spin 1s linear infinite' }} />}
                 <span style={{ flex: 1 }}>{txStatus.msg}</span>
                 {txStatus.txHash && (
-                  <a href={`https://testnet.arcscan.app/tx/${txStatus.txHash}`} target="_blank" rel="noreferrer" style={{ color: 'inherit', flexShrink: 0 }}>
+                  <a href={txUrl(txStatus.txHash)} target="_blank" rel="noreferrer" style={{ color: 'inherit', flexShrink: 0 }}>
                     <ExternalLink size={13} />
                   </a>
                 )}
@@ -740,7 +741,7 @@ export const TransactionMemos: React.FC<TransactionMemosProps> = ({ walletProvid
                         <button onClick={() => copyText(JSON.stringify(ev.memo, null, 2))} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 0 }} title="Copy memo">
                           <Copy size={12} />
                         </button>
-                        <a href={`https://testnet.arcscan.app/tx/${ev.txHash}`} target="_blank" rel="noreferrer" style={{ color: '#6ee7b7' }}>
+                        <a href={txUrl(ev.txHash)} target="_blank" rel="noreferrer" style={{ color: '#6ee7b7' }}>
                           <ExternalLink size={12} />
                         </a>
                       </div>

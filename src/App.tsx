@@ -1,3 +1,4 @@
+import { addrUrl } from "./config/arc-constants.ts";
 import { classifyCycleCapability } from "./lib/cycleCapabilities";
 import { useCollateralPolicy } from "./hooks/useCollateralPolicy";
 import { parseCollateralInput, formatCollateral } from "./lib/collateralPolicy";
@@ -27,7 +28,7 @@ import { EditClubNameModal } from "./components/savings/EditClubNameModal";
 import { GuideModal } from "./components/savings/GuideModal";
 import { ArcAppKitModal } from "./components/savings/ArcAppKitModal";
 import { LandingPage, getLeftOuterArcPoint, getRightOuterArcPoint } from "./components/landing/LandingPage";
-import { getKnownGroups, getRemovedGroups, saveKnownGroup, updateKnownGroupName } from "./lib/savingsClubDirectory";
+import { getKnownGroups, getRemovedGroups, updateKnownGroupName } from "./lib/savingsClubDirectory";
 import { usePasskeyWallet } from "./hooks/usePasskeyWallet";
 import {
   useClubInfo,
@@ -102,11 +103,13 @@ export default function App() {
 
   // Active address: passkey takes priority over wagmi
   const address = passkeyAddress ?? wagmiAddress;
+  const activeAccountRef = useRef(address);
+  activeAccountRef.current = address;
 
   // Dynamic contract address: initialized from ?group= URL query param or official default BondedTontine V2 club
   const [contractAddress, setContractAddress] = useState<`0x${string}`>(() => {
     if (typeof window !== "undefined") {
-      const removed = getRemovedGroups();
+      const removed = getRemovedGroups(address);
       const params = new URLSearchParams(window.location.search);
       const group = params.get("group");
       if (
@@ -196,7 +199,7 @@ export default function App() {
     const url = new URL(window.location.href);
     url.searchParams.delete("view");
     url.searchParams.set("tab", "app");
-    const removed = getRemovedGroups();
+    const removed = getRemovedGroups(address);
     if (removed.has(newAddress.toLowerCase())) {
       url.searchParams.delete("group");
     } else {
@@ -376,11 +379,7 @@ export default function App() {
   const ptAppRightPiggy = getRightOuterArcPoint(0.88 - scrollOffset * 0.5 - continuousScrollDelta * 0.6);
 
   const handleClubCreated = (newAddress: `0x${string}`) => {
-    saveKnownGroup({
-      address: newAddress,
-      name: isEn ? `Savings Club ${formatAddress(newAddress)}` : `Nhóm Hụi ${formatAddress(newAddress)}`,
-      creator: address?.toLowerCase(),
-    });
+    if (activeAccountRef.current?.toLowerCase() !== address?.toLowerCase()) return;
     setHasExplicitGroup(true);
     handleSwitchGroup(newAddress);
     setShowCreateModal(false);
@@ -429,7 +428,7 @@ export default function App() {
     isChecking: isBondedChecking,
     isError: isBondedError,
     refetch: refetchIsBonded,
-  } = useIsBondedClub(contractAddress);
+  } = useIsBondedClub(contractAddress, address);
 
   // Contract reads (keyed by active contract address and user address)
   const clubInfo = useClubInfo(contractAddress);
@@ -512,7 +511,7 @@ export default function App() {
   // Auto-switch to user-owned club if connected and current club is not affiliated
   useEffect(() => {
     if (!isBondedClub && address && !hasExplicitGroup && !isUserAffiliated) {
-      const known = getKnownGroups();
+      const known = getKnownGroups(address);
       const myClub = known.find(
         (g) => g.creator && g.creator.toLowerCase() === address.toLowerCase()
       );
@@ -717,21 +716,6 @@ export default function App() {
     return () => clearInterval(id);
   }, [roundInfo.endTime]);
 
-  // Two-way sync: Save valid on-chain group name to known groups (unless removed by user)
-  useEffect(() => {
-    if (!isBondedClub && clubInfo.groupName && contractAddress) {
-      const removed = getRemovedGroups();
-      if (!removed.has(contractAddress.toLowerCase())) {
-        const existed = getKnownGroups().some(
-          (g) => g.address.toLowerCase() === contractAddress.toLowerCase()
-        );
-        saveKnownGroup({ address: contractAddress, name: clubInfo.groupName });
-        if (!existed) {
-          setNameUpdateTrigger((prev) => prev + 1);
-        }
-      }
-    }
-  }, [clubInfo.groupName, contractAddress]);
 
   function refetchAll() {
     void collateralView.refresh();
@@ -759,9 +743,9 @@ export default function App() {
 
   const isLoading = clubInfo.isLoading;
 
-  const knownClub = getKnownGroups().find((c) => c.address.toLowerCase() === contractAddress.toLowerCase());
-  const knownGroupsList = getKnownGroups();
-  const removedGroupsSet = getRemovedGroups();
+  const knownClub = getKnownGroups(address).find((c) => c.address.toLowerCase() === contractAddress.toLowerCase());
+  const knownGroupsList = getKnownGroups(address);
+  const removedGroupsSet = getRemovedGroups(address);
   const activeDirectoryClubs = knownGroupsList.filter((g) => {
     const addr = g.address.toLowerCase();
     if (removedGroupsSet.has(addr)) return false;
@@ -1287,6 +1271,7 @@ export default function App() {
           !address ? (
             <div className="bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] rounded-3xl p-6 sm:p-8 border border-amber-500/30 shadow-xl max-w-3xl mx-auto my-6 space-y-5">
               <UnauthenticatedBondedClubPreview
+                key={contractAddress.toLowerCase()}
                 contractAddress={contractAddress}
                 displayedGroupName={displayedGroupName}
                 language={language}
@@ -1295,6 +1280,7 @@ export default function App() {
           ) : (
             <div className="my-6">
               <BondedClubWorkspace
+                key={`${address?.toLowerCase() ?? "guest"}:${contractAddress.toLowerCase()}`}
                 contractAddress={contractAddress}
                 userAddress={address}
                 language={language}
@@ -1538,7 +1524,7 @@ export default function App() {
                 <p className="leading-relaxed">
                   {isEn ? "Trustless smart contract on " : "Hợp đồng trustless trên "}
                   <a
-                    href={`https://explorer.testnet.arc.io/address/${contractAddress}`}
+                    href={addrUrl(contractAddress)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-400 font-semibold hover:underline inline-flex items-center gap-0.5"
@@ -1556,6 +1542,7 @@ export default function App() {
             <div className="lg:col-span-5 xl:col-span-4 space-y-6 lg:sticky lg:top-20">
               {/* Group Switcher & Share Link */}
               <GroupSwitcher
+                account={address}
                 currentAddress={contractAddress}
                 onSwitchGroup={handleSwitchGroup}
                 onOpenCreateModal={() => setShowCreateModal(true)}
@@ -1913,6 +1900,8 @@ export default function App() {
       </div>
 
       <ClubDirectoryModal
+        key={address?.toLowerCase() ?? "guest"}
+        account={address}
         isOpen={showDirectoryModal}
         onClose={() => {
           setShowDirectoryModal(false);
@@ -1933,7 +1922,7 @@ export default function App() {
         onClose={() => setShowEditCurrentClubModal(false)}
         club={currentClubForModal}
         onSave={(address, newName) => {
-          updateKnownGroupName(address, newName);
+          updateKnownGroupName(address, newName, passkeyAddress ?? wagmiAddress);
           setNameUpdateTrigger((prev) => prev + 1);
           toast.success(
             isEn

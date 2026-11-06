@@ -1,3 +1,4 @@
+import { ARC_RPC } from "./config/arc-constants.ts";
 import { CIRBTC_ADDRESS as DEFAULT_CIRBTC_ADDRESS } from "./config/arc-constants.ts";
 import artifact from "../contracts/out/RotatingSavings.sol/RotatingSavings.json" with { type: "json" };
 import { getUsdc, requireChain } from "./onchain-facts.ts";
@@ -225,7 +226,7 @@ export function parseContractError(error: unknown): string {
     return "Ví của bạn chưa mở khóa hoặc chưa kết nối tài khoản. Vui lòng mở tiện ích ví OKX/MetaMask trên trình duyệt, mở khóa ví và chọn tài khoản, sau đó thử lại.";
   }
   if (msg.includes("failed to fetch")) {
-    return "Lỗi kết nối RPC Arc Testnet trên ví. Vui lòng mở Arc AppKit -> Đồng bộ RPC, hoặc kiểm tra RPC URL ví là https://rpc.testnet.arc.io.";
+    return `Lỗi kết nối RPC Arc Testnet trên ví. Vui lòng mở Arc AppKit -> Đồng bộ RPC, hoặc kiểm tra RPC URL ví là ${ARC_RPC}.`;
   }
   if (msg.includes("collateralquotechanged") || msg.includes("collateral amounts changed")) return "Mức ký quỹ đã thay đổi. Xem lại số tiền và bấm xác nhận lần nữa.";
   if (msg.includes("insufficientcollateral") || msg.includes("top up collateral")) return "Chưa đủ ký quỹ đang khóa. Nộp bổ sung trước khi góp tiền hoặc đặt bid.";

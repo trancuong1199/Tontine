@@ -1,3 +1,5 @@
+import { BondedCollateralSummary } from "./BondedCollateralSummary";
+import { formatRoundDuration } from "../../lib/bondedDisplay";
 import { useState } from "react";
 import { useModal } from "connectkit";
 import {
@@ -29,13 +31,6 @@ interface UnauthenticatedBondedClubPreviewProps {
   language?: Language;
 }
 
-function formatRoundDuration(seconds: number, isEn: boolean): string {
-  if (seconds <= 0) return "--";
-  if (seconds < 3600) return `${Math.round(seconds / 60)} ${isEn ? "min" : "phút"}`;
-  if (seconds < 86400) return `${Math.round(seconds / 3600)} ${isEn ? "hours" : "giờ"}`;
-  if (seconds % 86400 === 0) return `${Math.round(seconds / 86400)} ${isEn ? "days" : "ngày"}`;
-  return `${(seconds / 86400).toFixed(1)} ${isEn ? "days" : "ngày"}`;
-}
 
 export function UnauthenticatedBondedClubPreview({
   contractAddress,
@@ -134,7 +129,7 @@ export function UnauthenticatedBondedClubPreview({
 
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-950/50 px-3 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            {stateLabels[club.state]?.[language] ?? (isEn ? "OPEN" : "ĐANG MỞ")}
+            {club.isLoading ? (isEn ? "Loading…" : "Đang tải…") : club.error ? (isEn ? "Unavailable" : "Không tải được") : stateLabels[club.state]?.[language] ?? "--"}
           </span>
         </div>
 
@@ -196,12 +191,13 @@ export function UnauthenticatedBondedClubPreview({
           </div>
         </div>
 
+        <BondedCollateralSummary club={club} language={language} />
         {/* Collateral & Risk Summary */}
         <div className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/25 flex items-start gap-2.5 text-xs text-amber-200/90 leading-relaxed">
           <Lock size={15} className="text-amber-400 shrink-0 mt-0.5" />
           <div>
             <span className="font-semibold text-amber-300">
-              {isEn ? "CirBTC Collateral Protection: " : "Bảo đảm bằng Cọc CirBTC: "}
+              {isEn ? "CirBTC Collateral: " : "Cọc CirBTC: "}
             </span>
             <span>
               {club.collateral > 0n

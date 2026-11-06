@@ -90,7 +90,7 @@ test("TC-NAME-01 (AC-02.1): App.tsx tính toán displayedGroupName ưu tiên tê
 
   // Verify code structure in App.tsx
   assert.ok(
-    appSrc.includes("const knownClub = getKnownGroups().find"),
+    appSrc.includes("const knownClub = getKnownGroups(address).find"),
     "App.tsx must lookup the active contract address in getKnownGroups()"
   );
   assert.ok(
@@ -177,8 +177,8 @@ test("TC-NAME-04 (AC-02.4): Nhóm mới chưa có trong danh bạ hiển thị f
 
   // Verify two-way synchronization hook in App.tsx
   assert.ok(
-    appSrc.includes("saveKnownGroup({ address: contractAddress, name: clubInfo.groupName })"),
-    "App.tsx must automatically sync valid on-chain groupName to known groups storage"
+    !appSrc.includes("saveKnownGroup({ address: contractAddress, name: clubInfo.groupName })"),
+    "App.tsx must not implicitly import a previous account selected club"
   );
 
   const unknownAddress = "0x9999999999999999999999999999999999999999";

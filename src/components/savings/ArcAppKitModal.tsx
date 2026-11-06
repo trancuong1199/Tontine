@@ -1,3 +1,4 @@
+import { addrUrl } from "../../config/arc-constants.ts";
 import { isPositiveAmount } from "../../lib/swapSafety";
 import { readArcBalances, formatArcBalance, formatApproximateQuote } from "../../lib/arcBalances";
 import { ARC_RPC, USDC_NATIVE_DECIMALS, EURC_DECIMALS, CIRBTC_DECIMALS } from "../../config/arc-constants";
@@ -461,7 +462,7 @@ export function ArcAppKitModal({
                 <div className="pt-2 flex items-center justify-between text-xs text-slate-400">
                   <span>{isEn ? "Verified Arc Pool:" : "Bể thanh khoản Arc:"}</span>
                   <a
-                    href="https://explorer.testnet.arc.io/address/0xe8f7fA2A412e98C537554643F83DA34DfdD50c23"
+                    href={addrUrl("0xe8f7fA2A412e98C537554643F83DA34DfdD50c23")}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-mono text-amber-400/90 hover:text-amber-300 flex items-center gap-1"

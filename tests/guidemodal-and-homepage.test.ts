@@ -171,7 +171,7 @@ test("TC-HOME-01 (AC-02.1): Hero Section trên LandingPage hiển thị tiêu đ
     "LandingPage hero must render all 3 key metric values"
   );
   assert.equal(translations.vi.landingPage.metric1Val, "100%");
-  assert.equal(translations.vi.landingPage.metric2Val, "0");
+  assert.equal(translations.vi.landingPage.metric2Val, "CirBTC");
   assert.equal(translations.vi.landingPage.metric3Val, "< 1s");
 
   // 3 CTA buttons
@@ -237,11 +237,11 @@ test("TC-HOME-04 (AC-02.4): Phân khu Featured Savings Clubs hiển thị thẻ 
   const source = readSource("src/components/landing/LandingPage.tsx");
 
   assert.ok(
-    source.includes("DEFAULT_SAVINGS_CLUBS.map"),
-    "LandingPage must iterate over DEFAULT_SAVINGS_CLUBS to display featured clubs"
+    source.includes("useBondedClub(ARC_TESTNET_DEFAULT_BONDED_CLUB)"),
+    "LandingPage must read configured featured Bonded club on-chain"
   );
   assert.ok(
-    source.includes("onSelectClub(club.address)"),
+    source.includes("onSelectClub(ARC_TESTNET_DEFAULT_BONDED_CLUB)"),
     "Featured clubs must provide 1-click navigation to select club"
   );
   assert.ok(

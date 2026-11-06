@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   SAVINGS_CLUBS_STORAGE_KEY,
+  getAccountKnownStorageKey,
   DEFAULT_SAVINGS_CLUBS,
   getKnownGroups,
   saveKnownGroup,
@@ -88,7 +89,7 @@ test("TC-FIX-04 (AC-02.1): saveKnownGroup không ghi đè tên nhóm tùy chỉn
     updateKnownGroupName(testAddr, "Hụi Tiết Kiệm Gia Đình");
 
     // Xác nhận đã lưu tên mới vào storage
-    const rawAfterEdit = mockStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
+    const rawAfterEdit = mockStorage.getItem(getAccountKnownStorageKey());
     const parsedAfterEdit = JSON.parse(rawAfterEdit!);
     const itemAfterEdit = parsedAfterEdit.find((g: { address: string }) => g.address.toLowerCase() === testAddr.toLowerCase());
     assert.equal(itemAfterEdit.name, "Hụi Tiết Kiệm Gia Đình");
@@ -97,7 +98,7 @@ test("TC-FIX-04 (AC-02.1): saveKnownGroup không ghi đè tên nhóm tùy chỉn
     saveKnownGroup({ address: testAddr, name: "Nhóm Hụi Mới" });
 
     // 4. Bắt buộc: Tên tùy chỉnh "Hụi Tiết Kiệm Gia Đình" phải được bảo toàn, không bị ghi đè thành "Nhóm Hụi Mới"
-    const rawAfterSync = mockStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
+    const rawAfterSync = mockStorage.getItem(getAccountKnownStorageKey());
     const parsedAfterSync = JSON.parse(rawAfterSync!);
     const itemAfterSync = parsedAfterSync.find((g: { address: string }) => g.address.toLowerCase() === testAddr.toLowerCase());
     assert.equal(
@@ -215,7 +216,7 @@ test("TC-FIX-09 (AC-03.3): displayedGroupName trong App.tsx tính toán ưu tiê
   const appSrc = readSource("src/App.tsx");
 
   assert.ok(
-    appSrc.includes("const knownClub = getKnownGroups().find((c) => c.address.toLowerCase() === contractAddress.toLowerCase());"),
+    appSrc.includes("const knownClub = getKnownGroups(address).find((c) => c.address.toLowerCase() === contractAddress.toLowerCase());"),
     "App.tsx must find knownClub from getKnownGroups()"
   );
   assert.ok(

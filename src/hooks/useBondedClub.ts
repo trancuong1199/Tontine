@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { oracleStatus as getOracleStatus, type OracleStatus } from "../lib/bondedDisplay.ts";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePublicClient } from "wagmi";
-import { decodeEventLog } from "viem";
+import { decodeEventLog, type PublicClient } from "viem";
 import {
   BONDED_TONTINE_ABI,
   BONDED_TONTINE_FACTORY_ABI,
@@ -82,6 +83,8 @@ export interface BondedClubSnapshot {
   healthBps: bigint | null;
   // Oracle feed metadata (T6.8)
   oracleDescription: string;
+  oracleDecimals: number | null;
+  oracleStatus: OracleStatus;
   isMockOracle: boolean;
   oraclePriceRaw: bigint;
   oracleUpdatedAt: bigint;
@@ -109,7 +112,7 @@ interface MemberCacheEntry {
 const memberListCache = new Map<string, MemberCacheEntry>();
 
 export async function fetchBondedClubMembers(
-  publicClient: any,
+  publicClient: Pick<PublicClient, "getLogs" | "getBlockNumber">,
   clubAddress: `0x${string}`,
   memberCount: bigint
 ): Promise<{ members: `0x${string}`[]; error: string | null }> {
@@ -129,166 +132,73 @@ export async function fetchBondedClubMembers(
     return { members: cached.addresses, error: null };
   }
 
-  // Strategy 1: On Arc Testnet, use Blockscout Explorer Logs API (bypasses RPC block range limit)
+  const errors: string[] = [];
+  let best = cached?.addresses ?? [];
+  const classify = (error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/429|rate.?limit/i.test(message)) return "rate-limit";
+    if (/block.?range|-32012|range.*limit/i.test(message)) return "rpc-range";
+    if (/timeout|timed out|abort/i.test(message)) return "timeout";
+    return "unavailable";
+  };
+  const accept = (members: `0x${string}`[]) => {
+    if (members.length > best.length) best = members;
+    if (BigInt(members.length) !== memberCount) { errors.push("partial"); return false; }
+    memberListCache.set(cacheKey, { addresses: members, memberCount, timestamp: Date.now() });
+    return true;
+  };
+  type MemberEvent = { eventName: string; args?: { member?: `0x${string}` }; blockNumber?: bigint; logIndex?: number };
+  const sortEvents = (a: MemberEvent, b: MemberEvent) => (a.blockNumber ?? 0n) === (b.blockNumber ?? 0n) ? (a.logIndex ?? 0) - (b.logIndex ?? 0) : (a.blockNumber ?? 0n) < (b.blockNumber ?? 0n) ? -1 : 1;
+  const replay = (logs: MemberEvent[]) => {
+    const active = new Map<string, `0x${string}`>();
+    for (const log of logs) {
+      const member = log.args?.member;
+      if (!member) continue;
+      if (log.eventName === "MemberRemoved") active.delete(member.toLowerCase());
+      else if (log.eventName === "MemberJoined") active.set(member.toLowerCase(), member);
+    }
+    return [...active.values()];
+  };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
     const explorerApi = `${requireChain(ARC_TESTNET_CHAIN_ID).explorerBase}/api`;
-    const explorerRes = await fetch(
-      `${explorerApi}?module=logs&action=getLogs&address=${clubAddress}&fromBlock=0&toBlock=latest`,
-      { signal: controller.signal }
-    );
-    clearTimeout(timeout);
-
-    if (explorerRes.ok) {
-      const data = await explorerRes.json();
-      if (data.message === "OK" && Array.isArray(data.result)) {
-        const joinedOrder: `0x${string}`[] = [];
-        const removedSet = new Set<string>();
-
-        for (const item of data.result) {
-          try {
-            const decoded = decodeEventLog({
-              abi: BONDED_TONTINE_ABI,
-              data: item.data,
-              topics: (item.topics || []).filter(Boolean),
-            });
-            if (decoded.eventName === "MemberJoined") {
-              const m = (decoded.args as { member?: `0x${string}` })?.member;
-              if (m && !joinedOrder.some((a) => a.toLowerCase() === m.toLowerCase())) {
-                joinedOrder.push(m);
-              }
-            } else if (decoded.eventName === "MemberRemoved") {
-              const m = (decoded.args as { member?: `0x${string}` })?.member;
-              if (m) {
-                removedSet.add(m.toLowerCase());
-              }
-            }
-          } catch {
-            // Non-matching log or unrelated event
-          }
-        }
-
-        const activeMembers = joinedOrder.filter((m) => !removedSet.has(m.toLowerCase()));
-        if (activeMembers.length > 0 || memberCount === 0n) {
-          memberListCache.set(cacheKey, {
-            addresses: activeMembers,
-            memberCount,
-            timestamp: Date.now(),
-          });
-          return { members: activeMembers, error: null };
-        }
-      }
+    const response = await fetch(`${explorerApi}?module=logs&action=getLogs&address=${clubAddress}&fromBlock=0&toBlock=latest`, { signal: controller.signal });
+    if (!response.ok) {
+      if (response.status === 429) errors.push("explorer-429");
+      throw new Error(`HTTP ${response.status}`);
     }
-  } catch {
-    // Explorer API failed or timed out, continue to RPC strategy
-  }
+    const data = await response.json() as { result?: unknown; message?: unknown };
+    if (!Array.isArray(data.result)) throw new Error(String(data.result ?? data.message));
+    type ExplorerEvent = { data: `0x${string}`; topics: [`0x${string}`, ...`0x${string}`[]]; blockNumber?: string; logIndex?: string };
+    const decoded = (data.result as ExplorerEvent[]).flatMap((item): MemberEvent[] => {
+      try {
+        const event = decodeEventLog({ abi: BONDED_TONTINE_ABI, data: item.data, topics: item.topics });
+        return [{ eventName: event.eventName ?? "", args: event.args as { member?: `0x${string}` }, blockNumber: BigInt(item.blockNumber ?? 0), logIndex: Number(item.logIndex ?? 0) }];
+      } catch { return []; }
+    }).sort(sortEvents);
+    const members = replay(decoded);
+    if (accept(members)) return { members, error: null };
+  } catch (error) { errors.push(classify(error)); }
+  finally { clearTimeout(timeout); }
 
-  // Strategy 2: RPC getLogs with fallback range
+  const readRange = async (fromBlock: bigint, toBlock: bigint | "latest") => {
+    const all = await Promise.all(["MemberJoined", "MemberRemoved"].map(async eventName => {
+      const logs = await publicClient.getLogs({ address: clubAddress, event: { type: "event", name: eventName, inputs: [{ type: "address", name: "member", indexed: true }] }, fromBlock, toBlock }) as unknown as MemberEvent[];
+      return logs.map(log => ({ ...log, eventName }));
+    }));
+    return replay(all.flat().sort(sortEvents));
+  };
   try {
-    // First try full range (works on local fork / anvil)
-    const [joinedLogs, removedLogs] = await Promise.all([
-      publicClient.getLogs({
-        address: clubAddress,
-        event: {
-          type: "event",
-          name: "MemberJoined",
-          inputs: [{ type: "address", name: "member", indexed: true }],
-        },
-        fromBlock: 0n,
-        toBlock: "latest",
-      }),
-      publicClient.getLogs({
-        address: clubAddress,
-        event: {
-          type: "event",
-          name: "MemberRemoved",
-          inputs: [{ type: "address", name: "member", indexed: true }],
-        },
-        fromBlock: 0n,
-        toBlock: "latest",
-      }),
-    ]);
-
-    const removedSet = new Set(
-      removedLogs
-        .map((l: any) => (l.args as { member?: string })?.member?.toLowerCase())
-        .filter(Boolean)
-    );
-
-    const joinedOrder: `0x${string}`[] = [];
-    for (const log of joinedLogs) {
-      const m = (log.args as { member?: `0x${string}` })?.member;
-      if (m && !removedSet.has(m.toLowerCase()) && !joinedOrder.some((a) => a.toLowerCase() === m.toLowerCase())) {
-        joinedOrder.push(m);
-      }
-    }
-
-    memberListCache.set(cacheKey, {
-      addresses: joinedOrder,
-      memberCount,
-      timestamp: Date.now(),
-    });
-    return { members: joinedOrder, error: null };
-  } catch {
-    // Strategy 3: If RPC failed with block range limit (-32012), try last 4000 blocks
-    try {
-      const currentBlock = await publicClient.getBlockNumber();
-      const fromBlock = currentBlock > 4000n ? currentBlock - 4000n : 0n;
-      const [joinedLogs, removedLogs] = await Promise.all([
-        publicClient.getLogs({
-          address: clubAddress,
-          event: {
-            type: "event",
-            name: "MemberJoined",
-            inputs: [{ type: "address", name: "member", indexed: true }],
-          },
-          fromBlock,
-          toBlock: currentBlock,
-        }),
-        publicClient.getLogs({
-          address: clubAddress,
-          event: {
-            type: "event",
-            name: "MemberRemoved",
-            inputs: [{ type: "address", name: "member", indexed: true }],
-          },
-          fromBlock,
-          toBlock: currentBlock,
-        }),
-      ]);
-
-      const removedSet = new Set(
-        removedLogs
-          .map((l: any) => (l.args as { member?: string })?.member?.toLowerCase())
-          .filter(Boolean)
-      );
-
-      const joinedOrder: `0x${string}`[] = [];
-      for (const log of joinedLogs) {
-        const m = (log.args as { member?: `0x${string}` })?.member;
-        if (m && !removedSet.has(m.toLowerCase()) && !joinedOrder.some((a) => a.toLowerCase() === m.toLowerCase())) {
-          joinedOrder.push(m);
-        }
-      }
-
-      if (joinedOrder.length > 0 || memberCount === 0n) {
-        memberListCache.set(cacheKey, {
-          addresses: joinedOrder,
-          memberCount,
-          timestamp: Date.now(),
-        });
-        return { members: joinedOrder, error: null };
-      }
-    } catch {
-      // Ignore chunked failure
-    }
-
-    return {
-      members: cached ? cached.addresses : [],
-      error: "Không thể tải danh sách thành viên (giới hạn RPC / lỗi mạng)",
-    };
-  }
+    const members = await readRange(0n, "latest");
+    if (accept(members)) return { members, error: null };
+  } catch (error) { errors.push(classify(error)); }
+  try {
+    const currentBlock = await publicClient.getBlockNumber();
+    const members = await readRange(currentBlock > 4000n ? currentBlock - 4000n : 0n, currentBlock);
+    if (accept(members)) return { members, error: null };
+  } catch (error) { errors.push(classify(error)); }
+  return { members: best, error: [...new Set([...errors, "partial"])].join("|") };
 }
 
 export function useBondedClub(
@@ -297,13 +207,16 @@ export function useBondedClub(
   enabled = true
 ): BondedClubSnapshot {
   const publicClient = usePublicClient({ chainId: ARC_TESTNET_CHAIN_ID });
+  const contextKey = `${clubAddress?.toLowerCase()}:${userAddress?.toLowerCase() ?? "guest"}`;
+  const contextRef = useRef(contextKey);
+  useLayoutEffect(() => { contextRef.current = contextKey; }, [contextKey]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const initialVerified = Boolean(
     clubAddress &&
       (clubAddress.toLowerCase() === ARC_TESTNET_DEFAULT_BONDED_CLUB.toLowerCase() ||
         isKnownBondedClubAddress(clubAddress) ||
-        getKnownGroups().find((g) => g.address.toLowerCase() === clubAddress.toLowerCase())?.version === "v2-bonded")
+        getKnownGroups(userAddress).find((g) => g.address.toLowerCase() === clubAddress.toLowerCase())?.version === "v2-bonded")
   );
   const [data, setData] = useState<Omit<BondedClubSnapshot, "isLoading" | "error" | "refetch">>({
     address: (clubAddress ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
@@ -343,6 +256,8 @@ export function useBondedClub(
     exposure: null,
     healthBps: null,
     oracleDescription: "",
+    oracleDecimals: null,
+    oracleStatus: "unavailable",
     isMockOracle: true,
     oraclePriceRaw: 0n,
     oracleUpdatedAt: 0n,
@@ -361,6 +276,7 @@ export function useBondedClub(
   });
 
   const refetch = useCallback(async () => {
+    const requestContext = contextKey;
     if (!enabled || !clubAddress || !publicClient) return;
     setIsLoading(true);
     setError(null);
@@ -571,11 +487,14 @@ export function useBondedClub(
 
       // Oracle metadata (T6.8)
       let oracleDescription = "";
+      let oracleDecimals: number | null = null;
+      let roundId = 0n;
+      let answeredInRound = 0n;
       let oraclePriceRaw = 0n;
       let oracleUpdatedAt = 0n;
       let oracleAdmin: `0x${string}` | undefined = undefined;
       if (priceFeed && priceFeed !== "0x0000000000000000000000000000000000000000") {
-        const [desc, roundData, adminAddr] = await Promise.all([
+        const [desc, roundData, adminAddr, decimals] = await Promise.all([
           (publicClient.readContract({
             address: priceFeed,
             abi: MOCK_AGGREGATOR_V3_ABI,
@@ -591,9 +510,13 @@ export function useBondedClub(
             abi: MOCK_AGGREGATOR_V3_ABI,
             functionName: "admin" as never,
           }) as Promise<`0x${string}`>).catch(() => undefined),
+          (publicClient.readContract({ address: priceFeed, abi: MOCK_AGGREGATOR_V3_ABI, functionName: "decimals" }) as Promise<number>).catch(() => null),
         ]);
+        oracleDecimals = decimals;
         oracleDescription = desc;
         if (roundData) {
+          roundId = roundData[0];
+          answeredInRound = roundData[4];
           oraclePriceRaw = roundData[1];
           oracleUpdatedAt = roundData[3];
         }
@@ -603,6 +526,9 @@ export function useBondedClub(
       const nowSec = BigInt(Math.floor(Date.now() / 1000));
       const priceAgeSeconds =
         oracleUpdatedAt > 0n && nowSec >= oracleUpdatedAt ? nowSec - oracleUpdatedAt : 0n;
+
+      const oracleStatus = getOracleStatus(oraclePriceRaw, oracleUpdatedAt, answeredInRound, roundId, nowSec, maxPriceAge);
+      oracleError = oracleError || oracleStatus !== "fresh";
 
       // User-specific reads
       let isMember = false;
@@ -683,6 +609,7 @@ export function useBondedClub(
         memberCount
       );
 
+      if (contextRef.current !== requestContext) return;
       setData({
         address: clubAddress,
         isVerifiedClub,
@@ -721,6 +648,8 @@ export function useBondedClub(
         exposure,
         healthBps,
         oracleDescription,
+        oracleDecimals,
+        oracleStatus,
         isMockOracle: isMockOracleDescription(oracleDescription),
         oraclePriceRaw,
         oracleUpdatedAt,
@@ -738,14 +667,16 @@ export function useBondedClub(
         cirBtcAllowance,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      if (contextRef.current === requestContext) setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setIsLoading(false);
+      if (contextRef.current === requestContext) setIsLoading(false);
     }
-  }, [clubAddress, userAddress, enabled, publicClient]);
+  }, [clubAddress, userAddress, enabled, publicClient, contextKey]);
 
   useEffect(() => {
     void refetch();
+    const interval = setInterval(() => void refetch(), 30_000);
+    return () => clearInterval(interval);
   }, [refetch]);
 
   return {

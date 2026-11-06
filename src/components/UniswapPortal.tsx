@@ -1,3 +1,4 @@
+import { txUrl } from "../config/arc-constants.ts";
 import React, { useState, useEffect } from 'react';
 import { ArrowDownUp, RefreshCw, Settings, Info, Plus, Layers } from 'lucide-react';
 import { saveTransaction, getTransactionHistory } from '../lib/TransactionHistory';
@@ -411,7 +412,7 @@ export const UniswapPortal: React.FC<UniswapPortalProps> = ({ connectedAccount, 
           to: ARC_ROUTER,
           txHash,
           status: 'COMPLETE' as const,
-          explorerUrl: `https://testnet.arcscan.app/tx/${txHash}`,
+          explorerUrl: txUrl(txHash),
           timestamp: Date.now(),
           tokenSymbol: tokenIn.symbol,
         };
@@ -983,7 +984,7 @@ export const UniswapPortal: React.FC<UniswapPortalProps> = ({ connectedAccount, 
                           </span> (Simulated - Click to Inspect 🔍)
                         </div>
                         <a
-                          href={`https://testnet.arcscan.app/tx/${swapStatus.txHash}`}
+                          href={txUrl(swapStatus.txHash)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="explorer-link"
@@ -994,7 +995,7 @@ export const UniswapPortal: React.FC<UniswapPortalProps> = ({ connectedAccount, 
                       </div>
                     ) : (
                       <a
-                        href={`https://testnet.arcscan.app/tx/${swapStatus.txHash}`}
+                        href={txUrl(swapStatus.txHash)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="explorer-link"
@@ -1894,7 +1895,7 @@ export const UniswapPortal: React.FC<UniswapPortalProps> = ({ connectedAccount, 
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', marginTop: '0.25rem' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>External Scan:</span>
                   <a
-                    href={`https://testnet.arcscan.app/tx/${mockExplorerData.hash}`}
+                    href={txUrl(String(mockExplorerData.hash))}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ color: '#ff007a', fontWeight: 600, textDecoration: 'underline', fontSize: '0.82rem' }}

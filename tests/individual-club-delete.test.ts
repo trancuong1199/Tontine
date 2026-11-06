@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   SAVINGS_CLUBS_STORAGE_KEY,
+  getAccountKnownStorageKey,
   REMOVED_CLUBS_STORAGE_KEY,
   getKnownGroups,
   saveKnownGroup,
@@ -11,7 +12,7 @@ import {
   clearCustomKnownGroups,
   DEFAULT_SAVINGS_CLUBS,
   syncFactoryBondedClubs,
-  setActiveDirectoryAccount,
+  getAccountRemovedStorageKey,
 } from "../src/lib/savingsClubDirectory.ts";
 import { translations } from "../src/lib/i18n.ts";
 
@@ -48,7 +49,7 @@ test("TC-DEL-01 (AC-01.1 & AC-01.2): removeKnownGroup(address) đưa địa ch�
     removeKnownGroup(testAddr);
 
     // Verify it is removed from hui_known_groups and added to hui_removed_groups
-    const removedRaw = mockStorage.getItem(REMOVED_CLUBS_STORAGE_KEY);
+    const removedRaw = mockStorage.getItem(getAccountRemovedStorageKey());
     assert.ok(removedRaw, "REMOVED_CLUBS_STORAGE_KEY must be stored in localStorage");
     const parsedRemoved = JSON.parse(removedRaw);
     assert.ok(parsedRemoved.includes(testAddr.toLowerCase()), "Removed address must be in hui_removed_groups");
@@ -156,7 +157,7 @@ test("TC-DEL-05 (AC-02.3, AC-02.4 & AC-02.5): handleDeleteGroup chặn nổi b�
     "handleDeleteGroup must stop event propagation"
   );
   assert.ok(
-    modalSrc.includes("removeKnownGroup(group.address);"),
+    modalSrc.includes("removeKnownGroup(group.address, account);"),
     "handleDeleteGroup must call removeKnownGroup with target address"
   );
   assert.ok(
@@ -265,31 +266,14 @@ test("TC-DEL-08: Phân tách danh bạ theo ví - Tài khoản 1 xóa club khôn
     const account1 = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     const account2 = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
-    saveKnownGroup({ address: clubAddr, name: "Nhóm Chung" });
-
-    // Cả 2 tài khoản đều thấy nhóm ban đầu
-    setActiveDirectoryAccount(account1);
-    assert.ok(getKnownGroups().some((g) => g.address.toLowerCase() === clubAddr.toLowerCase()));
-
-    setActiveDirectoryAccount(account2);
-    assert.ok(getKnownGroups().some((g) => g.address.toLowerCase() === clubAddr.toLowerCase()));
-
-    // Tài khoản 1 xóa nhóm
-    setActiveDirectoryAccount(account1);
-    removeKnownGroup(clubAddr);
-
-    // Tài khoản 1 không còn thấy nhóm
-    assert.ok(!getKnownGroups().some((g) => g.address.toLowerCase() === clubAddr.toLowerCase()));
-
-    // Chuyển sang Tài khoản 2: Tài khoản 2 VẪN THẤY nhóm bình thường!
-    setActiveDirectoryAccount(account2);
-    assert.ok(
-      getKnownGroups().some((g) => g.address.toLowerCase() === clubAddr.toLowerCase()),
-      "Tài khoản 2 vẫn phải thấy nhóm khi Tài khoản 1 xóa!"
-    );
+    saveKnownGroup({ address: clubAddr, name: "Nhóm Chung" }, account1);
+    assert.ok(!getKnownGroups(account2).some(g => g.address === clubAddr), "New account must not inherit account1 entries");
+    saveKnownGroup({ address: clubAddr, name: "Nhóm Chung" }, account2);
+    removeKnownGroup(clubAddr, account1);
+    assert.ok(!getKnownGroups(account1).some(g => g.address === clubAddr));
+    assert.ok(getKnownGroups(account2).some(g => g.address === clubAddr), "Removing account1 entry must preserve account2");
   } finally {
     globalThis.window = originalWindow;
-    setActiveDirectoryAccount(null);
   }
 });
 

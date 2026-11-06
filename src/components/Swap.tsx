@@ -1,3 +1,4 @@
+import { txUrl } from "../config/arc-constants.ts";
 import React, { useState, useEffect } from "react";
 import { AppKit } from "@circle-fin/app-kit";
 import { switchOrAddArcNetwork } from "../utils/arcChain";
@@ -81,7 +82,7 @@ export const Swap: React.FC<SwapProps> = ({ adapter, userAddress, isMetaMask, ki
       setStatus({ type: "info", msg: "Submitting swap request to Circle App Kit..." });
 
       const kit = new AppKit();
-      
+
       const result = await kit.swap({
         from: {
           adapter,
@@ -107,7 +108,7 @@ export const Swap: React.FC<SwapProps> = ({ adapter, userAddress, isMetaMask, ki
       onRefreshBalance();
     } catch (err: any) {
       console.error(err);
-      
+
       if (!kitKey || err.message.includes("Kit Key") || err.message.includes("401") || err.message.includes("unauthorized")) {
         setStatus({
           type: "error",
@@ -127,7 +128,7 @@ export const Swap: React.FC<SwapProps> = ({ adapter, userAddress, isMetaMask, ki
   const handleSimulateSwap = () => {
     setLoading(true);
     setStatus({ type: "info", msg: "[SIMULATION] Simulating Smart Contract execution for same-chain Swap on Arc..." });
-    
+
     setTimeout(() => {
       setLoading(false);
       const mockTxHash = "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
@@ -266,9 +267,9 @@ export const Swap: React.FC<SwapProps> = ({ adapter, userAddress, isMetaMask, ki
           {status.txHash && !status.msg.includes("[SIMULATED]") && (
             <div style={{ marginTop: "0.25rem", fontSize: "0.8rem" }}>
               Tx Hash:{" "}
-              <a 
-                href={`https://testnet.arcscan.app/tx/${status.txHash}`} 
-                target="_blank" 
+              <a
+                href={txUrl(status.txHash)}
+                target="_blank"
                 rel="noopener noreferrer"
               >
                 {status.txHash} ↗

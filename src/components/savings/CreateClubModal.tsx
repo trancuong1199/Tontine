@@ -68,7 +68,7 @@ export function CreateClubModal({
   const [collateralMode, setCollateralMode] = useState<'' | 'none' | 'custom'>(defaultCollateralMode ?? '');
   const [customCollateral, setCustomCollateral] = useState('');
   const requiredCollateral = parseCollateralInput(collateralMode, customCollateral);
-  const submitted = useRef<{ name: string; requiredCollateral: bigint } | null>(null);
+  const submitted = useRef<{ name: string; requiredCollateral: bigint; account?: string } | null>(null);
   const deploying = useRef(false);
 
   const toLocalDateTimeInput = (secondsFromNow: number): string => {
@@ -138,12 +138,13 @@ export function CreateClubModal({
         address: newAddress,
         name: submitted.current.name,
         initialCollateral: submitted.current.requiredCollateral.toString(),
-      });
+      }, submitted.current.account);
       setCollateralMode('');
       setCustomCollateral('');
+      const sameAccount = submitted.current.account?.toLowerCase() === address?.toLowerCase();
       submitted.current = null;
       deploying.current = false;
-      onSuccess(receipt.contractAddress as `0x${string}`);
+      if (sameAccount) onSuccess(receipt.contractAddress as `0x${string}`);
       onClose();
       resetDeploy();
     }
@@ -223,7 +224,7 @@ export function CreateClubModal({
       }
       const connected = getAccount(config);
       if (!address || connected.address !== address || connected.chainId !== ARC_TESTNET_CHAIN_ID) throw new Error("Wallet changed. Review the club configuration and retry.");
-      submitted.current = snapshot;
+      submitted.current = { ...snapshot, account: address };
       deployContract({
         abi: ROTATING_SAVINGS_ABI,
         bytecode: ROTATING_SAVINGS_BYTECODE,

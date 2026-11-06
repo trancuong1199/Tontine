@@ -1,3 +1,7 @@
+import { addrUrl } from "../../config/arc-constants.ts";
+import { useBondedClub } from "../../hooks/useBondedClub";
+import { formatUsdc } from "../../contract";
+import { bondedStateLabel } from "../../lib/bondedDisplay";
 import React, { useState, useEffect } from "react";
 import {
   ArrowRight,
@@ -21,7 +25,6 @@ import {
 } from "lucide-react";
 import { Language, t } from "../../lib/i18n";
 import {
-  DEFAULT_SAVINGS_CLUBS,
   formatAddress,
 } from "../../lib/savingsClubDirectory";
 import { ARC_TESTNET_DEFAULT_BONDED_CLUB } from "../../config/bonded-tontine";
@@ -63,6 +66,9 @@ export function LandingPage({
   language = "vi",
 }: LandingPageProps) {
   const isEn = language === "en";
+  const featured = useBondedClub(ARC_TESTNET_DEFAULT_BONDED_CLUB);
+  const featuredReady = !featured.isLoading && !featured.error;
+  const unavailable = featured.isLoading ? (isEn ? "Loading…" : "Đang tải…") : (isEn ? "Unavailable" : "Không tải được");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   // Scroll progress for dynamic orbital motion (Task-028: Scroll-Driven Orbital Movement)
@@ -554,8 +560,8 @@ export function LandingPage({
                   </h3>
                   <p className="text-xs text-amber-300">
                     {isEn
-                      ? "100% On-chain custody & mathematical guarantees"
-                      : "Khoá quỹ tự động, bảo vệ bằng mật mã học và toán học"}
+                      ? "On-chain records, collateral limits & disclosed risks"
+                      : "Ghi nhận trên chain, giới hạn cọc và công khai rủi ro"}
                   </p>
                 </div>
               </div>
@@ -663,7 +669,7 @@ export function LandingPage({
                 </p>
               </div>
               <div className="mt-6 pt-3 border-t border-slate-800 text-xs font-semibold text-amber-400 flex items-center gap-1">
-                <span>{isEn ? "Step 03 • Bid for Pot" : "Bước 03 • Đấu giá Bidding"}</span>
+                <span>{isEn ? "Step 03 • Borrow & Pay Interest" : "Bước 03 • Vay & Trả lãi"}</span>
               </div>
             </div>
 
@@ -715,32 +721,32 @@ export function LandingPage({
                   </span>
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-950/40 text-emerald-300 border border-emerald-500/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    {isEn ? "Open for Registration" : "Đang mở tham gia"}
+                    {featuredReady ? bondedStateLabel(featured.state, language) : unavailable}
                   </span>
                   <span className="text-xs font-mono text-amber-300/80 bg-black/60 px-2.5 py-0.5 rounded-md border border-amber-500/20">
                     {formatAddress(ARC_TESTNET_DEFAULT_BONDED_CLUB)}
                   </span>
                 </div>
                 <h3 className="text-2xl font-extrabold text-white">
-                  Saigon Bonded Club V2
+                  {featuredReady ? featured.groupName : unavailable}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300">
                   {isEn
-                    ? "Overcollateralized CirBTC savings club. Earn 2.0% fixed yield per round, protected by automated liquidation & 100% collateral seizure upon default."
-                    : "Mô hình hụi thế chấp tài sản CirBTC. Hưởng lãi cố định 2.0%/vòng từ chủ nhóm, bảo vệ bằng cơ chế thanh lý tự động và tịch thu 100% cọc nếu vỡ nợ."}
+                    ? "USDC contributions with owner CirBTC collateral. Review actual coverage and repayment obligations before joining."
+                    : "Góp USDC với cọc CirBTC của chủ nhóm. Kiểm tra tỷ lệ cọc thực tế và nghĩa vụ trả nợ trước khi tham gia."}
                 </p>
                 <div className="grid grid-cols-3 gap-2 py-2.5 px-3.5 bg-black/50 rounded-2xl border border-amber-500/20 text-center">
                   <div>
                     <div className="text-xs text-slate-400 uppercase">{isEn ? "Contribution" : "Mức góp"}</div>
-                    <div className="text-sm font-bold text-amber-300">10 USDC</div>
+                    <div className="text-sm font-bold text-amber-300">{featuredReady ? `${formatUsdc(featured.contributionAmount)} USDC` : unavailable}</div>
                   </div>
                   <div className="border-x border-slate-800">
-                    <div className="text-xs text-slate-400 uppercase">{isEn ? "Yield / Round" : "Lãi / vòng"}</div>
-                    <div className="text-sm font-bold text-emerald-400">2.00%</div>
+                    <div className="text-xs text-slate-400 uppercase">{isEn ? "Borrowing interest / round" : "Lãi vay / vòng"}</div>
+                    <div className="text-sm font-bold text-emerald-400">{featuredReady ? `${Number(featured.rateBpsPerRound) / 100}%` : unavailable}</div>
                   </div>
                   <div>
                     <div className="text-xs text-slate-400 uppercase">{isEn ? "Capacity" : "Sức chứa"}</div>
-                    <div className="text-sm font-bold text-amber-300">4 {isEn ? "members" : "thành viên"}</div>
+                    <div className="text-sm font-bold text-amber-300">{featuredReady ? `${featured.memberCount} / ${featured.maxMembers}` : unavailable}</div>
                   </div>
                 </div>
               </div>
@@ -757,84 +763,7 @@ export function LandingPage({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {DEFAULT_SAVINGS_CLUBS.map((club, idx) => {
-              const isFirst = idx === 0;
-              const contribution = isFirst ? "10 USDC" : "100 USDC";
-              const cycleText = isEn ? "7 Days / Cycle" : "7 ngày / Chu kỳ";
-              const membersText = isFirst
-                ? isEn
-                  ? "Max 5 Members"
-                  : "Tối đa 5 thành viên"
-                : isEn
-                ? "Max 10 Members"
-                : "Tối đa 10 thành viên";
 
-              return (
-                <div
-                  key={club.address}
-                  className="rounded-3xl border border-amber-500/20 bg-[#0c0d14] p-6 sm:p-7 hover:border-amber-500/40 hover:shadow-xl hover:shadow-amber-500/5 transition-all flex flex-col justify-between"
-                >
-                  <div>
-                    {/* Club Header Badge & Title */}
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-950/40 text-amber-300 border border-amber-500/30">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                        Arc Testnet Verified
-                      </span>
-                      <span className="text-xs font-mono text-amber-300/80 bg-black/60 px-2 py-0.5 rounded-md border border-amber-500/20">
-                        {formatAddress(club.address)}
-                      </span>
-                    </div>
-
-                    <h3 className="text-xl font-bold text-white mb-2">
-                      {club.name}
-                    </h3>
-                    <p className="text-xs text-slate-400 mb-6 font-mono break-all">
-                      {club.address}
-                    </p>
-
-                    {/* Quick Specs */}
-                    <div className="grid grid-cols-3 gap-2 py-3 px-3.5 bg-black/40 rounded-2xl border border-amber-500/20 mb-6">
-                      <div className="text-center">
-                        <div className="text-xs text-slate-400 font-medium">
-                          {isEn ? "Contribution" : "Mức đóng"}
-                        </div>
-                        <div className="text-sm font-bold text-amber-300 mt-0.5">
-                          {contribution}
-                        </div>
-                      </div>
-                      <div className="text-center border-x border-slate-800">
-                        <div className="text-xs text-slate-400 font-medium">
-                          {isEn ? "Cycle" : "Chu kỳ"}
-                        </div>
-                        <div className="text-sm font-bold text-amber-300 mt-0.5">
-                          {cycleText}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs text-slate-400 font-medium">
-                          {isEn ? "Capacity" : "Sức chứa"}
-                        </div>
-                        <div className="text-sm font-bold text-amber-300 mt-0.5">
-                          {membersText}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 1-Click Launch Club */}
-                  <button
-                    onClick={() => onSelectClub(club.address)}
-                    className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-slate-950 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 shadow-md shadow-amber-500/20 transition-all active:scale-95 cursor-pointer"
-                  >
-                    <span>{t("landingPage.enterClubBtn", language)}</span>
-                    <ArrowRight size={16} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </section>
 
@@ -970,7 +899,7 @@ export function LandingPage({
 
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium">
             <a
-              href="https://explorer.testnet.arc.io/address/0x6afaa0825d2e05ef00d571d4a043ab5dcc03534b"
+              href={addrUrl(ARC_TESTNET_DEFAULT_BONDED_CLUB)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-slate-400 hover:text-amber-300 transition-colors"

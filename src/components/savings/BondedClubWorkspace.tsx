@@ -1,3 +1,5 @@
+import { BondedCollateralSummary } from "./BondedCollateralSummary";
+import { memberErrorMessage } from "../../lib/bondedDisplay";
 import React, { useState } from "react";
 import { usePublicClient, useWaitForTransactionReceipt } from "wagmi";
 import { toast } from "sonner";
@@ -631,8 +633,8 @@ export function BondedClubWorkspace({
         : "Club not in active state"
       : club.oracleError
         ? isVi
-          ? "Giá oracle đã quá hạn, cần làm mới giá"
-          : "Oracle price is stale; refresh price first"
+          ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật"
+          : "Oracle price is invalid, unavailable or stale; refresh first"
         : club.totalDebt + club.interestOwed === 0n
           ? isVi
             ? "Không có dư nợ"
@@ -856,9 +858,9 @@ export function BondedClubWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    removeKnownGroup(contractAddress);
+                    removeKnownGroup(contractAddress, userAddress);
                     toast.success(isVi ? "Đã xóa nhóm khỏi danh bạ!" : "Removed club from directory!");
-                    const known = getKnownGroups().filter((g) => g.address.toLowerCase() !== contractAddress.toLowerCase());
+                    const known = getKnownGroups(userAddress).filter((g) => g.address.toLowerCase() !== contractAddress.toLowerCase());
                     if (known.length > 0) {
                       onSelectGroup?.(known[0].address as `0x${string}`);
                     } else {
@@ -1238,6 +1240,7 @@ export function BondedClubWorkspace({
               </h3>
             </div>
 
+            {club.membersLoadError && club.memberAddresses.length > 0 && <p role="status" className="text-xs text-amber-300">{memberErrorMessage(club.membersLoadError, language)} ({club.memberAddresses.length}/{club.memberCount.toString()}) <button onClick={() => void club.refetch()}>{isVi ? "Thử lại" : "Retry"}</button></p>}
             {club.memberAddresses.length === 0 ? (
               club.memberCount > 0n ? (
                 <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-3.5 text-xs text-amber-200 flex items-center justify-between gap-3">
@@ -1245,9 +1248,7 @@ export function BondedClubWorkspace({
                     <span className="font-semibold text-amber-300">
                       {isVi ? "Không thể tải danh sách địa chỉ" : "Failed to load member addresses"}:
                     </span>{" "}
-                    {isVi
-                      ? "Do giới hạn truy vấn RPC Arc Testnet. Nhóm hiện có " + club.memberCount.toString() + " thành viên on-chain."
-                      : "Due to Arc Testnet RPC block range limit. Club has " + club.memberCount.toString() + " on-chain members."}
+                    {memberErrorMessage(club.membersLoadError ?? "unavailable", language)}
                   </div>
                   <button
                     type="button"
@@ -1317,6 +1318,7 @@ export function BondedClubWorkspace({
             )}
           </div>
 
+          <BondedCollateralSummary club={club} language={language} />
           {/* 4. Oracle Status & Risk Disclosure */}
           <div className="rounded-3xl bg-black/40 backdrop-blur-md border border-amber-500/20 p-5 text-xs space-y-3 text-slate-300 shadow-md">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
@@ -1326,7 +1328,7 @@ export function BondedClubWorkspace({
                     Oracle ({club.oracleDescription || "BTC/USD"}):
                   </span>
                   <span className="font-mono text-amber-300 font-bold">
-                    {club.oraclePriceRaw > 0n ? "$" + formatUnitsExact(club.oraclePriceRaw, 8) : "N/A"}
+                    {club.oraclePriceRaw > 0n && club.oracleDecimals !== null ? "$" + formatUnitsExact(club.oraclePriceRaw, club.oracleDecimals) : "N/A"}
                   </span>
                   {club.isMockOracle && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/20 px-2.5 py-0.5 text-xs font-semibold text-orange-300 border border-orange-500/30">
@@ -1336,7 +1338,7 @@ export function BondedClubWorkspace({
                   )}
                   {isOracleRelevant && club.oracleError && (
                     <span className="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs font-semibold text-red-300 border border-red-500/30">
-                      {isVi ? "Giá oracle đã quá hạn, cần làm mới giá" : "Oracle price is stale; refresh price first"}
+                      {isVi ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật" : "Oracle price is invalid, unavailable or stale; refresh first"}
                     </span>
                   )}
                 </div>
@@ -1502,7 +1504,7 @@ export function BondedClubWorkspace({
               {staleBlocksPriceAction && (
                 <div className="rounded-xl border border-red-500/30 bg-red-950/40 px-3.5 py-2.5 text-xs text-red-300">
                   {isVi
-                    ? "Giá oracle đã quá hạn, cần làm mới giá trước khi vay hoặc rút cọc khi đang có nợ."
+                    ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật trước khi vay hoặc rút cọc khi đang có nợ."
                     : "Oracle price is stale; refresh price before borrowing or withdrawing collateral while indebted."}
                 </div>
               )}
@@ -1586,8 +1588,8 @@ export function BondedClubWorkspace({
                   {staleBlocksPriceAction && (
                     <p className="text-xs text-red-300">
                       {isVi
-                        ? "Giá oracle đã quá hạn, cần làm mới giá"
-                        : "Oracle price is stale; refresh price first"}
+                        ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật"
+                        : "Oracle price is invalid, unavailable or stale; refresh first"}
                     </p>
                   )}
                 </div>
@@ -1699,8 +1701,8 @@ export function BondedClubWorkspace({
                   {staleBlocksPriceAction && club.totalDebt + club.interestOwed > 0n && (
                     <p className="text-xs text-red-300">
                       {isVi
-                        ? "Giá oracle đã quá hạn, cần làm mới giá"
-                        : "Oracle price is stale; refresh price first"}
+                        ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật"
+                        : "Oracle price is invalid, unavailable or stale; refresh first"}
                     </p>
                   )}
                 </div>

@@ -1,3 +1,4 @@
+import { formatRoundDuration } from "../../lib/bondedDisplay";
 import { useEffect, useMemo, useState } from "react";
 import { usePublicClient, useReadContracts } from "wagmi";
 import type { Abi } from "viem";
@@ -45,6 +46,7 @@ import { Language, t } from "../../lib/i18n";
 import { EditClubNameModal } from "./EditClubNameModal";
 
 interface ClubDirectoryModalProps {
+  account?: string;
   isOpen: boolean;
   onClose: () => void;
   currentAddress: string;
@@ -63,15 +65,9 @@ export const CANONICAL_BONDED_CLUBS: SavingsClubItem[] = [
   },
 ];
 
-function formatRoundDuration(seconds: number, isEn: boolean): string {
-  if (seconds <= 0) return "--";
-  if (seconds < 3600) return `${Math.round(seconds / 60)} ${isEn ? "min" : "phút"}`;
-  if (seconds < 86400) return `${Math.round(seconds / 3600)} ${isEn ? "hours" : "giờ"}`;
-  if (seconds % 86400 === 0) return `${Math.round(seconds / 86400)} ${isEn ? "days" : "ngày"}`;
-  return `${(seconds / 86400).toFixed(1)} ${isEn ? "days" : "ngày"}`;
-}
 
 export function ClubDirectoryModal({
+  account,
   isOpen,
   onClose,
   currentAddress,
@@ -88,8 +84,8 @@ export function ClubDirectoryModal({
   const isEn = language === "en";
 
   const displayedGroups = useMemo(() => {
-    const removed = getRemovedGroups();
-    const rawList = groups.length > 0 ? groups : getKnownGroups();
+    const removed = getRemovedGroups(account);
+    const rawList = groups.length > 0 ? groups : getKnownGroups(account);
     const hiddenSet = new Set(HIDDEN_DEMO_CLUBS.map((a) => a.toLowerCase()));
 
     const list = rawList.filter((g) => {
@@ -109,32 +105,32 @@ export function ClubDirectoryModal({
       return [...fallback, ...list];
     }
     return list;
-  }, [groups]);
+  }, [groups, account]);
 
   const publicClient = usePublicClient({ chainId: ARC_TESTNET_CHAIN_ID });
   const canonicalFactory = CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
 
   useEffect(() => {
     if (isOpen) {
-      let currentKnown = getKnownGroups();
+      let currentKnown = getKnownGroups(account);
       const hasBonded = currentKnown.some((g) => g.version === "v2-bonded");
       if (!hasBonded) {
-        const removed = getRemovedGroups();
+        const removed = getRemovedGroups(account);
         for (const item of CANONICAL_BONDED_CLUBS) {
           if (!removed.has(item.address.toLowerCase())) {
             saveKnownGroup({
               address: item.address,
               name: item.name,
               version: "v2-bonded",
-            });
+            }, account);
             registerRuntimeBondedClub(item.address);
           }
         }
-        currentKnown = getKnownGroups();
+        currentKnown = getKnownGroups(account);
       }
       setGroups(currentKnown);
     }
-    if (!publicClient || !canonicalFactory) return;
+    if (!isOpen || !publicClient || !canonicalFactory) return;
     let cancelled = false;
     setIsSyncing(true);
     void (async () => {
@@ -143,13 +139,14 @@ export function ClubDirectoryModal({
           publicClient as unknown as Parameters<typeof syncFactoryBondedClubs>[0],
           canonicalFactory,
           BONDED_TONTINE_FACTORY_ABI as unknown as readonly unknown[],
-          BONDED_TONTINE_ABI as unknown as readonly unknown[]
+          BONDED_TONTINE_ABI as unknown as readonly unknown[],
+          account
         );
         for (const item of synced) {
           registerRuntimeBondedClub(item.address);
         }
         if (currentAddress && currentAddress.startsWith("0x")) {
-          const removed = getRemovedGroups();
+          const removed = getRemovedGroups(account);
           if (!removed.has(currentAddress.toLowerCase())) {
             const isClub = await publicClient.readContract({
               address: canonicalFactory,
@@ -176,16 +173,16 @@ export function ClubDirectoryModal({
                 address: currentAddress as `0x${string}`,
                 name: clubName,
                 version: "v2-bonded",
-              });
-              onGroupNameUpdated?.(currentAddress as `0x${string}`, clubName);
+              }, account);
+              if (!cancelled) onGroupNameUpdated?.(currentAddress as `0x${string}`, clubName);
             }
           }
         }
         if (!cancelled && isOpen) {
-          const removed = getRemovedGroups();
+          const removed = getRemovedGroups(account);
           const hiddenSet = new Set(HIDDEN_DEMO_CLUBS.map((a) => a.toLowerCase()));
           setGroups(
-            getKnownGroups().filter(
+            getKnownGroups(account).filter(
               (g) => !removed.has(g.address.toLowerCase()) && !hiddenSet.has(g.address.toLowerCase())
             )
           );
@@ -201,7 +198,7 @@ export function ClubDirectoryModal({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, publicClient, canonicalFactory, currentAddress]);
+  }, [isOpen, publicClient, canonicalFactory, currentAddress, account]);
 
   // Read rich parameters for all clubs: state, memberCount, maxMembers, contributionAmount, roundDuration, owner
   const stateContracts = useMemo(() => {
@@ -268,16 +265,21 @@ export function ClubDirectoryModal({
     },
   });
 
+  const visibleGroups = displayedGroups.map((group, groupIndex) => ({ group, groupIndex })).filter(({ group, groupIndex }) => {
+    const result = stateData?.[groupIndex * 6];
+    return result?.status !== "success" || Number(result.result) !== (group.version === "v2-bonded" ? 4 : GROUP_STATE.CANCELLED);
+  });
+
   const customGroupsCount = useMemo(() => {
     return groups.filter((g) => !g.isDefault).length;
-  }, [groups]);
+  }, [groups, account]);
 
   const handleClearCustomGroups = () => {
     if (customGroupsCount === 0) {
       toast.info(isEn ? t("clubDirectoryModal.clearOldClubsEmpty", language) : "Danh bạ hiện đã sạch sẽ, chỉ chứa các nhóm mặc định.");
       return;
     }
-    clearCustomKnownGroups();
+    clearCustomKnownGroups(account);
     setGroups([...DEFAULT_SAVINGS_CLUBS]);
     toast.success(
       isEn
@@ -392,8 +394,8 @@ export function ClubDirectoryModal({
       setConfirmingClub(null);
       return;
     }
-    removeKnownGroup(group.address);
-    const updated = getKnownGroups().filter((g) => g.address.toLowerCase() !== group.address.toLowerCase());
+    removeKnownGroup(group.address, account);
+    const updated = getKnownGroups(account).filter((g) => g.address.toLowerCase() !== group.address.toLowerCase());
     setGroups(updated);
     setConfirmingClub(null);
     onGroupNameUpdated?.(group.address, group.name);
@@ -436,8 +438,8 @@ export function ClubDirectoryModal({
   };
 
   const handleSaveClubName = (address: `0x${string}`, newName: string) => {
-    updateKnownGroupName(address, newName);
-    const updated = getKnownGroups();
+    updateKnownGroupName(address, newName, account);
+    const updated = getKnownGroups(account);
     setGroups(updated);
     if (onGroupNameUpdated) {
       onGroupNameUpdated(address, newName);
@@ -488,12 +490,12 @@ export function ClubDirectoryModal({
 
         {/* Club List */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
-          {displayedGroups.length === 0 ? (
+          {visibleGroups.length === 0 ? (
             <div className="text-center py-12 text-slate-400 text-xs sm:text-sm">
               {isEn ? t("clubDirectoryModal.noClubs", language) : "Chưa có nhóm nào trong danh sách."}
             </div>
           ) : (
-            displayedGroups.map((group, groupIndex) => {
+            visibleGroups.map(({ group, groupIndex }) => {
               const isCurrent = group.address.toLowerCase() === currentAddress.toLowerCase();
               const baseIdx = groupIndex * 6;
               const rawState =

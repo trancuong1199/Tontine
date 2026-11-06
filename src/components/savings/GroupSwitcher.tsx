@@ -7,6 +7,7 @@ import { saveKnownGroup, buildShareGroupUrl } from "../../lib/savingsClubDirecto
 import { Language, t } from "../../lib/i18n";
 
 interface GroupSwitcherProps {
+  account?: string;
   currentAddress: `0x${string}`;
   onSwitchGroup: (newAddress: `0x${string}`) => void;
   onOpenCreateModal?: () => void;
@@ -16,6 +17,7 @@ interface GroupSwitcherProps {
 }
 
 export function GroupSwitcher({
+  account,
   currentAddress,
   onSwitchGroup,
   onOpenCreateModal,
@@ -78,7 +80,7 @@ export function GroupSwitcher({
       saveKnownGroup({
         address: trimmed,
         name: isEn ? `Savings Club ${formatAddress(trimmed)}` : `Nhóm Hụi ${formatAddress(trimmed)}`,
-      });
+      }, account);
       onSwitchGroup(trimmed.toLowerCase() as `0x${string}`);
       setInputAddress("");
       setIsExpanded(false);

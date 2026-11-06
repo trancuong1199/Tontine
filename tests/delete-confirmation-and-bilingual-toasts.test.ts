@@ -87,7 +87,7 @@ test("TC-CONFIRM-05 (AC-01.5): Nút Xác nhận xóa kích hoạt handleConfirmD
     "ClubDirectoryModal must declare handleConfirmDelete handler"
   );
   assert.ok(
-    modalSrc.includes("removeKnownGroup(group.address);"),
+    modalSrc.includes("removeKnownGroup(group.address, account);"),
     "handleConfirmDelete must remove group from persistent storage"
   );
   assert.ok(

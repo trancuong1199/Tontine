@@ -1,0 +1,431 @@
+{
+  "taskId": "bonded-review-20261106",
+  "createdAt": "2026-11-06T15:54:28.237Z",
+  "files": {
+    "src/tracing.ts": {
+      "exists": true,
+      "sha256": "3ed5452d5abd6057c818e3362be325c3f1566523927e496e49e0eaf1bafd64b8",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_tracing.ts"
+    },
+    "src/vite-env.d.ts": {
+      "exists": true,
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_vite-env.d.ts"
+    },
+    "src/console-capture.ts": {
+      "exists": true,
+      "sha256": "ab682e27bfb8efb8b1084ab91ff604baee9b2128892a8036dc0584d82733d3ce",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_console-capture.ts"
+    },
+    "src/contract.ts": {
+      "exists": true,
+      "sha256": "9cf41730d021a84862be6ceca5a4b151581397a373d18016894928ec58a8ecfe",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_contract.ts"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "ef5f791f1199f99ae15ef49ddf73a8c917fac1a2c80a8e6caf48627e824f276a",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_App.tsx"
+    },
+    "src/onchain-money.ts": {
+      "exists": true,
+      "sha256": "8405ce18d622a27303569c7a6dbb152599604574a76a2dc41836c6fcbee84f58",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_onchain-money.ts"
+    },
+    "src/onchain-facts.ts": {
+      "exists": true,
+      "sha256": "44d180f0d40985b1ce3ef85167aa0a52a57f09b173a58053614efb73686a53d2",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_onchain-facts.ts"
+    },
+    "src/config.ts": {
+      "exists": true,
+      "sha256": "b3639c8bbcc6f6332960791bc3401a10ffdd97051f4a752e36b0fb8f5e135cf3",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_config.ts"
+    },
+    "src/main.tsx": {
+      "exists": true,
+      "sha256": "75663aa71f59d8553d0664ef250f4d1a7ddd0bbbd824086ab5b30cf9201d56a5",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_main.tsx"
+    },
+    "src/onchain-wait.ts": {
+      "exists": true,
+      "sha256": "e6b89dcf266213adea50cd35dd761aa8adfc4fb121dd90c702fb635d98bb1577",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_onchain-wait.ts"
+    },
+    "src/components/RightSidebar.tsx": {
+      "exists": true,
+      "sha256": "bd6ecf266858e1e987019f08a427a5c96372e654380e1891501d23d258d1743c",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_RightSidebar.tsx"
+    },
+    "src/components/Send.tsx": {
+      "exists": true,
+      "sha256": "0dfeba40cad617532bf05215e9aaffcbc80c09c0cfa968b132e3b491ec256ba3",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_Send.tsx"
+    },
+    "src/components/Logs.tsx": {
+      "exists": true,
+      "sha256": "6005594508567732cab699a5cd37d4f5c76fc1af63c26b7742055d367f9d502f",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_Logs.tsx"
+    },
+    "src/components/TransactionMemos.tsx": {
+      "exists": true,
+      "sha256": "327e3b99a3502e66a047b67dcce387fff165ed3e46b14b4d1b5d7654b5ae9961",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_TransactionMemos.tsx"
+    },
+    "src/components/BackgroundAnimation.tsx": {
+      "exists": true,
+      "sha256": "1c23edef2a0ba74e71925d11a677a88a1982b597ccdc9e661e9d1c9c8e87fb97",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_BackgroundAnimation.tsx"
+    },
+    "src/components/Bridge.tsx": {
+      "exists": true,
+      "sha256": "42903dba7c29c26a70fc510b28ea9bbf0fab8e0fd3597cd35a1b31ea461b9915",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_Bridge.tsx"
+    },
+    "src/components/PresentationDeck.tsx": {
+      "exists": true,
+      "sha256": "adf3819df6b2e20474eb6efae8ac4d57001748b4b4b9a22ca2617d75474de85c",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_PresentationDeck.tsx"
+    },
+    "src/components/SwapWidget.tsx": {
+      "exists": true,
+      "sha256": "375804405c45f7a2d32391c2b55d28bc2e51fa7bd7fa0c6a650785c339e08e78",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_SwapWidget.tsx"
+    },
+    "src/components/ArcAppKit.tsx": {
+      "exists": true,
+      "sha256": "79b60421f3dd7987efe395eb6cf3647263465aa8a918bba460defe2ec750ddfa",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_ArcAppKit.tsx"
+    },
+    "src/components/Faucet.tsx": {
+      "exists": true,
+      "sha256": "1b8362523f811cf7e32b6ef11480b6bfe1538ccc935e1e2c28b6fe08fcbf8895",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_Faucet.tsx"
+    },
+    "src/components/ArbitrageBot.tsx": {
+      "exists": true,
+      "sha256": "f9f809b6e6381f4b2e3c62d3042609961634f54572c7c9df6fd894b7572ec324",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_ArbitrageBot.tsx"
+    },
+    "src/components/Payments.tsx": {
+      "exists": true,
+      "sha256": "95b67634c3b6e076b7479285a3653c17795c39d0faaa66211ab092daf91af227",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_Payments.tsx"
+    },
+    "src/components/UniswapPortal.tsx": {
+      "exists": true,
+      "sha256": "7d7fc4c08fce424717f350a78996cc30a1023f10ac743ff111e88f1727ac316a",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_UniswapPortal.tsx"
+    },
+    "src/components/NetworkStats.tsx": {
+      "exists": true,
+      "sha256": "b7c56cd402000d3827c0673a0938016448a8203edec41364bdbc8fbbafd61816",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_NetworkStats.tsx"
+    },
+    "src/components/MerchantTreasury.tsx": {
+      "exists": true,
+      "sha256": "851da53dbf88e14ec4406543ca8353dfe2816a8a799db51a2f511664ddeadfec",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_MerchantTreasury.tsx"
+    },
+    "src/components/Dashboard.tsx": {
+      "exists": true,
+      "sha256": "32d7b7a1c636a55e18f3827bd70e4aeea2afa807be02d249f313a00d5979153a",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_Dashboard.tsx"
+    },
+    "src/components/FeaturesDoc.tsx": {
+      "exists": true,
+      "sha256": "95aaa083303e68709c1b7ae3cd01c603ec6f7043f4916904ce4618ed212e77b6",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_FeaturesDoc.tsx"
+    },
+    "src/components/AgentStack.tsx": {
+      "exists": true,
+      "sha256": "8d9684401e9ab083e95572d818660bb8bda3e0a8acf5dd2c30703ab57c504733",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_AgentStack.tsx"
+    },
+    "src/components/Analytics.tsx": {
+      "exists": true,
+      "sha256": "537a9df4d82061426035d10e797c6d865ac49d5faf9c3e0d93da7b57668fbf29",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_Analytics.tsx"
+    },
+    "src/components/Swap.tsx": {
+      "exists": true,
+      "sha256": "b23ea02b20cdbc8f2d88618f6d0c8eb742e53efde9033b6171ff16540e347820",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_Swap.tsx"
+    },
+    "src/components/CircleSmartContracts.tsx": {
+      "exists": true,
+      "sha256": "5519fdb04241222607f59f896a0c234453d66cb87112a57aad6dce78f842ce30",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_CircleSmartContracts.tsx"
+    },
+    "src/config/arc-constants.ts": {
+      "exists": true,
+      "sha256": "fcc4ce5adc2e73e676b82081fd3eb1dfdb8d719a518fffb2f4f194b079110bde",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_config_arc-constants.ts"
+    },
+    "src/config/bonded-tontine.ts": {
+      "exists": true,
+      "sha256": "0eef942b6b352e4fa118e2e54915f319fe8bea157b8f22d454ed2ccc256707ee",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_config_bonded-tontine.ts"
+    },
+    "src/config/arcNetwork.ts": {
+      "exists": true,
+      "sha256": "08ca0eedb0a85d47ac5e8811972591abeaab26b7f8a4b413f2f325bfa0f395ea",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_config_arcNetwork.ts"
+    },
+    "src/lib/cycleCapabilities.ts": {
+      "exists": true,
+      "sha256": "846405e1439aec65c3a0bb17c123b11147db0983fa6e10e7fbfa53ff844c75d6",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_cycleCapabilities.ts"
+    },
+    "src/lib/arcAnalytics.ts": {
+      "exists": true,
+      "sha256": "b9437bf33c23b9daa4de93ac0cd4bc1155a66902431c83cfb9596a9e59a7d928",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_arcAnalytics.ts"
+    },
+    "src/lib/collateralPolicy.ts": {
+      "exists": true,
+      "sha256": "78925875867e45c40561a82c3cf3e88bbf2d669c74e2f09716c3730e888ecf58",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_collateralPolicy.ts"
+    },
+    "src/lib/arcWallet.ts": {
+      "exists": true,
+      "sha256": "c2b8f86ee8134626e4e0d249b41c280da5765a3e47d33bb9368fe2b3efd74c7c",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_arcWallet.ts"
+    },
+    "src/lib/bidPresets.ts": {
+      "exists": true,
+      "sha256": "7f0894601dd319844f37aa85a3480bf38749b7fd1242d8a472594308768c2edf",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_bidPresets.ts"
+    },
+    "src/lib/arcBalances.ts": {
+      "exists": true,
+      "sha256": "1f3ef9e5bfcc57efb45488b86a03adf6a2dc90c7d8c1269299adb33e52ac7ff4",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_arcBalances.ts"
+    },
+    "src/lib/swapSafety.ts": {
+      "exists": true,
+      "sha256": "cbb2d392fa9205622fae87c4ae2c98b8fc9467695bb10606acbd93118863695a",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_swapSafety.ts"
+    },
+    "src/lib/navigation.ts": {
+      "exists": true,
+      "sha256": "fc9ce4a904b5997e90b80ff6d57c22d0b8503db43b3d1c6a80b5b24642f53a0a",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_navigation.ts"
+    },
+    "src/lib/priceMonitor.ts": {
+      "exists": true,
+      "sha256": "d3f624ca304cbf1d6210cc5549956dea3d4887588262afab2f8a4af9a5837a68",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_priceMonitor.ts"
+    },
+    "src/lib/roundHistory.ts": {
+      "exists": true,
+      "sha256": "a6cf0010f2fd1f3b7ec5e56c7426f6b7121264fd9d209aa0b262e0c09d95a8ae",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_roundHistory.ts"
+    },
+    "src/lib/TransactionHistory.ts": {
+      "exists": true,
+      "sha256": "496a2df98895d507473ca45c0795c5762b30539462d26ac9ccc37a4933e2c8dd",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_TransactionHistory.ts"
+    },
+    "src/lib/cctpService.ts": {
+      "exists": true,
+      "sha256": "42db5970ff7561a644bb4ade34cae846865264c121efc5a6da8927d06b009c35",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_cctpService.ts"
+    },
+    "src/lib/ApiLogger.ts": {
+      "exists": true,
+      "sha256": "d157d38065153e7799d57a67256b0b46c275bc07a8545db64e3a72abfffe49ba",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_ApiLogger.ts"
+    },
+    "src/lib/passkeySession.ts": {
+      "exists": true,
+      "sha256": "6de18bbe105c2a520697e938b4859ad2fdb035780500582e5cd28dff8f7a60a6",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_passkeySession.ts"
+    },
+    "src/lib/bondedTontine.ts": {
+      "exists": true,
+      "sha256": "c29726e3b97df9addff6fa0a32d752120a8ba8f3ff92f7265ba9dbc694021258",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_bondedTontine.ts"
+    },
+    "src/lib/savingsClubDirectory.ts": {
+      "exists": true,
+      "sha256": "68ae6002c66f7de43c1da2e430635a79b04744bf3594d62e7ae3738c4bbdcd7d",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_savingsClubDirectory.ts"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "6d8bf13e2b47f1693b1c0c22223c0678d65d9c99beb560aa3e57a754a61c5c29",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_i18n.ts"
+    },
+    "src/lib/arcSwap.ts": {
+      "exists": true,
+      "sha256": "3d363ce7ee711712e98a80cace43878434595dfdc771b2ec749e6714e76ce3b9",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_lib_arcSwap.ts"
+    },
+    "src/utils/arcChain.ts": {
+      "exists": true,
+      "sha256": "817b3dacabf9ca36c6c03247e84de7d9663666bcc2c12e3427b3647da802a297",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_utils_arcChain.ts"
+    },
+    "src/hooks/useIsBondedClub.ts": {
+      "exists": true,
+      "sha256": "153558b5ccc8a52b124bebfd9effa7dedf70e4389d1528307fcd3706b0b0fade",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_hooks_useIsBondedClub.ts"
+    },
+    "src/hooks/useSavingsClub.ts": {
+      "exists": true,
+      "sha256": "06538e219a3d0311febc4e277be8d88200fa7280274a0687627c3fdf59ae7a4b",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_hooks_useSavingsClub.ts"
+    },
+    "src/hooks/useBondedClub.ts": {
+      "exists": true,
+      "sha256": "edd6a2df242ed74c3e8717ef8e35c4d0c0959709b78f6ee5860c75537c403f22",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_hooks_useBondedClub.ts"
+    },
+    "src/hooks/usePasskeyWallet.ts": {
+      "exists": true,
+      "sha256": "c0fc79e0a7bc4ab2c9cfe89d4fcf070b73400c3eaabe892f312973bd39598183",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_hooks_usePasskeyWallet.ts"
+    },
+    "src/hooks/useCollateralPolicy.ts": {
+      "exists": true,
+      "sha256": "40395b854831ac52b88b05829ecb8bdf75cd556e4cf836939c9152c7a26a5508",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_hooks_useCollateralPolicy.ts"
+    },
+    "src/hooks/useArcWriteContract.ts": {
+      "exists": true,
+      "sha256": "e0b4d1f8fa8c0172997f4e01a3d0acfcad1297121480145a698509f07edc7f0c",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_hooks_useArcWriteContract.ts"
+    },
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "exists": true,
+      "sha256": "e12847ae6e8d3c128068357fe8003ced0889eb6bfda7fa56f43a575715da96f0",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_ArcAppKitModal.tsx"
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "exists": true,
+      "sha256": "444dc137742b8ed5dd6b90ad8daf3ea96556e57218fb698d1f368ae9c39fc457",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_PasskeyActionPanel.tsx"
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "exists": true,
+      "sha256": "74ce82a55d5f04a3895f69bb73ca22d3d9396671315270b0b4fec231a2a8b19d",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_ActionPanel.tsx"
+    },
+    "src/components/savings/CreateClubModal.tsx": {
+      "exists": true,
+      "sha256": "a6d900b97c3083e20fa2a6fb94c79b642f9615af974bb0be16b139e5ee42e25c",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_CreateClubModal.tsx"
+    },
+    "src/components/savings/CollateralPreview.tsx": {
+      "exists": true,
+      "sha256": "8cb536f4baa8eba1b9af1009cfb291a8657651ac82cbc69d6473411881359139",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_CollateralPreview.tsx"
+    },
+    "src/components/savings/OnboardingScreen.tsx": {
+      "exists": true,
+      "sha256": "b32c430bc136577b4c8c95df6c25d05f3059bdc5c796a2f3306667dea0f5431e",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_OnboardingScreen.tsx"
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "exists": true,
+      "sha256": "77392a1ceb2cbacb0bfd049d40f9f4205dbe6f9daee9550ed57f5f633020b699",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_ClubCard.tsx"
+    },
+    "src/components/savings/BondedClubWorkspace.tsx": {
+      "exists": true,
+      "sha256": "65033f51d84b02f8d2198a0361b6bcb3ddd8d9acd924469a0aefb3ff9e763f5a",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_BondedClubWorkspace.tsx"
+    },
+    "src/components/savings/EditClubNameModal.tsx": {
+      "exists": true,
+      "sha256": "8c7f49a8a90d560ada1b9a01164ba85e99abac0660ba96c52c1bb4c7d0e83df4",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_EditClubNameModal.tsx"
+    },
+    "src/components/savings/MemberStatus.tsx": {
+      "exists": true,
+      "sha256": "c603a5aeae0e106f348718aee180a7d1488aa9bcac3233128e8d349b243a8287",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_MemberStatus.tsx"
+    },
+    "src/components/savings/UnauthenticatedBondedClubPreview.tsx": {
+      "exists": true,
+      "sha256": "859abb94cdda817062395811ba80e417918cecae51571d8a91365c64cbd1ff05",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_UnauthenticatedBondedClubPreview.tsx"
+    },
+    "src/components/savings/HowItWorksCard.tsx": {
+      "exists": true,
+      "sha256": "67bc94f20911f203caff3de863c89b27b604e13514edd31f190ed7fb5ef44e4d",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_HowItWorksCard.tsx"
+    },
+    "src/components/savings/WaitingView.tsx": {
+      "exists": true,
+      "sha256": "8dd41dc6faac620710c2d325405423cdc5c6b05c2bc13c5ec8d81104075c5540",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_WaitingView.tsx"
+    },
+    "src/components/savings/GroupSwitcher.tsx": {
+      "exists": true,
+      "sha256": "a597c22ceaddd1548e2cd04e29a2353b04d2dc2e47431c25c7fba59fd2aafaf5",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_GroupSwitcher.tsx"
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "exists": true,
+      "sha256": "da1afa57fccec003de534022b3c30b4bca3d0e6c91f43e32da0e96063826726b",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_ClubDirectoryModal.tsx"
+    },
+    "src/components/savings/Header.tsx": {
+      "exists": true,
+      "sha256": "5d031aa472518d8b69395951c0a36e39c22e37a87859406d5751692bb4736295",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_Header.tsx"
+    },
+    "src/components/savings/ClubMembersRoster.tsx": {
+      "exists": true,
+      "sha256": "8f00fad44da50e1a1206d3dd47f4c74cdb07bd69434d81c3d813d34219ce7735",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_ClubMembersRoster.tsx"
+    },
+    "src/components/savings/RoundHistory.tsx": {
+      "exists": true,
+      "sha256": "d414ea41fed54a7f01fe2fef433d75001bb0f95eb71af18c5863ff60261b4dc2",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_RoundHistory.tsx"
+    },
+    "src/components/savings/GuideModal.tsx": {
+      "exists": true,
+      "sha256": "b6905dd75f1d61c98cc634153f47fafbfb06605614d565287ef4a3d41b9f1330",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_GuideModal.tsx"
+    },
+    "src/components/savings/CreateBondedClubModal.tsx": {
+      "exists": true,
+      "sha256": "ca7eb3df443d93cfce04077193df0c1f7a37d4afde66fdefa7d053c0ab6dd678",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_CreateBondedClubModal.tsx"
+    },
+    "src/components/savings/NonMemberActiveView.tsx": {
+      "exists": true,
+      "sha256": "41cda7b70f2ff48499e1f5645adcacab871f4a235db6e4e3d3db2038ad442693",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_savings_NonMemberActiveView.tsx"
+    },
+    "src/components/landing/LandingPage.tsx": {
+      "exists": true,
+      "sha256": "e57541eb06d1b4e34cefa2d7ea993792c65fb716884d1fa4cb90507cc476efee",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/src_components_landing_LandingPage.tsx"
+    },
+    "scripts/refresh-mock-oracle.mjs": {
+      "exists": true,
+      "sha256": "c747ed029d920c95ef431d7b8af1f0c7110e2d4f5beeadbec5e26830a865b137",
+      "snapshot": "docs/manifests/bonded-review-20261106/baseline/scripts_refresh-mock-oracle.mjs"
+    },
+    "docs/oracle-operations.md": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/lib/bondedDisplay.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/components/savings/BondedCollateralSummary.tsx": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    }
+  }
+}

@@ -278,7 +278,7 @@ test("TC-DIR-03 (AC-02.2, AC-02.3): ClubDirectoryModal.tsx tích hợp nút dọ
 
   // 4. Hàm xử lý handleClearCustomGroups cập nhật state tức thì về DEFAULT_SAVINGS_CLUBS
   assert.ok(
-    modalSrc.includes("clearCustomKnownGroups()"),
+    modalSrc.includes("clearCustomKnownGroups(account)"),
     "handleClearCustomGroups must call clearCustomKnownGroups"
   );
   assert.ok(

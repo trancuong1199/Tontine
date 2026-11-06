@@ -45,7 +45,7 @@ test("R1: fetchBondedClubMembers reports clear error when memberCount > 0 and al
 
   const result = await fetchBondedClubMembers(mockFailingClient, failingClub, 3n);
   assert.deepEqual(result.members, []);
-  assert.match(result.error ?? "", /giới hạn RPC/);
+  assert.match(result.error ?? "", /rpc-range/);
 });
 
 test("R2: calculateMaxBorrow respects pool liquidity when liquidity is less than collateral limit", () => {

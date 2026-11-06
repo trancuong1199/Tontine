@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   SAVINGS_CLUBS_STORAGE_KEY,
+  getAccountKnownStorageKey,
   getKnownGroups,
   saveKnownGroup,
   updateKnownGroupName,
@@ -38,7 +39,7 @@ test("TC-EDIT-01 (AC-01.1, AC-01.2 & AC-01.3): updateKnownGroupName cập nhật
 
     // 1. Cập nhật tên nhóm hợp lệ
     updateKnownGroupName(testAddr, "Nhóm Phát Tài 2026");
-    const raw = mockStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
+    const raw = mockStorage.getItem(getAccountKnownStorageKey());
     assert.ok(raw, "Storage key must exist after update");
     const parsed = JSON.parse(raw);
     const item = parsed.find((g: { address: string }) => g.address.toLowerCase() === testAddr.toLowerCase());
@@ -47,14 +48,14 @@ test("TC-EDIT-01 (AC-01.1, AC-01.2 & AC-01.3): updateKnownGroupName cập nhật
 
     // 2. Tên rỗng hoặc chỉ có khoảng trắng phải bị bỏ qua (không ghi đè tên cũ)
     updateKnownGroupName(testAddr, "   ");
-    const rawAfterEmpty = mockStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
+    const rawAfterEmpty = mockStorage.getItem(getAccountKnownStorageKey());
     const parsedAfterEmpty = JSON.parse(rawAfterEmpty!);
     const itemAfterEmpty = parsedAfterEmpty.find((g: { address: string }) => g.address.toLowerCase() === testAddr.toLowerCase());
     assert.equal(itemAfterEmpty.name, "Nhóm Phát Tài 2026", "Empty name must not overwrite existing valid name");
 
     // 3. Địa chỉ không hợp lệ phải bị bỏ qua
     updateKnownGroupName("0xinvalid", "Tên Hợp Lệ");
-    const rawInvalid = mockStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
+    const rawInvalid = mockStorage.getItem(getAccountKnownStorageKey());
     const parsedInvalid = JSON.parse(rawInvalid!);
     assert.ok(!parsedInvalid.some((g: { address: string }) => g.address === "0xinvalid"));
   } finally {
@@ -115,7 +116,7 @@ test("TC-EDIT-04 (AC-03.1 & AC-03.2): ClubDirectoryModal.tsx render nút icon Pe
   assert.ok(dirSrc.includes("<Pencil size={14} />"), "ClubDirectoryModal must render <Pencil size={14} /> edit icon");
   assert.ok(dirSrc.includes("setEditingClub(group)"), "Clicking pencil icon must set editingClub state");
   assert.ok(dirSrc.includes("<EditClubNameModal"), "ClubDirectoryModal must render EditClubNameModal component");
-  assert.ok(dirSrc.includes("updateKnownGroupName(address, newName)"), "handleSaveClubName must call updateKnownGroupName");
+  assert.ok(dirSrc.includes("updateKnownGroupName(address, newName, account)"), "handleSaveClubName must call updateKnownGroupName");
 });
 
 test("TC-EDIT-05 (AC-03.3 & AC-03.4): ClubCard.tsx render nút icon Pencil cạnh groupName và App.tsx đồng bộ tức thì", () => {
@@ -126,7 +127,7 @@ test("TC-EDIT-05 (AC-03.3 & AC-03.4): ClubCard.tsx render nút icon Pencil cạn
   assert.ok(cardSrc.includes("<Pencil size={16} />"), "ClubCard must render <Pencil size={16} /> edit icon");
   assert.ok(appSrc.includes("onEditName={() => setShowEditCurrentClubModal(true)}"), "App.tsx must pass onEditName callback to ClubCard");
   assert.ok(appSrc.includes("<EditClubNameModal"), "App.tsx must render EditClubNameModal for active club");
-  assert.ok(appSrc.includes("updateKnownGroupName(address, newName)"), "App.tsx must update name in storage upon save");
+  assert.ok(appSrc.includes("updateKnownGroupName(address, newName, passkeyAddress ?? wagmiAddress)"), "App.tsx must update name in storage upon save");
 });
 
 // ============================================================================

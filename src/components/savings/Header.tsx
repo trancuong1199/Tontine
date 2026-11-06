@@ -1,3 +1,4 @@
+import { addrUrl } from "../../config/arc-constants.ts";
 import { useState, useRef, useEffect } from "react";
 import { ConnectKitButton } from "connectkit";
 import { PiggyBank, BookOpen, ExternalLink, Plus, Layers, Globe, Zap, ChevronDown, Check, Copy, LogOut } from "lucide-react";
@@ -258,7 +259,7 @@ export function Header({
           )}
 
           <a
-            href="https://explorer.testnet.arc.io/address/0x6afaa0825d2e05ef00d571d4a043ab5dcc03534b"
+            href={addrUrl("0x6afaa0825d2e05ef00d571d4a043ab5dcc03534b")}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden lg:inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors whitespace-nowrap"

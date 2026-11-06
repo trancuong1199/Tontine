@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   DEFAULT_SAVINGS_CLUBS,
   SAVINGS_CLUBS_STORAGE_KEY,
+  getAccountKnownStorageKey,
   getKnownGroups,
   saveKnownGroup,
 } from "../src/lib/savingsClubDirectory.ts";
@@ -59,7 +60,7 @@ test("TC-DIR-02 (AC-01.2): Lưu trữ và khử trùng lặp - chuẩn hóa ch�
     saveKnownGroup({ address: testAddr.toUpperCase(), name: "Nhóm Test Cấp Vốn" });
     saveKnownGroup({ address: testAddr.toLowerCase(), name: "Nhóm Test Cấp Vốn Trùng" });
 
-    const storedRaw = mockStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
+    const storedRaw = mockStorage.getItem(getAccountKnownStorageKey());
     assert.ok(storedRaw, "Storage key must exist");
 
     const parsed = JSON.parse(storedRaw);
@@ -88,8 +89,8 @@ test("TC-DIR-03 (AC-01.3): Tự động ghi nhận khi tạo nhóm mới thành 
     "CreateClubModal must call saveKnownGroup"
   );
   assert.ok(
-    appSrc.includes("saveKnownGroup"),
-    "App.tsx must call saveKnownGroup"
+    appSrc.includes("activeAccountRef.current") && modalSrc.includes("submitted.current.account"),
+    "Creation saves must retain submitted account and guard stale completion"
   );
 });
 

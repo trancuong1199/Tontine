@@ -1,122 +1,66 @@
 #!/usr/bin/env node
-/**
- * Refresh MockAggregatorV3 BTC/USD price on Arc Testnet (U2)
- *
- * Usage:
- *   DEPLOYER_PRIVATE_KEY=0x... node scripts/refresh-mock-oracle.mjs [--price 60000] [--interval 1800]
- *
- * --interval <seconds>  Keep running and re-push the same price every N seconds (min 60) so the
- *                       testnet mock feed never goes stale (factory maxPriceAge is immutable; the
- *                       currently deployed factory uses 3600s, so use an interval below 3600).
- *
- * Security:
- * - Reads DEPLOYER_PRIVATE_KEY strictly from environment variable; never logs or writes it to disk.
- * - Reads RPC URL from src/onchain-facts.ts and feed address from src/config/bonded-tontine.ts.
+import process from "node:process";
+/** Read-only: node scripts/refresh-mock-oracle.mjs --status (or --dry-run).
+ * Write: DEPLOYER_PRIVATE_KEY=... node scripts/refresh-mock-oracle.mjs --price 60000 --interval 1800
  */
-
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { createPublicClient, createWalletClient, http, formatUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { arcTestnet } from "viem/chains";
-import { getChain } from "../src/onchain-facts.ts";
-import {
-  ARC_TESTNET_CHAIN_ID,
-  ARC_TESTNET_MOCK_FEED,
-} from "../src/config/bonded-tontine.ts";
+import { pathToFileURL } from "node:url";
+import { ARC_RPC } from "../src/config/arc-constants.ts";
+import { ARC_TESTNET_MOCK_FEED, ARC_TESTNET_DEFAULT_BONDED_CLUB } from "../src/config/bonded-tontine.ts";
+import { MOCK_AGGREGATOR_V3_ABI, BONDED_TONTINE_ABI } from "../src/lib/bondedTontine.ts";
 import { parseUnitsExact } from "../src/onchain-money.ts";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, "..");
-
-async function main() {
-  const args = process.argv.slice(2);
-  const priceIdx = args.indexOf("--price");
-  const usdPriceStr =
-    priceIdx >= 0 && args[priceIdx + 1] ? args[priceIdx + 1] : "60000";
-
-  const rawKey = process.env.DEPLOYER_PRIVATE_KEY?.trim();
-  if (!rawKey) {
-    throw new Error(
-      "Missing DEPLOYER_PRIVATE_KEY environment variable. Set DEPLOYER_PRIVATE_KEY=0x... before running."
-    );
+/** @param {string[]} args */
+export function parseOptions(args) {
+  let price = "60000", interval = null, readOnly = false;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--status" || arg === "--dry-run") readOnly = true;
+    else if (arg === "--price") {
+      price = args[++i];
+      if (!price || !/^\d+(\.\d{1,8})?$/.test(price) || parseUnitsExact(price, 8) <= 0n) throw new Error("--price must be positive with at most 8 decimals");
+    } else if (arg === "--interval") {
+      interval = Number(args[++i]);
+      if (!Number.isSafeInteger(interval) || interval < 60) throw new Error("--interval must be an integer >= 60 seconds");
+    } else throw new Error(`Unknown argument: ${arg}`);
   }
-  const formattedKey = rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`;
-  const account = privateKeyToAccount(formattedKey);
-
-  const chainFacts = getChain(ARC_TESTNET_CHAIN_ID);
-  const rpcUrl = chainFacts?.rpcUrls[0] ?? "https://rpc.testnet.arc.network";
-
-  const publicClient = createPublicClient({
-    chain: arcTestnet,
-    transport: http(rpcUrl),
-  });
-  const walletClient = createWalletClient({
-    account,
-    chain: arcTestnet,
-    transport: http(rpcUrl),
-  });
-
-  const mockArtifact = JSON.parse(
-    fs.readFileSync(
-      path.join(ROOT, "contracts/out/MockAggregatorV3.sol/MockAggregatorV3.json"),
-      "utf8"
-    )
-  );
-
-  const rawAnswer = parseUnitsExact(usdPriceStr, 8);
-
-  const refreshOnce = async () => {
-    console.log(
-      `[RefreshOracle] Updating MockAggregatorV3 (${ARC_TESTNET_MOCK_FEED}) to $${usdPriceStr} (${rawAnswer.toString()})...`
-    );
-
-    const hash = await walletClient.writeContract({
-      address: ARC_TESTNET_MOCK_FEED,
-      abi: mockArtifact.abi,
-      functionName: "setPrice",
-      args: [rawAnswer],
-    });
-
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    if (receipt.status !== "success") {
-      throw new Error(`[RefreshOracle] setPrice transaction reverted: ${hash}`);
-    }
-
-    const [roundId, answer, , updatedAt] = await publicClient.readContract({
-      address: ARC_TESTNET_MOCK_FEED,
-      abi: mockArtifact.abi,
-      functionName: "latestRoundData",
-    });
-
-    console.log(`[RefreshOracle] Success! tx=${hash}`);
-    console.log(
-      `[RefreshOracle] roundId=${roundId.toString()}, answer=$${formatUnits(answer, 8)} (${answer.toString()}), updatedAt=${updatedAt.toString()} (${new Date(Number(updatedAt) * 1000).toISOString()})`
-    );
-  };
-
-  await refreshOnce();
-
-  const intervalIdx = args.indexOf("--interval");
-  if (intervalIdx >= 0) {
-    const seconds = Number(args[intervalIdx + 1]);
-    if (!Number.isFinite(seconds) || seconds < 60) {
-      throw new Error("--interval must be a number of seconds >= 60");
-    }
-    console.log(`[RefreshOracle] Watch mode: refreshing every ${seconds}s. Press Ctrl+C to stop.`);
-    for (;;) {
-      await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
-      try {
-        await refreshOnce();
-      } catch (err) {
-        console.error("[RefreshOracle] Refresh failed, will retry:", err instanceof Error ? err.message : String(err));
-      }
-    }
-  }
+  return { price, interval, readOnly };
 }
 
-main().catch((err) => {
-  console.error("[RefreshOracle] Error:", err instanceof Error ? err.message : String(err));
-  process.exit(1);
-});
+export async function main(args = process.argv.slice(2)) {
+  // Validate all syntax before key access, signing or any network request.
+  const options = parseOptions(args);
+  const publicClient = createPublicClient({ chain: arcTestnet, transport: http(ARC_RPC) });
+  const [maxPriceAge, feed, decimals, round] = await Promise.all([
+    publicClient.readContract({ address: ARC_TESTNET_DEFAULT_BONDED_CLUB, abi: BONDED_TONTINE_ABI, functionName: "maxPriceAge" }),
+    publicClient.readContract({ address: ARC_TESTNET_DEFAULT_BONDED_CLUB, abi: BONDED_TONTINE_ABI, functionName: "priceFeed" }),
+    publicClient.readContract({ address: ARC_TESTNET_MOCK_FEED, abi: MOCK_AGGREGATOR_V3_ABI, functionName: "decimals" }),
+    publicClient.readContract({ address: ARC_TESTNET_MOCK_FEED, abi: MOCK_AGGREGATOR_V3_ABI, functionName: "latestRoundData" }),
+  ]);
+  if (feed.toLowerCase() !== ARC_TESTNET_MOCK_FEED.toLowerCase()) throw new Error("Default club does not use configured mock feed");
+  if (options.interval !== null && BigInt(options.interval) >= maxPriceAge) throw new Error("--interval must be below the club maxPriceAge");
+  const now = BigInt(Math.floor(Date.now() / 1000));
+  console.log(JSON.stringify({ feed, price: formatUnits(round[1], decimals), updatedAt: String(round[3]), ageSeconds: String(now - round[3]), maxPriceAge: String(maxPriceAge), stale: now - round[3] > maxPriceAge, readOnly: options.readOnly }));
+  if (options.readOnly) return;
+  const rawKey = process.env.DEPLOYER_PRIVATE_KEY?.trim();
+  if (!rawKey) throw new Error("Missing DEPLOYER_PRIVATE_KEY environment variable");
+  const account = privateKeyToAccount(rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`);
+  const wallet = createWalletClient({ account, chain: arcTestnet, transport: http(ARC_RPC) });
+  const answer = parseUnitsExact(options.price, decimals);
+  const refresh = async () => {
+    const hash = await wallet.writeContract({ address: feed, abi: MOCK_AGGREGATOR_V3_ABI, functionName: "setPrice", args: [answer] });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    if (receipt.status !== "success") throw new Error(`Refresh reverted: ${hash}`);
+    console.log(`Oracle refreshed: ${hash}`);
+  };
+  await refresh();
+  while (options.interval !== null) {
+    await new Promise(resolve => setTimeout(resolve, options.interval * 1000));
+    try { await refresh(); } catch (error) { console.error("Refresh failed:", error instanceof Error ? error.message : "provider request failed"); }
+  }
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch(error => { console.error(error instanceof Error ? error.message : "Oracle operation failed"); process.exitCode = 1; });
+}

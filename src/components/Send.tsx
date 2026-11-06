@@ -1,3 +1,4 @@
+import { txUrl } from "../config/arc-constants.ts";
 import React, { useState } from "react";
 import { AppKit } from "@circle-fin/app-kit";
 import { switchOrAddArcNetwork } from "../utils/arcChain";
@@ -41,9 +42,9 @@ export const Send: React.FC<SendProps> = ({ adapter, userAddress, isMetaMask, on
       }
 
       setStatus({ type: "info", msg: "Broadcasting send transaction on Build on Arc..." });
-      
+
       const kit = new AppKit();
-      
+
       // Execute Send Kit
       const result = await kit.send({
         from: {
@@ -56,17 +57,17 @@ export const Send: React.FC<SendProps> = ({ adapter, userAddress, isMetaMask, on
       });
 
       console.log("Send result:", result);
-      
+
       setStatus({
         type: "success",
         msg: `Successfully transferred ${amount} ${token} on Build on Arc!`,
         txHash: (result as any).txHash || (result as any).transactionHash || (result as any).id || (typeof result === "string" ? result : undefined),
       });
-      
+
       // Reset form
       setToAddress("");
       setAmount("");
-      
+
       // Refresh balances
       onRefreshBalance();
     } catch (err: any) {
@@ -96,9 +97,9 @@ export const Send: React.FC<SendProps> = ({ adapter, userAddress, isMetaMask, on
       <form onSubmit={handleSend}>
         <div className="form-group">
           <label className="form-label">Select Token</label>
-          <select 
-            className="form-select" 
-            value={token} 
+          <select
+            className="form-select"
+            value={token}
             onChange={(e) => setToken(e.target.value)}
             disabled={loading}
           >
@@ -155,9 +156,9 @@ export const Send: React.FC<SendProps> = ({ adapter, userAddress, isMetaMask, on
           {status.txHash && (
             <div style={{ marginTop: "0.25rem", fontSize: "0.8rem" }}>
               Tx Hash:{" "}
-              <a 
-                href={`https://testnet.arcscan.app/tx/${status.txHash}`} 
-                target="_blank" 
+              <a
+                href={txUrl(status.txHash)}
+                target="_blank"
                 rel="noopener noreferrer"
               >
                 {status.txHash} ↗

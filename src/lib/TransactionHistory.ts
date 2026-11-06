@@ -1,3 +1,4 @@
+import { txUrl } from "../config/arc-constants.ts";
 export interface Transaction {
   id: string;
   action: string;
@@ -30,7 +31,7 @@ export const updateTransactionStatus = (id: string, status: Transaction['status'
     history[txIndex].status = status;
     if (txHash) {
       history[txIndex].txHash = txHash;
-      history[txIndex].explorerUrl = `https://testnet.arcscan.app/tx/${txHash}`;
+      history[txIndex].explorerUrl = txUrl(txHash);
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     window.dispatchEvent(new Event('transaction_history_updated'));

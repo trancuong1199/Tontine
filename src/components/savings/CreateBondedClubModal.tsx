@@ -192,7 +192,7 @@ export function CreateBondedClubModal({
         name: params.groupName,
         creator: userAddress?.toLowerCase(),
         version: "v2-bonded",
-      });
+      }, userAddress);
 
       toast.success(
         isEn

@@ -1,0 +1,84 @@
+TAP version 13
+# Subtest: BRQ02 exact whole-cycle coverage and decimal/zero boundaries
+ok 1 - BRQ02 exact whole-cycle coverage and decimal/zero boundaries
+  ---
+  duration_ms: 1.876995
+  type: 'test'
+  ...
+# Subtest: BRQ04 oracle threshold, missing, future and incomplete round are distinct
+ok 2 - BRQ04 oracle threshold, missing, future and incomplete round are distinct
+  ---
+  duration_ms: 0.199283
+  type: 'test'
+  ...
+# Subtest: BRQ06 A/B/guest namespaces isolate save rename delete clear; legacy ignored
+ok 3 - BRQ06 A/B/guest namespaces isolate save rename delete clear; legacy ignored
+  ---
+  duration_ms: 1.619566
+  type: 'test'
+  ...
+# Subtest: BRQ06 delayed factory sync retains originating account and respects concurrent hide
+ok 4 - BRQ06 delayed factory sync retains originating account and respects concurrent hide
+  ---
+  duration_ms: 7.963832
+  type: 'test'
+  ...
+# Subtest: BRQ03 duration singular and both subtitle translations resolve
+ok 5 - BRQ03 duration singular and both subtitle translations resolve
+  ---
+  duration_ms: 0.447313
+  type: 'test'
+  ...
+# Subtest: BRQ05 429, range, timeout and complete fallback preserve truthful diagnosis
+ok 6 - BRQ05 429, range, timeout and complete fallback preserve truthful diagnosis
+  ---
+  duration_ms: 2.28804
+  type: 'test'
+  ...
+# Subtest: BRQ04 CLI options reject malformed values before any provider work
+ok 7 - BRQ04 CLI options reject malformed values before any provider work
+  ---
+  duration_ms: 0.797285
+  type: 'test'
+  ...
+# Subtest: BRQ01 home renders actual featured data, placeholders and bilingual bonded copy
+ok 8 - BRQ01 home renders actual featured data, placeholders and bilingual bonded copy
+  ---
+  duration_ms: 158.474191
+  type: 'test'
+  ...
+# Subtest: BRQ02/04 collateral component renders historical labels, precision and missing price
+ok 9 - BRQ02/04 collateral component renders historical labels, precision and missing price
+  ---
+  duration_ms: 11.165458
+  type: 'test'
+  ...
+# Subtest: BRQ03 directory renders same-name addresses distinctly and excludes cancelled including empty result
+ok 10 - BRQ03 directory renders same-name addresses distinctly and excludes cancelled including empty result
+  ---
+  duration_ms: 71.092972
+  type: 'test'
+  ...
+# Subtest: BRQ07 canonical URL helpers and operational source inventory
+ok 11 - BRQ07 canonical URL helpers and operational source inventory
+  ---
+  duration_ms: 9.669542
+  type: 'test'
+  ...
+{"feed":"0x9c0866b4D6dB662038f805563b8f4CdECA626525","price":"60000","updatedAt":"100","ageSeconds":"1793981172","maxPriceAge":"3600","stale":true,"readOnly":true}
+{"feed":"0x9c0866b4D6dB662038f805563b8f4CdECA626525","price":"60000","updatedAt":"100","ageSeconds":"1793981172","maxPriceAge":"3600","stale":true,"readOnly":true}
+# Subtest: BRQ04 read-only operator paths never access signer or send writes
+ok 12 - BRQ04 read-only operator paths never access signer or send writes
+  ---
+  duration_ms: 328.901515
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 632.904617

@@ -1,3 +1,4 @@
+import { ARC_EXPLORER, ARC_RPC, txUrl } from "../config/arc-constants.ts";
 import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import { Bot, Shield, Zap, ExternalLink, Copy, Check, Calendar, Plus, CheckCircle2, Clock, DollarSign, Send, ArrowUpRight, Lock, Play, Cpu } from 'lucide-react';
@@ -178,8 +179,8 @@ export const AgentStack: React.FC<AgentStackProps> = ({ connectedAccount, wallet
               chainId: '0x4cef52',
               chainName: 'Arc Testnet',
               nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
-              rpcUrls: ['https://rpc.testnet.arc.io'],
-              blockExplorerUrls: ['https://explorer.testnet.arc.io']
+              rpcUrls: [ARC_RPC],
+              blockExplorerUrls: [ARC_EXPLORER]
             }]
           });
         }
@@ -218,7 +219,7 @@ export const AgentStack: React.FC<AgentStackProps> = ({ connectedAccount, wallet
       // Update Invoice Status to PAID
       setInvoices(prev => prev.map(item => item.id === inv.id ? { ...item, status: 'PAID', txHash: realHash } : item));
 
-      setStatusLog(`✅ Invoice Successfully Paid On-Chain!\n\nDisbursement Details:\n{\n  "status": "PAID",\n  "invoice": "${inv.title}",\n  "amount": "$${inv.amountUsdc} USDC",\n  "recipient": "${inv.recipientName} (${targetRecipient})",\n  "txHash": "${realHash}",\n  "explorer": "https://testnet.arcscan.app/tx/${realHash}"\n}`);
+      setStatusLog(`✅ Invoice Successfully Paid On-Chain!\n\nDisbursement Details:\n{\n  "status": "PAID",\n  "invoice": "${inv.title}",\n  "amount": "$${inv.amountUsdc} USDC",\n  "recipient": "${inv.recipientName} (${targetRecipient})",\n  "txHash": "${realHash}",\n  "explorer": "${ARC_EXPLORER}/tx/${realHash}"\n}`);
 
       saveTransaction({
         id: `tx-autopay-${Date.now()}`,
@@ -228,7 +229,7 @@ export const AgentStack: React.FC<AgentStackProps> = ({ connectedAccount, wallet
         to: targetRecipient,
         txHash: realHash,
         status: 'COMPLETE',
-        explorerUrl: `https://testnet.arcscan.app/tx/${realHash}`,
+        explorerUrl: txUrl(realHash),
         timestamp: Date.now(),
         tokenSymbol: 'USDC'
       });
@@ -546,7 +547,7 @@ export const AgentStack: React.FC<AgentStackProps> = ({ connectedAccount, wallet
                           </span>
                           {inv.txHash && (
                             <a
-                              href={`https://testnet.arcscan.app/tx/${inv.txHash}`}
+                              href={txUrl(inv.txHash)}
                               target="_blank"
                               rel="noreferrer"
                               style={{ color: '#0ea5e9', display: 'flex', alignItems: 'center' }}
@@ -750,7 +751,7 @@ export const AgentStack: React.FC<AgentStackProps> = ({ connectedAccount, wallet
                     <div style={{ fontWeight: 800, color: '#10b981', fontSize: '1.1rem' }}>${item.amountUsdc} USDC</div>
                     {item.txHash && (
                       <a
-                        href={`https://testnet.arcscan.app/tx/${item.txHash}`}
+                        href={txUrl(item.txHash)}
                         target="_blank"
                         rel="noreferrer"
                         style={{ background: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9', padding: '6px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '0.8rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}

@@ -1,7 +1,7 @@
 import { LEGACY_TEST_CLUB_ADDRESS } from "../config/bonded-tontine.ts";
 
 export function isValidAddress(address: unknown): address is `0x${string}` {
-  return typeof address === "string" && /^0x[a-fA-F0-9]{40}$/.test(address);
+  return typeof address === "string" && /^0x[a-f0-9]{40}$/i.test(address);
 }
 
 export function formatAddress(address: string): string {
@@ -63,13 +63,7 @@ export function getRemovedGroups(account?: string): Set<string> {
     const acc = resolveAccount(account);
     const key = getAccountRemovedStorageKey(acc ?? undefined);
     const raw = window.localStorage.getItem(key);
-    let parsed: any = null;
-    if (raw) {
-      parsed = JSON.parse(raw);
-    } else if (!acc) {
-      const globalRaw = window.localStorage.getItem(REMOVED_CLUBS_STORAGE_KEY);
-      if (globalRaw) parsed = JSON.parse(globalRaw);
-    }
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
     if (Array.isArray(parsed)) {
       return new Set(
         parsed
@@ -83,31 +77,15 @@ export function getRemovedGroups(account?: string): Set<string> {
   }
 }
 
-let activeDirectoryAccount: string | null = null;
-
-export function setActiveDirectoryAccount(account?: string | null): void {
-  activeDirectoryAccount = account && isValidAddress(account) ? account.toLowerCase() : null;
+/** Explicit context only: omitted account is the separate guest namespace. */
+export function resolveAccount(account?: string): string | null {
+  return account && isValidAddress(account) ? account.toLowerCase() : null;
 }
-
-export function getActiveDirectoryAccount(): string | null {
-  return activeDirectoryAccount;
-}
-
-export function resolveAccount(explicitAccount?: string): string | null {
-  if (explicitAccount && isValidAddress(explicitAccount)) {
-    return explicitAccount.toLowerCase();
-  }
-  return activeDirectoryAccount;
-}
-
 export function getAccountRemovedStorageKey(account?: string): string {
-  const acc = resolveAccount(account);
-  return acc ? `${REMOVED_CLUBS_STORAGE_KEY}_${acc}` : REMOVED_CLUBS_STORAGE_KEY;
+  return `${REMOVED_CLUBS_STORAGE_KEY}_${resolveAccount(account) ?? "guest"}`;
 }
-
 export function getAccountKnownStorageKey(account?: string): string {
-  const acc = resolveAccount(account);
-  return acc ? `${SAVINGS_CLUBS_STORAGE_KEY}_${acc}` : SAVINGS_CLUBS_STORAGE_KEY;
+  return `${SAVINGS_CLUBS_STORAGE_KEY}_${resolveAccount(account) ?? "guest"}`;
 }
 
 export const DEFAULT_SAVINGS_CLUBS: SavingsClubItem[] = [
@@ -131,10 +109,7 @@ export function getKnownGroups(account?: string): SavingsClubItem[] {
   try {
     const acc = resolveAccount(account);
     const removedAddresses = getRemovedGroups(acc ?? undefined);
-    let raw = acc ? window.localStorage.getItem(getAccountKnownStorageKey(acc)) : null;
-    if (!raw) {
-      raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
-    }
+    const raw = window.localStorage.getItem(getAccountKnownStorageKey(account));
     if (!raw) {
       return DEFAULT_SAVINGS_CLUBS.filter(
         (def) => !removedAddresses.has(def.address.toLowerCase())
@@ -220,7 +195,7 @@ export function saveKnownGroup(item: {
   initialCollateral?: string;
   creator?: string;
   version?: ClubVersion;
-}): void {
+}, account?: string): void {
   if (!item || !isValidAddress(item.address)) return;
   if (typeof window === "undefined" || !window.localStorage) return;
 
@@ -238,7 +213,7 @@ export function saveKnownGroup(item: {
     version?: ClubVersion;
   }> = [];
   try {
-    const raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
+    const raw = window.localStorage.getItem(getAccountKnownStorageKey(account));
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
@@ -302,14 +277,14 @@ export function saveKnownGroup(item: {
   const updated = [newItem, ...filtered];
 
   try {
-    window.localStorage.setItem(SAVINGS_CLUBS_STORAGE_KEY, JSON.stringify(updated));
+    window.localStorage.setItem(getAccountKnownStorageKey(account), JSON.stringify(updated));
 
     // If this group was previously marked as removed, un-hide it
-    const removed = getRemovedGroups();
+    const removed = getRemovedGroups(account);
     if (removed.has(normalized)) {
       removed.delete(normalized);
       window.localStorage.setItem(
-        REMOVED_CLUBS_STORAGE_KEY,
+        getAccountRemovedStorageKey(account),
         JSON.stringify(Array.from(removed))
       );
     }
@@ -322,11 +297,11 @@ export function saveKnownGroup(item: {
  * Xóa sạch danh sách các nhóm tùy chỉnh được lưu trong localStorage,
  * đưa danh bạ về trạng thái mặc định chỉ gồm DEFAULT_SAVINGS_CLUBS.
  */
-export function clearCustomKnownGroups(): void {
+export function clearCustomKnownGroups(account?: string): void {
   if (typeof window === "undefined" || !window.localStorage) return;
   try {
-    window.localStorage.removeItem(SAVINGS_CLUBS_STORAGE_KEY);
-    window.localStorage.removeItem(REMOVED_CLUBS_STORAGE_KEY);
+    window.localStorage.removeItem(getAccountKnownStorageKey(account));
+    window.localStorage.removeItem(getAccountRemovedStorageKey(account));
   } catch (_err) {
     // Graceful catch
   }
@@ -336,61 +311,22 @@ export function clearCustomKnownGroups(): void {
  * Xóa một nhóm cụ thể khỏi danh bạ đã lưu (bao gồm nhóm đã hủy, hết hạn, hoặc không chơi nữa).
  */
 export function removeKnownGroup(address: string, account?: string): void {
-  if (!address || typeof window === "undefined" || !window.localStorage) return;
-  const target = address.toLowerCase();
-  const acc = resolveAccount(account);
+  if (!isValidAddress(address) || typeof window === "undefined") return;
   try {
-    // 1. Loại bỏ khỏi danh sách nhóm đã lưu của tài khoản (hoặc toàn cục nếu không có tài khoản)
-    if (!acc) {
-      const raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          const filtered = parsed.filter(
-            (g) => g && typeof g.address === "string" && g.address.toLowerCase() !== target
-          );
-          window.localStorage.setItem(SAVINGS_CLUBS_STORAGE_KEY, JSON.stringify(filtered));
-        }
-      }
-    } else {
-      const accKey = getAccountKnownStorageKey(acc);
-      const raw = window.localStorage.getItem(accKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          const filtered = parsed.filter(
-            (g) => g && typeof g.address === "string" && g.address.toLowerCase() !== target
-          );
-          window.localStorage.setItem(accKey, JSON.stringify(filtered));
-        }
-      }
-    }
-
-    // 2. Ghi nhận vào danh sách nhóm đã xóa của tài khoản (hoặc toàn cục nếu không có tài khoản)
-    const removedKey = getAccountRemovedStorageKey(acc ?? undefined);
-    const removed = getRemovedGroups(acc ?? undefined);
-    removed.add(target);
-    window.localStorage.setItem(
-      removedKey,
-      JSON.stringify(Array.from(removed))
-    );
-
-    // Luôn duy trì đồng bộ REMOVED_CLUBS_STORAGE_KEY toàn cục khi acc là null để các test cũ pass 100%
-    if (!acc) {
-      window.localStorage.setItem(
-        REMOVED_CLUBS_STORAGE_KEY,
-        JSON.stringify(Array.from(removed))
-      );
-    }
-  } catch (_err) {
-    // Graceful catch
-  }
+    const key = getAccountKnownStorageKey(account);
+    const parsed = JSON.parse(window.localStorage.getItem(key) ?? "[]");
+    const list = Array.isArray(parsed) ? parsed : [];
+    window.localStorage.setItem(key, JSON.stringify(list.filter(g => g?.address?.toLowerCase() !== address.toLowerCase())));
+    const removed = getRemovedGroups(account);
+    removed.add(address.toLowerCase());
+    window.localStorage.setItem(getAccountRemovedStorageKey(account), JSON.stringify([...removed]));
+  } catch { /* Storage unavailable. */ }
 }
 
 /**
  * Cập nhật tên nhóm đã lưu trong danh bạ localStorage.
  */
-export function updateKnownGroupName(address: string, newName: string): void {
+export function updateKnownGroupName(address: string, newName: string, account?: string): void {
   if (!address || !isValidAddress(address)) return;
   const trimmed = typeof newName === "string" ? newName.trim() : "";
   if (!trimmed) return;
@@ -400,7 +336,7 @@ export function updateKnownGroupName(address: string, newName: string): void {
 
   let rawList: Array<{ address: string; name: string; createdAt?: number; initialCollateral?: string }> = [];
   try {
-    const raw = window.localStorage.getItem(SAVINGS_CLUBS_STORAGE_KEY);
+    const raw = window.localStorage.getItem(getAccountKnownStorageKey(account));
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
@@ -429,7 +365,7 @@ export function updateKnownGroupName(address: string, newName: string): void {
   }
 
   try {
-    window.localStorage.setItem(SAVINGS_CLUBS_STORAGE_KEY, JSON.stringify(rawList));
+    window.localStorage.setItem(getAccountKnownStorageKey(account), JSON.stringify(rawList));
   } catch (_err) {
     // Graceful catch
   }
@@ -477,7 +413,8 @@ export async function syncFactoryBondedClubs(
   },
   factoryAddress: `0x${string}`,
   factoryAbi: readonly unknown[],
-  tontineAbi: readonly unknown[]
+  tontineAbi: readonly unknown[],
+  account?: string
 ): Promise<SavingsClubItem[]> {
   if (!reader || !isValidAddress(factoryAddress)) return [];
   const synced: SavingsClubItem[] = [];
@@ -489,7 +426,7 @@ export async function syncFactoryBondedClubs(
       args: [],
     })) as bigint;
     const count = Number(lengthRaw);
-    const removedAddresses = getRemovedGroups();
+    const removedAddresses = getRemovedGroups(account);
 
     // Query all club addresses in parallel for blazing-fast sync
     const clubAddresses = await Promise.all(
@@ -527,7 +464,7 @@ export async function syncFactoryBondedClubs(
       const clubAddr = validEntries[j].addr;
       const lower = clubAddr.toLowerCase();
       // If user previously removed this club, do not revive it on sync
-      if (removedAddresses.has(lower)) {
+      if (removedAddresses.has(lower) || getRemovedGroups(account).has(lower)) {
         continue;
       }
       let groupName = names[j]?.trim() || `Bonded Club #${validEntries[j].i + 1}`;
@@ -535,7 +472,7 @@ export async function syncFactoryBondedClubs(
         address: clubAddr,
         name: groupName,
         version: "v2-bonded",
-      });
+      }, account);
       synced.push({
         address: lower as `0x${string}`,
         name: groupName,

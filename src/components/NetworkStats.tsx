@@ -1,3 +1,4 @@
+import { ARC_EXPLORER, txUrl } from "../config/arc-constants.ts";
 import { useState, useEffect } from 'react';
 import { Activity, BarChart2, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -35,7 +36,7 @@ export const NetworkStats: React.FC<NetworkStatsProps> = ({ connectedAccount }) 
         // Dynamic Total Swaps Calculation
         let totalCount = localUserTxs.length;
         try {
-          const res = await fetch(`https://testnet.arcscan.app/api?module=account&action=txlist&address=${connectedAccount}`);
+          const res = await fetch(`${ARC_EXPLORER}/api?module=account&action=txlist&address=${connectedAccount}`);
           const data = await res.json();
           if (data && data.result && Array.isArray(data.result)) {
             const localHashes = new Set(localUserTxs.map(tx => tx.txHash?.toLowerCase()).filter(Boolean));
@@ -54,7 +55,7 @@ export const NetworkStats: React.FC<NetworkStatsProps> = ({ connectedAccount }) 
 
         let arcscanTxs: any[] = [];
         try {
-          const res = await fetch(`https://testnet.arcscan.app/api?module=account&action=txlist&address=${connectedAccount}&sort=desc&page=${page}&offset=${ITEMS_PER_PAGE}`);
+          const res = await fetch(`${ARC_EXPLORER}/api?module=account&action=txlist&address=${connectedAccount}&sort=desc&page=${page}&offset=${ITEMS_PER_PAGE}`);
           const data = await res.json();
           if (data && data.result && Array.isArray(data.result)) {
             arcscanTxs = data.result.map((tx: any) => ({
@@ -65,7 +66,7 @@ export const NetworkStats: React.FC<NetworkStatsProps> = ({ connectedAccount }) 
               to: tx.to,
               txHash: tx.hash,
               status: tx.isError === "1" ? "FAILED" : "COMPLETE",
-              explorerUrl: `https://testnet.arcscan.app/tx/${tx.hash}`,
+              explorerUrl: txUrl(String(tx.hash)),
               timestamp: parseInt(tx.timeStamp) * 1000
             }));
           }
