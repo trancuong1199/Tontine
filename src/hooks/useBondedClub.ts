@@ -17,6 +17,7 @@ import {
   BONDED_USDC_ADDRESS,
   BONDED_CIRBTC_ADDRESS,
   isKnownBondedClubAddress,
+  KNOWN_BONDED_CLUB_MEMBERS,
 } from "../config/bonded-tontine.ts";
 import { getKnownGroups } from "../lib/savingsClubDirectory.ts";
 import { requireChain } from "../onchain-facts.ts";
@@ -105,7 +106,7 @@ export interface BondedClubSnapshot {
   usdcAllowance: bigint;
   cirBtcBalance: bigint;
   cirBtcAllowance: bigint;
-  refetch: () => Promise<void>;
+  refetch: (options?: { silent?: boolean }) => Promise<void>;
 }
 
 interface MemberCacheEntry {
@@ -114,6 +115,45 @@ interface MemberCacheEntry {
   timestamp: number;
 }
 const memberListCache = new Map<string, MemberCacheEntry>();
+
+function getStoredMemberCache(cacheKey: string): MemberCacheEntry | undefined {
+  const inMem = memberListCache.get(cacheKey);
+  if (inMem) return inMem;
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      const raw = localStorage.getItem(`hui_bonded_members_${cacheKey}`);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { addresses?: unknown; memberCount?: unknown; timestamp?: unknown };
+        if (Array.isArray(parsed.addresses) && parsed.memberCount !== undefined) {
+          const entry: MemberCacheEntry = {
+            addresses: parsed.addresses as `0x${string}`[],
+            memberCount: BigInt(String(parsed.memberCount)),
+            timestamp: Number(parsed.timestamp || 0),
+          };
+          memberListCache.set(cacheKey, entry);
+          return entry;
+        }
+      }
+    } catch {}
+  }
+  return undefined;
+}
+
+function setStoredMemberCache(cacheKey: string, entry: MemberCacheEntry): void {
+  memberListCache.set(cacheKey, entry);
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      localStorage.setItem(
+        `hui_bonded_members_${cacheKey}`,
+        JSON.stringify({
+          addresses: entry.addresses,
+          memberCount: entry.memberCount.toString(),
+          timestamp: entry.timestamp,
+        })
+      );
+    } catch {}
+  }
+}
 
 export async function fetchBondedClubMembers(
   publicClient: Pick<PublicClient, "getLogs" | "getBlockNumber">,
@@ -125,15 +165,22 @@ export async function fetchBondedClubMembers(
   }
 
   const cacheKey = clubAddress.toLowerCase();
-  const cached = memberListCache.get(cacheKey);
-  // Cache valid for 30s if count matches
+  const cached = getStoredMemberCache(cacheKey);
+  // Cache valid if count matches and has all members
   if (
     cached &&
     cached.memberCount === memberCount &&
-    cached.addresses.length === Number(memberCount) &&
-    Date.now() - cached.timestamp < 30_000
+    cached.addresses.length === Number(memberCount)
   ) {
     return { members: cached.addresses, error: null };
+  }
+
+  // Pre-seed known canonical clubs
+  const known = KNOWN_BONDED_CLUB_MEMBERS[cacheKey];
+  if (known && BigInt(known.length) === memberCount) {
+    const list = [...known];
+    setStoredMemberCache(cacheKey, { addresses: list, memberCount, timestamp: Date.now() });
+    return { members: list, error: null };
   }
 
   const errors: string[] = [];
@@ -148,7 +195,7 @@ export async function fetchBondedClubMembers(
   const accept = (members: `0x${string}`[]) => {
     if (members.length > best.length) best = members;
     if (BigInt(members.length) !== memberCount) { errors.push("partial"); return false; }
-    memberListCache.set(cacheKey, { addresses: members, memberCount, timestamp: Date.now() });
+    setStoredMemberCache(cacheKey, { addresses: members, memberCount, timestamp: Date.now() });
     return true;
   };
   type MemberEvent = { eventName: string; args?: { member?: `0x${string}` }; blockNumber?: bigint; logIndex?: number };
@@ -165,11 +212,15 @@ export async function fetchBondedClubMembers(
   };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6000);
+  let got429 = false;
   try {
     const explorerApi = `${requireChain(ARC_TESTNET_CHAIN_ID).explorerBase}/api`;
     const response = await fetch(`${explorerApi}?module=logs&action=getLogs&address=${clubAddress}&fromBlock=0&toBlock=latest`, { signal: controller.signal });
     if (!response.ok) {
-      if (response.status === 429) errors.push("explorer-429");
+      if (response.status === 429) {
+        errors.push("explorer-429");
+        got429 = true;
+      }
       throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json() as { result?: unknown; message?: unknown };
@@ -185,6 +236,30 @@ export async function fetchBondedClubMembers(
     if (accept(members)) return { members, error: null };
   } catch (error) { errors.push(classify(error)); }
   finally { clearTimeout(timeout); }
+
+  // Fallback to Blockscout v2 transactions if explorer v1 was rate limited or unavailable
+  if (got429 || errors.includes("unavailable")) {
+    const v2Controller = new AbortController();
+    const v2Timeout = setTimeout(() => v2Controller.abort(), 4000);
+    try {
+      const explorerBase = requireChain(ARC_TESTNET_CHAIN_ID).explorerBase;
+      const v2Response = await fetch(`${explorerBase}/api/v2/addresses/${clubAddress}/transactions`, { signal: v2Controller.signal });
+      if (v2Response.ok) {
+        const v2Data = (await v2Response.json()) as { items?: Array<{ method?: string; from?: { hash?: string } }> };
+        if (Array.isArray(v2Data.items)) {
+          const joinMembers = v2Data.items
+            .filter((item) => item.method === "joinGroup" && item.from?.hash)
+            .map((item) => item.from!.hash!.toLowerCase() as `0x${string}`);
+          const uniqueMembers = [...new Set(joinMembers)];
+          if (accept(uniqueMembers)) return { members: uniqueMembers, error: null };
+        }
+      }
+    } catch {
+      // v2 fallback failed, continue to RPC
+    } finally {
+      clearTimeout(v2Timeout);
+    }
+  }
 
   const readRange = async (fromBlock: bigint, toBlock: bigint | "latest") => {
     const all = await Promise.all(["MemberJoined", "MemberRemoved"].map(async eventName => {
@@ -214,7 +289,11 @@ export function useBondedClub(
   const contextKey = `${clubAddress?.toLowerCase()}:${userAddress?.toLowerCase() ?? "guest"}`;
   const contextRef = useRef(contextKey);
   const requestSequence = useRef(0);
-  useLayoutEffect(() => { contextRef.current = contextKey; }, [contextKey]);
+  const hasLoadedRef = useRef(false);
+  useLayoutEffect(() => {
+    contextRef.current = contextKey;
+    hasLoadedRef.current = false;
+  }, [contextKey]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const initialVerified = Boolean(
@@ -284,11 +363,13 @@ export function useBondedClub(
     cirBtcAllowance: 0n,
   });
 
-  const refetch = useCallback(async () => {
+  const refetch = useCallback(async (options?: { silent?: boolean }) => {
     const requestContext = contextKey;
     const requestId = ++requestSequence.current;
     if (!enabled || !clubAddress || !publicClient) return;
-    setIsLoading(true);
+    if (!hasLoadedRef.current && !options?.silent) {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const readClub = <T = unknown>(functionName: string, args: readonly unknown[] = []) =>
@@ -613,23 +694,11 @@ export function useBondedClub(
         cirBtcAllowance = cAllow;
       }
 
-      // Read member list from MemberJoined / MemberRemoved events (L5 & R1 resilient fetching)
-      const { members: memberAddresses, error: membersLoadError } = await fetchBondedClubMembers(
-        publicClient,
-        clubAddress,
-        memberCount
-      );
-
-      const memberContributionRound = stateRaw === BONDED_STATE.ACTIVE && currentRoundIndex >= 1n && currentRoundIndex <= maxMembers ? currentRoundIndex : null;
-      const memberContributions: Record<string, boolean | null> = {};
-      if (memberContributionRound !== null) {
-        await Promise.all(memberAddresses.map(async member => {
-          memberContributions[member.toLowerCase()] = await readClub<boolean>("contributed", [memberContributionRound, member]).catch(() => null);
-        }));
-      }
-
       if (contextRef.current !== requestContext || requestSequence.current !== requestId) return;
-      setData({
+      hasLoadedRef.current = true;
+      setIsLoading(false);
+      setData((prev) => ({
+        ...prev,
         address: clubAddress,
         isVerifiedClub,
         factoryAddress,
@@ -660,11 +729,7 @@ export function useBondedClub(
         nextInterestDeadline,
         currentRoundIndex,
         cycleEnded,
-        memberAddresses,
-        memberContributions,
-        memberContributionRound,
         positionAvailable,
-        membersLoadError,
         oracleError,
         collateralValueUsdc,
         borrowLimit,
@@ -688,7 +753,36 @@ export function useBondedClub(
         usdcAllowance,
         cirBtcBalance,
         cirBtcAllowance,
-      });
+      }));
+
+      // Read member list from MemberJoined / MemberRemoved events (L5 & R1 resilient fetching)
+      const { members: rawMemberAddresses, error: membersLoadError } = await fetchBondedClubMembers(
+        publicClient,
+        clubAddress,
+        memberCount
+      );
+
+      let memberAddresses = [...rawMemberAddresses];
+      if (userAddress && isMember && !memberAddresses.some((m) => m.toLowerCase() === userAddress.toLowerCase())) {
+        memberAddresses.push(userAddress);
+      }
+
+      const memberContributionRound = stateRaw === BONDED_STATE.ACTIVE && currentRoundIndex >= 1n && currentRoundIndex <= maxMembers ? currentRoundIndex : null;
+      const memberContributions: Record<string, boolean | null> = {};
+      if (memberContributionRound !== null && memberAddresses.length > 0) {
+        await Promise.all(memberAddresses.map(async member => {
+          memberContributions[member.toLowerCase()] = await readClub<boolean>("contributed", [memberContributionRound, member]).catch(() => null);
+        }));
+      }
+
+      if (contextRef.current !== requestContext || requestSequence.current !== requestId) return;
+      setData((prev) => ({
+        ...prev,
+        memberAddresses,
+        memberContributions,
+        memberContributionRound,
+        membersLoadError,
+      }));
     } catch (err) {
       if (contextRef.current === requestContext && requestSequence.current === requestId) setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -698,7 +792,7 @@ export function useBondedClub(
 
   useEffect(() => {
     void refetch();
-    const interval = setInterval(() => void refetch(), 30_000);
+    const interval = setInterval(() => void refetch({ silent: true }), 30_000);
     return () => clearInterval(interval);
   }, [refetch]);
 

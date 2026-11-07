@@ -23,6 +23,13 @@ export const KNOWN_BONDED_TONTINE_CLUBS: readonly `0x${string}`[] = [
   "0xF9469568ebb287275009fcE3Db224a16273C5d05",
 ] as const;
 
+export const KNOWN_BONDED_CLUB_MEMBERS: Record<string, readonly `0x${string}`[]> = {
+  "0x3d35e830fe5ba48ff5b36dbba9ecebd3a7bad59b": [
+    "0x3f2416F9782c069cD8cA40a3648B141578CFe460",
+    "0xb59b2C4efDAe4a9d9eb497E435cF25b65001D224",
+  ],
+};
+
 /**
  * Historical demo clubs excluded from public directory list to prevent confusion.
  */
