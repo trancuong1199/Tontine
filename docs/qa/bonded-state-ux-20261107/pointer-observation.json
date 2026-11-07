@@ -1,0 +1,25 @@
+{
+  "events": [
+    {
+      "type": "click",
+      "trusted": true,
+      "x": 187,
+      "y": 810,
+      "target": "BROWSER-SKILL-OVERLAY",
+      "text": ""
+    },
+    {
+      "type": "click",
+      "trusted": true,
+      "x": 38,
+      "y": 810,
+      "target": "BUTTON",
+      "text": "Review and acknowledge risk"
+    }
+  ],
+  "scrollY": 2097,
+  "focus": "checkbox",
+  "riskTop": 663,
+  "barTop": 775,
+  "writes": []
+}

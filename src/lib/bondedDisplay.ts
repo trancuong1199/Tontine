@@ -2,6 +2,7 @@ import { formatUnitsExact } from "../onchain-money.ts";
 
 export function formatRoundDuration(seconds: number, isEn: boolean): string {
   if (seconds <= 0) return "--";
+  if (seconds < 60) return `${Math.round(seconds)} ${isEn ? (Math.round(seconds) === 1 ? "second" : "seconds") : "giây"}`;
   const value = seconds < 3600 ? Math.round(seconds / 60) : seconds < 86400 ? Math.round(seconds / 3600) : Number((seconds / 86400).toFixed(1));
   const unit = seconds < 3600 ? (isEn ? "min" : "phút") : seconds < 86400 ? (isEn ? (value === 1 ? "hour" : "hours") : "giờ") : (isEn ? (value === 1 ? "day" : "days") : "ngày");
   return `${value} ${unit}`;
@@ -80,4 +81,13 @@ export function availablePrincipal(deposits: bigint, debt: bigint): bigint {
 export function formatAdaptivePercent(percent: bigint): string {
   if (percent >= 1_000_000n) return formatUnitsExact((percent + 5_000n) / 10_000n, 2);
   return formatUnitsExact(percent, 6);
+}
+
+/** Two decimals for ordinary amounts; retain sub-cent positive balances. */
+export function formatFinancialAmount(raw: bigint): string {
+  if (raw !== 0n && raw > -10_000n && raw < 10_000n) return formatUnitsExact(raw, 6);
+  const negative = raw < 0n;
+  const magnitude = negative ? -raw : raw;
+  const cents = (magnitude + 5_000n) / 10_000n;
+  return `${negative ? "-" : ""}${cents / 100n}.${(cents % 100n).toString().padStart(2, "0")}`;
 }

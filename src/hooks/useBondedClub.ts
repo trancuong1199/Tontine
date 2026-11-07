@@ -75,6 +75,9 @@ export interface BondedClubSnapshot {
   currentRoundIndex: bigint;
   cycleEnded: boolean;
   memberAddresses: readonly `0x${string}`[];
+  memberContributions: Record<string, boolean | null>;
+  memberContributionRound: bigint | null;
+  positionAvailable: boolean;
   membersLoadError: string | null;
   // Oracle-dependent fields (may be null if oracle is stale/broken)
   oracleError: boolean;
@@ -210,6 +213,7 @@ export function useBondedClub(
   const publicClient = usePublicClient({ chainId: ARC_TESTNET_CHAIN_ID });
   const contextKey = `${clubAddress?.toLowerCase()}:${userAddress?.toLowerCase() ?? "guest"}`;
   const contextRef = useRef(contextKey);
+  const requestSequence = useRef(0);
   useLayoutEffect(() => { contextRef.current = contextKey; }, [contextKey]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -251,6 +255,9 @@ export function useBondedClub(
     currentRoundIndex: 0n,
     cycleEnded: false,
     memberAddresses: [],
+    memberContributions: {},
+    memberContributionRound: null,
+    positionAvailable: false,
     membersLoadError: null,
     oracleError: false,
     collateralValueUsdc: null,
@@ -279,6 +286,7 @@ export function useBondedClub(
 
   const refetch = useCallback(async () => {
     const requestContext = contextKey;
+    const requestId = ++requestSequence.current;
     if (!enabled || !clubAddress || !publicClient) return;
     setIsLoading(true);
     setError(null);
@@ -532,6 +540,7 @@ export function useBondedClub(
       const oracleStatus = getOracleStatus(oraclePriceRaw, oracleUpdatedAt, answeredInRound, roundId, nowSec, maxPriceAge);
       oracleError = oracleError || oracleStatus !== "fresh";
 
+      let positionAvailable = Boolean(userAddress);
       // User-specific reads
       let isMember = false;
       let userDeposit = 0n;
@@ -556,16 +565,16 @@ export function useBondedClub(
           cBal,
           cAllow,
         ] = await Promise.all([
-          readClub<boolean>("isMember", [userAddress]).catch(() => false),
-          readClub<bigint>("deposit", [userAddress]).catch(() => 0n),
+          readClub<boolean>("isMember", [userAddress]).catch(() => { positionAvailable = false; return false; }),
+          readClub<bigint>("deposit", [userAddress]).catch(() => { positionAvailable = false; return 0n; }),
           currentRoundIndex >= 1n && currentRoundIndex <= maxMembers
-            ? readClub<boolean>("contributed", [currentRoundIndex, userAddress]).catch(() => false)
+            ? readClub<boolean>("contributed", [currentRoundIndex, userAddress]).catch(() => { positionAvailable = false; return false; })
             : Promise.resolve(false),
-          readClub<bigint>("pendingInterest", [userAddress]).catch(() => 0n),
-          readClub<readonly [bigint, bigint]>("previewPrincipal", [userAddress]).catch(
-            () => [0n, 0n] as const
-          ),
-          readClub<boolean>("principalWithdrawn", [userAddress]).catch(() => false),
+          readClub<bigint>("pendingInterest", [userAddress]).catch(() => { positionAvailable = false; return 0n; }),
+          stateRaw === BONDED_STATE.COMPLETED || stateRaw === BONDED_STATE.DEFAULTED
+            ? readClub<readonly [bigint, bigint]>("previewPrincipal", [userAddress]).catch(() => { positionAvailable = false; return [0n, 0n] as const; })
+            : Promise.resolve([0n, 0n] as const),
+          readClub<boolean>("principalWithdrawn", [userAddress]).catch(() => { positionAvailable = false; return false; }),
           publicClient
             .readContract({
               address: BONDED_USDC_ADDRESS,
@@ -611,7 +620,15 @@ export function useBondedClub(
         memberCount
       );
 
-      if (contextRef.current !== requestContext) return;
+      const memberContributionRound = stateRaw === BONDED_STATE.ACTIVE && currentRoundIndex >= 1n && currentRoundIndex <= maxMembers ? currentRoundIndex : null;
+      const memberContributions: Record<string, boolean | null> = {};
+      if (memberContributionRound !== null) {
+        await Promise.all(memberAddresses.map(async member => {
+          memberContributions[member.toLowerCase()] = await readClub<boolean>("contributed", [memberContributionRound, member]).catch(() => null);
+        }));
+      }
+
+      if (contextRef.current !== requestContext || requestSequence.current !== requestId) return;
       setData({
         address: clubAddress,
         isVerifiedClub,
@@ -644,6 +661,9 @@ export function useBondedClub(
         currentRoundIndex,
         cycleEnded,
         memberAddresses,
+        memberContributions,
+        memberContributionRound,
+        positionAvailable,
         membersLoadError,
         oracleError,
         collateralValueUsdc,
@@ -670,9 +690,9 @@ export function useBondedClub(
         cirBtcAllowance,
       });
     } catch (err) {
-      if (contextRef.current === requestContext) setError(err instanceof Error ? err.message : String(err));
+      if (contextRef.current === requestContext && requestSequence.current === requestId) setError(err instanceof Error ? err.message : String(err));
     } finally {
-      if (contextRef.current === requestContext) setIsLoading(false);
+      if (contextRef.current === requestContext && requestSequence.current === requestId) setIsLoading(false);
     }
   }, [clubAddress, userAddress, enabled, publicClient, contextKey]);
 

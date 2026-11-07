@@ -104,7 +104,7 @@ test('BRQ01 home renders actual featured data, placeholders and bilingual bonded
 test('BRQ02/04 collateral component renders historical labels, precision and missing price',async()=>{
  const {BondedCollateralSummary}=await loadUI('src/components/savings/BondedCollateralSummary.tsx');
  const html=renderToStaticMarkup(React.createElement(BondedCollateralSummary,{club:fixture,language:'en'}));
- for(const expected of ['$0.012','160','0.0075%','Historical estimate','138405s / 3600s','Test price, not market price'])assert.ok(html.includes(expected),expected);
+ for(const expected of ['$0.012','160','0.0075%','Historical estimate','1.6 days / 1 hour','Test price, not market price'])assert.ok(html.includes(expected),expected);
  const invalid=renderToStaticMarkup(React.createElement(BondedCollateralSummary,{club:{...fixture,oracleStatus:'invalid'},language:'en'}));assert.doesNotMatch(invalid,/\$0.012/);assert.match(invalid,/Invalid price/);
 });
 test('BRQ03 directory renders same-name addresses distinctly and excludes cancelled including empty result',async()=>{

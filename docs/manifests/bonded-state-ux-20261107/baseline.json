@@ -1,0 +1,66 @@
+{
+  "taskId": "bonded-state-ux-20261107",
+  "createdAt": "2026-11-07T13:13:33.537Z",
+  "files": {
+    "src/components/savings/BondedClubWorkspace.tsx": {
+      "exists": true,
+      "sha256": "6020fca50259e264fbcb2bd4aa8994f5b66b7592120acb839cf9c0c01ef74459",
+      "snapshot": "docs/manifests/bonded-state-ux-20261107/baseline/src_components_savings_BondedClubWorkspace.tsx"
+    },
+    "src/components/savings/UnauthenticatedBondedClubPreview.tsx": {
+      "exists": true,
+      "sha256": "7779cc55837ceef61f8691d21229a306dc570564a02a10dca6b5760cb32014d9",
+      "snapshot": "docs/manifests/bonded-state-ux-20261107/baseline/src_components_savings_UnauthenticatedBondedClubPreview.tsx"
+    },
+    "src/components/savings/CreateBondedClubModal.tsx": {
+      "exists": true,
+      "sha256": "4c11ad8cd9dd0a3a95fc103f691edd72bb6202a31d1b93bd668b3429d7c7c928",
+      "snapshot": "docs/manifests/bonded-state-ux-20261107/baseline/src_components_savings_CreateBondedClubModal.tsx"
+    },
+    "src/components/savings/BondedCollateralSummary.tsx": {
+      "exists": true,
+      "sha256": "f91b8a38b90d867a2a715d82a0b488170a704d155473f30d3716c22e6eb8e537",
+      "snapshot": "docs/manifests/bonded-state-ux-20261107/baseline/src_components_savings_BondedCollateralSummary.tsx"
+    },
+    "src/hooks/useBondedClub.ts": {
+      "exists": true,
+      "sha256": "c67952e3ceb981dbcc172e136458077c8d9263d510cb81bf7a462e78e9fe172f",
+      "snapshot": "docs/manifests/bonded-state-ux-20261107/baseline/src_hooks_useBondedClub.ts"
+    },
+    "src/lib/bondedDisplay.ts": {
+      "exists": true,
+      "sha256": "314730ba2b7a49e0f8f8f32d9c54b50d597f8ce586dc9696935fae4644c01c18",
+      "snapshot": "docs/manifests/bonded-state-ux-20261107/baseline/src_lib_bondedDisplay.ts"
+    },
+    "src/components/savings/BondedTerminalView.tsx": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/components/savings/BondedMobileActionBar.tsx": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/lib/bondedState.ts": {
+      "exists": false,
+      "sha256": null,
+      "snapshot": null
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "e9b9ec0552059b69634f3b2074cf96853d46c48a877ecb4f691799b7dea72a91",
+      "snapshot": "docs/manifests/bonded-state-ux-20261107/baseline/src_lib_i18n.ts"
+    },
+    "src/App.tsx": {
+      "exists": true,
+      "sha256": "84ad06299e97487492a95909e03b0870e0b7f9b4b545ca4c65d0ad77bddc3f99",
+      "snapshot": "docs/manifests/bonded-state-ux-20261107/baseline/src_App.tsx"
+    },
+    "src/index.css": {
+      "exists": true,
+      "sha256": "633e5f7ec7a1a3633baafecef4fdf559a3e7fbf9392b37c349e093d13ac0830e",
+      "snapshot": "docs/manifests/bonded-state-ux-20261107/baseline/src_index.css"
+    }
+  }
+}

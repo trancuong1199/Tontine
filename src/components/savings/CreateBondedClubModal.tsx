@@ -1,4 +1,5 @@
-import { useState, useId } from "react";
+import { formatRoundDuration, formatFinancialAmount } from "../../lib/bondedDisplay";
+import { useState, useId, useRef } from "react";
 import { useAccount, usePublicClient } from "wagmi";
 import { useArcWriteContract } from "../../hooks/useArcWriteContract";
 import { useModal } from "connectkit";
@@ -70,6 +71,8 @@ export function CreateBondedClubModal({
   const { writeContractAsync } = useArcWriteContract(undefined, { disableAutoToast: true });
   const publicClient = usePublicClient();
   const isEn = language === "en";
+  const formId = useId();
+  const deployingRef = useRef(false);
 
   const [groupName, setGroupName] = useState(isEn ? "Saigon Bonded Club" : "Nhóm Bonded V2");
   const [contributionAmount, setContributionAmount] = useState("10");
@@ -103,7 +106,7 @@ export function CreateBondedClubModal({
 
   const handleDeploy = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!isNameValid || !isAmountValid || !isMembersValid || !isDurationValid || !hasConfirmedCollateralSeizure || isDeploying) {
+    if (!isNameValid || !isAmountValid || !isMembersValid || !isDurationValid || !hasConfirmedCollateralSeizure || isDeploying || deployingRef.current) {
       if (!hasConfirmedCollateralSeizure) {
         toast.error(
           isEn
@@ -137,6 +140,7 @@ export function CreateBondedClubModal({
       return;
     }
 
+    deployingRef.current = true;
     setIsDeploying(true);
     setDeployStep(isEn ? "Waiting for signature in wallet..." : "Đang chờ ký xác nhận trên ví...");
 
@@ -214,22 +218,23 @@ export function CreateBondedClubModal({
       console.error("Bonded club creation failed:", err);
       toast.error(parseBondedTontineError(err, language));
     } finally {
+      deployingRef.current = false;
       setIsDeploying(false);
       setDeployStep("");
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl max-h-[90vh] flex flex-col rounded-3xl border border-amber-500/40 bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] text-white shadow-2xl shadow-amber-500/10 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-xl max-h-[calc(100dvh-1.5rem)] flex flex-col rounded-3xl border border-amber-500/40 bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] text-white shadow-2xl shadow-amber-500/10 overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-6 border-b border-amber-500/20 bg-amber-500/5">
+        <div className="shrink-0 flex items-center justify-between gap-2 p-4 sm:p-6 border-b border-amber-500/20 bg-amber-500/5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-md shadow-amber-500/10">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-white">
                   {isEn ? "Create BondedTontine V2 Club" : "Tạo Nhóm BondedTontine V2"}
                 </h2>
@@ -237,7 +242,7 @@ export function CreateBondedClubModal({
                   CirBTC Collateral
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="hidden sm:block text-xs text-slate-400 mt-0.5">
                 {isEn
                   ? "Factory-deployed club with BTC/USD Oracle & anti-default bond"
                   : "Nhóm hụi thế chấp CirBTC định giá Oracle, chống bùng hụi qua Factory"}
@@ -255,18 +260,27 @@ export function CreateBondedClubModal({
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleDeploy} className="flex-1 overflow-y-auto p-6 space-y-5">
+        <form id={formId} data-testid="create-bonded-body" onSubmit={handleDeploy} className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
           {/* Version Switcher banner */}
           <div className="flex items-center justify-between p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs">
             <div className="flex items-center gap-2 text-amber-200">
               <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
               <span>
                 {isEn
-                  ? "Standard: Bonded V2 (Recommended with collateral security)"
-                  : "Tiêu chuẩn: Bonded V2 (Khuyên dùng với bảo chứng CirBTC)"}
+                  ? "Bonded V2: CirBTC collateral; review the risk terms"
+                  : "Bonded V2: cọc CirBTC; kiểm tra điều kiện rủi ro"}
               </span>
             </div>
           </div>
+
+          <section data-testid="create-bonded-essential-terms" className="rounded-2xl border border-amber-500/30 bg-black/30 p-4 space-y-2 text-xs text-slate-200">
+            <h3 className="font-bold text-amber-300">{isEn ? "Essential terms before creation" : "Điều kiện cần biết trước khi tạo"}</h3>
+            <p>{isEn ? "Owner borrowing interest per round" : "Lãi vay chủ nhóm mỗi vòng"}: {(rateBps / 100).toFixed(2)}%</p>
+            <p>{isEn ? "Initial collateral: 0 cirBTC; creation does not deposit collateral. Initial borrowing capacity: 0 USDC until collateral is deposited and a fresh price is available." : "Cọc ban đầu: 0 cirBTC; tạo nhóm không tự nạp cọc. Hạn mức vay ban đầu: 0 USDC cho đến khi nạp cọc và có giá còn hạn."}</p>
+            <p>{isEn ? "To start: positive CirBTC collateral and at least 2 members. There is no requirement to collateralize 200% of the whole pool to start." : "Điều kiện bắt đầu: cọc CirBTC lớn hơn 0 và ít nhất 2 thành viên. Không bắt buộc cọc 200% toàn bộ quỹ để bắt đầu."}</p>
+            <p>{isEn ? "Borrowing safety margin" : "Biên an toàn khoản vay"}: {safetyBps / 100}% — {isEn ? `$${safetyBps / 100} collateral per $100 exposure, including interest.` : `$${safetyBps / 100} cọc cho mỗi $100 dư nợ tính cả lãi.`}</p>
+            <p>{isEn ? "Liquidation threshold" : "Ngưỡng thanh lý"}: {liquidationBps / 100}% {isEn ? "of exposure; separate from the start conditions." : "dư nợ; khác với điều kiện bắt đầu."}</p>
+          </section>
 
           {/* Field 1: Group Name */}
           <div className="space-y-1.5">
@@ -485,12 +499,12 @@ export function CreateBondedClubModal({
               <span>{isEn ? "Full Cycle Duration:" : "Thời gian toàn chu kỳ:"}</span>
               <span className="text-slate-200 font-medium">
                 {isMembersValid && isDurationValid
-                  ? `${Math.round((maxMembers * roundDuration) / 86400)} ${isEn ? "days" : "ngày"} (${maxMembers} ${isEn ? "rounds" : "vòng"})`
+                  ? `${formatRoundDuration(maxMembers * roundDuration, isEn)} (${maxMembers} ${isEn ? "rounds" : "vòng"})`
                   : "--"}
               </span>
             </div>
             <div className="flex items-center justify-between text-slate-400 text-xs">
-              <span>{isEn ? "Collateral Security:" : "Bảo đảm thế chấp:"}</span>
+              <span>{isEn ? "Collateral asset (deposit after creation):" : "Tài sản cọc (nạp sau khi tạo):"}</span>
               <span className="text-emerald-400 font-semibold flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" />
                 {isEn ? "CirBTC + BTC/USD Oracle" : "CirBTC + Oracle BTC/USD"}
@@ -498,6 +512,8 @@ export function CreateBondedClubModal({
             </div>
           </div>
 
+        </form>
+        <div data-testid="create-bonded-footer" className="shrink-0 border-t border-amber-500/30 bg-[#0c0d14] p-3 sm:p-4 space-y-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {/* Mandatory Collateral Seizure Confirmation Checkbox */}
           <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-3.5">
             <label className="flex items-start gap-2.5 cursor-pointer text-xs select-none">
@@ -509,21 +525,9 @@ export function CreateBondedClubModal({
                 className="mt-0.5 h-4 w-4 rounded border-amber-500/40 text-amber-500 focus:ring-amber-400 focus:ring-offset-0 bg-black/60 cursor-pointer shrink-0"
               />
               <span className="text-slate-300 leading-relaxed">
-                {isEn ? (
-                  <>
-                    I have reviewed the grace periods (Interest grace:{" "}
-                    <span className="text-amber-300 font-semibold">{Math.round(interestGraceSec / 3600)}h</span>, Settlement grace:{" "}
-                    <span className="text-amber-300 font-semibold">{Math.round(settlementGraceSec / 3600)}h</span>) and understand{" "}
-                    <strong className="text-amber-300 font-bold">100% of CirBTC collateral is seized upon default</strong> if interest or settlement is overdue.
-                  </>
-                ) : (
-                  <>
-                    Tôi đã xem xét thời gian ân hạn (Ân hạn trả lãi:{" "}
-                    <span className="text-amber-300 font-semibold">{Math.round(interestGraceSec / 3600)} giờ</span>, Ân hạn tất toán:{" "}
-                    <span className="text-amber-300 font-semibold">{Math.round(settlementGraceSec / 3600)} giờ</span>) và hiểu rằng{" "}
-                    <strong className="text-amber-300 font-bold">100% tiền cọc CirBTC sẽ bị tịch thu nếu vỡ nợ</strong> khi quá hạn trả lãi hoặc tất toán.
-                  </>
-                )}
+                {isEn
+                  ? `I accept the terms: interest grace ${formatRoundDuration(interestGraceSec, true)}, settlement grace ${formatRoundDuration(settlementGraceSec, true)}. Default can seize all CirBTC collateral.`
+                  : `Tôi đồng ý điều kiện: ân hạn lãi ${formatRoundDuration(interestGraceSec, false)}, tất toán ${formatRoundDuration(settlementGraceSec, false)}. Vỡ nợ có thể mất toàn bộ cọc CirBTC.`}
               </span>
             </label>
           </div>
@@ -545,6 +549,7 @@ export function CreateBondedClubModal({
           <div className="pt-2">
             <button
               type="submit"
+              form={formId}
               disabled={!isNameValid || !isAmountValid || !isMembersValid || !isDurationValid || !hasConfirmedCollateralSeizure || isDeploying}
               className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
             >
@@ -561,7 +566,7 @@ export function CreateBondedClubModal({
               )}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

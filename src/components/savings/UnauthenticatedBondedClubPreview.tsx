@@ -1,5 +1,5 @@
 import { BondedCollateralSummary, BondedLiquiditySummary } from "./BondedCollateralSummary";
-import { formatRoundDuration } from "../../lib/bondedDisplay";
+import { formatRoundDuration, formatFinancialAmount } from "../../lib/bondedDisplay";
 import { useState } from "react";
 import { useModal } from "connectkit";
 import {
@@ -72,6 +72,8 @@ export function UnauthenticatedBondedClubPreview({
     [BONDED_STATE.CANCELLED]: { vi: "ĐÃ HỦY", en: "CANCELLED" },
   };
 
+  const canInviteJoin = !club.isLoading && !club.error && club.financialsAvailable && club.state === BONDED_STATE.OPEN && club.maxMembers > 0n && club.memberCount < club.maxMembers;
+  const connectLabel = canInviteJoin ? (isEn ? "Connect Wallet to Join" : "Kết nối ví để tham gia") : (isEn ? "Connect Wallet to View My Position" : "Kết nối ví để xem phần của tôi");
   const currentClubName = club.groupName.trim() || displayedGroupName;
 
   return (
@@ -152,7 +154,7 @@ export function UnauthenticatedBondedClubPreview({
               <span>{isEn ? "Contribution" : "Mức góp"}</span>
             </div>
             <div className="text-sm sm:text-base font-bold text-amber-300 mt-1">
-              {formatUsdc(club.contributionAmount)} USDC
+              {formatFinancialAmount(club.contributionAmount)} USDC
             </div>
             <div className="text-xs text-slate-500">{isEn ? "/ member / round" : "/ tv / vòng"}</div>
           </div>
@@ -160,12 +162,12 @@ export function UnauthenticatedBondedClubPreview({
           <div className="border-l border-slate-800">
             <div className="text-xs text-slate-400 font-medium flex items-center justify-center gap-1">
               <Percent size={13} className="text-emerald-400" />
-              <span>{isEn ? "Yield / Round" : "Lãi suất / vòng"}</span>
+              <span>{isEn ? "Borrowing interest / round" : "Lãi vay / vòng"}</span>
             </div>
             <div className="text-sm sm:text-base font-bold text-emerald-400 mt-1">
               {(Number(club.rateBpsPerRound) / 100).toFixed(2)}%
             </div>
-            <div className="text-xs text-slate-500">{isEn ? "paid by owner" : "chủ nhóm chi trả"}</div>
+            <div className="text-xs text-slate-500">{isEn ? "owed by owner" : "nghĩa vụ của chủ nhóm"}</div>
           </div>
 
           <div className="border-l border-slate-800">
@@ -193,21 +195,7 @@ export function UnauthenticatedBondedClubPreview({
 
         <BondedLiquiditySummary club={club} language={language} />
         <BondedCollateralSummary club={club} language={language} />
-        {/* Collateral & Risk Summary */}
-        <div className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/25 flex items-start gap-2.5 text-xs text-amber-200/90 leading-relaxed">
-          <Lock size={15} className="text-amber-400 shrink-0 mt-0.5" />
-          <div>
-            <span className="font-semibold text-amber-300">
-              {isEn ? "CirBTC Collateral: " : "Cọc CirBTC: "}
-            </span>
-            <span>
-              {club.collateral > 0n
-                ? `${formatUnitsExact(club.collateral, 8)} cirBTC ${isEn ? "locked in contract." : "đã được ký quỹ."} `
-                : (isEn ? "Waiting for owner collateral deposit. " : "Đang chờ chủ nhóm nạp cọc. ")}
-              {BONDED_DISCLOSURE_COPY[language]}
-            </span>
-          </div>
-        </div>
+
       </div>
 
       {/* Connect Wallet Action Card */}
@@ -217,12 +205,12 @@ export function UnauthenticatedBondedClubPreview({
         </div>
         <div className="space-y-1.5">
           <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-            {isEn ? "Connect Wallet to Join This Club" : "Kết nối ví để tham gia nhóm này"}
+            {connectLabel}
           </h3>
           <p className="text-slate-300 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
             {isEn
-              ? "Connect your Web3 or Passkey wallet to join the roster, contribute USDC, and receive fixed interest."
-              : "Kết nối ví Web3 hoặc Passkey của bạn để vào danh sách thành viên, góp USDC và nhận tiền lãi mỗi vòng."}
+              ? (canInviteJoin ? "Review collateral and repayment terms, then connect a Web3 wallet to join. Interest can be claimed only after it is paid." : "Connect to inspect your deposits, paid interest and any eligible recovery. This state does not offer immediate joining.")
+              : (canInviteJoin ? "Kiểm tra cọc và điều kiện trả nợ, rồi kết nối ví Web3 để tham gia. Chỉ nhận được lãi đã thanh toán." : "Kết nối để xem tiền đã góp, lãi đã trả và tài sản có thể thu hồi. Trạng thái này không mở đăng ký ngay.")}
           </p>
         </div>
         <div className="flex items-center justify-center pt-1">
@@ -232,7 +220,7 @@ export function UnauthenticatedBondedClubPreview({
             className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center gap-2"
           >
             <Wallet size={16} />
-            <span>{isEn ? "Connect Wallet to Join" : "Kết nối ví để tham gia ngay"}</span>
+            <span>{connectLabel}</span>
           </button>
         </div>
       </div>

@@ -1,0 +1,283 @@
+{
+  "fixture": true,
+  "framework": "Real React components and compiled application Tailwind CSS; mocked wallet/provider boundaries; no signing",
+  "browserSessionStopped": true,
+  "debugCapture": "/tmp/state-ux-debug-final.json",
+  "note": "Mobile submit center hit-test intersects BrowserSkill's own overlay; inspected underlying element stack contains the actual submit button. App modal covers underlying fixed bar. Review button activated with keyboard Enter after mouse event did not scroll; settled screenshot shows risk checkbox above fixed bar.",
+  "evidence": [
+    {
+      "case": "defaulted-mobile-vi",
+      "geometry": {
+        "viewport": [
+          390,
+          844
+        ],
+        "width": 390,
+        "bodyWidth": 390,
+        "terminal": true,
+        "risk": false,
+        "bar": {
+          "display": "block",
+          "y": 775,
+          "bottom": 844,
+          "text": "Nhận tài sản thu hồi",
+          "padding": "12px"
+        },
+        "writes": []
+      },
+      "screenshot": null
+    },
+    {
+      "case": "cancelled-mobile-en",
+      "geometry": {
+        "viewport": [
+          390,
+          844
+        ],
+        "width": 390,
+        "bodyWidth": 390,
+        "terminal": true,
+        "risk": false,
+        "bar": {
+          "display": "block",
+          "y": 783,
+          "bottom": 844,
+          "text": "No eligible claim available",
+          "padding": "12px"
+        },
+        "writes": []
+      },
+      "screenshot": "{\n  \"byte_size\": 40695,\n  \"format\": \"png\",\n  \"height\": 844,\n  \"path\": \"/tmp/state-ux-cancelled-mobile-en.png\",\n  \"tab_id\": 29577905,\n  \"width\": 390\n}\n"
+    },
+    {
+      "case": "full-preview-mobile-en",
+      "geometry": {
+        "viewport": [
+          390,
+          844
+        ],
+        "width": 390,
+        "bodyWidth": 390,
+        "terminal": false,
+        "risk": false,
+        "bar": null,
+        "writes": []
+      },
+      "screenshot": "{\n  \"byte_size\": 88392,\n  \"format\": \"png\",\n  \"height\": 844,\n  \"path\": \"/tmp/state-ux-full-preview-mobile-en.png\",\n  \"tab_id\": 29577905,\n  \"width\": 390\n}\n"
+    },
+    {
+      "case": "active-preview-mobile-vi",
+      "geometry": {
+        "viewport": [
+          390,
+          844
+        ],
+        "width": 390,
+        "bodyWidth": 390,
+        "terminal": false,
+        "risk": false,
+        "bar": null,
+        "writes": []
+      },
+      "screenshot": "{\n  \"byte_size\": 89149,\n  \"format\": \"png\",\n  \"height\": 844,\n  \"path\": \"/tmp/state-ux-active-preview-mobile-vi.png\",\n  \"tab_id\": 29577905,\n  \"width\": 390\n}\n"
+    },
+    {
+      "case": "modal-mobile-vi",
+      "geometry": {
+        "viewport": [
+          390,
+          844
+        ],
+        "width": 390,
+        "bodyWidth": 390,
+        "terminal": false,
+        "risk": true,
+        "bar": {
+          "display": "block",
+          "y": 775,
+          "bottom": 844,
+          "text": "Xem và xác nhận rủi ro",
+          "padding": "12px"
+        },
+        "writes": []
+      },
+      "screenshot": "{\n  \"byte_size\": 150383,\n  \"format\": \"png\",\n  \"height\": 844,\n  \"path\": \"/tmp/state-ux-modal-mobile-vi.png\",\n  \"tab_id\": 29577905,\n  \"width\": 390\n}\n"
+    },
+    {
+      "case": "modal390x844vi-scrolled-consent",
+      "geometry": {
+        "viewport": [
+          390,
+          844
+        ],
+        "scrollWidth": 390,
+        "footer": {
+          "top": 673,
+          "bottom": 831,
+          "height": 158
+        },
+        "checkbox": {
+          "top": 703,
+          "bottom": 719,
+          "checked": true,
+          "hit": true
+        },
+        "submit": {
+          "top": 771,
+          "bottom": 819,
+          "disabled": false,
+          "hit": false
+        },
+        "body": {
+          "height": 569,
+          "scrollHeight": 997,
+          "scrollTop": 428,
+          "overflow": "auto"
+        },
+        "writes": []
+      },
+      "screenshot": null
+    },
+    {
+      "case": "modal390x667en",
+      "geometry": {
+        "viewport": [
+          390,
+          667
+        ],
+        "scrollWidth": 390,
+        "footer": {
+          "top": 476.5,
+          "bottom": 654,
+          "height": 177.5
+        },
+        "checkbox": {
+          "top": 506.5,
+          "bottom": 522.5,
+          "checked": false,
+          "hit": true
+        },
+        "submit": {
+          "top": 594,
+          "bottom": 642,
+          "disabled": true,
+          "hit": false
+        },
+        "body": {
+          "height": 345,
+          "scrollHeight": 1013,
+          "scrollTop": 0,
+          "overflow": "auto"
+        },
+        "writes": []
+      },
+      "screenshot": "{\n  \"byte_size\": 124852,\n  \"format\": \"png\",\n  \"height\": 667,\n  \"path\": \"/tmp/state-ux-modal390x667en.png\",\n  \"tab_id\": 29577905,\n  \"width\": 390\n}\n"
+    },
+    {
+      "case": "modal1440x900vi",
+      "geometry": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "scrollWidth": 1425,
+        "footer": {
+          "top": 721,
+          "bottom": 887,
+          "height": 166
+        },
+        "checkbox": {
+          "top": 755,
+          "bottom": 771,
+          "checked": false,
+          "hit": true
+        },
+        "submit": {
+          "top": 823,
+          "bottom": 871,
+          "disabled": true,
+          "hit": true
+        },
+        "body": {
+          "height": 613,
+          "scrollHeight": 875,
+          "scrollTop": 0,
+          "overflow": "auto"
+        },
+        "writes": []
+      },
+      "screenshot": "{\n  \"byte_size\": 370266,\n  \"format\": \"png\",\n  \"height\": 900,\n  \"path\": \"/tmp/state-ux-modal1440x900vi.png\",\n  \"tab_id\": 29577905,\n  \"width\": 1440\n}\n"
+    },
+    {
+      "case": "modal1440x900en",
+      "geometry": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "scrollWidth": 1425,
+        "footer": {
+          "top": 721,
+          "bottom": 887,
+          "height": 166
+        },
+        "checkbox": {
+          "top": 755,
+          "bottom": 771,
+          "checked": false,
+          "hit": true
+        },
+        "submit": {
+          "top": 823,
+          "bottom": 871,
+          "disabled": true,
+          "hit": true
+        },
+        "body": {
+          "height": 613,
+          "scrollHeight": 891,
+          "scrollTop": 0,
+          "overflow": "auto"
+        },
+        "writes": []
+      },
+      "screenshot": "{\n  \"byte_size\": 359449,\n  \"format\": \"png\",\n  \"height\": 900,\n  \"path\": \"/tmp/state-ux-modal1440x900en.png\",\n  \"tab_id\": 29577905,\n  \"width\": 1440\n}\n"
+    },
+    {
+      "case": "full-open-mobile-en",
+      "geometry": {
+        "viewport": [
+          390,
+          844
+        ],
+        "width": 390,
+        "risk": false,
+        "bar": "Claim paid interest",
+        "rawDuration": false,
+        "timeline": null,
+        "joinButtons": [],
+        "writes": []
+      },
+      "screenshot": null
+    },
+    {
+      "case": "active-final-mobile-vi",
+      "geometry": {
+        "viewport": [
+          390,
+          844
+        ],
+        "width": 390,
+        "risk": true,
+        "bar": "Xem và xác nhận rủi ro",
+        "rawDuration": false,
+        "timeline": [
+          "Chu kỳ: 1 "
+        ],
+        "joinButtons": [],
+        "writes": []
+      },
+      "screenshot": null
+    }
+  ]
+}

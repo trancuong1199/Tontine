@@ -1,0 +1,47 @@
+{
+  "taskId": "bonded-state-ux-20261107",
+  "frozenAt": "2026-11-07T13:28:34.873Z",
+  "status": "FROZEN",
+  "files": {
+    "src/components/savings/BondedClubWorkspace.tsx": {
+      "sha256": "43bacc30b76c3f1314c93b2043f2cb683abbd6475837d4c082e85403cc2f23c8",
+      "baselineSha256": "6020fca50259e264fbcb2bd4aa8994f5b66b7592120acb839cf9c0c01ef74459",
+      "isNew": false
+    },
+    "src/components/savings/UnauthenticatedBondedClubPreview.tsx": {
+      "sha256": "269aee374048025981ad551dc5128a342448261e50ac1a29c3cb6a82ec3603ed",
+      "baselineSha256": "7779cc55837ceef61f8691d21229a306dc570564a02a10dca6b5760cb32014d9",
+      "isNew": false
+    },
+    "src/components/savings/CreateBondedClubModal.tsx": {
+      "sha256": "5b4ce97311f8973b64b35a1f015d3de0385a3777654e23ea3b9e36fdb36e74cd",
+      "baselineSha256": "4c11ad8cd9dd0a3a95fc103f691edd72bb6202a31d1b93bd668b3429d7c7c928",
+      "isNew": false
+    },
+    "src/components/savings/BondedCollateralSummary.tsx": {
+      "sha256": "0edc0339707e261d17d436fdf9fb08f2667cf5994e5edc6d9e0eb531711e8e24",
+      "baselineSha256": "f91b8a38b90d867a2a715d82a0b488170a704d155473f30d3716c22e6eb8e537",
+      "isNew": false
+    },
+    "src/hooks/useBondedClub.ts": {
+      "sha256": "a76ccfc9a2e06c92ab49ba1009d15073ce3818551a43767ca74f80096fd172b5",
+      "baselineSha256": "c67952e3ceb981dbcc172e136458077c8d9263d510cb81bf7a462e78e9fe172f",
+      "isNew": false
+    },
+    "src/lib/bondedDisplay.ts": {
+      "sha256": "424299867a1b9bfa87311645f987d38769d279367209d59ee8f462e2777667b7",
+      "baselineSha256": "314730ba2b7a49e0f8f8f32d9c54b50d597f8ce586dc9696935fae4644c01c18",
+      "isNew": false
+    },
+    "src/components/savings/BondedTerminalView.tsx": {
+      "sha256": "e771cfefcbd9a191fbecd4dcf6d07254aa08da2d89ee16373b786ef2ba6d3e06",
+      "baselineSha256": null,
+      "isNew": true
+    },
+    "src/components/savings/BondedMobileActionBar.tsx": {
+      "sha256": "19f92da7f99509409c7f201c01b267c31fc4a8f19cc3fc35c42c3d99719c79f7",
+      "baselineSha256": null,
+      "isNew": true
+    }
+  }
+}
