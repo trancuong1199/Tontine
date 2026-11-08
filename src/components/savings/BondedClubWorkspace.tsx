@@ -1,6 +1,6 @@
 import { BondedTerminalView } from "./BondedTerminalView";
 import { BondedMobileActionBar } from "./BondedMobileActionBar";
-import { BondedCollateralSummary, BondedLiquiditySummary } from "./BondedCollateralSummary";
+import { BondedLiquiditySummary, BondedRiskBanner } from "./BondedCollateralSummary";
 import { memberErrorMessage, requiresRiskAcknowledgement, riskAcknowledgementContext, formatAdaptivePercent, formatFinancialAmount, formatRoundDuration } from "../../lib/bondedDisplay";
 import React, { useLayoutEffect, useRef, useState } from "react";
 import { usePublicClient, useWaitForTransactionReceipt } from "wagmi";
@@ -749,89 +749,98 @@ export function BondedClubWorkspace({
   const mobileLabel = mobileUnavailable ? (club.isLoading ? (isVi ? "Đang tải thông tin…" : "Loading details…") : (isVi ? "Chưa tải được thông tin — thử lại" : "Details unavailable — retry")) : mobileReview ? (isVi ? "Xem và xác nhận rủi ro" : "Review and acknowledge risk") : canJoinWithAcknowledgement ? (isVi ? "Tham gia nhóm" : "Join club") : canContributeWithAcknowledgement ? (isVi ? "Góp tiền vòng này" : "Contribute this round") : club.pendingInterest > 0n ? (isVi ? "Nhận lãi đã trả" : "Claim paid interest") : isOwner ? (isVi ? "Xem bước tiếp theo" : "Review next step") : club.state === BONDED_STATE.OPEN && club.isMember ? (isVi ? "Đang chờ chủ nhóm bắt đầu" : "Waiting for the owner to start") : club.state === BONDED_STATE.OPEN && !hasCapacity ? (isVi ? "Nhóm đã đủ thành viên" : "Club is full") : (isVi ? "Hiện chưa có thao tác cần thực hiện" : "No action needed right now");
   const mobileAction = mobileUnavailable ? () => void club.refetch() : mobileReview ? reviewMemberAction : canJoinWithAcknowledgement ? () => void handleJoin() : canContributeWithAcknowledgement ? () => void handleContribute() : club.pendingInterest > 0n ? () => void handleClaimInterest() : isOwner ? () => ownerControlsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }) : undefined;
 
+  const timelineRoundEnd = club.startTime > 0n && club.currentRoundIndex >= 1n && club.currentRoundIndex <= club.maxMembers
+    ? club.startTime + club.currentRoundIndex * club.roundDuration : 0n;
+  const timelineRoundLeft = timelineRoundEnd > nowSec ? Number(timelineRoundEnd - nowSec) : 0;
+  const timelineInterestOverdue = club.nextInterestDeadline > 0n && nowSec >= club.nextInterestDeadline && club.interestOwed > 0n;
+  const timelineInterestLeft = club.nextInterestDeadline > nowSec ? Number(club.nextInterestDeadline - nowSec) : 0;
+  const timelineHasDebt = club.totalDebt > 0n || club.interestOwed > 0n;
+  const timelineUrgent = timelineInterestOverdue
+    || (timelineHasDebt && timelineInterestLeft > 0 && timelineInterestLeft < Number(club.interestGrace || 120n))
+    || (timelineRoundLeft > 0 && timelineRoundLeft < Number(club.roundDuration) * 0.2);
+  const nextDeadlineLabel = timelineInterestOverdue
+    ? (isVi ? "Quá hạn trả lãi!" : "Interest overdue!")
+    : timelineRoundLeft > 0
+      ? `${isVi ? `Vòng ${club.currentRoundIndex} đóng sau` : `Round ${club.currentRoundIndex} closes in`} ${formatRoundDuration(timelineRoundLeft, !isVi)}`
+      : timelineHasDebt && timelineInterestLeft > 0
+        ? `${isVi ? "Hạn trả lãi sau" : "Interest due in"} ${formatRoundDuration(timelineInterestLeft, !isVi)}`
+        : (isVi ? "Không có hạn gấp" : "No urgent deadline");
   return (
     <div className="space-y-6 text-slate-100 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-0" data-testid="bonded-workspace">
-      {/* Top Action & Verification Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] p-4 sm:p-5 rounded-3xl border border-amber-500/30 shadow-lg">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-300 border border-amber-500/30">
-            BondedTontine V2
-          </span>
+      {/* Thanh công cụ gọn: nhận diện nhóm bên trái, hành động phụ bên phải */}
+      <div className="flex flex-wrap items-center justify-between gap-3" data-testid="bonded-toolbar">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+          <span className="font-semibold text-slate-300">BondedTontine V2</span>
           {club.isVerifiedClub ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/30">
+            <span className="inline-flex items-center gap-1 text-emerald-300">
               <ShieldCheck className="h-3.5 w-3.5" />
               {isVi ? "Đã xác minh bởi Factory" : "Verified by Factory"}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/20 px-3 py-1 text-xs font-semibold text-red-300 border border-red-500/40">
+            <span className="inline-flex items-center gap-1 font-semibold text-red-300">
               <ShieldAlert className="h-3.5 w-3.5" />
               {isVi ? "Chưa xác minh (ngoài Factory)" : "Unverified Club"}
             </span>
           )}
-          <div className="inline-flex items-center gap-1 bg-black/50 px-2.5 py-1 rounded-xl border border-amber-500/30 text-xs">
+          <span className="inline-flex items-center gap-1.5 font-mono">
             <button
               type="button"
               onClick={handleCopyContractAddress}
-              className="inline-flex items-center gap-1.5 text-amber-300 hover:text-amber-200 font-mono transition-colors cursor-pointer"
+              className="inline-flex min-h-[44px] items-center gap-1.5 text-slate-300 hover:text-amber-200 transition-colors cursor-pointer sm:min-h-0"
               title={isVi ? `Sao chép: ${contractAddress}` : `Copy: ${contractAddress}`}
             >
               <span>{contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}</span>
-              {copiedAddress ? (
-                <Check size={12} className="text-emerald-400 shrink-0" />
-              ) : (
-                <Copy size={12} className="text-amber-400/80 shrink-0" />
-              )}
+              {copiedAddress ? <Check size={12} className="text-emerald-400 shrink-0" /> : <Copy size={12} className="shrink-0" />}
             </button>
             <a
               href={buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, contractAddress)}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-400 hover:text-amber-300 p-0.5 rounded transition-colors inline-flex items-center"
+              className="inline-flex min-h-[44px] items-center text-slate-400 hover:text-amber-300 transition-colors sm:min-h-0"
               title={isVi ? "Xem trên Arc Explorer" : "View on Arc Explorer"}
+              aria-label={isVi ? "Xem nhóm trên Arc Explorer" : "View club on Arc Explorer"}
             >
               <ExternalLink size={12} />
             </a>
-          </div>
+          </span>
         </div>
-
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleCopyInviteLink}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 px-3.5 py-2 text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-700 px-3 text-xs font-semibold text-slate-200 hover:border-amber-400/50 transition-colors cursor-pointer"
             title={isVi ? "Sao chép link mời thành viên (?group=...)" : "Copy club invite link (?group=...)"}
+            aria-label={isVi ? "Sao chép link mời" : "Copy club invite link"}
           >
-            {copiedInviteLink ? (
-              <Check className="h-3.5 w-3.5 text-emerald-400" />
-            ) : (
-              <Share2 className="h-3.5 w-3.5 text-amber-400" />
-            )}
-            <span>{copiedInviteLink ? (isVi ? "Đã chép link mời!" : "Link Copied!") : (isVi ? "Sao chép link mời" : "Copy Club Link")}</span>
+            {copiedInviteLink ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{copiedInviteLink ? (isVi ? "Đã chép link mời!" : "Link Copied!") : (isVi ? "Sao chép link mời" : "Copy Club Link")}</span>
           </button>
           {onOpenDirectoryModal && (
             <button
               type="button"
               onClick={onOpenDirectoryModal}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-slate-900/80 px-3.5 py-2 text-xs font-bold text-amber-300 hover:bg-slate-800 transition-all cursor-pointer"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-700 px-3 text-xs font-semibold text-slate-200 hover:border-amber-400/50 transition-colors cursor-pointer"
             >
               <Layers className="h-3.5 w-3.5" />
-              {isVi ? "Danh sách nhóm" : "Club Directory"}
+              <span className="hidden sm:inline">{isVi ? "Danh sách nhóm" : "Club Directory"}</span>
+              <span className="sr-only sm:hidden">{isVi ? "Danh sách nhóm" : "Club Directory"}</span>
             </button>
           )}
           <button
             type="button"
             onClick={() => void club.refetch()}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/80 px-3.5 py-2 text-xs font-medium text-slate-200 hover:border-amber-400/50 transition-all cursor-pointer"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-700 text-slate-300 hover:border-amber-400/50 transition-colors cursor-pointer"
+            title={isVi ? "Làm mới" : "Refresh"}
+            aria-label={isVi ? "Làm mới dữ liệu nhóm" : "Refresh club data"}
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            {isVi ? "Làm mới" : "Refresh"}
           </button>
           <button
             type="button"
             onClick={() => onOpenCreateModal?.()}
-            className="rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 text-slate-950 font-bold px-4 py-2 text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+            className="inline-flex min-h-[44px] items-center rounded-xl border border-amber-500/40 px-3 text-xs font-semibold text-amber-300 hover:bg-amber-500/10 transition-colors cursor-pointer"
           >
-            {isVi ? "+ Tạo nhóm Bonded V2" : "+ Create Bonded V2 Club"}
+            <span className="sm:hidden">{isVi ? "+ Tạo nhóm" : "+ New club"}</span><span className="hidden sm:inline">{isVi ? "+ Tạo nhóm Bonded V2" : "+ Create Bonded V2 Club"}</span>
           </button>
         </div>
       </div>
@@ -850,100 +859,19 @@ export function BondedClubWorkspace({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* LEFT COLUMN: Overview, Deadlines, Roster, Oracle (col-span-7 / 8) */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-          {/* 1. Hero Overview Card (phong cách ClubCard.tsx) */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] text-white shadow-xl shadow-amber-500/5 border border-amber-500/30 p-6 sm:p-7 transition-all">
-            {/* Ambient glows */}
-            <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-yellow-500/5 rounded-full blur-3xl pointer-events-none" />
-
-            {/* Top Row: Badges, Title, State Pill */}
-            <div className="relative z-10 flex flex-wrap items-start justify-between gap-3 mb-6">
-              <div>
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              {/* Quick remove if club is defaulted/completed or empty open club */}
-              {(club.memberCount === 0n || club.state === BONDED_STATE.DEFAULTED || club.state === BONDED_STATE.COMPLETED) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    removeKnownGroup(contractAddress, userAddress);
-                    toast.success(isVi ? "Đã xóa nhóm khỏi danh bạ!" : "Removed club from directory!");
-                    const known = getKnownGroups(userAddress).filter((g) => g.address.toLowerCase() !== contractAddress.toLowerCase());
-                    if (known.length > 0) {
-                      onSelectGroup?.(known[0].address as `0x${string}`);
-                    } else {
-                      if (typeof window !== "undefined") {
-                        try {
-                          const url = new URL(window.location.href);
-                          url.searchParams.delete("group");
-                          window.history.replaceState({}, "", url.toString());
-                        } catch {}
-                      }
-                      onSelectGroup?.(contractAddress);
-                    }
-                  }}
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 border border-red-500/40 text-xs font-semibold text-red-300 transition-colors cursor-pointer"
-                  title={isVi ? "Xóa nhóm khỏi danh bạ" : "Remove club from directory"}
-                >
-                  <Trash2 size={12} />
-                  <span>{isVi ? "Xóa nhóm" : "Remove club"}</span>
-                </button>
-              )}
-
-                  <span className="inline-flex items-center gap-1 text-xs font-bold tracking-wider uppercase text-amber-300 bg-amber-950/40 px-2.5 py-0.5 rounded-full backdrop-blur-xs border border-amber-500/30">
-                    <ShieldCheck size={13} className="text-amber-400" />
-                    {isVi ? "Hụi bảo chứng V2" : "BondedTontine V2"}
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-200 bg-amber-950/60 px-2.5 py-0.5 rounded-full border border-amber-500/40">
-                    <ShieldCheck size={12} className="text-amber-400" />
-                    <span>
-                      {isVi ? "Cọc" : "Collateral"}: {formatUnitsExact(club.collateral, 8)} CirBTC
-                    </span>
-                  </span>
-                  <div className="inline-flex items-center gap-1 bg-black/50 px-2 py-0.5 rounded-lg border border-amber-500/30 text-xs">
-                    <button
-                      type="button"
-                      onClick={handleCopyContractAddress}
-                      className="inline-flex items-center gap-1.5 text-amber-300 hover:text-amber-200 font-mono transition-colors cursor-pointer"
-                    >
-                      <span className="font-semibold">{contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}</span>
-                      {copiedAddress ? (
-                        <Check size={12} className="text-emerald-400 shrink-0" />
-                      ) : (
-                        <Copy size={12} className="text-amber-400/80 shrink-0" />
-                      )}
-                    </button>
-                    <a
-                      href={buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, contractAddress)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-slate-400 hover:text-amber-300 p-0.5 rounded transition-colors inline-flex items-center"
-                    >
-                      <ExternalLink size={12} />
-                    </a>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleCopyInviteLink}
-                    className="inline-flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 px-2.5 py-1 rounded-xl border border-amber-500/30 text-xs font-semibold text-amber-300 transition-colors cursor-pointer"
-                    title={isVi ? "Sao chép link mời thành viên (?group=...)" : "Copy invite link (?group=...)"}
-                  >
-                    {copiedInviteLink ? <Check size={12} className="text-emerald-400" /> : <Share2 size={12} className="text-amber-400" />}
-                    <span>{copiedInviteLink ? (isVi ? "Đã chép link mời!" : "Link Copied!") : (isVi ? "Sao chép link mời" : "Copy Invite Link")}</span>
-                  </button>
-                </div>
-
-                <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-xs">
+          {/* 1. Hero: một đối tượng chính, bốn số liệu cốt lõi, chi tiết thu gọn */}
+          <section data-testid="bonded-hero" className="space-y-5 rounded-3xl border border-amber-500/20 bg-[#0c0d14] p-6 shadow-xl sm:p-7">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-2xl font-extrabold tracking-tight text-white text-balance sm:text-3xl">
                   {club.groupName || "BondedTontine Club"}
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="mt-1 text-xs text-slate-400">
                   {isVi ? "Chủ nhóm:" : "Owner:"}{" "}
                   <span className="font-mono text-slate-200">{club.owner.slice(0, 6)}...{club.owner.slice(-4)}</span>
                   {" • "}
                   {club.cycleEnded ? (
-                    <span className="font-semibold text-amber-400">
-                      {isVi ? "Chu kỳ đã kết thúc" : "Cycle ended"}
-                    </span>
+                    <span className="font-semibold text-amber-400">{isVi ? "Chu kỳ đã kết thúc" : "Cycle ended"}</span>
                   ) : (
                     <span>
                       {isVi ? "Vòng hiện tại:" : "Current Round:"}{" "}
@@ -952,146 +880,139 @@ export function BondedClubWorkspace({
                   )}
                 </p>
               </div>
-
-              {/* State Pill */}
-              <div
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs sm:text-sm font-bold backdrop-blur-md ${stateInfo.bg} ${stateInfo.text}`}
-              >
-                <span className={`w-2 h-2 rounded-full ${stateInfo.dot} animate-pulse`} />
+              <div className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-bold sm:text-sm ${stateInfo.bg} ${stateInfo.text}`}>
+                <span className={`h-2 w-2 rounded-full ${stateInfo.dot}`} />
                 <span>{isVi ? stateInfo.labelVi : stateInfo.labelEn}</span>
               </div>
             </div>
 
-            {/* Hero Pot / Deposit Display */}
-            <div className="relative z-10 bg-black/40 backdrop-blur-md rounded-2xl p-5 sm:p-6 border border-amber-500/20 mb-6 shadow-inner">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-1.5 text-amber-300 text-xs sm:text-sm font-semibold mb-1">
-                    <Coins size={16} className="text-amber-400" />
-                    <span>{isVi ? "Tổng tiền góp trong quỹ (Pool)" : "Total Deposits in Pool"}</span>
-                  </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl sm:text-4xl font-extrabold tabular-nums tracking-tight text-white">
-                      {financialsReady ? displayUsdc(club.totalDeposits) : financialPlaceholder}
-                    </span>
-                    <span className="text-lg sm:text-xl font-bold text-cyan-200">USDC</span>
-                  </div>
-                  <BondedLiquiditySummary club={club} language={language} />
-                  <p className="text-xs sm:text-sm font-medium text-blue-200/90 mt-1.5">
-                    {isVi ? "Mức đóng cố định:" : "Fixed contribution:"}{" "}
-                    <strong className="text-white font-bold">{displayUsdc(club.contributionAmount)} USDC</strong>{" "}
-                    {isVi ? "/ thành viên / vòng" : "/ member / round"}
-                  </p>
-                </div>
-
-                <div className="text-left sm:text-right">
-                  <span className="text-xs font-semibold text-slate-300 block">
-                    {isVi ? "Cọc CirBTC của Chủ hụi" : "Owner CirBTC Collateral"}
-                  </span>
-                  <span className="text-base font-bold text-emerald-300 tabular-nums">
-                    {formatUnitsExact(club.collateral, 8)} cirBTC
-                  </span>
-                  <span className="text-xs text-slate-400 block mt-0.5">
-                    ≈ {club.collateralValueUsdc !== null ? `${displayUsdc(club.collateralValueUsdc)} USDC` : "N/A"}
-                  </span>
-                </div>
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
+              <div>
+                <dt className="text-xs text-slate-400">{isVi ? "Tổng tiền góp trong quỹ (Pool)" : "Total Deposits in Pool"}</dt>
+                <dd className="mt-1 text-2xl font-extrabold tabular-nums text-white">
+                  {financialsReady ? displayUsdc(club.totalDeposits) : financialPlaceholder}
+                  <span className="ml-1 text-sm font-semibold text-slate-400">USDC</span>
+                </dd>
               </div>
+              <div>
+                <dt className="text-xs text-slate-400">{isVi ? "Mức đóng / vòng" : "Contribution / round"}</dt>
+                <dd className="mt-1 text-2xl font-extrabold tabular-nums text-white">
+                  {displayUsdc(club.contributionAmount)}
+                  <span className="ml-1 text-sm font-semibold text-slate-400">USDC</span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-slate-400">{isVi ? "Quy mô thành viên" : "Member Capacity"}</dt>
+                <dd className="mt-1 text-2xl font-extrabold tabular-nums text-white">
+                  {club.memberCount.toString()}/{club.maxMembers.toString()}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-slate-400">{isVi ? "Lãi suất / Vòng" : "Rate per Round"}</dt>
+                <dd className="mt-1 text-2xl font-extrabold tabular-nums text-white">
+                  {(Number(club.rateBpsPerRound) / 100).toFixed(2)}%
+                </dd>
+                <dd className="text-xs text-slate-400">{isVi ? "chủ nhóm chi trả" : "paid by owner"}</dd>
+              </div>
+            </dl>
 
-              {/* Member Capacity Progress Bar */}
-              <div className="mt-4 pt-4 border-t border-amber-500/10">
-                <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-blue-200 mb-2">
-                  <span className="flex items-center gap-1.5">
-                    <Users size={14} className="text-amber-400" />
+            <BondedRiskBanner club={club} language={language} />
+
+            <details className="group rounded-2xl border border-slate-800 bg-black/30" data-testid="bonded-details">
+              <summary className="flex cursor-pointer select-none list-none items-center justify-between px-4 py-3 text-sm font-semibold text-slate-300">
+                <span>{isVi ? "Chi tiết quỹ và cọc" : "Pool and collateral details"}</span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+              </summary>
+              <div className="space-y-4 px-4 pb-4">
+                <BondedLiquiditySummary club={club} language={language} />
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+                  <div>
+                    <dt className="text-xs text-slate-400">{isVi ? "Cọc CirBTC của Chủ hụi" : "Owner CirBTC Collateral"}</dt>
+                    <dd className="font-semibold tabular-nums text-emerald-300">{formatUnitsExact(club.collateral, 8)} cirBTC</dd>
+                    <dd className="text-xs text-slate-400">≈ {club.collateralValueUsdc !== null ? `${displayUsdc(club.collateralValueUsdc)} USDC` : "N/A"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-slate-400">{isVi ? "Dư nợ / Hạn mức vay" : "Debt / Borrow Limit"}</dt>
+                    <dd className="font-semibold tabular-nums text-amber-300">
+                      {financialsReady ? displayUsdc(club.totalDebt) : financialPlaceholder} / {club.borrowLimit !== null ? `${displayUsdc(club.borrowLimit)} USDC` : "N/A"}
+                    </dd>
+                    <dd className="text-xs text-slate-400">{isVi ? "Lãi nợ:" : "Interest:"} {displayUsdc(club.interestOwed)} USDC</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-slate-400">{isVi ? "Hệ số sức khỏe" : "Health Ratio"}</dt>
+                    <dd className="font-semibold tabular-nums text-white">{healthRatioDisplay}</dd>
+                    <dd className="text-xs text-slate-400">{isVi ? "Thanh lý:" : "Liquidation:"} {(Number(club.liquidationBps) / 100).toFixed(0)}%</dd>
+                  </div>
+                </dl>
+                <p className="text-xs text-slate-400">
+                  {showAnnualizedApr
+                    ? `(~ ${aprPct.toFixed(1)}% APR)`
+                    : isShortRound
+                      ? (isVi ? "Lãi suất mỗi vòng chỉ minh họa, không phải lãi suất thực." : "Rate per round is illustrative only, not real APR.")
+                      : ""}
+                </p>
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between text-xs text-slate-400">
                     <span>
                       {isVi ? "Quy mô thành viên" : "Member Capacity"} ({club.memberCount.toString()}/{club.maxMembers.toString()})
                       {club.state === BONDED_STATE.OPEN && (
-                        <span className="ml-1.5 font-normal text-amber-200/90 hidden sm:inline">
+                        <span className="ml-1.5 text-amber-200/90">
                           • {club.memberCount < 2n
                             ? (isVi ? "Cần tối thiểu 2 để bắt đầu" : "Min 2 members required")
                             : (isVi ? "Đủ điều kiện bắt đầu" : "Ready to start")}
                         </span>
                       )}
                     </span>
-                  </span>
-                  <span className="font-bold text-amber-300 tabular-nums">{fillPercent}%</span>
+                    <span className="font-semibold tabular-nums text-slate-300">{fillPercent}%</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-black/50">
+                    <div className="h-full rounded-full bg-amber-400 transition-all duration-500" style={{ width: `${Math.max(fillPercent, 4)}%` }} />
+                  </div>
                 </div>
-                <div className="w-full h-3 bg-black/50 border border-slate-800 rounded-full overflow-hidden p-0.5">
-                  <div
-                    className="h-full bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full transition-all duration-500 shadow-sm shadow-amber-400/30"
-                    style={{ width: `${Math.max(fillPercent, 4)}%` }}
-                  />
-                </div>
+                {/* Quick remove if club is defaulted/completed or empty open club */}
+                      {(club.memberCount === 0n || club.state === BONDED_STATE.DEFAULTED || club.state === BONDED_STATE.COMPLETED) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            removeKnownGroup(contractAddress, userAddress);
+                            toast.success(isVi ? "Đã xóa nhóm khỏi danh bạ!" : "Removed club from directory!");
+                            const known = getKnownGroups(userAddress).filter((g) => g.address.toLowerCase() !== contractAddress.toLowerCase());
+                            if (known.length > 0) {
+                              onSelectGroup?.(known[0].address as `0x${string}`);
+                            } else {
+                              if (typeof window !== "undefined") {
+                                try {
+                                  const url = new URL(window.location.href);
+                                  url.searchParams.delete("group");
+                                  window.history.replaceState({}, "", url.toString());
+                                } catch {}
+                              }
+                              onSelectGroup?.(contractAddress);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 border border-red-500/40 text-xs font-semibold text-red-300 transition-colors cursor-pointer"
+                          title={isVi ? "Xóa nhóm khỏi danh bạ" : "Remove club from directory"}
+                        >
+                          <Trash2 size={12} />
+                          <span>{isVi ? "Xóa nhóm" : "Remove club"}</span>
+                        </button>
+                      )}
               </div>
-            </div>
-
-            {/* 4 Key Metrics Grid */}
-            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-amber-500/20 text-center">
-                <div className="text-xs text-slate-300 font-semibold mb-1">
-                  {isVi ? "Cọc CirBTC" : "Owner Collateral"}
-                </div>
-                <p className="text-base sm:text-lg font-bold tabular-nums text-emerald-300">
-                  {formatUnitsExact(club.collateral, 8)}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  cirBTC
-                </p>
-              </div>
-
-              <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-amber-500/20 text-center">
-                <div className="text-xs text-slate-300 font-semibold mb-1">
-                  {isVi ? "Dư nợ / Hạn mức vay" : "Debt / Borrow Limit"}
-                </div>
-                <p className="text-base sm:text-lg font-bold tabular-nums text-amber-300">
-                  {financialsReady ? displayUsdc(club.totalDebt) : financialPlaceholder} / {club.borrowLimit !== null ? `${displayUsdc(club.borrowLimit)} USDC` : "N/A"}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {isVi ? "Lãi nợ:" : "Interest:"} {displayUsdc(club.interestOwed)} USDC
-                </p>
-              </div>
-
-              <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-amber-500/20 text-center">
-                <div className="text-xs text-slate-300 font-semibold mb-1">
-                  {isVi ? "Hệ số sức khỏe" : "Health Ratio"}
-                </div>
-                <p className="text-base sm:text-lg font-bold tabular-nums text-white">
-                  {healthRatioDisplay}
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {isVi ? "Thanh lý:" : "Liquidation:"} {(Number(club.liquidationBps) / 100).toFixed(0)}%
-                </p>
-              </div>
-
-              <div className="bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-amber-500/20 text-center">
-                <div className="text-xs text-slate-300 font-semibold mb-1">
-                  {isVi ? "Lãi suất / Vòng" : "Rate per Round"}
-                </div>
-                <p className="text-base sm:text-lg font-bold tabular-nums text-white">
-                  {(Number(club.rateBpsPerRound) / 100).toFixed(2)}%
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {showAnnualizedApr
-                    ? `(~ ${aprPct.toFixed(1)}% APR)`
-                    : isShortRound
-                      ? (isVi ? "(chỉ minh họa, không phải lãi suất thực)" : "(illustrative only, not real APR)")
-                      : ""}
-                </p>
-              </div>
-            </div>
-          </div>
+            </details>
+          </section>
 
           {/* 2. Deadlines Timeline Block (M2) */}
           {club.state === BONDED_STATE.ACTIVE && (
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] text-white shadow-xl border border-amber-500/30 p-6 space-y-4">
-              <div className="flex items-center justify-between">
+            <details data-testid="bonded-timeline" open={timelineUrgent || undefined} className="group rounded-3xl border border-amber-500/20 bg-[#0c0d14] text-white shadow-xl">
+              <summary className="flex cursor-pointer select-none list-none flex-wrap items-center justify-between gap-2 p-5">
                 <h3 className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
                   <Clock className="h-4 w-4 text-amber-400" />
                   {isVi ? "Mốc thời gian & Hạn chót (Deadlines)" : "Timeline & Deadlines"}
                 </h3>
-                <span className="text-xs text-slate-400">
-                  {isVi ? "Chu kỳ:" : "Cycle duration:"} {formatFriendlyDuration(Number(club.roundDuration), isVi)} × {Number(club.totalRounds)} {isVi ? "vòng" : "rounds"}
-                </span>
-              </div>
+                <span className="ml-auto flex items-center gap-2 text-xs font-semibold text-slate-300">{nextDeadlineLabel}<ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" /></span>
+              </summary>
+              <div className="space-y-4 px-5 pb-5">
+              <p className="text-xs text-slate-400">{isVi ? "Chu kỳ:" : "Cycle duration:"} {formatFriendlyDuration(Number(club.roundDuration), isVi)} × {Number(club.totalRounds)} {isVi ? "vòng" : "rounds"}</p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 {/* 1. Current Round Cutoff */}
@@ -1237,16 +1158,19 @@ export function BondedClubWorkspace({
                 </div>
               )}
             </div>
+            </details>
           )}
 
           {/* 3. Club Members Roster (L5 & phong cách ClubMembersRoster) */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] text-white shadow-xl border border-amber-500/30 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-amber-500/15 pb-3">
+          <details data-testid="bonded-roster" className="group rounded-3xl border border-amber-500/20 bg-[#0c0d14] text-white shadow-xl">
+            <summary className="flex cursor-pointer select-none list-none items-center justify-between p-5">
               <h3 className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
                 <Users className="h-4 w-4 text-amber-400" />
                 {isVi ? "Danh sách thành viên" : "Member Roster"} ({(club.memberAddresses.length || club.memberCount).toString()}/{club.maxMembers.toString()})
               </h3>
-            </div>
+              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="space-y-4 px-5 pb-5">
 
             {club.membersLoadError && club.memberAddresses.length > 0 && <p role="status" className="text-xs text-amber-300">{memberErrorMessage(club.membersLoadError, language)} ({club.memberAddresses.length}/{club.memberCount.toString()}) <button onClick={() => void club.refetch()}>{isVi ? "Thử lại" : "Retry"}</button></p>}
             {club.memberAddresses.length === 0 ? (
@@ -1328,6 +1252,7 @@ export function BondedClubWorkspace({
               </div>
             )}
           </div>
+          </details>
 
 
         </div>
@@ -1335,6 +1260,7 @@ export function BondedClubWorkspace({
         {/* RIGHT COLUMN: ActionPanel (col-span-5 / 4) */}
         <div className="lg:col-span-5 xl:col-span-4 space-y-6 lg:sticky lg:top-24">
           {/* 1. Member Actions Card (phong cách ActionPanel.tsx) */}
+          {(!isOwner || club.userDeposit > 0n || club.pendingInterest > 0n) && (
           <div ref={memberActionsRef} data-testid="bonded-member-actions" className="scroll-mt-24 rounded-3xl bg-[#0c0d14] p-6 sm:p-7 border border-amber-500/30 shadow-xl space-y-5 text-slate-100">
             <div className="flex items-center justify-between border-b border-amber-500/15 pb-4">
               <h3 className="flex items-center gap-2 text-base font-bold text-white">
@@ -1346,8 +1272,8 @@ export function BondedClubWorkspace({
               </span>
             </div>
 
-            <BondedCollateralSummary club={club} language={language} />
             {/* Position Summary */}
+            {(club.isMember || club.userDeposit > 0n) && (
             <div className="grid grid-cols-2 gap-3 bg-black/40 rounded-2xl p-4 border border-slate-800">
               <div>
                 <span className="text-xs text-slate-400 block">{isVi ? "Đã góp:" : "Deposited:"}</span>
@@ -1362,6 +1288,7 @@ export function BondedClubWorkspace({
                 </span>
               </div>
             </div>
+            )}
 
       {/* Unverified Club Warning & Confirmation Gate (T6.7) */}
       {!club.isVerifiedClub && hasFundingAction && (
@@ -1416,16 +1343,7 @@ export function BondedClubWorkspace({
                 </button>
               )}
 
-              {club.state === BONDED_STATE.OPEN && (
-                <button
-                  type="button"
-                  onClick={handleCopyInviteLink}
-                  className="w-full py-2.5 rounded-2xl border border-amber-500/40 bg-amber-950/30 hover:bg-amber-900/40 text-amber-300 font-semibold text-xs sm:text-sm transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  {copiedInviteLink ? <Check size={15} className="text-emerald-400" /> : <Share2 size={15} className="text-amber-400" />}
-                  <span>{copiedInviteLink ? (isVi ? "Đã sao chép link mời!" : "Invite Link Copied!") : (isVi ? "Sao chép link mời bạn bè" : "Copy Club Invite Link")}</span>
-                </button>
-              )}
+
 
               {club.state === BONDED_STATE.ACTIVE && club.isMember && (
                 <div className="space-y-1.5">
@@ -1461,6 +1379,7 @@ export function BondedClubWorkspace({
                 </div>
               )}
 
+              {club.pendingInterest > 0n && (
               <button
                 type="button"
                 disabled={isPending || club.pendingInterest === 0n}
@@ -1472,6 +1391,7 @@ export function BondedClubWorkspace({
                   ? `Nhận lãi (${displayUsdc(club.pendingInterest)} USDC)`
                   : `Claim Interest (${displayUsdc(club.pendingInterest)} USDC)`}
               </button>
+              )}
 
               {(club.state === BONDED_STATE.COMPLETED || club.state === BONDED_STATE.DEFAULTED) &&
                 club.userDeposit > 0n && (
@@ -1489,6 +1409,7 @@ export function BondedClubWorkspace({
               )}
             </div>
           </div>
+          )}
 
           {/* 2. Club Owner Controls (T6.3 & U3.1: Only rendered when connected wallet is club.owner) */}
           {isOwner && (
@@ -1766,13 +1687,14 @@ export function BondedClubWorkspace({
           )}
 
           {/* 3. Permissionless Keeper Actions (T6.5, U3.2 & U3.3) */}
-          <div className="rounded-2xl bg-[#0c0d14] p-5 border border-slate-800 shadow-xl space-y-3.5 text-slate-100">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+          <details data-testid="bonded-keeper-actions" open={(canFinalize || canDeclareDefault || canLiquidate) || undefined} className="group rounded-2xl border border-slate-800 bg-[#0c0d14] text-slate-100 shadow-xl">
+            <summary className="flex cursor-pointer select-none list-none items-center justify-between gap-2 p-5"><h3 className="flex items-center gap-2 text-sm font-bold text-white">
               <Flame className="h-4 w-4 text-orange-400" />
               {isVi
                 ? "Hoàn tất hoặc xử lý vỡ nợ"
                 : "Complete cycle or resolve default"}
-            </h3>
+            </h3><ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" /></summary>
+            <div className="space-y-3.5 px-5 pb-5">
             <div className="space-y-2.5">
               <div className="space-y-1">
                 <button
@@ -1848,6 +1770,7 @@ export function BondedClubWorkspace({
               </div>
             )}
           </div>
+          </details>
         </div>
       </div>
       <BondedMobileActionBar label={mobileLabel} onAction={mobileAction} disabled={isPending || club.isLoading || (isPasskeyUser && !mobileReview && !isOwner)} />
