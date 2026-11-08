@@ -768,25 +768,25 @@ export function BondedClubWorkspace({
   return (
     <div className="space-y-6 text-slate-100 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-0" data-testid="bonded-workspace">
       {/* Thanh công cụ gọn: nhận diện nhóm bên trái, hành động phụ bên phải */}
-      <div className="flex flex-wrap items-center justify-between gap-3" data-testid="bonded-toolbar">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-          <span className="font-semibold text-slate-300">BondedTontine V2</span>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-[#0c0d14]/95 p-3.5 sm:px-5 sm:py-4 shadow-xl backdrop-blur-md" data-testid="bonded-toolbar">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-2 text-xs text-slate-300">
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-1 font-bold text-amber-300">BondedTontine V2</span>
           {club.isVerifiedClub ? (
-            <span className="inline-flex items-center gap-1 text-emerald-300">
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 font-semibold text-emerald-300">
               <ShieldCheck className="h-3.5 w-3.5" />
               {isVi ? "Đã xác minh bởi Factory" : "Verified by Factory"}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 font-semibold text-red-300">
+            <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/15 px-2.5 py-1 font-semibold text-red-300">
               <ShieldAlert className="h-3.5 w-3.5" />
               {isVi ? "Chưa xác minh (ngoài Factory)" : "Unverified Club"}
             </span>
           )}
-          <span className="inline-flex items-center gap-1.5 font-mono">
+          <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/90 px-2.5 py-1 font-mono">
             <button
               type="button"
               onClick={handleCopyContractAddress}
-              className="inline-flex min-h-[44px] items-center gap-1.5 text-slate-300 hover:text-amber-200 transition-colors cursor-pointer sm:min-h-0"
+              className="inline-flex min-h-[44px] items-center gap-1.5 text-slate-200 hover:text-amber-200 transition-colors cursor-pointer sm:min-h-0"
               title={isVi ? `Sao chép: ${contractAddress}` : `Copy: ${contractAddress}`}
             >
               <span>{contractAddress.slice(0, 6)}...{contractAddress.slice(-4)}</span>
@@ -808,20 +808,20 @@ export function BondedClubWorkspace({
           <button
             type="button"
             onClick={handleCopyInviteLink}
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-700 px-3 text-xs font-semibold text-slate-200 hover:border-amber-400/50 transition-colors cursor-pointer"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/70 hover:bg-amber-900/80 px-3 text-xs font-semibold text-amber-200 hover:border-amber-400/70 shadow-sm transition-colors cursor-pointer"
             title={isVi ? "Sao chép link mời thành viên (?group=...)" : "Copy club invite link (?group=...)"}
             aria-label={isVi ? "Sao chép link mời" : "Copy club invite link"}
           >
-            {copiedInviteLink ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5" />}
+            {copiedInviteLink ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5 text-amber-300" />}
             <span className="hidden sm:inline">{copiedInviteLink ? (isVi ? "Đã chép link mời!" : "Link Copied!") : (isVi ? "Sao chép link mời" : "Copy Club Link")}</span>
           </button>
           {onOpenDirectoryModal && (
             <button
               type="button"
               onClick={onOpenDirectoryModal}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-700 px-3 text-xs font-semibold text-slate-200 hover:border-amber-400/50 transition-colors cursor-pointer"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-600 bg-slate-900/95 hover:bg-slate-800 px-3 text-xs font-semibold text-slate-100 hover:border-amber-400/60 shadow-sm transition-colors cursor-pointer"
             >
-              <Layers className="h-3.5 w-3.5" />
+              <Layers className="h-3.5 w-3.5 text-amber-300" />
               <span className="hidden sm:inline">{isVi ? "Danh sách nhóm" : "Club Directory"}</span>
               <span className="sr-only sm:hidden">{isVi ? "Danh sách nhóm" : "Club Directory"}</span>
             </button>
@@ -829,16 +829,44 @@ export function BondedClubWorkspace({
           <button
             type="button"
             onClick={() => void club.refetch()}
-            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-700 text-slate-300 hover:border-amber-400/50 transition-colors cursor-pointer"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-slate-600 bg-slate-900/95 hover:bg-slate-800 text-slate-200 hover:border-amber-400/60 shadow-sm transition-colors cursor-pointer"
             title={isVi ? "Làm mới" : "Refresh"}
             aria-label={isVi ? "Làm mới dữ liệu nhóm" : "Refresh club data"}
           >
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
+          {club.state !== BONDED_STATE.ACTIVE && (
+            <button
+              type="button"
+              onClick={() => {
+                removeKnownGroup(contractAddress, userAddress);
+                toast.success(isVi ? "Đã xóa nhóm khỏi danh bạ!" : "Removed club from directory!");
+                const known = getKnownGroups(userAddress).filter((g) => g.address.toLowerCase() !== contractAddress.toLowerCase());
+                if (known.length > 0) {
+                  onSelectGroup?.(known[0].address as `0x${string}`);
+                } else {
+                  if (typeof window !== "undefined") {
+                    try {
+                      const url = new URL(window.location.href);
+                      url.searchParams.delete("group");
+                      window.history.replaceState({}, "", url.toString());
+                    } catch {}
+                  }
+                  onSelectGroup?.(contractAddress);
+                }
+              }}
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-red-500/45 bg-red-950/75 hover:bg-red-900/85 px-3 text-xs font-semibold text-red-200 hover:border-red-400/70 shadow-sm transition-colors cursor-pointer"
+              title={isVi ? "Xóa nhóm khỏi danh bạ" : "Remove club from directory"}
+              aria-label={isVi ? "Xóa nhóm" : "Remove club"}
+            >
+              <Trash2 className="h-3.5 w-3.5 text-red-300" />
+              <span className="hidden sm:inline">{isVi ? "Xóa nhóm" : "Remove club"}</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onOpenCreateModal?.()}
-            className="inline-flex min-h-[44px] items-center rounded-xl border border-amber-500/40 px-3 text-xs font-semibold text-amber-300 hover:bg-amber-500/10 transition-colors cursor-pointer"
+            className="inline-flex min-h-[44px] items-center rounded-xl border border-amber-300/60 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:via-amber-400 px-3.5 text-xs font-extrabold text-slate-950 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
           >
             <span className="sm:hidden">{isVi ? "+ Tạo nhóm" : "+ New club"}</span><span className="hidden sm:inline">{isVi ? "+ Tạo nhóm Bonded V2" : "+ Create Bonded V2 Club"}</span>
           </button>

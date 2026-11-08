@@ -1,6 +1,6 @@
 {
   "taskId": "task-059",
-  "frozenAt": "2026-11-08T07:19:22.594Z",
+  "frozenAt": "2026-11-08T07:33:25.642Z",
   "status": "FROZEN",
   "files": {
     "contracts/BondedTontine.sol": {
@@ -10,16 +10,6 @@
     },
     "contracts/BondedTontineFactory.sol": {
       "sha256": "fa07ed94ff5486dca86a8f1b6aa772143612195647c2c8a8b5a288f0c8f061a3",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "contracts/test/mocks/MockAggregatorV3.sol": {
-      "sha256": "56ad30eef45ffddb243b274cf6166ecbeaeb595a1a4f3168eba11c698fcae702",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "contracts/test/BondedTontine.t.sol": {
-      "sha256": "205584aea0fec2d4b678b088486a0fdbb8f584416f88a08fb43faca2e0504660",
       "baselineSha256": null,
       "isNew": false
     },
@@ -38,6 +28,16 @@
       "baselineSha256": null,
       "isNew": false
     },
+    "contracts/test/BondedTontine.t.sol": {
+      "sha256": "205584aea0fec2d4b678b088486a0fdbb8f584416f88a08fb43faca2e0504660",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "contracts/test/mocks/MockAggregatorV3.sol": {
+      "sha256": "56ad30eef45ffddb243b274cf6166ecbeaeb595a1a4f3168eba11c698fcae702",
+      "baselineSha256": null,
+      "isNew": false
+    },
     "foundry.toml": {
       "sha256": "73d8794ab22918086eb43e6bcf679af1638f45cd58219c47de1c30145321b8f1",
       "baselineSha256": "2deb4217c39b7b62fbc9f9c844bea76b9b00f1a48cb422f174bf80e6ba155b10",
@@ -53,33 +53,13 @@
       "baselineSha256": null,
       "isNew": false
     },
-    "src/config/bonded-tontine.ts": {
-      "sha256": "93a4ff44f71d80e43643a943c34bc06087935ddbb07218d7c45bd8d0d002886b",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "src/lib/bondedTontine.ts": {
-      "sha256": "c29726e3b97df9addff6fa0a32d752120a8ba8f3ff92f7265ba9dbc694021258",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "src/hooks/useBondedClub.ts": {
-      "sha256": "45c77eab0aae3886ba3c9df75f358f7ebf4f5140f3f4c79673fb7568d0228f94",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "src/hooks/useIsBondedClub.ts": {
-      "sha256": "e60833e8a5d831ff3f6011fa3a9333a16ade97da5ae81bc5d82cff03fcf8748e",
-      "baselineSha256": null,
-      "isNew": false
-    },
-    "src/hooks/useArcWriteContract.ts": {
-      "sha256": "e0b4d1f8fa8c0172997f4e01a3d0acfcad1297121480145a698509f07edc7f0c",
+    "src/App.tsx": {
+      "sha256": "84ad06299e97487492a95909e03b0870e0b7f9b4b545ca4c65d0ad77bddc3f99",
       "baselineSha256": null,
       "isNew": false
     },
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "4b1cd66ba00097e0e23118e9ef0841e454e5e475757fe6d26ee7ada46e3c3cd7",
+      "sha256": "f85c6b46721a628be661c8b9e4978d9426114c291d077b465bfec9175533b731",
       "baselineSha256": null,
       "isNew": false
     },
@@ -88,8 +68,23 @@
       "baselineSha256": null,
       "isNew": false
     },
-    "src/hooks/useSavingsClub.ts": {
-      "sha256": "06538e219a3d0311febc4e277be8d88200fa7280274a0687627c3fdf59ae7a4b",
+    "src/config/bonded-tontine.ts": {
+      "sha256": "93a4ff44f71d80e43643a943c34bc06087935ddbb07218d7c45bd8d0d002886b",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/contract.ts": {
+      "sha256": "72784ee59404ae3c74bd7a379ccb6e5a72918451a86db1fc8945e76f9f3544a6",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/hooks/useArcWriteContract.ts": {
+      "sha256": "e0b4d1f8fa8c0172997f4e01a3d0acfcad1297121480145a698509f07edc7f0c",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/hooks/useBondedClub.ts": {
+      "sha256": "45c77eab0aae3886ba3c9df75f358f7ebf4f5140f3f4c79673fb7568d0228f94",
       "baselineSha256": null,
       "isNew": false
     },
@@ -98,13 +93,18 @@
       "baselineSha256": null,
       "isNew": false
     },
-    "src/App.tsx": {
-      "sha256": "84ad06299e97487492a95909e03b0870e0b7f9b4b545ca4c65d0ad77bddc3f99",
+    "src/hooks/useIsBondedClub.ts": {
+      "sha256": "e60833e8a5d831ff3f6011fa3a9333a16ade97da5ae81bc5d82cff03fcf8748e",
       "baselineSha256": null,
       "isNew": false
     },
-    "src/contract.ts": {
-      "sha256": "72784ee59404ae3c74bd7a379ccb6e5a72918451a86db1fc8945e76f9f3544a6",
+    "src/hooks/useSavingsClub.ts": {
+      "sha256": "06538e219a3d0311febc4e277be8d88200fa7280274a0687627c3fdf59ae7a4b",
+      "baselineSha256": null,
+      "isNew": false
+    },
+    "src/lib/bondedTontine.ts": {
+      "sha256": "c29726e3b97df9addff6fa0a32d752120a8ba8f3ff92f7265ba9dbc694021258",
       "baselineSha256": null,
       "isNew": false
     },
