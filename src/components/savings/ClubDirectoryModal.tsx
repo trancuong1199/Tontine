@@ -354,7 +354,7 @@ export function ClubDirectoryModal({
       rawState === GROUP_STATE.ACTIVE ||
       (rawState === GROUP_STATE.OPEN && hasMember0);
 
-    if (group.isDefault || (isActive && !isBonded)) {
+    if (group.isDefault || isActive) {
       toast.error(
         isEn
           ? t("clubDirectoryModal.deleteActiveError", language)
@@ -385,7 +385,7 @@ export function ClubDirectoryModal({
       rawState === GROUP_STATE.ACTIVE ||
       (rawState === GROUP_STATE.OPEN && hasMember0);
 
-    if (group.isDefault || (isActive && !isBonded)) {
+    if (group.isDefault || isActive) {
       toast.error(
         isEn
           ? t("clubDirectoryModal.deleteActiveError", language)
@@ -395,7 +395,14 @@ export function ClubDirectoryModal({
       return;
     }
     removeKnownGroup(group.address, account);
-    const updated = getKnownGroups(account).filter((g) => g.address.toLowerCase() !== group.address.toLowerCase());
+    const hiddenSet = new Set(HIDDEN_DEMO_CLUBS.map((a) => a.toLowerCase()));
+    const updated = getKnownGroups(account).filter((g) => {
+      const addr = g.address.toLowerCase();
+      if (addr === group.address.toLowerCase()) return false;
+      if (hiddenSet.has(addr)) return false;
+      if (g.isDefault && g.version !== "v2-bonded") return false;
+      return true;
+    });
     setGroups(updated);
     setConfirmingClub(null);
     onGroupNameUpdated?.(group.address, group.name);

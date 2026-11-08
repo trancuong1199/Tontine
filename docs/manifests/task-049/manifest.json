@@ -1,6 +1,6 @@
 {
   "taskId": "task-049",
-  "frozenAt": "2026-10-25T15:52:57.529Z",
+  "frozenAt": "2026-11-08T08:33:28.846Z",
   "status": "FROZEN",
   "files": {
     "contracts/RotatingSavings.sol": {
@@ -13,65 +13,10 @@
       "baselineSha256": "54e59f9ccdf1175802c3d22af6d138a40cf352e3fb943cbf43185b0c7bda7daf",
       "isNew": false
     },
-    "src/contract.ts": {
-      "sha256": "768eca04bab183c9b3b858842735e8497da0f5be2c31523d7f0bb642174e7add",
-      "baselineSha256": "c85db5a177b77aee94af7df76ed6d0e1c7c1fe6f06c46dca186f596e723990cf",
+    "scripts/launch-interactive-arena.mjs": {
+      "sha256": "976f711c2c79f2de0032ddc1111e5f71dd9e064f49a715c97866470a13d77b6f",
+      "baselineSha256": "f1df0713eee13dcb709e57a8ded994c7539d57efe27552221f0c8fd8b8f8c82d",
       "isNew": false
-    },
-    "src/hooks/useSavingsClub.ts": {
-      "sha256": "5648e9546a1c3e3ee8d2d2849668ebe0dc4135b1d7db77b87d1e42167c66a3f9",
-      "baselineSha256": "9be5b1b0411f831c1be5bb8e6f75f756584eb654314bb6f0670491a85a6a0d82",
-      "isNew": false
-    },
-    "src/App.tsx": {
-      "sha256": "13ef23b0ca72ab3b9fb7849719847e97ac949d0de7380460ebddc27af7d4aec9",
-      "baselineSha256": "4db1649f53608124d42c1523d6acbe4fe6f055cf2ec126548db48cc20ca9daa0",
-      "isNew": false
-    },
-    "src/components/savings/CreateClubModal.tsx": {
-      "sha256": "f7b816855d3f55d8fe6667c4a601669c55e96693a5a77d77f7ebb840fcbd5174",
-      "baselineSha256": "708df2dd66df2defbf758623600fd6945ff1fd2312ad8ea90d2b678658a7e095",
-      "isNew": false
-    },
-    "src/components/savings/ActionPanel.tsx": {
-      "sha256": "40d161c142054293eb5c34cef869ad0ce66b371fc8c02675e5c820038f6ec1fc",
-      "baselineSha256": "f45bd1891e71e5aca568a820806518ee43a8307e5ee507283bc843790a31de4e",
-      "isNew": false
-    },
-    "src/components/savings/PasskeyActionPanel.tsx": {
-      "sha256": "defe4e8afe52968f04a29a210f3f92e2b0ad99297eaea2a93f8de7dca6282b8b",
-      "baselineSha256": "654900aef9e45f56d0dab907e71ad118c78cd3828e9a52cab75053191a6e0587",
-      "isNew": false
-    },
-    "src/components/savings/ClubCard.tsx": {
-      "sha256": "5f6d2c83bd18e6dd86c36c8877e4b5ffddcaa01672041bfd474c58d48e221fd9",
-      "baselineSha256": "24b27086467153955c15a8db62d247dee62475d48fa681bc8d9f7cb4f48eac5c",
-      "isNew": false
-    },
-    "src/lib/i18n.ts": {
-      "sha256": "2d6aac87f91e177d9d51500c51f959136a2cfd49d64c4ce4524ad2eb34c1bcc8",
-      "baselineSha256": "af1f0a5f340f3b9cbe99664cfcfd38b1ff20b741f4a5b87811d148745a6a3da5",
-      "isNew": false
-    },
-    "src/lib/savingsClubDirectory.ts": {
-      "sha256": "4db0b88050c0db41713b2395aebd3a9f01357c21cd72b0cef16e9923fdc4f506",
-      "baselineSha256": "167a9d51a9cb850ed41997e4af0afdd2edca35391404ad9c450f43e38c9f587f",
-      "isNew": false
-    },
-    "src/lib/collateralPolicy.ts": {
-      "sha256": "78925875867e45c40561a82c3cf3e88bbf2d669c74e2f09716c3730e888ecf58",
-      "baselineSha256": null,
-      "isNew": true
-    },
-    "src/components/savings/CollateralPreview.tsx": {
-      "sha256": "a64ca62002f019129ee21dbb2f374805e96f01c75767f5d14b83a89130fc7be4",
-      "baselineSha256": null,
-      "isNew": true
-    },
-    "src/hooks/useCollateralPolicy.ts": {
-      "sha256": "33451f454a10c551d381bcfcfe1f7031775447ee23fc4f6fc7110e17bc3b5f99",
-      "baselineSha256": null,
-      "isNew": true
     },
     "scripts/setup-10-members.mjs": {
       "sha256": "3fdb6f0ee9bcfa98fa00888924b53c30302aff2a0902c26dcfcc15a556572978",
@@ -83,19 +28,9 @@
       "baselineSha256": "8ae45dd1f4a56d252a7f4ebe756342349065c3cbddd157853adffe4f4ab3cbb8",
       "isNew": false
     },
-    "scripts/wait-and-launch-interactive-arena.mjs": {
-      "sha256": "3420945180b71a234475b1e6e7ffe88823c9b9f56ba01ba7c169f5153081c166",
-      "baselineSha256": "60268cf74f3a9e74803df055a9e8dd583816325a56589dff1e38f4286dcb3f66",
-      "isNew": false
-    },
     "scripts/setup-complete-user-arena.mjs": {
       "sha256": "224c12120459451c7d12d94c415f7ab9cecae0f8008decb082a768c60b7101ab",
       "baselineSha256": "99a1df8b25e124f5e3d769e42facdff7593bc1e4b6df6dfbd6ce20404eae8e81",
-      "isNew": false
-    },
-    "scripts/launch-interactive-arena.mjs": {
-      "sha256": "976f711c2c79f2de0032ddc1111e5f71dd9e064f49a715c97866470a13d77b6f",
-      "baselineSha256": "f1df0713eee13dcb709e57a8ded994c7539d57efe27552221f0c8fd8b8f8c82d",
       "isNew": false
     },
     "scripts/setup-interactive-bidding.mjs": {
@@ -103,9 +38,74 @@
       "baselineSha256": "639a8ff821251a748fa705f083e0c6b676a89aadd54259adabc5a299f91838ef",
       "isNew": false
     },
+    "scripts/wait-and-launch-interactive-arena.mjs": {
+      "sha256": "3420945180b71a234475b1e6e7ffe88823c9b9f56ba01ba7c169f5153081c166",
+      "baselineSha256": "60268cf74f3a9e74803df055a9e8dd583816325a56589dff1e38f4286dcb3f66",
+      "isNew": false
+    },
+    "src/App.tsx": {
+      "sha256": "880c41fb5df1426569560b35adfd9a548ce665310d8315884017dfbced429789",
+      "baselineSha256": "4db1649f53608124d42c1523d6acbe4fe6f055cf2ec126548db48cc20ca9daa0",
+      "isNew": false
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "74ce82a55d5f04a3895f69bb73ca22d3d9396671315270b0b4fec231a2a8b19d",
+      "baselineSha256": "f45bd1891e71e5aca568a820806518ee43a8307e5ee507283bc843790a31de4e",
+      "isNew": false
+    },
+    "src/components/savings/ClubCard.tsx": {
+      "sha256": "77392a1ceb2cbacb0bfd049d40f9f4205dbe6f9daee9550ed57f5f633020b699",
+      "baselineSha256": "24b27086467153955c15a8db62d247dee62475d48fa681bc8d9f7cb4f48eac5c",
+      "isNew": false
+    },
+    "src/components/savings/CollateralPreview.tsx": {
+      "sha256": "8cb536f4baa8eba1b9af1009cfb291a8657651ac82cbc69d6473411881359139",
+      "baselineSha256": null,
+      "isNew": true
+    },
+    "src/components/savings/CreateClubModal.tsx": {
+      "sha256": "ecb6ea2f3bdcc79ddb6dc4ef8f0ac203a15b11c4fcd41bb570a67b2f254aae71",
+      "baselineSha256": "708df2dd66df2defbf758623600fd6945ff1fd2312ad8ea90d2b678658a7e095",
+      "isNew": false
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "sha256": "444dc137742b8ed5dd6b90ad8daf3ea96556e57218fb698d1f368ae9c39fc457",
+      "baselineSha256": "654900aef9e45f56d0dab907e71ad118c78cd3828e9a52cab75053191a6e0587",
+      "isNew": false
+    },
+    "src/contract.ts": {
+      "sha256": "72784ee59404ae3c74bd7a379ccb6e5a72918451a86db1fc8945e76f9f3544a6",
+      "baselineSha256": "c85db5a177b77aee94af7df76ed6d0e1c7c1fe6f06c46dca186f596e723990cf",
+      "isNew": false
+    },
     "src/hooks/useArcWriteContract.ts": {
-      "sha256": "a911bbccbe69c97aa27d9e14201cb9870da412609f9acf6be97660bc9452c2cb",
+      "sha256": "e0b4d1f8fa8c0172997f4e01a3d0acfcad1297121480145a698509f07edc7f0c",
       "baselineSha256": "6d15a41d8b3a044230eeb08243036eb06414f412f28dbb1d43d3e402761cf160",
+      "isNew": false
+    },
+    "src/hooks/useCollateralPolicy.ts": {
+      "sha256": "40395b854831ac52b88b05829ecb8bdf75cd556e4cf836939c9152c7a26a5508",
+      "baselineSha256": null,
+      "isNew": true
+    },
+    "src/hooks/useSavingsClub.ts": {
+      "sha256": "06538e219a3d0311febc4e277be8d88200fa7280274a0687627c3fdf59ae7a4b",
+      "baselineSha256": "9be5b1b0411f831c1be5bb8e6f75f756584eb654314bb6f0670491a85a6a0d82",
+      "isNew": false
+    },
+    "src/lib/collateralPolicy.ts": {
+      "sha256": "78925875867e45c40561a82c3cf3e88bbf2d669c74e2f09716c3730e888ecf58",
+      "baselineSha256": null,
+      "isNew": true
+    },
+    "src/lib/i18n.ts": {
+      "sha256": "e9b9ec0552059b69634f3b2074cf96853d46c48a877ecb4f691799b7dea72a91",
+      "baselineSha256": "af1f0a5f340f3b9cbe99664cfcfd38b1ff20b741f4a5b87811d148745a6a3da5",
+      "isNew": false
+    },
+    "src/lib/savingsClubDirectory.ts": {
+      "sha256": "8971d0754bbbed60bfad552fb7459540b85c9d1536432a0ab9bb2ba6d0667171",
+      "baselineSha256": "167a9d51a9cb850ed41997e4af0afdd2edca35391404ad9c450f43e38c9f587f",
       "isNew": false
     }
   }

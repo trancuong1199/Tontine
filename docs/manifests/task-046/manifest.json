@@ -1,16 +1,21 @@
 {
   "taskId": "task-046",
-  "frozenAt": "2026-10-25T13:06:53.528Z",
+  "frozenAt": "2026-11-08T08:33:28.550Z",
   "status": "FROZEN",
   "files": {
-    "src/components/savings/ArcAppKitModal.tsx": {
-      "sha256": "1f76b25f50b62e9a97e19098c619c9d991fe241b86ac9ef7b244f831f4c0ca86",
-      "baselineSha256": "57aa2ddbc47b3ae7afca482dc5da2daf6dcc572c00dbc719dc5794d6c02b7a58",
+    "contracts/RotatingSavings.sol": {
+      "sha256": "5b720d576cbd5acf4223c5b2bc843ea8552b9779f8718eca500093759eadff01",
+      "baselineSha256": "768f9d228c5cff2b87fbe96a5c8b1ea388061ba8af3b01bd1dd3ff372fb260b5",
       "isNew": false
     },
-    "src/components/RightSidebar.tsx": {
-      "sha256": "bd6ecf266858e1e987019f08a427a5c96372e654380e1891501d23d258d1743c",
-      "baselineSha256": "fa19279038932911351ab36d49e6ac6e0125bc3942145039639d580ae6aabec6",
+    "contracts/out/RotatingSavings.sol/RotatingSavings.json": {
+      "sha256": "750a94bd8afbb45bd96546aad12192a8b14572184c239b0a87a3cfd74b1fe66e",
+      "baselineSha256": "094a6400326b64f994d25fa263153f4b25cbabe01b50400dff002366650904bd",
+      "isNew": false
+    },
+    "src/components/Analytics.tsx": {
+      "sha256": "537a9df4d82061426035d10e797c6d865ac49d5faf9c3e0d93da7b57668fbf29",
+      "baselineSha256": "7c3262dc236f9e1391e1b4ec6cc4fa5b1ebfba18ed003b02b070d687113fbd58",
       "isNew": false
     },
     "src/components/ArcAppKit.tsx": {
@@ -23,18 +28,33 @@
       "baselineSha256": "c9c9d5a5ebba8a5a5aa29ba89dac3a98b197305a93516920fd1d983144dc84aa",
       "isNew": false
     },
-    "src/components/Analytics.tsx": {
-      "sha256": "537a9df4d82061426035d10e797c6d865ac49d5faf9c3e0d93da7b57668fbf29",
-      "baselineSha256": "7c3262dc236f9e1391e1b4ec6cc4fa5b1ebfba18ed003b02b070d687113fbd58",
-      "isNew": false
-    },
     "src/components/MerchantTreasury.tsx": {
-      "sha256": "40e8865e1e4af70335c2adea5408b59022fc3707463d6b5a40599744ad44c624",
+      "sha256": "851da53dbf88e14ec4406543ca8353dfe2816a8a799db51a2f511664ddeadfec",
       "baselineSha256": "581fb0dbe89f0fcfefe9c5720432bee7549a347c2ee869f91380634a7706161f",
       "isNew": false
     },
+    "src/components/RightSidebar.tsx": {
+      "sha256": "bd6ecf266858e1e987019f08a427a5c96372e654380e1891501d23d258d1743c",
+      "baselineSha256": "fa19279038932911351ab36d49e6ac6e0125bc3942145039639d580ae6aabec6",
+      "isNew": false
+    },
+    "src/components/savings/ActionPanel.tsx": {
+      "sha256": "74ce82a55d5f04a3895f69bb73ca22d3d9396671315270b0b4fec231a2a8b19d",
+      "baselineSha256": "84ca12a379e6096ea566ae623d485b480b2cf61fd503c68ccb5ff19910f6610a",
+      "isNew": false
+    },
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "sha256": "9b4659ede7626bf31d1558360530b1afe6f96667b2a9955112dd5ab94fa6a573",
+      "baselineSha256": "57aa2ddbc47b3ae7afca482dc5da2daf6dcc572c00dbc719dc5794d6c02b7a58",
+      "isNew": false
+    },
+    "src/components/savings/PasskeyActionPanel.tsx": {
+      "sha256": "444dc137742b8ed5dd6b90ad8daf3ea96556e57218fb698d1f368ae9c39fc457",
+      "baselineSha256": "0843760d616c1613ec84fbd0f58e8d9bdbbde007747248408adaaf758784cb8f",
+      "isNew": false
+    },
     "src/config/arc-constants.ts": {
-      "sha256": "46efebc224bab6e4e44ac61b871767d65ae01c55c192aac0563c793d8b0cf061",
+      "sha256": "fe32ef85c1ef4ddf8c3e1d54fd9be6aaf9e611106b0dae11a7d45aa33a0f0ec1",
       "baselineSha256": "325aa3b3a7669ec16ddeb7bee9627604a4c7817adaca036db5b3ca7b30dca6bc",
       "isNew": false
     },
@@ -43,15 +63,20 @@
       "baselineSha256": "21aa88120a9516bb56695bcac61177e0ea572b595290513093ae9d322b6a29e6",
       "isNew": false
     },
-    "src/utils/arcChain.ts": {
-      "sha256": "817b3dacabf9ca36c6c03247e84de7d9663666bcc2c12e3427b3647da802a297",
-      "baselineSha256": "8872ae3faf355fa5820c628f7860d53543087b4da166b2a4c1cbc4ddb4d2bb0a",
-      "isNew": false
-    },
     "src/contract.ts": {
-      "sha256": "c85db5a177b77aee94af7df76ed6d0e1c7c1fe6f06c46dca186f596e723990cf",
+      "sha256": "72784ee59404ae3c74bd7a379ccb6e5a72918451a86db1fc8945e76f9f3544a6",
       "baselineSha256": "ad3d97f1416ce3a19780bcd3f8fe5d779badb4727077e39b15036e91a3ec8670",
       "isNew": false
+    },
+    "src/lib/arcAnalytics.ts": {
+      "sha256": "b9437bf33c23b9daa4de93ac0cd4bc1155a66902431c83cfb9596a9e59a7d928",
+      "baselineSha256": null,
+      "isNew": true
+    },
+    "src/lib/arcBalances.ts": {
+      "sha256": "1f3ef9e5bfcc57efb45488b86a03adf6a2dc90c7d8c1269299adb33e52ac7ff4",
+      "baselineSha256": null,
+      "isNew": true
     },
     "src/lib/bidPresets.ts": {
       "sha256": "7f0894601dd319844f37aa85a3480bf38749b7fd1242d8a472594308768c2edf",
@@ -59,39 +84,14 @@
       "isNew": false
     },
     "src/lib/i18n.ts": {
-      "sha256": "464e9c0da321291eb77907a2c6958342fa08a73a955ad88aaaea477672d7e489",
+      "sha256": "e9b9ec0552059b69634f3b2074cf96853d46c48a877ecb4f691799b7dea72a91",
       "baselineSha256": "8138862745f19f245535f1bd6eb43d1a6eeb5e997f7f30a923142e948876e9cb",
       "isNew": false
     },
-    "src/components/savings/ActionPanel.tsx": {
-      "sha256": "5fc9fbda72e305bb6d1989a4353d32a638ec7442786bf0e7a15e54a39dbe8bf7",
-      "baselineSha256": "84ca12a379e6096ea566ae623d485b480b2cf61fd503c68ccb5ff19910f6610a",
+    "src/utils/arcChain.ts": {
+      "sha256": "817b3dacabf9ca36c6c03247e84de7d9663666bcc2c12e3427b3647da802a297",
+      "baselineSha256": "8872ae3faf355fa5820c628f7860d53543087b4da166b2a4c1cbc4ddb4d2bb0a",
       "isNew": false
-    },
-    "src/components/savings/PasskeyActionPanel.tsx": {
-      "sha256": "ca5b38a666a3fd12e9968ff50e9d188b6a046551f33b837f3de81632737a0fc9",
-      "baselineSha256": "0843760d616c1613ec84fbd0f58e8d9bdbbde007747248408adaaf758784cb8f",
-      "isNew": false
-    },
-    "contracts/RotatingSavings.sol": {
-      "sha256": "259f5c857d7ff69352e6df09cc41f9e19106f407a7a005c91394b51f5ed6677b",
-      "baselineSha256": "768f9d228c5cff2b87fbe96a5c8b1ea388061ba8af3b01bd1dd3ff372fb260b5",
-      "isNew": false
-    },
-    "contracts/out/RotatingSavings.sol/RotatingSavings.json": {
-      "sha256": "54e59f9ccdf1175802c3d22af6d138a40cf352e3fb943cbf43185b0c7bda7daf",
-      "baselineSha256": "094a6400326b64f994d25fa263153f4b25cbabe01b50400dff002366650904bd",
-      "isNew": false
-    },
-    "src/lib/arcBalances.ts": {
-      "sha256": "1f3ef9e5bfcc57efb45488b86a03adf6a2dc90c7d8c1269299adb33e52ac7ff4",
-      "baselineSha256": null,
-      "isNew": true
-    },
-    "src/lib/arcAnalytics.ts": {
-      "sha256": "772522fae37f2d26d456d17728123bd4bf616fb027dfb85c7b398e30efd4f8b9",
-      "baselineSha256": null,
-      "isNew": true
     }
   }
 }

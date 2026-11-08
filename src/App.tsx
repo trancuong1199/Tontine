@@ -16,7 +16,7 @@ import { PasskeyActionPanel } from "./components/savings/PasskeyActionPanel";
 import { BondedClubWorkspace } from "./components/savings/BondedClubWorkspace";
 import { UnauthenticatedBondedClubPreview } from "./components/savings/UnauthenticatedBondedClubPreview";
 import { useIsBondedClub } from "./hooks/useIsBondedClub";
-import { ARC_TESTNET_DEFAULT_BONDED_CLUB, LEGACY_TEST_CLUB_ADDRESS } from "./config/bonded-tontine";
+import { ARC_TESTNET_DEFAULT_BONDED_CLUB, LEGACY_TEST_CLUB_ADDRESS, HIDDEN_DEMO_CLUBS } from "./config/bonded-tontine";
 import { GroupSwitcher } from "./components/savings/GroupSwitcher";
 import { RoundHistory } from "./components/savings/RoundHistory";
 import { ClubMembersRoster } from "./components/savings/ClubMembersRoster";
@@ -746,9 +746,11 @@ export default function App() {
   const knownClub = getKnownGroups(address).find((c) => c.address.toLowerCase() === contractAddress.toLowerCase());
   const knownGroupsList = getKnownGroups(address);
   const removedGroupsSet = getRemovedGroups(address);
+  const hiddenGroupsSet = new Set(HIDDEN_DEMO_CLUBS.map((a) => a.toLowerCase()));
   const activeDirectoryClubs = knownGroupsList.filter((g) => {
     const addr = g.address.toLowerCase();
     if (removedGroupsSet.has(addr)) return false;
+    if (hiddenGroupsSet.has(addr)) return false;
     if (g.isDefault && g.version !== "v2-bonded") return false;
     return true;
   });
@@ -763,8 +765,10 @@ export default function App() {
 
   useEffect(() => {
     if (isCurrentRemoved && effectiveAvailableClubsCount > 0) {
-      const nextAddr = activeDirectoryClubs[0]?.address || ARC_TESTNET_DEFAULT_BONDED_CLUB;
-      setContractAddress(nextAddr);
+      const nextAddr = activeDirectoryClubs[0]?.address || (hasBondedCanonical ? ARC_TESTNET_DEFAULT_BONDED_CLUB : undefined);
+      if (nextAddr) {
+        setContractAddress(nextAddr);
+      }
     }
   }, [isCurrentRemoved, effectiveAvailableClubsCount, nameUpdateTrigger]);
 

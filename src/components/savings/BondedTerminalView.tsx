@@ -4,9 +4,9 @@ import { formatFinancialAmount } from "../../lib/bondedDisplay";
 import { formatUnitsExact } from "../../onchain-money";
 import { BondedMobileActionBar } from "./BondedMobileActionBar";
 
-export function BondedTerminalView({ club, language, isOwner, isPasskeyUser, pending, onClaim, onWithdraw, onCollateral, onDirectory }: {
+export function BondedTerminalView({ club, language, isOwner, isPasskeyUser, pending, onClaim, onWithdraw, onCollateral, onDirectory, onRemove }: {
   club: BondedClubSnapshot; language: "vi" | "en"; isOwner: boolean; isPasskeyUser: boolean; pending: boolean;
-  onClaim: () => void; onWithdraw: () => void; onCollateral: () => void; onDirectory?: () => void;
+  onClaim: () => void; onWithdraw: () => void; onCollateral: () => void; onDirectory?: () => void; onRemove?: () => void;
 }) {
   const vi = language === "vi";
   const cancelled = club.state === BONDED_STATE.CANCELLED;
@@ -41,7 +41,7 @@ export function BondedTerminalView({ club, language, isOwner, isPasskeyUser, pen
         {canCollateral && <button disabled={disabled} onClick={onCollateral} className="rounded-xl border border-amber-500 px-4 py-3 text-amber-200 disabled:opacity-50">{vi ? "Rút cọc còn lại" : "Withdraw remaining collateral"}</button>}
       </div>
       {pending && <p role="status">{vi ? "Đang chờ giao dịch…" : "Transaction pending…"}</p>}
-      <div className="flex gap-4 text-sm text-amber-200"><button onClick={() => void club.refetch()}>{vi ? "Làm mới số dư" : "Refresh balances"}</button>{onDirectory && <button onClick={onDirectory}>{vi ? "Danh sách nhóm" : "Club directory"}</button>}</div>
+      <div className="flex flex-wrap gap-4 text-sm text-amber-200"><button onClick={() => void club.refetch()}>{vi ? "Làm mới số dư" : "Refresh balances"}</button>{onDirectory && <button onClick={onDirectory}>{vi ? "Danh sách nhóm" : "Club directory"}</button>}{onRemove && <button onClick={onRemove} className="text-red-300 hover:text-red-200">{vi ? "Xóa khỏi danh bạ" : "Remove from directory"}</button>}</div>
     </section>
     <BondedMobileActionBar label={actionLabel} onAction={action} disabled={disabled || club.isLoading} />
   </div>;

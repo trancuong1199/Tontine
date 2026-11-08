@@ -1,31 +1,31 @@
 {
   "taskId": "task-058",
-  "frozenAt": "2026-11-01T17:12:58.947Z",
+  "frozenAt": "2026-11-08T08:33:29.701Z",
   "status": "FROZEN",
   "files": {
-    "src/components/savings/Header.tsx": {
-      "sha256": "5d031aa472518d8b69395951c0a36e39c22e37a87859406d5751692bb4736295",
-      "baselineSha256": "d372ff78cfc38758eebce7dc4d7f1796b650b46911d5cef0c7b89acb5c0ea492",
-      "isNew": false
-    },
     "src/App.tsx": {
-      "sha256": "3c743528ebf400b33f7c9f2f2406d380e273da3f612c10315e4ab1d1d1186b45",
+      "sha256": "880c41fb5df1426569560b35adfd9a548ce665310d8315884017dfbced429789",
       "baselineSha256": "1db4ac4496dbea797889b2a6786ee3fe2bc5542c0bfb863d378ee697b59b7bb9",
       "isNew": false
     },
     "src/components/landing/LandingPage.tsx": {
-      "sha256": "cf5e39eb3bbca37ba81341663c0159396659f33685ccbc1868e569cfcb6e9a5d",
+      "sha256": "bd1af4e931516c1924731ea7d1d766d906db52bc1c57154fb21e40d8bfb3127a",
       "baselineSha256": "b37b16baba32d6e99a50344fdd4bbeb50def854b8f96a826b8b8f71335092448",
+      "isNew": false
+    },
+    "src/components/savings/ArcAppKitModal.tsx": {
+      "sha256": "9b4659ede7626bf31d1558360530b1afe6f96667b2a9955112dd5ab94fa6a573",
+      "baselineSha256": "0f70972eee6b8afe5cc9a2eaa613564084ee2671d8071f65fe336e0e31584227",
+      "isNew": false
+    },
+    "src/components/savings/Header.tsx": {
+      "sha256": "2a275c132910243cda9d98ece31723e8d8fdb981f0ad0cf3acb1fe56d06d19b8",
+      "baselineSha256": "d372ff78cfc38758eebce7dc4d7f1796b650b46911d5cef0c7b89acb5c0ea492",
       "isNew": false
     },
     "src/hooks/usePasskeyWallet.ts": {
       "sha256": "c0fc79e0a7bc4ab2c9cfe89d4fcf070b73400c3eaabe892f312973bd39598183",
       "baselineSha256": "5b82ad4c7f814c8a91121545db8b81eea031621ae5cb343b734abe5f6020c692",
-      "isNew": false
-    },
-    "src/components/savings/ArcAppKitModal.tsx": {
-      "sha256": "e12847ae6e8d3c128068357fe8003ced0889eb6bfda7fa56f43a575715da96f0",
-      "baselineSha256": "0f70972eee6b8afe5cc9a2eaa613564084ee2671d8071f65fe336e0e31584227",
       "isNew": false
     }
   }

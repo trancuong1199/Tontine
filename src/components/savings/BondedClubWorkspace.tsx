@@ -49,6 +49,7 @@ import {
   ORACLE_INFO,
   BONDED_DISCLOSURE_COPY,
   MOCK_ORACLE_WARNING_COPY,
+  HIDDEN_DEMO_CLUBS,
   registerRuntimeBondedClub,
 } from "../../config/bonded-tontine.ts";
 import { buildAddressExplorerUrl, buildTxExplorerUrl } from "../../onchain-facts.ts";
@@ -731,6 +732,42 @@ export function BondedClubWorkspace({
         : club.healthBps > 100_000n ? ">1000%" : `${formatAdaptivePercent(club.healthBps * 10_000n)}%`;
 
   const terminal = club.state === BONDED_STATE.COMPLETED || club.state === BONDED_STATE.DEFAULTED || club.state === BONDED_STATE.CANCELLED;
+  const canRemoveFromDirectory =
+    !club.isLoading &&
+    club.financialsAvailable &&
+    (club.memberCount === 0n || terminal);
+  const handleRemoveCurrentClub = () => {
+    if (club.state === BONDED_STATE.ACTIVE || (club.state === BONDED_STATE.OPEN && club.memberCount > 0n)) {
+      toast.error(
+        isVi
+          ? "Không thể xóa nhóm đang hoạt động hoặc đã có thành viên!"
+          : "Cannot remove an active club or a club with members!"
+      );
+      return;
+    }
+    removeKnownGroup(contractAddress, userAddress);
+    toast.success(isVi ? "Đã xóa nhóm khỏi danh bạ!" : "Removed club from directory!");
+    const hiddenSet = new Set(HIDDEN_DEMO_CLUBS.map((a) => a.toLowerCase()));
+    const known = getKnownGroups(userAddress).filter((g) => {
+      const addr = g.address.toLowerCase();
+      if (addr === contractAddress.toLowerCase()) return false;
+      if (hiddenSet.has(addr)) return false;
+      if (g.isDefault && g.version !== "v2-bonded") return false;
+      return true;
+    });
+    if (known.length > 0) {
+      onSelectGroup?.(known[0].address as `0x${string}`);
+    } else {
+      if (typeof window !== "undefined") {
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("group");
+          window.history.replaceState({}, "", url.toString());
+        } catch {}
+      }
+      onSelectGroup?.(contractAddress);
+    }
+  };
   const reviewMemberAction = () => {
     memberActionsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     memberActionsRef.current?.querySelector<HTMLInputElement>('input[type="checkbox"]:not(:checked)')?.focus({ preventScroll: true });
@@ -743,7 +780,7 @@ export function BondedClubWorkspace({
       : club.totalDebt > 0n ? (isVi ? "Bước tiếp theo: hoàn trả khoản vay trước hạn tất toán." : "Next: repay the loan before settlement is due.")
         : club.cycleEnded ? (isVi ? "Chu kỳ đã hết hạn; kiểm tra điều kiện để hoàn tất." : "The cycle has ended; review completion eligibility.")
           : (isVi ? "Theo dõi tiền góp và lịch trả lãi của chu kỳ đang chạy." : "Monitor contributions and interest deadlines during the active cycle.");
-  if (terminal) return <BondedTerminalView club={club} language={language} isOwner={isOwner} isPasskeyUser={isPasskeyUser} pending={isPending} onClaim={() => void handleClaimInterest()} onWithdraw={() => void handleWithdrawPrincipal()} onCollateral={() => void handleTerminalCollateral()} onDirectory={onOpenDirectoryModal} />;
+  if (terminal) return <BondedTerminalView club={club} language={language} isOwner={isOwner} isPasskeyUser={isPasskeyUser} pending={isPending} onClaim={() => void handleClaimInterest()} onWithdraw={() => void handleWithdrawPrincipal()} onCollateral={() => void handleTerminalCollateral()} onDirectory={onOpenDirectoryModal} onRemove={handleRemoveCurrentClub} />;
   const mobileReview = hasFundingAction && (riskBlocked || (contributeEligible && contributeBlockedByVerification));
   const mobileUnavailable = !financialsReady || !club.positionAvailable;
   const mobileLabel = mobileUnavailable ? (club.isLoading ? (isVi ? "Đang tải thông tin…" : "Loading details…") : (isVi ? "Chưa tải được thông tin — thử lại" : "Details unavailable — retry")) : mobileReview ? (isVi ? "Xem và xác nhận rủi ro" : "Review and acknowledge risk") : canJoinWithAcknowledgement ? (isVi ? "Tham gia nhóm" : "Join club") : canContributeWithAcknowledgement ? (isVi ? "Góp tiền vòng này" : "Contribute this round") : club.pendingInterest > 0n ? (isVi ? "Nhận lãi đã trả" : "Claim paid interest") : isOwner ? (isVi ? "Xem bước tiếp theo" : "Review next step") : club.state === BONDED_STATE.OPEN && club.isMember ? (isVi ? "Đang chờ chủ nhóm bắt đầu" : "Waiting for the owner to start") : club.state === BONDED_STATE.OPEN && !hasCapacity ? (isVi ? "Nhóm đã đủ thành viên" : "Club is full") : (isVi ? "Hiện chưa có thao tác cần thực hiện" : "No action needed right now");
@@ -835,26 +872,10 @@ export function BondedClubWorkspace({
           >
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
-          {club.state !== BONDED_STATE.ACTIVE && (
+          {canRemoveFromDirectory && (
             <button
               type="button"
-              onClick={() => {
-                removeKnownGroup(contractAddress, userAddress);
-                toast.success(isVi ? "Đã xóa nhóm khỏi danh bạ!" : "Removed club from directory!");
-                const known = getKnownGroups(userAddress).filter((g) => g.address.toLowerCase() !== contractAddress.toLowerCase());
-                if (known.length > 0) {
-                  onSelectGroup?.(known[0].address as `0x${string}`);
-                } else {
-                  if (typeof window !== "undefined") {
-                    try {
-                      const url = new URL(window.location.href);
-                      url.searchParams.delete("group");
-                      window.history.replaceState({}, "", url.toString());
-                    } catch {}
-                  }
-                  onSelectGroup?.(contractAddress);
-                }
-              }}
+              onClick={handleRemoveCurrentClub}
               className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-red-500/45 bg-red-950/75 hover:bg-red-900/85 px-3 text-xs font-semibold text-red-200 hover:border-red-400/70 shadow-sm transition-colors cursor-pointer"
               title={isVi ? "Xóa nhóm khỏi danh bạ" : "Remove club from directory"}
               aria-label={isVi ? "Xóa nhóm" : "Remove club"}
@@ -998,26 +1019,10 @@ export function BondedClubWorkspace({
                   </div>
                 </div>
                 {/* Quick remove if club is defaulted/completed or empty open club */}
-                      {(club.memberCount === 0n || club.state === BONDED_STATE.DEFAULTED || club.state === BONDED_STATE.COMPLETED) && (
+                      {canRemoveFromDirectory && (
                         <button
                           type="button"
-                          onClick={() => {
-                            removeKnownGroup(contractAddress, userAddress);
-                            toast.success(isVi ? "Đã xóa nhóm khỏi danh bạ!" : "Removed club from directory!");
-                            const known = getKnownGroups(userAddress).filter((g) => g.address.toLowerCase() !== contractAddress.toLowerCase());
-                            if (known.length > 0) {
-                              onSelectGroup?.(known[0].address as `0x${string}`);
-                            } else {
-                              if (typeof window !== "undefined") {
-                                try {
-                                  const url = new URL(window.location.href);
-                                  url.searchParams.delete("group");
-                                  window.history.replaceState({}, "", url.toString());
-                                } catch {}
-                              }
-                              onSelectGroup?.(contractAddress);
-                            }
-                          }}
+                          onClick={handleRemoveCurrentClub}
                           className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 border border-red-500/40 text-xs font-semibold text-red-300 transition-colors cursor-pointer"
                           title={isVi ? "Xóa nhóm khỏi danh bạ" : "Remove club from directory"}
                         >
@@ -1356,7 +1361,7 @@ export function BondedClubWorkspace({
               </div>
             )}
 
-            {club.state === BONDED_STATE.OPEN && !hasCapacity && <p role="status" className="text-amber-200">{isVi ? "Nhóm đã đủ thành viên; không nhận đăng ký mới." : "This club is full; new registrations are closed."}</p>}
+            {club.state === BONDED_STATE.OPEN && !club.isLoading && club.maxMembers > 0n && !hasCapacity && <p role="status" className="text-amber-200">{isVi ? "Nhóm đã đủ thành viên; không nhận đăng ký mới." : "This club is full; new registrations are closed."}</p>}
             {/* Actions */}
             <div className="space-y-3">
               {joinEligible && (

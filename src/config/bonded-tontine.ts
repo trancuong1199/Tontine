@@ -37,6 +37,7 @@ export const HIDDEN_DEMO_CLUBS: readonly `0x${string}`[] = [
   "0xe74069717317dbB86d423439fb9c219A5c5bf812", // Completed E2E demo club
   "0xF9469568ebb287275009fcE3Db224a16273C5d05", // Defaulted/Liquidated E2E demo club
   "0xe9ccfe9f2d53a5479a17d795635e0795e84d9130", // Old testnet demo club
+  "0xe328f4c30068a728b0f2d75f1cf74c1c6bef4da1", // Cancelled testnet club
 ] as const;
 
 /**
