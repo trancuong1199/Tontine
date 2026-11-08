@@ -1,6 +1,6 @@
 {
   "taskId": "task-059",
-  "frozenAt": "2026-11-08T15:59:33.336Z",
+  "frozenAt": "2026-11-08T16:26:03.197Z",
   "status": "FROZEN",
   "files": {
     "contracts/BondedTontine.sol": {
@@ -59,7 +59,7 @@
       "isNew": false
     },
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "796494881a41f601754912442a0de25288184d131d82f26cd40679045a8b2650",
+      "sha256": "4fe05ccb5a3d9612b30dc3b8ddc570dae726d06be01bb76fd14f8ad26303de8e",
       "baselineSha256": null,
       "isNew": false
     },

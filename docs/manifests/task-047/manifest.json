@@ -1,6 +1,6 @@
 {
   "taskId": "task-047",
-  "frozenAt": "2026-11-08T08:33:28.650Z",
+  "frozenAt": "2026-11-08T16:26:02.803Z",
   "status": "FROZEN",
   "files": {
     "src/components/MerchantTreasury.tsx": {

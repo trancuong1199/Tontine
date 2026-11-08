@@ -217,6 +217,11 @@ export function BondedClubWorkspace({
   }, [hasDepositedCollateral, requiredRoundCirBtc, requiredRoundCirBtcStr]);
   const [withdrawColInput, setWithdrawColInput] = useState("");
   const [borrowInput, setBorrowInput] = useState("");
+  useEffect(() => {
+    if (availablePoolUsdc > 0n) {
+      setBorrowInput(formatUsdcExact(availablePoolUsdc));
+    }
+  }, [availablePoolUsdc]);
   const [repayInput, setRepayInput] = useState("");
   const [interestInput, setInterestInput] = useState("");
   const [removeMemberInput, setRemoveMemberInput] = useState("");
@@ -465,8 +470,8 @@ export function BondedClubWorkspace({
   const handleBorrow = () => {
     let amt = 0n;
     try {
-      if (!borrowInput.trim()) throw new Error();
-      amt = parseUsdc(borrowInput);
+      const trimmed = borrowInput.trim();
+      amt = trimmed ? parseUsdc(trimmed) : availablePoolUsdc;
       if (amt <= 0n) throw new Error();
     } catch {
       toast.error(
