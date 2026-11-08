@@ -4,9 +4,10 @@ import { formatFinancialAmount } from "../../lib/bondedDisplay";
 import { formatUnitsExact } from "../../onchain-money";
 import { BondedMobileActionBar } from "./BondedMobileActionBar";
 
-export function BondedTerminalView({ club, language, isOwner, isPasskeyUser, pending, onClaim, onWithdraw, onCollateral, onDirectory, onRemove }: {
+export function BondedTerminalView({ club, language, isOwner, isPasskeyUser, pending, onClaim, onWithdraw, onCollateral, onDirectory, onRemove, confirmingRemove, onRequestRemove, onCancelRemove }: {
   club: BondedClubSnapshot; language: "vi" | "en"; isOwner: boolean; isPasskeyUser: boolean; pending: boolean;
   onClaim: () => void; onWithdraw: () => void; onCollateral: () => void; onDirectory?: () => void; onRemove?: () => void;
+  confirmingRemove?: boolean; onRequestRemove?: () => void; onCancelRemove?: () => void;
 }) {
   const vi = language === "vi";
   const cancelled = club.state === BONDED_STATE.CANCELLED;
@@ -41,8 +42,20 @@ export function BondedTerminalView({ club, language, isOwner, isPasskeyUser, pen
         {canCollateral && <button disabled={disabled} onClick={onCollateral} className="rounded-xl border border-amber-500 px-4 py-3 text-amber-200 disabled:opacity-50">{vi ? "Rút cọc còn lại" : "Withdraw remaining collateral"}</button>}
       </div>
       {pending && <p role="status">{vi ? "Đang chờ giao dịch…" : "Transaction pending…"}</p>}
-      <div className="flex flex-wrap gap-4 text-sm text-amber-200"><button onClick={() => void club.refetch()}>{vi ? "Làm mới số dư" : "Refresh balances"}</button>{onDirectory && <button onClick={onDirectory}>{vi ? "Danh sách nhóm" : "Club directory"}</button>}{onRemove && <button onClick={onRemove} className="text-red-300 hover:text-red-200">{vi ? "Xóa khỏi danh bạ" : "Remove from directory"}</button>}</div>
+      <div className="flex flex-wrap gap-4 text-sm text-amber-200"><button onClick={() => void club.refetch()}>{vi ? "Làm mới số dư" : "Refresh balances"}</button>{onDirectory && <button onClick={onDirectory}>{vi ? "Danh sách nhóm" : "Club directory"}</button>}{(onRequestRemove || onRemove) && <button onClick={onRequestRemove ?? onRemove} className="text-red-300 hover:text-red-200">{vi ? "Xóa khỏi danh bạ" : "Remove from directory"}</button>}</div>
     </section>
+    {confirmingRemove && onRemove && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="w-full max-w-md rounded-3xl border border-red-500/40 bg-[#0c0d14] p-6 text-slate-100 shadow-2xl space-y-4">
+          <h3 className="text-base font-bold text-white">{vi ? "Xác nhận xóa nhóm khỏi danh bạ" : "Confirm Remove Club"}</h3>
+          <p className="text-xs text-slate-300">{vi ? "Bạn có chắc chắn muốn xóa nhóm này khỏi danh bạ hiển thị của bạn không?" : "Are you sure you want to remove this club from your directory?"}</p>
+          <div className="flex items-center justify-end gap-2.5 pt-2">
+            <button type="button" onClick={onCancelRemove} className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 cursor-pointer">{vi ? "Giữ lại" : "Cancel"}</button>
+            <button type="button" onClick={onRemove} className="rounded-xl border border-red-500/50 bg-red-600 hover:bg-red-500 px-4 py-2 text-xs font-bold text-white cursor-pointer">{vi ? "Xác nhận xóa nhóm" : "Confirm Remove"}</button>
+          </div>
+        </div>
+      </div>
+    )}
     <BondedMobileActionBar label={actionLabel} onAction={action} disabled={disabled || club.isLoading} />
   </div>;
 }

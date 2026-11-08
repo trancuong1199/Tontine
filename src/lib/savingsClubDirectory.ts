@@ -534,9 +534,7 @@ export function toggleClubCancelVote(
   const current = getClubCancelVotes(clubAddress);
   const voterLower = voterAddress.toLowerCase();
   const hasVoted = current.includes(voterLower);
-  const next = hasVoted
-    ? current.filter((addr) => addr !== voterLower)
-    : [...current, voterLower];
+  const next = hasVoted ? current : [...current, voterLower];
 
   if (typeof window !== "undefined" && window.localStorage) {
     try {
@@ -548,7 +546,7 @@ export function toggleClubCancelVote(
       // Ignore storage errors
     }
   }
-  return { voted: !hasVoted, votes: next };
+  return { voted: true, votes: next };
 }
 
 export function hasMajorityCancelVotes(

@@ -35,11 +35,7 @@ function cancelVotesSyncPlugin(): Plugin {
               }
               if (typeof payload.toggleVoter === 'string' && /^0x[a-f0-9]{40}$/i.test(payload.toggleVoter)) {
                 const voter = payload.toggleVoter.toLowerCase()
-                if (current.has(voter)) {
-                  current.delete(voter)
-                } else {
-                  current.add(voter)
-                }
+                current.add(voter)
               }
               sharedCancelVotes.set(targetClub, current)
               res.end(JSON.stringify({ votes: Array.from(current) }))

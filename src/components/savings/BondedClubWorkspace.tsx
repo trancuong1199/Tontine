@@ -742,6 +742,8 @@ export function BondedClubWorkspace({
   const [cancelVotes, setCancelVotes] = useState<string[]>(() =>
     getClubCancelVotes(contractAddress)
   );
+  const [showVoteConfirmModal, setShowVoteConfirmModal] = useState(false);
+  const [showRemoveConfirmModal, setShowRemoveConfirmModal] = useState(false);
   useEffect(() => {
     const local = getClubCancelVotes(contractAddress);
     setCancelVotes(local);
@@ -787,7 +789,7 @@ export function BondedClubWorkspace({
   const hasCancelMajority =
     !needsCancelVote || cancelVotes.length >= requiredCancelVotes;
 
-  const handleToggleCancelVote = () => {
+  const handleRequestCancelVote = () => {
     if (!userAddress) {
       toast.error(
         isVi
@@ -796,41 +798,49 @@ export function BondedClubWorkspace({
       );
       return;
     }
-    const { voted, votes } = toggleClubCancelVote(contractAddress, userAddress);
-    setCancelVotes(votes);
-    void fetch(`/__api/cancel-votes?club=${contractAddress.toLowerCase()}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ club: contractAddress.toLowerCase(), toggleVoter: userAddress.toLowerCase() }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (Array.isArray(data?.votes)) {
-          try {
-            window.localStorage.setItem(
-              `hui_club_cancel_votes_${contractAddress.toLowerCase()}`,
-              JSON.stringify(data.votes)
-            );
-          } catch {
-            // ignore
-          }
-          setCancelVotes(data.votes);
-        }
-      })
-      .catch(() => {});
-    if (voted) {
-      toast.success(
-        isVi
-          ? `Đã ghi nhận phiếu đồng ý hủy nhóm (${votes.length}/${requiredCancelVotes})!`
-          : `Cancel vote recorded (${votes.length}/${requiredCancelVotes})!`
-      );
-    } else {
-      toast.success(
-        isVi
-          ? `Đã rút phiếu hủy nhóm (${votes.length}/${requiredCancelVotes}).`
-          : `Withdrew cancel vote (${votes.length}/${requiredCancelVotes}).`
-      );
+    if (hasVotedCancel) return;
+    setShowVoteConfirmModal(true);
+  };
+
+  const handleConfirmCancelVote = () => {
+    if (!userAddress || hasVotedCancel) {
+      setShowVoteConfirmModal(false);
+      return;
     }
+    const { votes } = toggleClubCancelVote(contractAddress, userAddress);
+    setCancelVotes(votes);
+    setShowVoteConfirmModal(false);
+    if (typeof window !== "undefined" && typeof window.fetch === "function") {
+      void window
+        .fetch(`/__api/cancel-votes?club=${contractAddress.toLowerCase()}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            club: contractAddress.toLowerCase(),
+            toggleVoter: userAddress.toLowerCase(),
+          }),
+        })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (Array.isArray(data?.votes)) {
+            try {
+              window.localStorage.setItem(
+                `hui_club_cancel_votes_${contractAddress.toLowerCase()}`,
+                JSON.stringify(data.votes)
+              );
+            } catch {
+              // ignore
+            }
+            setCancelVotes(data.votes);
+          }
+        })
+        .catch(() => {});
+    }
+    toast.success(
+      isVi
+        ? `Đã xác nhận bỏ phiếu hủy nhóm (${votes.length}/${requiredCancelVotes})!`
+        : `Cancel vote confirmed (${votes.length}/${requiredCancelVotes})!`
+    );
   };
 
   const terminal = club.state === BONDED_STATE.COMPLETED || club.state === BONDED_STATE.DEFAULTED || club.state === BONDED_STATE.CANCELLED;
@@ -838,13 +848,20 @@ export function BondedClubWorkspace({
     !club.isLoading &&
     club.financialsAvailable &&
     (club.memberCount === 0n || terminal || (club.state === BONDED_STATE.OPEN && hasCancelMajority));
-  const handleRemoveCurrentClub = () => {
+  const handleRequestRemoveClub = () => {
     if (club.state === BONDED_STATE.ACTIVE || (club.state === BONDED_STATE.OPEN && !hasCancelMajority)) {
       toast.error(
         isVi
           ? `Cần đủ đa số phiếu đồng thuận (${cancelVotes.length}/${requiredCancelVotes} phiếu) mới có thể xóa nhóm!`
           : `Majority member vote required (${cancelVotes.length}/${requiredCancelVotes} votes) before removing this club!`
       );
+      return;
+    }
+    setShowRemoveConfirmModal(true);
+  };
+  const handleConfirmRemoveCurrentClub = () => {
+    setShowRemoveConfirmModal(false);
+    if (club.state === BONDED_STATE.ACTIVE || (club.state === BONDED_STATE.OPEN && !hasCancelMajority)) {
       return;
     }
     removeKnownGroup(contractAddress, userAddress);
@@ -882,7 +899,7 @@ export function BondedClubWorkspace({
       : club.totalDebt > 0n ? (isVi ? "Bước tiếp theo: hoàn trả khoản vay trước hạn tất toán." : "Next: repay the loan before settlement is due.")
         : club.cycleEnded ? (isVi ? "Chu kỳ đã hết hạn; kiểm tra điều kiện để hoàn tất." : "The cycle has ended; review completion eligibility.")
           : (isVi ? "Theo dõi tiền góp và lịch trả lãi của chu kỳ đang chạy." : "Monitor contributions and interest deadlines during the active cycle.");
-  if (terminal) return <BondedTerminalView club={club} language={language} isOwner={isOwner} isPasskeyUser={isPasskeyUser} pending={isPending} onClaim={() => void handleClaimInterest()} onWithdraw={() => void handleWithdrawPrincipal()} onCollateral={() => void handleTerminalCollateral()} onDirectory={onOpenDirectoryModal} onRemove={handleRemoveCurrentClub} />;
+  if (terminal) return <BondedTerminalView club={club} language={language} isOwner={isOwner} isPasskeyUser={isPasskeyUser} pending={isPending} onClaim={() => void handleClaimInterest()} onWithdraw={() => void handleWithdrawPrincipal()} onCollateral={() => void handleTerminalCollateral()} onDirectory={onOpenDirectoryModal} onRemove={handleConfirmRemoveCurrentClub} confirmingRemove={showRemoveConfirmModal} onRequestRemove={handleRequestRemoveClub} onCancelRemove={() => setShowRemoveConfirmModal(false)} />;
   const mobileReview = hasFundingAction && (riskBlocked || (contributeEligible && contributeBlockedByVerification));
   const mobileUnavailable = !financialsReady || !club.positionAvailable;
   const mobileLabel = mobileUnavailable ? (club.isLoading ? (isVi ? "Đang tải thông tin…" : "Loading details…") : (isVi ? "Chưa tải được thông tin — thử lại" : "Details unavailable — retry")) : mobileReview ? (isVi ? "Xem và xác nhận rủi ro" : "Review and acknowledge risk") : canJoinWithAcknowledgement ? (isVi ? "Tham gia nhóm" : "Join club") : canContributeWithAcknowledgement ? (isVi ? "Góp tiền vòng này" : "Contribute this round") : club.pendingInterest > 0n ? (isVi ? "Nhận lãi đã trả" : "Claim paid interest") : isOwner ? (isVi ? "Xem bước tiếp theo" : "Review next step") : club.state === BONDED_STATE.OPEN && club.isMember ? (isVi ? "Đang chờ chủ nhóm bắt đầu" : "Waiting for the owner to start") : club.state === BONDED_STATE.OPEN && !hasCapacity ? (isVi ? "Nhóm đã đủ thành viên" : "Club is full") : (isVi ? "Hiện chưa có thao tác cần thực hiện" : "No action needed right now");
@@ -977,7 +994,7 @@ export function BondedClubWorkspace({
           {canRemoveFromDirectory && (
             <button
               type="button"
-              onClick={handleRemoveCurrentClub}
+              onClick={handleRequestRemoveClub}
               className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-red-500/45 bg-red-950/75 hover:bg-red-900/85 px-3 text-xs font-semibold text-red-200 hover:border-red-400/70 shadow-sm transition-colors cursor-pointer"
               title={isVi ? "Xóa nhóm khỏi danh bạ" : "Remove club from directory"}
               aria-label={isVi ? "Xóa nhóm" : "Remove club"}
@@ -1124,7 +1141,7 @@ export function BondedClubWorkspace({
                       {canRemoveFromDirectory && (
                         <button
                           type="button"
-                          onClick={handleRemoveCurrentClub}
+                          onClick={handleRequestRemoveClub}
                           className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-red-950/60 hover:bg-red-900/80 border border-red-500/40 text-xs font-semibold text-red-300 transition-colors cursor-pointer"
                           title={isVi ? "Xóa nhóm khỏi danh bạ" : "Remove club from directory"}
                         >
@@ -1560,15 +1577,16 @@ export function BondedClubWorkspace({
                   </p>
                   <button
                     type="button"
-                    onClick={handleToggleCancelVote}
-                    className={`w-full py-2.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+                    disabled={hasVotedCancel}
+                    onClick={handleRequestCancelVote}
+                    className={`w-full py-2.5 rounded-xl border text-xs font-semibold transition-colors ${
                       hasVotedCancel
-                        ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50"
-                        : "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                        ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 opacity-85 cursor-not-allowed"
+                        : "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 cursor-pointer"
                     }`}
                   >
                     {hasVotedCancel
-                      ? (isVi ? "✓ Đã bỏ phiếu đồng ý hủy (Bấm để rút phiếu)" : "✓ Voted to Cancel (Click to withdraw)")
+                      ? (isVi ? "✓ Đã bỏ phiếu đồng ý hủy (Đã khóa)" : "✓ Voted to Cancel (Locked)")
                       : (isVi ? "🗳️ Bỏ phiếu đồng ý hủy nhóm" : "🗳️ Vote to Cancel Club")}
                   </button>
                 </div>
@@ -1857,15 +1875,16 @@ export function BondedClubWorkspace({
                       </p>
                       <button
                         type="button"
-                        onClick={handleToggleCancelVote}
-                        className={`w-full py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+                        disabled={hasVotedCancel}
+                        onClick={handleRequestCancelVote}
+                        className={`w-full py-2 rounded-xl border text-xs font-semibold transition-colors ${
                           hasVotedCancel
-                            ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50"
-                            : "border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                            ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 opacity-85 cursor-not-allowed"
+                            : "border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 cursor-pointer"
                         }`}
                       >
                         {hasVotedCancel
-                          ? (isVi ? "✓ Đã bỏ phiếu đồng ý hủy (Bấm để rút phiếu)" : "✓ Voted to Cancel (Click to withdraw)")
+                          ? (isVi ? "✓ Đã bỏ phiếu đồng ý hủy (Đã khóa)" : "✓ Voted to Cancel (Locked)")
                           : (isVi ? "🗳️ Bỏ phiếu đồng ý hủy nhóm" : "🗳️ Vote to Cancel Club")}
                       </button>
                     </div>
@@ -1975,6 +1994,92 @@ export function BondedClubWorkspace({
           </details>
         </div>
       </div>
+      {showVoteConfirmModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
+          data-testid="bonded-vote-confirm-modal"
+        >
+          <div className="w-full max-w-md rounded-3xl border border-red-500/40 bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] p-6 text-slate-100 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-red-500/40 bg-red-500/15 text-red-300">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">
+                  {isVi ? "Xác nhận bỏ phiếu hủy nhóm" : "Confirm Cancel Club Vote"}
+                </h3>
+                <p className="text-xs text-slate-300">
+                  {club.groupName || "BondedTontine Club"} ({cancelVotes.length}/{requiredCancelVotes} {isVi ? "phiếu hiện tại" : "current votes"})
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              {isVi
+                ? "Bạn có chắc chắn muốn bỏ phiếu đồng ý hủy nhóm này không? Sau khi xác nhận, phiếu bầu của bạn sẽ được khóa vĩnh viễn và không thể rút lại."
+                : "Are you sure you want to vote to cancel this club? Once confirmed, your vote is final and cannot be withdrawn."}
+            </p>
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowVoteConfirmModal(false)}
+                className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                {isVi ? "Hủy bỏ" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancelVote}
+                className="rounded-xl border border-red-500/50 bg-red-600 hover:bg-red-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/20 transition-colors cursor-pointer"
+              >
+                {isVi ? "Xác nhận bỏ phiếu" : "Confirm Vote"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showRemoveConfirmModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
+          data-testid="bonded-remove-confirm-modal"
+        >
+          <div className="w-full max-w-md rounded-3xl border border-red-500/40 bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] p-6 text-slate-100 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-red-500/40 bg-red-500/15 text-red-300">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">
+                  {isVi ? "Xác nhận xóa nhóm khỏi danh bạ" : "Confirm Remove Club"}
+                </h3>
+                <p className="text-xs text-slate-300">
+                  {club.groupName || "BondedTontine Club"} ({contractAddress.slice(0, 6)}...{contractAddress.slice(-4)})
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              {isVi
+                ? "Bạn có chắc chắn muốn xóa nhóm này khỏi danh bạ hiển thị của bạn không?"
+                : "Are you sure you want to remove this club from your directory?"}
+            </p>
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowRemoveConfirmModal(false)}
+                className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                {isVi ? "Giữ lại" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRemoveCurrentClub}
+                className="rounded-xl border border-red-500/50 bg-red-600 hover:bg-red-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/20 transition-colors cursor-pointer"
+              >
+                {isVi ? "Xác nhận xóa nhóm" : "Confirm Remove"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <BondedMobileActionBar label={mobileLabel} onAction={mobileAction} disabled={isPending || club.isLoading || (isPasskeyUser && !mobileReview && !isOwner)} />
     </div>
   );
