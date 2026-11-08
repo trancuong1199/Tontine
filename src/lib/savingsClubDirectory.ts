@@ -1,4 +1,4 @@
-import { LEGACY_TEST_CLUB_ADDRESS } from "../config/bonded-tontine.ts";
+import { LEGACY_TEST_CLUB_ADDRESS, ARC_TESTNET_DEFAULT_BONDED_CLUB } from "../config/bonded-tontine.ts";
 
 export function isValidAddress(address: unknown): address is `0x${string}` {
   return typeof address === "string" && /^0x[a-f0-9]{40}$/i.test(address);
@@ -65,10 +65,12 @@ export function getRemovedGroups(account?: string): Set<string> {
     const raw = window.localStorage.getItem(key);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
     if (Array.isArray(parsed)) {
+      const canonicalDefault = ARC_TESTNET_DEFAULT_BONDED_CLUB.toLowerCase();
+      const allowRemoveCanonical = hasMajorityCancelVotes(canonicalDefault, 2n);
       return new Set(
         parsed
           .map((a) => (typeof a === "string" ? a.toLowerCase() : ""))
-          .filter(Boolean)
+          .filter((a) => Boolean(a) && (a !== canonicalDefault || allowRemoveCanonical))
       );
     }
     return new Set<string>();

@@ -70,7 +70,18 @@ export default function App() {
   const isEn = language === "en";
 
   // MetaMask / injected wallet (wagmi)
-  const { address: wagmiAddress, connector } = useAccount();
+  const { address: wagmiAddress, connector, isReconnecting } = useAccount();
+  const persistedWagmiAddress = useMemo<`0x${string}` | undefined>(() => {
+    if (typeof window === "undefined" || !window.localStorage) return undefined;
+    try {
+      const raw = window.localStorage.getItem("wagmi.store");
+      if (!raw) return undefined;
+      const match = raw.match(/"accounts":\s*\[\s*"(0x[a-fA-F0-9]{40})"/);
+      return match ? (match[1] as `0x${string}`) : undefined;
+    } catch {
+      return undefined;
+    }
+  }, [wagmiAddress, isReconnecting]);
 
   // Passkey wallet (Circle Modular Wallet)
   const { state: pkState, bundler, isConfigured, register, login, logout, clearError } = usePasskeyWallet();
@@ -102,7 +113,7 @@ export default function App() {
   };
 
   // Active address: passkey takes priority over wagmi
-  const address = passkeyAddress ?? wagmiAddress;
+  const address = passkeyAddress ?? wagmiAddress ?? (isReconnecting ? persistedWagmiAddress : undefined);
   const activeAccountRef = useRef(address);
   activeAccountRef.current = address;
 
@@ -759,8 +770,10 @@ export default function App() {
     activeDirectoryClubs.length +
     (hasBondedCanonical && !activeDirectoryClubs.some((g) => g.version === "v2-bonded") ? 1 : 0);
 
-  const isCurrentRemoved = removedGroupsSet.has(contractAddress.toLowerCase());
-  const hasNoActiveClub = isCurrentRemoved || effectiveAvailableClubsCount === 0 || (knownGroupsList.length === 0 && !clubInfo.groupName);
+  const isCurrentRemoved = removedGroupsSet.has(contractAddress.toLowerCase()) || hiddenGroupsSet.has(contractAddress.toLowerCase());
+  const hasNoActiveClub =
+    effectiveAvailableClubsCount === 0 ||
+    (!isBondedClub && knownGroupsList.length === 0 && !clubInfo.groupName);
   const activeCollateralAmount = clubInfo.collateralAmount;
 
   useEffect(() => {
@@ -770,7 +783,7 @@ export default function App() {
         setContractAddress(nextAddr);
       }
     }
-  }, [isCurrentRemoved, effectiveAvailableClubsCount, nameUpdateTrigger]);
+  }, [isCurrentRemoved, effectiveAvailableClubsCount, nameUpdateTrigger, address]);
 
   const displayedGroupName = (knownClub && knownClub.name && !knownClub.name.startsWith("Nhóm Hụi 0x") && !knownClub.name.startsWith("Savings Club 0x"))
     ? knownClub.name
