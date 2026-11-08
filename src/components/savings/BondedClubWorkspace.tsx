@@ -1741,27 +1741,10 @@ export function BondedClubWorkspace({
               </div>
 
               {staleBlocksPriceAction && (
-                <div className="rounded-xl border border-red-500/30 bg-red-950/40 px-3.5 py-3 text-xs text-red-200 space-y-2">
-                  <p className="leading-relaxed text-red-300">
-                    {isVi
-                      ? "Giá oracle không hợp lệ hoặc quá hạn (> 60 phút trên Testnet), cần cập nhật trước khi vay hoặc rút cọc khi đang có nợ."
-                      : "Oracle price is stale; refresh price before borrowing or withdrawing collateral while indebted."}
-                  </p>
-                  <p className="text-slate-300 leading-relaxed">
-                    {isVi
-                      ? `Hợp đồng thông minh yêu cầu giá BTC/USD được cập nhật trong vòng 60 phút để tính hạn mức vay an toàn. Bấm nút bên dưới bằng ví Admin Oracle (${club.oracleAdmin ? `${club.oracleAdmin.slice(0, 6)}...${club.oracleAdmin.slice(-4)}` : "0xdB77...Baf0"}) để làm mới giá $60,000:`
-                      : `The smart contract requires a BTC/USD oracle update within the last 60 minutes to calculate your safe borrow limit. Click below with Oracle Admin wallet (${club.oracleAdmin ? `${club.oracleAdmin.slice(0, 6)}...${club.oracleAdmin.slice(-4)}` : "0xdB77...Baf0"}) to refresh the $60,000 price:`}
-                  </p>
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => void handleSetMockPrice("60000")}
-                    className="w-full rounded-xl border border-amber-500/50 bg-amber-500/20 hover:bg-amber-500/30 disabled:opacity-40 px-3 py-2 text-xs font-bold text-amber-200 transition-colors cursor-pointer"
-                  >
-                    {isVi
-                      ? `Làm mới giá Oracle BTC/USD ($60,000)${!canManageMockOracle && club.oracleAdmin ? ` — Cần ví ${club.oracleAdmin.slice(0, 6)}...${club.oracleAdmin.slice(-4)}` : ""}`
-                      : `Refresh BTC/USD Oracle ($60,000)${!canManageMockOracle && club.oracleAdmin ? ` — Switch to ${club.oracleAdmin.slice(0, 6)}...${club.oracleAdmin.slice(-4)}` : ""}`}
-                  </button>
+                <div className="rounded-xl border border-red-500/30 bg-red-950/40 px-3.5 py-2.5 text-xs text-red-300">
+                  {isVi
+                    ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật trước khi vay hoặc rút cọc khi đang có nợ."
+                    : "Oracle price is stale; refresh price before borrowing or withdrawing collateral while indebted."}
                 </div>
               )}
 
