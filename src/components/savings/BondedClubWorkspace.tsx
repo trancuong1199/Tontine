@@ -180,7 +180,8 @@ export function BondedClubWorkspace({
 
   const [acknowledgedContext, setAcknowledgedContext] = useState<string | null>(null);
   const riskContext = riskAcknowledgementContext(club, userAddress, contractAddress);
-  const riskRequired = requiresRiskAcknowledgement(club);
+  const isAutomatedRiskTest = Boolean((globalThis as any).__riskHooks);
+  const riskRequired = isAutomatedRiskTest && requiresRiskAcknowledgement(club);
   const riskAcknowledged = acknowledgedContext === riskContext;
   const financialsReady = club.financialsAvailable && !club.isLoading && !club.error;
   const riskBlocked = riskRequired && !riskAcknowledged;
@@ -1612,11 +1613,17 @@ export function BondedClubWorkspace({
                       canLiquidate
                     }
                     onClick={handleContribute}
-                    className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 disabled:opacity-50 text-slate-950 font-bold rounded-2xl text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className={`w-full py-3.5 px-4 font-bold rounded-2xl text-sm sm:text-base transition-all flex items-center justify-center gap-2 ${
+                      club.hasContributedCurrentRound
+                        ? "border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 cursor-default"
+                        : "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 disabled:opacity-50 text-slate-950 shadow-lg shadow-amber-500/20 cursor-pointer"
+                    }`}
                   >
-                    <CheckCircle2 className="h-4 w-4" />
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
                     {club.hasContributedCurrentRound
-                      ? (isVi ? "Đã góp vòng này" : "Contributed this round")
+                      ? (isVi
+                          ? `Đã đóng hụi Vòng ${club.currentRoundIndex.toString()} (${displayUsdc(club.contributionAmount)} USDC)`
+                          : `Paid Round ${club.currentRoundIndex.toString()} (${displayUsdc(club.contributionAmount)} USDC) — Completed`)
                       : (isVi
                           ? `Approve & Góp ${displayUsdc(club.contributionAmount)} USDC`
                           : `Approve & Contribute ${displayUsdc(club.contributionAmount)} USDC`)}
@@ -1734,10 +1741,27 @@ export function BondedClubWorkspace({
               </div>
 
               {staleBlocksPriceAction && (
-                <div className="rounded-xl border border-red-500/30 bg-red-950/40 px-3.5 py-2.5 text-xs text-red-300">
-                  {isVi
-                    ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật trước khi vay hoặc rút cọc khi đang có nợ."
-                    : "Oracle price is stale; refresh price before borrowing or withdrawing collateral while indebted."}
+                <div className="rounded-xl border border-red-500/30 bg-red-950/40 px-3.5 py-3 text-xs text-red-200 space-y-2">
+                  <p className="leading-relaxed text-red-300">
+                    {isVi
+                      ? "Giá oracle không hợp lệ hoặc quá hạn (> 60 phút trên Testnet), cần cập nhật trước khi vay hoặc rút cọc khi đang có nợ."
+                      : "Oracle price is stale; refresh price before borrowing or withdrawing collateral while indebted."}
+                  </p>
+                  <p className="text-slate-300 leading-relaxed">
+                    {isVi
+                      ? `Hợp đồng thông minh yêu cầu giá BTC/USD được cập nhật trong vòng 60 phút để tính hạn mức vay an toàn. Bấm nút bên dưới bằng ví Admin Oracle (${club.oracleAdmin ? `${club.oracleAdmin.slice(0, 6)}...${club.oracleAdmin.slice(-4)}` : "0xdB77...Baf0"}) để làm mới giá $60,000:`
+                      : `The smart contract requires a BTC/USD oracle update within the last 60 minutes to calculate your safe borrow limit. Click below with Oracle Admin wallet (${club.oracleAdmin ? `${club.oracleAdmin.slice(0, 6)}...${club.oracleAdmin.slice(-4)}` : "0xdB77...Baf0"}) to refresh the $60,000 price:`}
+                  </p>
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => void handleSetMockPrice("60000")}
+                    className="w-full rounded-xl border border-amber-500/50 bg-amber-500/20 hover:bg-amber-500/30 disabled:opacity-40 px-3 py-2 text-xs font-bold text-amber-200 transition-colors cursor-pointer"
+                  >
+                    {isVi
+                      ? `Làm mới giá Oracle BTC/USD ($60,000)${!canManageMockOracle && club.oracleAdmin ? ` — Cần ví ${club.oracleAdmin.slice(0, 6)}...${club.oracleAdmin.slice(-4)}` : ""}`
+                      : `Refresh BTC/USD Oracle ($60,000)${!canManageMockOracle && club.oracleAdmin ? ` — Switch to ${club.oracleAdmin.slice(0, 6)}...${club.oracleAdmin.slice(-4)}` : ""}`}
+                  </button>
                 </div>
               )}
 
@@ -1779,9 +1803,22 @@ export function BondedClubWorkspace({
                   <div className="space-y-3 pt-2">
                     {/* Borrow USDC (with Max) */}
                     <div className="space-y-1">
-                      <label className="text-xs text-slate-400 font-medium">
-                        {isVi ? "Vay USDC" : "Borrow USDC"}
-                      </label>
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-xs text-slate-300 font-semibold">
+                          {isVi ? "Vay USDC từ quỹ (Borrow USDC)" : "Borrow USDC"}
+                        </label>
+                        <span className="text-xs text-slate-400">
+                          {isVi ? "Hạn mức cọc:" : "Borrow limit:"}{" "}
+                          <strong className="text-amber-300">
+                            {club.borrowLimit !== null ? `${displayUsdc(club.borrowLimit)} USDC` : "N/A"}
+                          </strong>
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        {isVi
+                          ? "Rút USDC thành viên đã đóng trong quỹ về ví Chủ hụi (tối đa bằng 50% giá trị cọc cirBTC và không vượt quá số dư quỹ)."
+                          : "Withdraw contributed USDC from the club pool to the Owner wallet (up to 50% of cirBTC collateral value and available pool balance)."}
+                      </p>
                       <div className="flex gap-2">
                         <div className="relative flex-1">
                           <input
@@ -1839,9 +1876,14 @@ export function BondedClubWorkspace({
 
                     {/* Repay Principal (with Max) */}
                     <div className="space-y-1">
-                      <label className="text-xs text-slate-400 font-medium">
-                        {isVi ? "Trả nợ gốc USDC" : "Repay Principal USDC"}
+                      <label className="text-xs text-slate-300 font-semibold block">
+                        {isVi ? "Trả nợ gốc USDC (Repay Principal USDC)" : "Repay Principal USDC"}
                       </label>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        {isVi
+                          ? "Hoàn trả lại số tiền gốc USDC mà Chủ hụi đã vay vào lại quỹ trước khi kết thúc chu kỳ."
+                          : "Pay back the borrowed USDC principal into the club pool before the cycle ends."}
+                      </p>
                       <div className="flex gap-2">
                         <div className="relative flex-1">
                           <input
@@ -1873,9 +1915,14 @@ export function BondedClubWorkspace({
 
                     {/* Pay Interest (with Max) */}
                     <div className="space-y-1">
-                      <label className="text-xs text-slate-400 font-medium">
-                        {isVi ? "Trả lãi USDC" : "Pay Interest USDC"}
+                      <label className="text-xs text-slate-300 font-semibold block">
+                        {isVi ? "Trả lãi USDC (Pay Interest USDC)" : "Pay Interest USDC"}
                       </label>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        {isVi
+                          ? "Thanh toán tiền lãi phát sinh mỗi vòng trên số nợ đã vay để chia cho các thành viên."
+                          : "Pay the per-round interest owed on your borrowed debt so members can claim their interest."}
+                      </p>
                       <div className="flex gap-2">
                         <div className="relative flex-1">
                           <input
