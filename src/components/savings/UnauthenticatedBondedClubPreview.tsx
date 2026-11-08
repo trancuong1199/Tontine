@@ -84,7 +84,7 @@ export function UnauthenticatedBondedClubPreview({
         <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-300 border border-amber-500/40 uppercase">
-              BondedTontine V2
+              BondedTontine
             </span>
             {club.isVerifiedClub ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/30">

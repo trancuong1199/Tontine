@@ -74,7 +74,7 @@ export function CreateBondedClubModal({
   const formId = useId();
   const deployingRef = useRef(false);
 
-  const [groupName, setGroupName] = useState(isEn ? "Saigon Bonded Club" : "Nhóm Bonded V2");
+  const [groupName, setGroupName] = useState("Saigon Bonded Club");
   const [contributionAmount, setContributionAmount] = useState("10");
   const [maxMembers, setMaxMembers] = useState(5);
   const [roundDuration, setRoundDuration] = useState(86400);
@@ -200,8 +200,8 @@ export function CreateBondedClubModal({
 
       toast.success(
         isEn
-          ? `BondedTontine V2 Club created: ${params.groupName}`
-          : `Đã tạo nhóm BondedTontine V2 thành công: ${params.groupName}`,
+          ? `BondedTontine Club created: ${params.groupName}`
+          : `Đã tạo nhóm BondedTontine thành công: ${params.groupName}`,
         {
           description: formatAddress(newClubAddress),
           action: {
@@ -236,7 +236,7 @@ export function CreateBondedClubModal({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-white">
-                  {isEn ? "Create BondedTontine V2 Club" : "Tạo Nhóm BondedTontine V2"}
+                  {isEn ? "Create BondedTontine Club" : "Tạo Nhóm BondedTontine"}
                 </h2>
                 <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold uppercase">
                   CirBTC Collateral
@@ -267,8 +267,8 @@ export function CreateBondedClubModal({
               <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
               <span>
                 {isEn
-                  ? "Bonded V2: CirBTC collateral; review the risk terms"
-                  : "Bonded V2: cọc CirBTC; kiểm tra điều kiện rủi ro"}
+                  ? "BondedTontine: CirBTC collateral; review the risk terms"
+                  : "BondedTontine: cọc CirBTC; kiểm tra điều kiện rủi ro"}
               </span>
             </div>
           </div>
@@ -561,7 +561,7 @@ export function CreateBondedClubModal({
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4" />
-                  <span>{isEn ? "Create BondedTontine V2 Club" : "Tạo Nhóm BondedTontine V2"}</span>
+                  <span>{isEn ? "Create BondedTontine Club" : "Tạo Nhóm BondedTontine"}</span>
                 </>
               )}
             </button>

@@ -60,7 +60,15 @@ import {
   formatUnitsExact,
   parseUnitsExact,
 } from "../../onchain-money.ts";
-import { saveKnownGroup, removeKnownGroup, getKnownGroups, buildShareGroupUrl } from "../../lib/savingsClubDirectory.ts";
+import {
+  saveKnownGroup,
+  removeKnownGroup,
+  getKnownGroups,
+  buildShareGroupUrl,
+  getClubCancelVotes,
+  toggleClubCancelVote,
+  getRequiredCancelVotes,
+} from "../../lib/savingsClubDirectory.ts";
 import { parseEventLogs } from "viem";
 
 export { BONDED_DISCLOSURE_COPY, MOCK_ORACLE_WARNING_COPY };
@@ -731,17 +739,55 @@ export function BondedClubWorkspace({
           : "∞ (No debt)"
         : club.healthBps > 100_000n ? ">1000%" : `${formatAdaptivePercent(club.healthBps * 10_000n)}%`;
 
+  const [cancelVotes, setCancelVotes] = useState<string[]>(() =>
+    getClubCancelVotes(contractAddress)
+  );
+  const needsCancelVote =
+    club.state === BONDED_STATE.OPEN && club.memberCount >= 2n;
+  const requiredCancelVotes = getRequiredCancelVotes(club.memberCount);
+  const hasVotedCancel = Boolean(
+    userAddress && cancelVotes.includes(userAddress.toLowerCase())
+  );
+  const hasCancelMajority =
+    !needsCancelVote || cancelVotes.length >= requiredCancelVotes;
+
+  const handleToggleCancelVote = () => {
+    if (!userAddress) {
+      toast.error(
+        isVi
+          ? "Vui lòng kết nối ví để biểu quyết!"
+          : "Please connect your wallet to vote!"
+      );
+      return;
+    }
+    const { voted, votes } = toggleClubCancelVote(contractAddress, userAddress);
+    setCancelVotes(votes);
+    if (voted) {
+      toast.success(
+        isVi
+          ? `Đã ghi nhận phiếu đồng ý hủy nhóm (${votes.length}/${requiredCancelVotes})!`
+          : `Cancel vote recorded (${votes.length}/${requiredCancelVotes})!`
+      );
+    } else {
+      toast.success(
+        isVi
+          ? `Đã rút phiếu hủy nhóm (${votes.length}/${requiredCancelVotes}).`
+          : `Withdrew cancel vote (${votes.length}/${requiredCancelVotes}).`
+      );
+    }
+  };
+
   const terminal = club.state === BONDED_STATE.COMPLETED || club.state === BONDED_STATE.DEFAULTED || club.state === BONDED_STATE.CANCELLED;
   const canRemoveFromDirectory =
     !club.isLoading &&
     club.financialsAvailable &&
-    (club.memberCount === 0n || terminal);
+    (club.memberCount === 0n || terminal || (club.state === BONDED_STATE.OPEN && hasCancelMajority));
   const handleRemoveCurrentClub = () => {
-    if (club.state === BONDED_STATE.ACTIVE || (club.state === BONDED_STATE.OPEN && club.memberCount > 0n)) {
+    if (club.state === BONDED_STATE.ACTIVE || (club.state === BONDED_STATE.OPEN && !hasCancelMajority)) {
       toast.error(
         isVi
-          ? "Không thể xóa nhóm đang hoạt động hoặc đã có thành viên!"
-          : "Cannot remove an active club or a club with members!"
+          ? `Cần đủ đa số phiếu đồng thuận (${cancelVotes.length}/${requiredCancelVotes} phiếu) mới có thể xóa nhóm!`
+          : `Majority member vote required (${cancelVotes.length}/${requiredCancelVotes} votes) before removing this club!`
       );
       return;
     }
@@ -807,7 +853,7 @@ export function BondedClubWorkspace({
       {/* Thanh công cụ gọn: nhận diện nhóm bên trái, hành động phụ bên phải */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-[#0c0d14]/95 p-3.5 sm:px-5 sm:py-4 shadow-xl backdrop-blur-md" data-testid="bonded-toolbar">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-2 text-xs text-slate-300">
-          <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-1 font-bold text-amber-300">BondedTontine V2</span>
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/15 px-2.5 py-1 font-bold text-amber-300">BondedTontine</span>
           {club.isVerifiedClub ? (
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 font-semibold text-emerald-300">
               <ShieldCheck className="h-3.5 w-3.5" />
@@ -889,7 +935,7 @@ export function BondedClubWorkspace({
             onClick={() => onOpenCreateModal?.()}
             className="inline-flex min-h-[44px] items-center rounded-xl border border-amber-300/60 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:via-amber-400 px-3.5 text-xs font-extrabold text-slate-950 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
           >
-            <span className="sm:hidden">{isVi ? "+ Tạo nhóm" : "+ New club"}</span><span className="hidden sm:inline">{isVi ? "+ Tạo nhóm Bonded V2" : "+ Create Bonded V2 Club"}</span>
+            <span className="sm:hidden">{isVi ? "+ Tạo nhóm" : "+ New club"}</span><span className="hidden sm:inline">{isVi ? "+ Tạo nhóm mới" : "+ Create Savings Club"}</span>
           </button>
         </div>
       </div>
@@ -899,8 +945,8 @@ export function BondedClubWorkspace({
         <div className="rounded-2xl border border-amber-500/40 bg-amber-950/40 p-4 text-xs text-amber-200 shadow-md">
           <strong>{isVi ? "Thông báo ví Passkey:" : "Passkey Wallet Notice:"}</strong>{" "}
           {isVi
-            ? "Bản BondedTontine V2 hiện tại sử dụng ví trình duyệt Web3 (như MetaMask / Rabby) để ký trực tiếp hợp đồng. Tính năng Circle Passkey Smart Account đang được cấu hình cho V2."
-            : "BondedTontine V2 currently requires a standard Web3 browser wallet (MetaMask / Rabby). Circle Passkey smart account execution is disabled for V2 transactions."}
+            ? "BondedTontine hiện tại sử dụng ví trình duyệt Web3 (như MetaMask / Rabby) để ký trực tiếp hợp đồng. Tính năng Circle Passkey Smart Account đang được cấu hình."
+            : "BondedTontine currently requires a standard Web3 browser wallet (MetaMask / Rabby). Circle Passkey smart account execution is disabled for these transactions."}
         </div>
       )}
 
@@ -1440,6 +1486,37 @@ export function BondedClubWorkspace({
                     : `Withdraw Principal (${displayUsdc(club.previewPrincipalUsdc)} USDC + ${formatUnitsExact(club.previewPrincipalCirBtc, 8)} cirBTC)`}
                 </button>
               )}
+
+              {needsCancelVote && club.isMember && (
+                <div className="p-3.5 rounded-2xl bg-red-950/25 border border-red-500/30 text-xs text-slate-300 space-y-2.5" data-testid="bonded-member-cancel-vote">
+                  <div className="flex items-center justify-between font-bold text-red-300">
+                    <span>
+                      {isVi ? "🗳️ Biểu quyết Hủy nhóm" : "🗳️ Majority Cancel Vote"}
+                    </span>
+                    <span className="font-mono">
+                      {cancelVotes.length}/{requiredCancelVotes} {isVi ? "phiếu" : "votes"}
+                    </span>
+                  </div>
+                  <p className="text-slate-400 leading-relaxed">
+                    {isVi
+                      ? "Khi nhóm đã có từ 2 thành viên trở lên, cần đa số đồng thuận bỏ phiếu trước khi hủy hoặc xóa nhóm."
+                      : "Once ≥ 2 members have joined, majority consensus is required before the club can be cancelled or removed."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleToggleCancelVote}
+                    className={`w-full py-2.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+                      hasVotedCancel
+                        ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50"
+                        : "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                    }`}
+                  >
+                    {hasVotedCancel
+                      ? (isVi ? "✓ Đã bỏ phiếu đồng ý hủy (Bấm để rút phiếu)" : "✓ Voted to Cancel (Click to withdraw)")
+                      : (isVi ? "🗳️ Bỏ phiếu đồng ý hủy nhóm" : "🗳️ Vote to Cancel Club")}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           )}
@@ -1706,13 +1783,49 @@ export function BondedClubWorkspace({
                   >
                     {isVi ? "Bắt đầu các vòng" : "Start Rounds"}
                   </button>
+
+                  {needsCancelVote && (
+                    <div className="p-3 rounded-xl bg-red-950/25 border border-red-500/25 text-xs text-slate-300 space-y-2" data-testid="bonded-owner-cancel-vote">
+                      <div className="flex items-center justify-between font-bold text-red-300">
+                        <span>
+                          {isVi ? "🗳️ Cơ chế Biểu quyết Hủy nhóm" : "🗳️ Majority Cancel Vote Required"}
+                        </span>
+                        <span className="font-mono">
+                          {cancelVotes.length}/{requiredCancelVotes} {isVi ? "phiếu" : "votes"}
+                        </span>
+                      </div>
+                      <p className="text-slate-400 leading-relaxed">
+                        {isVi
+                          ? "Khi nhóm đã có từ 2 thành viên trở lên, chủ nhóm không thể tự ý hủy một mình mà cần đa số đồng thuận bỏ phiếu."
+                          : "Since ≥ 2 members have joined, the owner cannot unilaterally cancel. Majority consensus is required."}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleToggleCancelVote}
+                        className={`w-full py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
+                          hasVotedCancel
+                            ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50"
+                            : "border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                        }`}
+                      >
+                        {hasVotedCancel
+                          ? (isVi ? "✓ Đã bỏ phiếu đồng ý hủy (Bấm để rút phiếu)" : "✓ Voted to Cancel (Click to withdraw)")
+                          : (isVi ? "🗳️ Bỏ phiếu đồng ý hủy nhóm" : "🗳️ Vote to Cancel Club")}
+                      </button>
+                    </div>
+                  )}
+
                   <button
                     type="button"
-                    disabled={isPending}
+                    disabled={isPending || !hasCancelMajority}
                     onClick={handleCancelOpen}
                     className="w-full py-2.5 rounded-xl border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-40 text-red-300 font-semibold text-xs transition-all cursor-pointer"
                   >
-                    {isVi ? "Hủy nhóm & Hoàn cọc" : "Cancel Club & Refund Collateral"}
+                    {needsCancelVote && !hasCancelMajority
+                      ? (isVi
+                          ? `Hủy nhóm & Hoàn cọc (Cần ${cancelVotes.length}/${requiredCancelVotes} phiếu)`
+                          : `Cancel Club & Refund Collateral (${cancelVotes.length}/${requiredCancelVotes} votes)`)
+                      : (isVi ? "Hủy nhóm & Hoàn cọc" : "Cancel Club & Refund Collateral")}
                   </button>
                 </div>
               )}

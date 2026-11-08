@@ -485,4 +485,72 @@ export async function syncFactoryBondedClubs(
   return synced;
 }
 
+export const CLUB_CANCEL_VOTES_STORAGE_PREFIX = "hui_club_cancel_votes_";
+
+export function getRequiredCancelVotes(memberCount: number | bigint): number {
+  const count = Number(memberCount);
+  if (count <= 0) return 0;
+  return Math.floor(count / 2) + 1;
+}
+
+export function getClubCancelVotes(clubAddress?: string): string[] {
+  if (!clubAddress || !isValidAddress(clubAddress)) return [];
+  if (typeof window === "undefined" || !window.localStorage) return [];
+  try {
+    const raw = window.localStorage.getItem(
+      `${CLUB_CANCEL_VOTES_STORAGE_PREFIX}${clubAddress.toLowerCase()}`
+    );
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return Array.from(
+      new Set(
+        parsed
+          .map((addr) => (typeof addr === "string" ? addr.toLowerCase() : ""))
+          .filter((addr) => isValidAddress(addr))
+      )
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function toggleClubCancelVote(
+  clubAddress?: string,
+  voterAddress?: string
+): { voted: boolean; votes: string[] } {
+  if (!clubAddress || !isValidAddress(clubAddress) || !voterAddress || !isValidAddress(voterAddress)) {
+    return { voted: false, votes: getClubCancelVotes(clubAddress) };
+  }
+  const current = getClubCancelVotes(clubAddress);
+  const voterLower = voterAddress.toLowerCase();
+  const hasVoted = current.includes(voterLower);
+  const next = hasVoted
+    ? current.filter((addr) => addr !== voterLower)
+    : [...current, voterLower];
+
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      window.localStorage.setItem(
+        `${CLUB_CANCEL_VOTES_STORAGE_PREFIX}${clubAddress.toLowerCase()}`,
+        JSON.stringify(next)
+      );
+    } catch {
+      // Ignore storage errors
+    }
+  }
+  return { voted: !hasVoted, votes: next };
+}
+
+export function hasMajorityCancelVotes(
+  clubAddress?: string,
+  memberCount: number | bigint = 0
+): boolean {
+  const count = Number(memberCount);
+  if (count < 2) return true;
+  const required = getRequiredCancelVotes(count);
+  return getClubCancelVotes(clubAddress).length >= required;
+}
+
+
 

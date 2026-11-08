@@ -32,6 +32,7 @@ import {
   clearCustomKnownGroups,
   syncFactoryBondedClubs,
   saveKnownGroup,
+  hasMajorityCancelVotes,
   DEFAULT_SAVINGS_CLUBS,
   SavingsClubItem,
 } from "../../lib/savingsClubDirectory";
@@ -59,7 +60,7 @@ interface ClubDirectoryModalProps {
 export const CANONICAL_BONDED_CLUBS: SavingsClubItem[] = [
   {
     address: ARC_TESTNET_DEFAULT_BONDED_CLUB,
-    name: "Saigon Bonded Club V2",
+    name: "Saigon Bonded Club",
     version: "v2-bonded",
     isDefault: true,
   },
@@ -349,7 +350,7 @@ export function ClubDirectoryModal({
     const memberCount = isBonded
       ? (stateData?.[baseIdx + 1]?.status === "success" ? BigInt(stateData[baseIdx + 1].result as any) : 0n)
       : (stateData?.[baseIdx + 1]?.status === "success" && stateData[baseIdx + 1].result ? 1n : 0n);
-    const hasMember0 = memberCount > 0n;
+    const hasMember0 = memberCount > 0n && !hasMajorityCancelVotes(group.address, memberCount);
     const isActive =
       rawState === GROUP_STATE.ACTIVE ||
       (rawState === GROUP_STATE.OPEN && hasMember0);
@@ -380,7 +381,7 @@ export function ClubDirectoryModal({
     const memberCount = isBonded
       ? (stateData?.[baseIdx + 1]?.status === "success" ? BigInt(stateData[baseIdx + 1].result as any) : 0n)
       : (stateData?.[baseIdx + 1]?.status === "success" && stateData[baseIdx + 1].result ? 1n : 0n);
-    const hasMember0 = memberCount > 0n;
+    const hasMember0 = memberCount > 0n && !hasMajorityCancelVotes(group.address, memberCount);
     const isActive =
       rawState === GROUP_STATE.ACTIVE ||
       (rawState === GROUP_STATE.OPEN && hasMember0);
@@ -529,7 +530,7 @@ export function ClubDirectoryModal({
                 stateData?.[baseIdx + 5]?.status === "success"
                   ? String(stateData[baseIdx + 5].result)
                   : undefined;
-              const hasMember0 = memberCount > 0n;
+              const hasMember0 = memberCount > 0n && !hasMajorityCancelVotes(group.address, memberCount);
               const isActive =
                 rawState === GROUP_STATE.ACTIVE ||
                 (rawState === GROUP_STATE.OPEN && hasMember0);
@@ -597,7 +598,7 @@ export function ClubDirectoryModal({
 
                         {group.version === "v2-bonded" && (
                           <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                            BondedTontine V2
+                            BondedTontine
                           </span>
                         )}
 

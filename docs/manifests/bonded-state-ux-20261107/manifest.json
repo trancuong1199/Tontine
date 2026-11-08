@@ -1,10 +1,10 @@
 {
   "taskId": "bonded-state-ux-20261107",
-  "frozenAt": "2026-11-08T08:33:24.313Z",
+  "frozenAt": "2026-11-08T10:59:31.988Z",
   "status": "FROZEN",
   "files": {
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "ba3ede62bacf905907acbf4c488ea32dd6eacc066fb231a7a2d567f28fe98951",
+      "sha256": "bf12d1aa298b8f1e79fa09829b803f90599bc9b975949b609b619c8db1454a35",
       "baselineSha256": "6020fca50259e264fbcb2bd4aa8994f5b66b7592120acb839cf9c0c01ef74459",
       "isNew": false
     },
@@ -19,17 +19,17 @@
       "isNew": true
     },
     "src/components/savings/BondedTerminalView.tsx": {
-      "sha256": "da2ac90f8381115d761d61667253d5219a195b8bba9553b4a11576e84b8e8b44",
+      "sha256": "366885fb3297e3e48073e94e69c70f1c5523551f5d5a7ae1a765787c56238664",
       "baselineSha256": null,
       "isNew": true
     },
     "src/components/savings/CreateBondedClubModal.tsx": {
-      "sha256": "5b4ce97311f8973b64b35a1f015d3de0385a3777654e23ea3b9e36fdb36e74cd",
+      "sha256": "c0fb92d0a94ed14ffa92c5559b59746675ea30db90b669959b860f4c5bce715e",
       "baselineSha256": "4c11ad8cd9dd0a3a95fc103f691edd72bb6202a31d1b93bd668b3429d7c7c928",
       "isNew": false
     },
     "src/components/savings/UnauthenticatedBondedClubPreview.tsx": {
-      "sha256": "269aee374048025981ad551dc5128a342448261e50ac1a29c3cb6a82ec3603ed",
+      "sha256": "a19b359cd939d087cfcf09a80b0a24df2700da04306072c3a35dd27e53d71a57",
       "baselineSha256": "7779cc55837ceef61f8691d21229a306dc570564a02a10dca6b5760cb32014d9",
       "isNew": false
     },

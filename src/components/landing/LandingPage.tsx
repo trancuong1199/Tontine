@@ -717,7 +717,7 @@ export function LandingPage({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wide">
                     <ShieldCheck size={14} className="text-amber-400" />
-                    BondedTontine V2
+                    BondedTontine
                   </span>
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-950/40 text-emerald-300 border border-emerald-500/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -756,7 +756,7 @@ export function LandingPage({
                   onClick={() => onSelectClub(ARC_TESTNET_DEFAULT_BONDED_CLUB)}
                   className="w-full md:w-auto px-6 py-3.5 rounded-xl text-sm font-bold text-slate-950 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <span>{isEn ? "Enter Bonded V2 Club" : "Vào nhóm Bonded V2"}</span>
+                  <span>{isEn ? "Enter Savings Club" : "Vào Nhóm Hụi"}</span>
                   <ArrowRight size={16} />
                 </button>
               </div>

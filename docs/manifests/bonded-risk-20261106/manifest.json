@@ -1,6 +1,6 @@
 {
   "taskId": "bonded-risk-20261106",
-  "frozenAt": "2026-11-08T08:33:24.213Z",
+  "frozenAt": "2026-11-08T10:59:31.915Z",
   "status": "FROZEN",
   "files": {
     ".gitignore": {
@@ -29,7 +29,7 @@
       "isNew": false
     },
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "ba3ede62bacf905907acbf4c488ea32dd6eacc066fb231a7a2d567f28fe98951",
+      "sha256": "bf12d1aa298b8f1e79fa09829b803f90599bc9b975949b609b619c8db1454a35",
       "baselineSha256": "c6ffcce82e15caf7ab713956d27977b01589c14f723acb4c40bf66f2e27106c8",
       "isNew": false
     },
@@ -39,7 +39,7 @@
       "isNew": false
     },
     "src/components/savings/ClubDirectoryModal.tsx": {
-      "sha256": "159fd01bce2c968107b08a8d92962a434accae5d1fedd233b4cecec411bc59b7",
+      "sha256": "2ed5ff55d071db7b1dfe7f7dc257489a0a4990b679f62c82511796aad04e96e3",
       "baselineSha256": "cb7c6e8554eb978457574d83cc56f7570b0a2e22572b82c56e33abab0cea60f4",
       "isNew": false
     },
@@ -49,7 +49,7 @@
       "isNew": false
     },
     "src/components/savings/UnauthenticatedBondedClubPreview.tsx": {
-      "sha256": "269aee374048025981ad551dc5128a342448261e50ac1a29c3cb6a82ec3603ed",
+      "sha256": "a19b359cd939d087cfcf09a80b0a24df2700da04306072c3a35dd27e53d71a57",
       "baselineSha256": "9dc61ff06e2d2782f9ebee1c522cecdec042cf37d007116e5bc50d22298ee945",
       "isNew": false
     },
