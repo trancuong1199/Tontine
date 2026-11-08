@@ -2,7 +2,7 @@ import { BondedTerminalView } from "./BondedTerminalView";
 import { BondedMobileActionBar } from "./BondedMobileActionBar";
 import { BondedLiquiditySummary, BondedRiskBanner } from "./BondedCollateralSummary";
 import { memberErrorMessage, requiresRiskAcknowledgement, riskAcknowledgementContext, formatAdaptivePercent, formatFinancialAmount, formatRoundDuration } from "../../lib/bondedDisplay";
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePublicClient, useWaitForTransactionReceipt } from "wagmi";
 import { toast } from "sonner";
 import {
@@ -742,6 +742,42 @@ export function BondedClubWorkspace({
   const [cancelVotes, setCancelVotes] = useState<string[]>(() =>
     getClubCancelVotes(contractAddress)
   );
+  useEffect(() => {
+    const local = getClubCancelVotes(contractAddress);
+    setCancelVotes(local);
+    if (typeof window === "undefined" || typeof window.fetch !== "function") return;
+    let active = true;
+    const syncWithServer = async () => {
+      try {
+        const res = await window.fetch(`/__api/cancel-votes?club=${contractAddress.toLowerCase()}`, {
+          method: local.length > 0 ? "POST" : "GET",
+          headers: local.length > 0 ? { "Content-Type": "application/json" } : undefined,
+          body: local.length > 0 ? JSON.stringify({ club: contractAddress.toLowerCase(), syncVotes: local }) : undefined,
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (active && Array.isArray(data?.votes)) {
+          try {
+            window.localStorage.setItem(
+              `hui_club_cancel_votes_${contractAddress.toLowerCase()}`,
+              JSON.stringify(data.votes)
+            );
+          } catch {
+            // ignore
+          }
+          setCancelVotes(data.votes);
+        }
+      } catch {
+        // ignore offline/static mode
+      }
+    };
+    void syncWithServer();
+    const interval = window.setInterval(syncWithServer, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [contractAddress]);
   const needsCancelVote =
     club.state === BONDED_STATE.OPEN && club.memberCount >= 2n;
   const requiredCancelVotes = getRequiredCancelVotes(club.memberCount);
@@ -762,6 +798,26 @@ export function BondedClubWorkspace({
     }
     const { voted, votes } = toggleClubCancelVote(contractAddress, userAddress);
     setCancelVotes(votes);
+    void fetch(`/__api/cancel-votes?club=${contractAddress.toLowerCase()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ club: contractAddress.toLowerCase(), toggleVoter: userAddress.toLowerCase() }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (Array.isArray(data?.votes)) {
+          try {
+            window.localStorage.setItem(
+              `hui_club_cancel_votes_${contractAddress.toLowerCase()}`,
+              JSON.stringify(data.votes)
+            );
+          } catch {
+            // ignore
+          }
+          setCancelVotes(data.votes);
+        }
+      })
+      .catch(() => {});
     if (voted) {
       toast.success(
         isVi

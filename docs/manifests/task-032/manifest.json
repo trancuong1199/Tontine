@@ -1,6 +1,6 @@
 {
   "taskId": "task-032",
-  "frozenAt": "2026-11-08T11:50:34.013Z",
+  "frozenAt": "2026-11-08T12:03:05.492Z",
   "status": "FROZEN",
   "files": {
     "src/components/savings/ClubDirectoryModal.tsx": {
@@ -14,7 +14,7 @@
       "isNew": false
     },
     "src/lib/savingsClubDirectory.ts": {
-      "sha256": "acd5478cee44b01e8453b828dd9d04d5e92bbcc86fa30151ff09bdf72501c46c",
+      "sha256": "9fdfec362bd1cd25fd0281334b149466dc77b151e930011ca17d871e17ff889f",
       "baselineSha256": "8f7837d94284744c3b733022b0332640f443f0049fe2007345db111d4950cbdf",
       "isNew": false
     }

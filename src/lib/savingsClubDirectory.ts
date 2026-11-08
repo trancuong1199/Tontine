@@ -65,11 +65,20 @@ export function getRemovedGroups(account?: string): Set<string> {
     const raw = window.localStorage.getItem(key);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
     if (Array.isArray(parsed)) {
-      return new Set(
-        parsed
-          .map((a) => (typeof a === "string" ? a.toLowerCase() : ""))
-          .filter(Boolean)
-      );
+      const canonicalDefault = ARC_TESTNET_DEFAULT_BONDED_CLUB.toLowerCase();
+      const allowRemoveCanonical = hasMajorityCancelVotes(canonicalDefault, 2n);
+      const list = parsed
+        .map((a) => (typeof a === "string" ? a.toLowerCase() : ""))
+        .filter(Boolean);
+      const filtered = list.filter((a) => a !== canonicalDefault || allowRemoveCanonical);
+      if (filtered.length !== list.length) {
+        try {
+          window.localStorage.setItem(key, JSON.stringify(filtered));
+        } catch {
+          // ignore
+        }
+      }
+      return new Set(filtered);
     }
     return new Set<string>();
   } catch (_err) {
