@@ -894,7 +894,7 @@ export function BondedClubWorkspace({
   const ownerNextStep = club.state === BONDED_STATE.OPEN
     ? club.collateral === 0n ? (isVi ? "Bước tiếp theo: nạp cọc CirBTC lớn hơn 0. Sau đó mời ít nhất 2 thành viên để bắt đầu." : "Next: deposit a positive CirBTC bond, then recruit at least 2 members to start.")
       : club.memberCount < 2n ? (isVi ? "Bước tiếp theo: mời thêm thành viên; cần ít nhất 2 người để bắt đầu." : "Next: invite members; at least 2 are required to start.")
-        : (isVi ? "Nhóm đủ điều kiện cơ bản để bắt đầu chu kỳ." : "The club meets the basic conditions to start its cycle.")
+        : (isVi ? "Nhóm đủ điều kiện cơ bản để bắt đầu chu kỳ (Chủ hụi + đủ hụi viên & đã nạp cọc). Bấm 'Bắt đầu các vòng (Start Rounds)' ngay bên dưới để mở Vòng 1 cho thành viên đóng hụi!" : "The club meets the basic conditions to start its cycle. Click 'Start Rounds' right below to open Round 1 so members can contribute!")
     : club.interestOwed > 0n ? (isVi ? "Bước tiếp theo: thanh toán lãi đến hạn và kiểm tra lịch trả nợ." : "Next: pay outstanding interest and review repayment deadlines.")
       : club.totalDebt > 0n ? (isVi ? "Bước tiếp theo: hoàn trả khoản vay trước hạn tất toán." : "Next: repay the loan before settlement is due.")
         : club.cycleEnded ? (isVi ? "Chu kỳ đã hết hạn; kiểm tra điều kiện để hoàn tất." : "The cycle has ended; review completion eligibility.")
@@ -1034,10 +1034,24 @@ export function BondedClubWorkspace({
                 <h2 className="text-2xl font-extrabold tracking-tight text-white text-balance sm:text-3xl">
                   {club.groupName || "BondedTontine Club"}
                 </h2>
-                <p className="mt-1 text-xs text-slate-400">
-                  {isVi ? "Chủ nhóm:" : "Owner:"}{" "}
-                  <span className="font-mono text-slate-200">{club.owner.slice(0, 6)}...{club.owner.slice(-4)}</span>
-                  {" • "}
+                <p className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-950/30 px-2.5 py-0.5 text-amber-200">
+                    <span className="font-semibold text-amber-300">{isVi ? "Chủ hụi (Owner):" : "Club Owner:"}</span>
+                    <a
+                      href={buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, club.owner)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-mono font-bold text-white underline hover:text-amber-300"
+                    >
+                      {club.owner.slice(0, 6)}...{club.owner.slice(-4)}
+                    </a>
+                    {isOwner && (
+                      <span className="rounded bg-amber-500/25 px-1.5 py-0.2 text-xs font-bold text-amber-300">
+                        {isVi ? "Bạn" : "You"}
+                      </span>
+                    )}
+                  </span>
+                  <span>•</span>
                   {club.cycleEnded ? (
                     <span className="font-semibold text-amber-400">{isVi ? "Chu kỳ đã kết thúc" : "Cycle ended"}</span>
                   ) : (
@@ -1070,9 +1084,14 @@ export function BondedClubWorkspace({
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-400">{isVi ? "Quy mô thành viên" : "Member Capacity"}</dt>
+                <dt className="text-xs text-slate-400">{isVi ? "Số suất Hụi viên" : "Member Capacity"}</dt>
                 <dd className="mt-1 text-2xl font-extrabold tabular-nums text-white">
                   {club.memberCount.toString()}/{club.maxMembers.toString()}
+                </dd>
+                <dd className="text-xs text-amber-300/90">
+                  {isVi
+                    ? `+ 1 Chủ hụi (Tổng ${(club.memberCount + 1n).toString()} người)`
+                    : `+ 1 Owner (${(club.memberCount + 1n).toString()} people total)`}
                 </dd>
               </div>
               <div>
@@ -1314,15 +1333,45 @@ export function BondedClubWorkspace({
           )}
 
           {/* 3. Club Members Roster (L5 & phong cách ClubMembersRoster) */}
-          <details data-testid="bonded-roster" className="group rounded-3xl border border-amber-500/20 bg-[#0c0d14] text-white shadow-xl">
+          <details open data-testid="bonded-roster" className="group rounded-3xl border border-amber-500/20 bg-[#0c0d14] text-white shadow-xl">
             <summary className="flex cursor-pointer select-none list-none items-center justify-between p-5">
               <h3 className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
                 <Users className="h-4 w-4 text-amber-400" />
-                {isVi ? "Danh sách thành viên" : "Member Roster"} ({(club.memberAddresses.length || club.memberCount).toString()}/{club.maxMembers.toString()})
+                {isVi ? "Danh sách thành viên & Chủ hụi" : "Club Owner & Member Roster"} ({(club.memberAddresses.length || club.memberCount).toString()}/{club.maxMembers.toString()} {isVi ? `hụi viên + 1 Chủ hụi = ${(BigInt(club.memberAddresses.length || Number(club.memberCount)) + 1n).toString()} người` : `members + 1 Owner = ${(BigInt(club.memberAddresses.length || Number(club.memberCount)) + 1n).toString()} total`})
               </h3>
               <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
             </summary>
             <div className="space-y-4 px-5 pb-5">
+              {/* Pinned Club Owner Row */}
+              {club.owner && club.owner !== "0x0000000000000000000000000000000000000000" && (
+                <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-amber-500/40 bg-amber-950/25 p-3.5 text-xs text-slate-200">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 text-xs font-extrabold text-amber-300 shrink-0">
+                      {isVi ? "Chủ hụi (Owner)" : "Club Owner"}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                      <a
+                        href={buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, club.owner)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-mono hover:text-amber-300 underline font-bold text-white"
+                      >
+                        {club.owner.slice(0, 6)}...{club.owner.slice(-4)}
+                      </a>
+                      {isOwner && (
+                        <span className="rounded-full bg-amber-500/25 px-2 py-0.5 text-xs font-semibold text-amber-300 border border-amber-500/40">
+                          {isVi ? "Bạn" : "You"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className={`rounded-lg border px-2.5 py-1 text-xs font-semibold ${club.collateral > 0n ? "border-emerald-500/30 bg-emerald-950/40 text-emerald-300" : "border-amber-500/30 bg-black/40 text-amber-300"}`}>
+                    {club.collateral > 0n
+                      ? (isVi ? `Đã cọc ${formatUnitsExact(club.collateral, 8)} cirBTC` : `Bonded ${formatUnitsExact(club.collateral, 8)} cirBTC`)
+                      : (isVi ? "Chưa nạp cọc cirBTC" : "No cirBTC bond yet")}
+                  </span>
+                </div>
+              )}
 
             {club.membersLoadError && club.memberAddresses.length > 0 && <p role="status" className="text-xs text-amber-300">{memberErrorMessage(club.membersLoadError, language)} ({club.memberAddresses.length}/{club.memberCount.toString()}) <button onClick={() => void club.refetch()}>{isVi ? "Thử lại" : "Retry"}</button></p>}
             {club.memberAddresses.length === 0 ? (
@@ -1371,6 +1420,9 @@ export function BondedClubWorkspace({
                             >
                               {m.slice(0, 6)}...{m.slice(-4)}
                             </a>
+                            <span className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-300 border border-slate-700">
+                              {isVi ? "Hụi viên" : "Member"}
+                            </span>
                             {isCurrent && (
                               <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-300 border border-amber-500/30">
                                 {isVi ? "Bạn" : "You"}
@@ -1423,6 +1475,26 @@ export function BondedClubWorkspace({
                 {isVi ? "Ví:" : "Wallet:"} <strong className="text-white font-semibold">{formatUsdc(usdcBalance.balance ?? 0n)} USDC</strong>
               </span>
             </div>
+
+            {/* Club Owner Info for Member Accounts */}
+            {club.owner && club.owner !== "0x0000000000000000000000000000000000000000" && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/25 bg-amber-950/20 px-3.5 py-2.5 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-amber-300">{isVi ? "Chủ hụi (Club Owner):" : "Club Owner:"}</span>
+                  <a
+                    href={buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, club.owner)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono font-bold text-white underline hover:text-amber-300"
+                  >
+                    {club.owner.slice(0, 6)}...{club.owner.slice(-4)}
+                  </a>
+                </div>
+                <span className="text-slate-300 font-medium">
+                  {isVi ? "Cọc:" : "Bond:"} <strong className="text-emerald-300">{formatUnitsExact(club.collateral, 8)} cirBTC</strong>
+                </span>
+              </div>
+            )}
 
             {/* Position Summary */}
             {(club.isMember || club.userDeposit > 0n) && (
@@ -1495,7 +1567,24 @@ export function BondedClubWorkspace({
                 </button>
               )}
 
-
+              {club.state === BONDED_STATE.OPEN && club.isMember && (
+                <div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-3.5">
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full py-3 rounded-xl border border-amber-500/30 bg-black/50 text-amber-200/80 font-bold text-xs sm:text-sm cursor-not-allowed"
+                  >
+                    {isVi
+                      ? `Đóng hụi ${displayUsdc(club.contributionAmount)} USDC (Chờ Chủ hụi bắt đầu Vòng 1)`
+                      : `Contribute ${displayUsdc(club.contributionAmount)} USDC (Waiting for Owner to Start Round 1)`}
+                  </button>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {isVi
+                      ? `Nhóm đang ở Vòng 0/${club.totalRounds.toString()} (chờ mở vòng). Ngay khi Chủ hụi (${club.owner.slice(0, 6)}...${club.owner.slice(-4)}) bấm "Bắt đầu các vòng (Start Rounds)", nút đóng ${displayUsdc(club.contributionAmount)} USDC sẽ mở khóa tại đây.`
+                      : `Club is at Round 0/${club.totalRounds.toString()} (Open). Once the Club Owner (${club.owner.slice(0, 6)}...${club.owner.slice(-4)}) clicks "Start Rounds", this ${displayUsdc(club.contributionAmount)} USDC contribution button will unlock.`}
+                  </p>
+                </div>
+              )}
 
               {club.state === BONDED_STATE.ACTIVE && club.isMember && (
                 <div className="space-y-1.5">
@@ -1564,7 +1653,7 @@ export function BondedClubWorkspace({
                 <div className="p-3.5 rounded-2xl bg-red-950/25 border border-red-500/30 text-xs text-slate-300 space-y-2.5" data-testid="bonded-member-cancel-vote">
                   <div className="flex items-center justify-between font-bold text-red-300">
                     <span>
-                      {isVi ? "🗳️ Biểu quyết Hủy nhóm" : "🗳️ Majority Cancel Vote"}
+                      {isVi ? "Biểu quyết Hủy nhóm" : "Majority Cancel Vote"}
                     </span>
                     <span className="font-mono">
                       {cancelVotes.length}/{requiredCancelVotes} {isVi ? "phiếu" : "votes"}
@@ -1586,8 +1675,8 @@ export function BondedClubWorkspace({
                     }`}
                   >
                     {hasVotedCancel
-                      ? (isVi ? "✓ Đã bỏ phiếu đồng ý hủy (Đã khóa)" : "✓ Voted to Cancel (Locked)")
-                      : (isVi ? "🗳️ Bỏ phiếu đồng ý hủy nhóm" : "🗳️ Vote to Cancel Club")}
+                      ? (isVi ? "Đã bỏ phiếu đồng ý hủy (Đã khóa)" : "Voted to Cancel (Locked)")
+                      : (isVi ? "Bỏ phiếu đồng ý hủy nhóm" : "Vote to Cancel Club")}
                   </button>
                 </div>
               )}
@@ -1608,6 +1697,30 @@ export function BondedClubWorkspace({
                   Owner: {club.owner.slice(0, 6)}...{club.owner.slice(-4)}
                 </span>
               </div>
+
+              {/* Open State Primary Launch Card at the TOP */}
+              {club.state === BONDED_STATE.OPEN && (
+                <div className="space-y-3 rounded-2xl border border-amber-500/40 bg-amber-950/20 p-4">
+                  <div className="text-xs text-slate-200 space-y-1">
+                    <div className="font-bold text-amber-300">
+                      {isVi ? "Trạng thái mở vòng & đóng hụi (Vòng 0)" : "Round Launch & Contribution Status (Round 0)"}
+                    </div>
+                    <p className="text-slate-300 leading-relaxed">
+                      {isVi
+                        ? `Trong BondedTontine, Chủ hụi nạp cọc cirBTC và bấm "Bắt đầu các vòng" bên dưới để mở Vòng 1. Ngay khi Vòng 1 bắt đầu, các Hụi viên sẽ đóng ${displayUsdc(club.contributionAmount)} USDC/vòng.`
+                        : `In BondedTontine, the Club Owner deposits cirBTC collateral and clicks "Start Rounds" below to open Round 1. Once Round 1 starts, Members contribute ${displayUsdc(club.contributionAmount)} USDC per round.`}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isPending || club.memberCount < 2n || club.collateral === 0n}
+                    onClick={handleStartRounds}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 disabled:opacity-40 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+                  >
+                    {isVi ? "Bắt đầu các vòng (Mở Vòng 1 để đóng hụi)" : "Start Rounds (Open Round 1 for Contributions)"}
+                  </button>
+                </div>
+              )}
 
               <div className="flex items-center justify-between bg-black/40 rounded-xl px-3.5 py-2.5 border border-slate-800 text-xs">
                 <span className="text-slate-400">{isVi ? "Lãi đang nợ:" : "Interest Owed:"}</span>
@@ -1647,133 +1760,146 @@ export function BondedClubWorkspace({
                   </div>
                 </div>
 
-                {/* Borrow USDC (with Max) */}
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-400 font-medium">
-                    {isVi ? "Vay USDC" : "Borrow USDC"}
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        value={borrowInput}
-                        onChange={(e) => setBorrowInput(e.target.value)}
-                        placeholder="USDC borrow"
-                        className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-hidden"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const liquidityLimit =
-                            club.totalDeposits > club.totalDebt
-                              ? club.totalDeposits - club.totalDebt
-                              : 0n;
-                          let collateralLimit = 0n;
-                          if (club.borrowLimit !== null && club.borrowLimit > club.interestOwed) {
-                            const maxDebt =
-                              ((club.borrowLimit - club.interestOwed) * 10000n) /
-                              (10000n + club.rateBpsPerRound);
-                            if (maxDebt > club.totalDebt) {
-                              collateralLimit = maxDebt - club.totalDebt;
-                            }
-                          }
-                          const maxBorrow =
-                            liquidityLimit < collateralLimit ? liquidityLimit : collateralLimit;
-                          setBorrowInput(formatUsdcExact(maxBorrow));
-                        }}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
-                      >
-                        {isVi ? "Tối đa" : "Max"}
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={
-                        isPending ||
-                        club.state !== BONDED_STATE.ACTIVE ||
-                        staleBlocksPriceAction
-                      }
-                      onClick={handleBorrow}
-                      className="shrink-0 rounded-xl bg-amber-500/20 px-3.5 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 disabled:opacity-40 transition-all cursor-pointer"
-                    >
-                      {isVi ? "Vay USDC" : "Borrow"}
-                    </button>
-                  </div>
-                  {staleBlocksPriceAction && (
-                    <p className="text-xs text-red-300">
+                {/* Active Cycle Loan & Interest Controls (Collapsed while OPEN so Start Rounds stays prominent) */}
+                <details open={club.state === BONDED_STATE.ACTIVE || undefined} className="group rounded-2xl border border-slate-800 bg-black/30 p-3 space-y-3">
+                  <summary className="flex cursor-pointer select-none list-none items-center justify-between text-xs font-semibold text-slate-300">
+                    <span>
                       {isVi
-                        ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật"
-                        : "Oracle price is invalid, unavailable or stale; refresh first"}
-                    </p>
-                  )}
-                </div>
-
-                {/* Repay Principal (with Max) */}
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-400 font-medium">
-                    {isVi ? "Trả nợ gốc USDC" : "Repay Principal USDC"}
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        value={repayInput}
-                        onChange={(e) => setRepayInput(e.target.value)}
-                        placeholder="USDC repay"
-                        className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-hidden"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setRepayInput(formatUsdcExact(club.totalDebt));
-                        }}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
-                      >
-                        {isVi ? "Tối đa" : "Max"}
-                      </button>
+                        ? "Vay vốn & Trả nợ/lãi USDC (Mở khi chu kỳ đang chạy)"
+                        : "Borrow & Repay USDC (Active during running rounds)"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
+                  </summary>
+                  <div className="space-y-3 pt-2">
+                    {/* Borrow USDC (with Max) */}
+                    <div className="space-y-1">
+                      <label className="text-xs text-slate-400 font-medium">
+                        {isVi ? "Vay USDC" : "Borrow USDC"}
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            value={borrowInput}
+                            onChange={(e) => setBorrowInput(e.target.value)}
+                            placeholder="USDC borrow"
+                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const liquidityLimit =
+                                club.totalDeposits > club.totalDebt
+                                  ? club.totalDeposits - club.totalDebt
+                                  : 0n;
+                              let collateralLimit = 0n;
+                              if (club.borrowLimit !== null && club.borrowLimit > club.interestOwed) {
+                                const maxDebt =
+                                  ((club.borrowLimit - club.interestOwed) * 10000n) /
+                                  (10000n + club.rateBpsPerRound);
+                                if (maxDebt > club.totalDebt) {
+                                  collateralLimit = maxDebt - club.totalDebt;
+                                }
+                              }
+                              const maxBorrow =
+                                liquidityLimit < collateralLimit ? liquidityLimit : collateralLimit;
+                              setBorrowInput(formatUsdcExact(maxBorrow));
+                            }}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
+                          >
+                            {isVi ? "Tối đa" : "Max"}
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={
+                            isPending ||
+                            club.state !== BONDED_STATE.ACTIVE ||
+                            staleBlocksPriceAction
+                          }
+                          onClick={handleBorrow}
+                          className="shrink-0 rounded-xl bg-amber-500/20 px-3.5 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 disabled:opacity-40 transition-all cursor-pointer"
+                        >
+                          {isVi ? "Vay USDC" : "Borrow"}
+                        </button>
+                      </div>
+                      {staleBlocksPriceAction && (
+                        <p className="text-xs text-red-300">
+                          {isVi
+                            ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật"
+                            : "Oracle price is invalid, unavailable or stale; refresh first"}
+                        </p>
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      disabled={isPending || club.totalDebt === 0n}
-                      onClick={handleRepay}
-                      className="shrink-0 rounded-xl bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 transition-all cursor-pointer"
-                    >
-                      {isVi ? "Trả gốc" : "Repay"}
-                    </button>
-                  </div>
-                </div>
 
-                {/* Pay Interest (with Max) */}
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-400 font-medium">
-                    {isVi ? "Trả lãi USDC" : "Pay Interest USDC"}
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        value={interestInput}
-                        onChange={(e) => setInterestInput(e.target.value)}
-                        placeholder={displayUsdc(club.interestOwed)}
-                        className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-hidden"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setInterestInput(formatUsdcExact(club.interestOwed));
-                        }}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
-                      >
-                        {isVi ? "Tối đa" : "Max"}
-                      </button>
+                    {/* Repay Principal (with Max) */}
+                    <div className="space-y-1">
+                      <label className="text-xs text-slate-400 font-medium">
+                        {isVi ? "Trả nợ gốc USDC" : "Repay Principal USDC"}
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            value={repayInput}
+                            onChange={(e) => setRepayInput(e.target.value)}
+                            placeholder="USDC repay"
+                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRepayInput(formatUsdcExact(club.totalDebt));
+                            }}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
+                          >
+                            {isVi ? "Tối đa" : "Max"}
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isPending || club.totalDebt === 0n}
+                          onClick={handleRepay}
+                          className="shrink-0 rounded-xl bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 transition-all cursor-pointer"
+                        >
+                          {isVi ? "Trả gốc" : "Repay"}
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      disabled={isPending || club.interestOwed === 0n}
-                      onClick={handlePayInterest}
-                      className="shrink-0 rounded-xl bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 transition-all cursor-pointer"
-                    >
-                      {isVi ? "Trả lãi" : "Pay Interest"}
-                    </button>
+
+                    {/* Pay Interest (with Max) */}
+                    <div className="space-y-1">
+                      <label className="text-xs text-slate-400 font-medium">
+                        {isVi ? "Trả lãi USDC" : "Pay Interest USDC"}
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            value={interestInput}
+                            onChange={(e) => setInterestInput(e.target.value)}
+                            placeholder={displayUsdc(club.interestOwed)}
+                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-hidden"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setInterestInput(formatUsdcExact(club.interestOwed));
+                            }}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
+                          >
+                            {isVi ? "Tối đa" : "Max"}
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isPending || club.interestOwed === 0n}
+                          onClick={handlePayInterest}
+                          className="shrink-0 rounded-xl bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 transition-all cursor-pointer"
+                        >
+                          {isVi ? "Trả lãi" : "Pay Interest"}
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </details>
 
                 {/* Withdraw Collateral (with Max) */}
                 <div className="space-y-1">
@@ -1849,20 +1975,11 @@ export function BondedClubWorkspace({
               {/* Open State Actions */}
               {club.state === BONDED_STATE.OPEN && (
                 <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
-                  <button
-                    type="button"
-                    disabled={isPending || club.memberCount < 2n || club.collateral === 0n}
-                    onClick={handleStartRounds}
-                    className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 font-bold text-xs transition-all cursor-pointer"
-                  >
-                    {isVi ? "Bắt đầu các vòng" : "Start Rounds"}
-                  </button>
-
                   {needsCancelVote && (
                     <div className="p-3 rounded-xl bg-red-950/25 border border-red-500/25 text-xs text-slate-300 space-y-2" data-testid="bonded-owner-cancel-vote">
                       <div className="flex items-center justify-between font-bold text-red-300">
                         <span>
-                          {isVi ? "🗳️ Cơ chế Biểu quyết Hủy nhóm" : "🗳️ Majority Cancel Vote Required"}
+                          {isVi ? "Cơ chế Biểu quyết Hủy nhóm" : "Majority Cancel Vote Required"}
                         </span>
                         <span className="font-mono">
                           {cancelVotes.length}/{requiredCancelVotes} {isVi ? "phiếu" : "votes"}
@@ -1884,8 +2001,8 @@ export function BondedClubWorkspace({
                         }`}
                       >
                         {hasVotedCancel
-                          ? (isVi ? "✓ Đã bỏ phiếu đồng ý hủy (Đã khóa)" : "✓ Voted to Cancel (Locked)")
-                          : (isVi ? "🗳️ Bỏ phiếu đồng ý hủy nhóm" : "🗳️ Vote to Cancel Club")}
+                          ? (isVi ? "Đã bỏ phiếu đồng ý hủy (Đã khóa)" : "Voted to Cancel (Locked)")
+                          : (isVi ? "Bỏ phiếu đồng ý hủy nhóm" : "Vote to Cancel Club")}
                       </button>
                     </div>
                   )}
