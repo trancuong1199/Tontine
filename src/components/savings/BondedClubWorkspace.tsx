@@ -725,9 +725,25 @@ export function BondedClubWorkspace({
     },
   };
   const stateInfo = stateConfig[club.state] ?? stateConfig[BONDED_STATE.OPEN];
+  const hasOwnerAddress = Boolean(
+    club.owner && club.owner !== "0x0000000000000000000000000000000000000000"
+  );
+  const displayedMemberCount =
+    club.maxMembers > 0n
+      ? club.memberCount + (hasOwnerAddress ? 1n : 0n) > club.maxMembers
+        ? club.maxMembers
+        : club.memberCount + (hasOwnerAddress ? 1n : 0n)
+      : club.memberCount;
+  const rawRosterBase = BigInt(club.memberAddresses.length || Number(club.memberCount));
+  const displayedRosterCount =
+    club.maxMembers > 0n
+      ? rawRosterBase + (hasOwnerAddress ? 1n : 0n) > club.maxMembers
+        ? club.maxMembers
+        : rawRosterBase + (hasOwnerAddress ? 1n : 0n)
+      : rawRosterBase;
   const fillPercent =
     club.maxMembers > 0n
-      ? Math.min(100, Math.round((Number(club.memberCount) / Number(club.maxMembers)) * 100))
+      ? Math.min(100, Math.round((Number(displayedMemberCount) / Number(club.maxMembers)) * 100))
       : 0;
 
   const healthRatioDisplay =
@@ -1084,14 +1100,9 @@ export function BondedClubWorkspace({
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-400">{isVi ? "Số suất Hụi viên" : "Member Capacity"}</dt>
+                <dt className="text-xs text-slate-400">{isVi ? "Quy mô thành viên" : "Member Capacity"}</dt>
                 <dd className="mt-1 text-2xl font-extrabold tabular-nums text-white">
-                  {club.memberCount.toString()}/{club.maxMembers.toString()}
-                </dd>
-                <dd className="text-xs text-amber-300/90">
-                  {isVi
-                    ? `+ 1 Chủ hụi (Tổng ${(club.memberCount + 1n).toString()} người)`
-                    : `+ 1 Owner (${(club.memberCount + 1n).toString()} people total)`}
+                  {displayedMemberCount.toString()}/{club.maxMembers.toString()}
                 </dd>
               </div>
               <div>
@@ -1141,7 +1152,7 @@ export function BondedClubWorkspace({
                 <div>
                   <div className="mb-1.5 flex items-center justify-between text-xs text-slate-400">
                     <span>
-                      {isVi ? "Quy mô thành viên" : "Member Capacity"} ({club.memberCount.toString()}/{club.maxMembers.toString()})
+                      {isVi ? "Quy mô thành viên" : "Member Capacity"} ({displayedMemberCount.toString()}/{club.maxMembers.toString()})
                       {club.state === BONDED_STATE.OPEN && (
                         <span className="ml-1.5 text-amber-200/90">
                           • {club.memberCount < 2n
@@ -1337,7 +1348,7 @@ export function BondedClubWorkspace({
             <summary className="flex cursor-pointer select-none list-none items-center justify-between p-5">
               <h3 className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
                 <Users className="h-4 w-4 text-amber-400" />
-                {isVi ? "Danh sách thành viên & Chủ hụi" : "Club Owner & Member Roster"} ({(club.memberAddresses.length || club.memberCount).toString()}/{club.maxMembers.toString()} {isVi ? `hụi viên + 1 Chủ hụi = ${(BigInt(club.memberAddresses.length || Number(club.memberCount)) + 1n).toString()} người` : `members + 1 Owner = ${(BigInt(club.memberAddresses.length || Number(club.memberCount)) + 1n).toString()} total`})
+                {isVi ? "Danh sách thành viên" : "Member Roster"} ({displayedRosterCount.toString()}/{club.maxMembers.toString()})
               </h3>
               <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
             </summary>
@@ -1568,20 +1579,20 @@ export function BondedClubWorkspace({
               )}
 
               {club.state === BONDED_STATE.OPEN && club.isMember && (
-                <div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-3.5">
+                <div className="space-y-2.5 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-4">
                   <button
                     type="button"
                     disabled
-                    className="w-full py-3 rounded-xl border border-amber-500/30 bg-black/50 text-amber-200/80 font-bold text-xs sm:text-sm cursor-not-allowed"
+                    className="w-full px-4 py-3 rounded-xl border border-amber-500/35 bg-black/50 text-amber-200 font-bold text-xs sm:text-sm leading-snug cursor-not-allowed"
                   >
                     {isVi
-                      ? `Đóng hụi ${displayUsdc(club.contributionAmount)} USDC (Chờ Chủ hụi bắt đầu Vòng 1)`
-                      : `Contribute ${displayUsdc(club.contributionAmount)} USDC (Waiting for Owner to Start Round 1)`}
+                      ? `Đóng hụi ${displayUsdc(club.contributionAmount)} USDC (Chờ mở Vòng 1)`
+                      : `Contribute ${displayUsdc(club.contributionAmount)} USDC (Waiting for Round 1)`}
                   </button>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="px-0.5 text-xs text-slate-300 leading-relaxed">
                     {isVi
-                      ? `Nhóm đang ở Vòng 0/${club.totalRounds.toString()} (chờ mở vòng). Ngay khi Chủ hụi (${club.owner.slice(0, 6)}...${club.owner.slice(-4)}) bấm "Bắt đầu các vòng (Start Rounds)", nút đóng ${displayUsdc(club.contributionAmount)} USDC sẽ mở khóa tại đây.`
-                      : `Club is at Round 0/${club.totalRounds.toString()} (Open). Once the Club Owner (${club.owner.slice(0, 6)}...${club.owner.slice(-4)}) clicks "Start Rounds", this ${displayUsdc(club.contributionAmount)} USDC contribution button will unlock.`}
+                      ? `Nhóm đang ở Vòng 0/${club.totalRounds.toString()}. Khi Chủ hụi (${club.owner.slice(0, 6)}...${club.owner.slice(-4)}) bấm "Bắt đầu các vòng", nút đóng ${displayUsdc(club.contributionAmount)} USDC sẽ mở khóa.`
+                      : `Club is at Round 0/${club.totalRounds.toString()}. Once the Owner (${club.owner.slice(0, 6)}...${club.owner.slice(-4)}) clicks "Start Rounds", this ${displayUsdc(club.contributionAmount)} USDC button will unlock.`}
                   </p>
                 </div>
               )}
@@ -1650,33 +1661,28 @@ export function BondedClubWorkspace({
               )}
 
               {needsCancelVote && club.isMember && (
-                <div className="p-3.5 rounded-2xl bg-red-950/25 border border-red-500/30 text-xs text-slate-300 space-y-2.5" data-testid="bonded-member-cancel-vote">
-                  <div className="flex items-center justify-between font-bold text-red-300">
-                    <span>
-                      {isVi ? "Biểu quyết Hủy nhóm" : "Majority Cancel Vote"}
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-red-950/20 border border-red-500/25 text-xs text-slate-300" data-testid="bonded-member-cancel-vote">
+                  <div className="flex items-center gap-1.5 text-slate-300">
+                    <span className="font-semibold text-red-300">
+                      {isVi ? "Biểu quyết hủy:" : "Cancel Vote:"}
                     </span>
-                    <span className="font-mono">
-                      {cancelVotes.length}/{requiredCancelVotes} {isVi ? "phiếu" : "votes"}
+                    <span className="font-mono text-slate-400">
+                      {cancelVotes.length}/{requiredCancelVotes}
                     </span>
                   </div>
-                  <p className="text-slate-400 leading-relaxed">
-                    {isVi
-                      ? "Khi nhóm đã có từ 2 thành viên trở lên, cần đa số đồng thuận bỏ phiếu trước khi hủy hoặc xóa nhóm."
-                      : "Once ≥ 2 members have joined, majority consensus is required before the club can be cancelled or removed."}
-                  </p>
                   <button
                     type="button"
                     disabled={hasVotedCancel}
                     onClick={handleRequestCancelVote}
-                    className={`w-full py-2.5 rounded-xl border text-xs font-semibold transition-colors ${
+                    className={`px-2.5 py-1 rounded-lg border text-xs font-semibold transition-colors ${
                       hasVotedCancel
                         ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 opacity-85 cursor-not-allowed"
                         : "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 cursor-pointer"
                     }`}
                   >
                     {hasVotedCancel
-                      ? (isVi ? "Đã bỏ phiếu đồng ý hủy (Đã khóa)" : "Voted to Cancel (Locked)")
-                      : (isVi ? "Bỏ phiếu đồng ý hủy nhóm" : "Vote to Cancel Club")}
+                      ? (isVi ? "Đã bỏ phiếu" : "Voted")
+                      : (isVi ? "Bỏ phiếu hủy" : "Vote to Cancel")}
                   </button>
                 </div>
               )}
@@ -1976,33 +1982,28 @@ export function BondedClubWorkspace({
               {club.state === BONDED_STATE.OPEN && (
                 <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
                   {needsCancelVote && (
-                    <div className="p-3 rounded-xl bg-red-950/25 border border-red-500/25 text-xs text-slate-300 space-y-2" data-testid="bonded-owner-cancel-vote">
-                      <div className="flex items-center justify-between font-bold text-red-300">
-                        <span>
-                          {isVi ? "Cơ chế Biểu quyết Hủy nhóm" : "Majority Cancel Vote Required"}
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-red-950/20 border border-red-500/25 text-xs text-slate-300" data-testid="bonded-owner-cancel-vote">
+                      <div className="flex items-center gap-1.5 text-slate-300">
+                        <span className="font-semibold text-red-300">
+                          {isVi ? "Biểu quyết hủy:" : "Cancel Vote:"}
                         </span>
-                        <span className="font-mono">
-                          {cancelVotes.length}/{requiredCancelVotes} {isVi ? "phiếu" : "votes"}
+                        <span className="font-mono text-slate-400">
+                          {cancelVotes.length}/{requiredCancelVotes}
                         </span>
                       </div>
-                      <p className="text-slate-400 leading-relaxed">
-                        {isVi
-                          ? "Khi nhóm đã có từ 2 thành viên trở lên, chủ nhóm không thể tự ý hủy một mình mà cần đa số đồng thuận bỏ phiếu."
-                          : "Since ≥ 2 members have joined, the owner cannot unilaterally cancel. Majority consensus is required."}
-                      </p>
                       <button
                         type="button"
                         disabled={hasVotedCancel}
                         onClick={handleRequestCancelVote}
-                        className={`w-full py-2 rounded-xl border text-xs font-semibold transition-colors ${
+                        className={`px-2.5 py-1 rounded-lg border text-xs font-semibold transition-colors ${
                           hasVotedCancel
                             ? "border-emerald-500/40 bg-emerald-950/40 text-emerald-300 opacity-85 cursor-not-allowed"
                             : "border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 cursor-pointer"
                         }`}
                       >
                         {hasVotedCancel
-                          ? (isVi ? "Đã bỏ phiếu đồng ý hủy (Đã khóa)" : "Voted to Cancel (Locked)")
-                          : (isVi ? "Bỏ phiếu đồng ý hủy nhóm" : "Vote to Cancel Club")}
+                          ? (isVi ? "Đã bỏ phiếu" : "Voted")
+                          : (isVi ? "Bỏ phiếu hủy" : "Vote to Cancel")}
                       </button>
                     </div>
                   )}
@@ -2011,12 +2012,12 @@ export function BondedClubWorkspace({
                     type="button"
                     disabled={isPending || !hasCancelMajority}
                     onClick={handleCancelOpen}
-                    className="w-full py-2.5 rounded-xl border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-40 text-red-300 font-semibold text-xs transition-all cursor-pointer"
+                    className="w-full py-2 rounded-xl border border-red-500/35 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-40 text-red-300 font-semibold text-xs transition-all cursor-pointer"
                   >
                     {needsCancelVote && !hasCancelMajority
                       ? (isVi
-                          ? `Hủy nhóm & Hoàn cọc (Cần ${cancelVotes.length}/${requiredCancelVotes} phiếu)`
-                          : `Cancel Club & Refund Collateral (${cancelVotes.length}/${requiredCancelVotes} votes)`)
+                          ? `Hủy nhóm & Hoàn cọc (${cancelVotes.length}/${requiredCancelVotes} phiếu)`
+                          : `Cancel Club (${cancelVotes.length}/${requiredCancelVotes} votes)`)
                       : (isVi ? "Hủy nhóm & Hoàn cọc" : "Cancel Club & Refund Collateral")}
                   </button>
                 </div>
