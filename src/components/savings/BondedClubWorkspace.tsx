@@ -191,7 +191,30 @@ export function BondedClubWorkspace({
   useLayoutEffect(() => { setAcknowledgedContext(null); }, [riskContext]);
 
   // Owner input states
-  const [collateralInput, setCollateralInput] = useState("0.05");
+  const activeMemberSlots =
+    club.memberCount > 0n
+      ? club.memberCount
+      : club.maxMembers > 1n
+        ? club.maxMembers - 1n
+        : 1n;
+  const roundPotUsdc = club.contributionAmount * activeMemberSlots;
+  const referenceBtcPrice = 60_000_00000000n; // $60,000 reference BTC price (8 decimals)
+  const requiredRoundCirBtc =
+    roundPotUsdc > 0n
+      ? (roundPotUsdc * 10n ** 10n + referenceBtcPrice - 1n) / referenceBtcPrice
+      : 0n;
+  const requiredRoundCirBtcStr =
+    requiredRoundCirBtc > 0n ? formatUnitsExact(requiredRoundCirBtc, 8) : "0.00016667";
+  const hasDepositedCollateral = club.collateral > 0n;
+  const availablePoolUsdc =
+    club.totalDeposits > club.totalDebt ? club.totalDeposits - club.totalDebt : 0n;
+
+  const [collateralInput, setCollateralInput] = useState(requiredRoundCirBtcStr);
+  useEffect(() => {
+    if (!hasDepositedCollateral && requiredRoundCirBtc > 0n) {
+      setCollateralInput(requiredRoundCirBtcStr);
+    }
+  }, [hasDepositedCollateral, requiredRoundCirBtc, requiredRoundCirBtcStr]);
   const [withdrawColInput, setWithdrawColInput] = useState("");
   const [borrowInput, setBorrowInput] = useState("");
   const [repayInput, setRepayInput] = useState("");
@@ -1752,23 +1775,33 @@ export function BondedClubWorkspace({
               <div className="space-y-3">
                 {/* Deposit Collateral */}
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-400 font-medium">
-                    {isVi ? "Nạp cọc CirBTC" : "Deposit CirBTC Collateral"}
-                  </label>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-xs text-slate-300 font-semibold">
+                      {isVi ? "Nạp cọc CirBTC (theo mỗi vòng)" : "Deposit CirBTC Collateral (per round)"}
+                    </label>
+                    <span className="text-xs text-amber-300">
+                      {isVi
+                        ? `Mỗi vòng ${displayUsdc(roundPotUsdc)} USDC → Quy đổi: ${requiredRoundCirBtcStr} cirBTC`
+                        : `Per round ${displayUsdc(roundPotUsdc)} USDC → Auto bond: ${requiredRoundCirBtcStr} cirBTC`}
+                    </span>
+                  </div>
                   <div className="flex gap-2">
                     <input
-                      value={collateralInput}
+                      value={hasDepositedCollateral ? formatUnitsExact(club.collateral, 8) : collateralInput}
+                      disabled={hasDepositedCollateral}
                       onChange={(e) => setCollateralInput(e.target.value)}
-                      placeholder="cirBTC (e.g. 0.05)"
-                      className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-hidden"
+                      placeholder={requiredRoundCirBtcStr}
+                      className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <button
                       type="button"
-                      disabled={isPending}
+                      disabled={isPending || hasDepositedCollateral}
                       onClick={handleDepositCollateral}
-                      className="shrink-0 rounded-xl bg-amber-500/20 px-3.5 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 disabled:opacity-40 transition-all cursor-pointer"
+                      className="shrink-0 rounded-xl bg-amber-500/20 px-3.5 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                     >
-                      {isVi ? "Nạp cọc" : "Deposit"}
+                      {hasDepositedCollateral
+                        ? (isVi ? "Đã đóng cọc" : "Deposited")
+                        : (isVi ? "Nạp cọc" : "Deposit")}
                     </button>
                   </div>
                 </div>
@@ -1791,16 +1824,16 @@ export function BondedClubWorkspace({
                           {isVi ? "Vay USDC từ quỹ (Borrow USDC)" : "Borrow USDC"}
                         </label>
                         <span className="text-xs text-slate-400">
-                          {isVi ? "Hạn mức cọc:" : "Borrow limit:"}{" "}
+                          {isVi ? "Có thể vay tối đa:" : "Max borrowable:"}{" "}
                           <strong className="text-amber-300">
-                            {club.borrowLimit !== null ? `${displayUsdc(club.borrowLimit)} USDC` : "N/A"}
+                            {`${displayUsdc(availablePoolUsdc)} USDC`}
                           </strong>
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 leading-relaxed">
                         {isVi
-                          ? "Rút USDC thành viên đã đóng trong quỹ về ví Chủ hụi (tối đa bằng 50% giá trị cọc cirBTC và không vượt quá số dư quỹ)."
-                          : "Withdraw contributed USDC from the club pool to the Owner wallet (up to 50% of cirBTC collateral value and available pool balance)."}
+                          ? "Rút USDC thành viên đã đóng trong quỹ về ví Chủ hụi (tối đa bằng toàn bộ số dư quỹ khả dụng khi đã đóng cọc)."
+                          : "Withdraw contributed USDC from the club pool to the Owner wallet (up to full available pool balance once collateral is deposited)."}
                       </p>
                       <div className="flex gap-2">
                         <div className="relative flex-1">
@@ -1808,27 +1841,12 @@ export function BondedClubWorkspace({
                             value={borrowInput}
                             onChange={(e) => setBorrowInput(e.target.value)}
                             placeholder="USDC borrow"
-                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-hidden"
+                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden"
                           />
                           <button
                             type="button"
                             onClick={() => {
-                              const liquidityLimit =
-                                club.totalDeposits > club.totalDebt
-                                  ? club.totalDeposits - club.totalDebt
-                                  : 0n;
-                              let collateralLimit = 0n;
-                              if (club.borrowLimit !== null && club.borrowLimit > club.interestOwed) {
-                                const maxDebt =
-                                  ((club.borrowLimit - club.interestOwed) * 10000n) /
-                                  (10000n + club.rateBpsPerRound);
-                                if (maxDebt > club.totalDebt) {
-                                  collateralLimit = maxDebt - club.totalDebt;
-                                }
-                              }
-                              const maxBorrow =
-                                liquidityLimit < collateralLimit ? liquidityLimit : collateralLimit;
-                              setBorrowInput(formatUsdcExact(maxBorrow));
+                              setBorrowInput(formatUsdcExact(availablePoolUsdc));
                             }}
                             className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
                           >
