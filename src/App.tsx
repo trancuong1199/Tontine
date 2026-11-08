@@ -74,19 +74,48 @@ export default function App() {
   const persistedWagmiAddress = useMemo<`0x${string}` | undefined>(() => {
     if (typeof window === "undefined" || !window.localStorage) return undefined;
     try {
+      const lastSaved = window.localStorage.getItem("hui_last_connected_account");
+      if (lastSaved && /^0x[a-fA-F0-9]{40}$/.test(lastSaved)) {
+        return lastSaved.toLowerCase() as `0x${string}`;
+      }
       const raw = window.localStorage.getItem("wagmi.store");
-      if (!raw) return undefined;
-      const match = raw.match(/"accounts":\s*\[\s*"(0x[a-fA-F0-9]{40})"/);
-      return match ? (match[1] as `0x${string}`) : undefined;
+      const storeMatch = raw?.match(/"accounts":\s*\[\s*"(0x[a-fA-F0-9]{40})"/);
+      if (storeMatch?.[1]) {
+        return storeMatch[1].toLowerCase() as `0x${string}`;
+      }
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        const keyMatch = k?.match(/^hui_(?:removed|known)_groups_(0x[a-fA-F0-9]{40})$/);
+        if (keyMatch?.[1]) {
+          return keyMatch[1].toLowerCase() as `0x${string}`;
+        }
+      }
+      return undefined;
     } catch {
       return undefined;
     }
   }, [wagmiAddress, isReconnecting]);
+  const [isHydratingWallet, setIsHydratingWallet] = useState<boolean>(() => Boolean(persistedWagmiAddress));
 
   // Passkey wallet (Circle Modular Wallet)
   const { state: pkState, bundler, isConfigured, register, login, logout, clearError } = usePasskeyWallet();
   const passkeyAddress = pkState.status === "ready" ? pkState.address : undefined;
   const passkeyAccount = pkState.status === "ready" ? pkState.account : undefined;
+
+  useEffect(() => {
+    const active = passkeyAddress ?? wagmiAddress;
+    if (active) {
+      setIsHydratingWallet(false);
+      try {
+        window.localStorage.setItem("hui_last_connected_account", active.toLowerCase());
+      } catch {
+        // Ignore storage errors
+      }
+      return;
+    }
+    const timer = setTimeout(() => setIsHydratingWallet(false), 1200);
+    return () => clearTimeout(timer);
+  }, [wagmiAddress, passkeyAddress]);
 
   const handleDisconnectAll = () => {
     if (passkeyAddress) {
@@ -98,6 +127,7 @@ export default function App() {
           try {
             localStorage.removeItem("wagmi.store");
             localStorage.removeItem("wagmi.recentConnectorId");
+            localStorage.removeItem("hui_last_connected_account");
           } catch {
             // Ignore storage errors
           }
@@ -113,7 +143,7 @@ export default function App() {
   };
 
   // Active address: passkey takes priority over wagmi
-  const address = passkeyAddress ?? wagmiAddress ?? (isReconnecting ? persistedWagmiAddress : undefined);
+  const address = passkeyAddress ?? wagmiAddress ?? ((isReconnecting || isHydratingWallet) ? persistedWagmiAddress : undefined);
   const activeAccountRef = useRef(address);
   activeAccountRef.current = address;
 
@@ -772,6 +802,7 @@ export default function App() {
 
   const isCurrentRemoved = removedGroupsSet.has(contractAddress.toLowerCase()) || hiddenGroupsSet.has(contractAddress.toLowerCase());
   const hasNoActiveClub =
+    isCurrentRemoved ||
     effectiveAvailableClubsCount === 0 ||
     (!isBondedClub && knownGroupsList.length === 0 && !clubInfo.groupName);
   const activeCollateralAmount = clubInfo.collateralAmount;
