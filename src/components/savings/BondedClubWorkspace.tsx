@@ -198,6 +198,12 @@ export function BondedClubWorkspace({
         ? club.maxMembers - 1n
         : 1n;
   const roundPotUsdc = club.contributionAmount * activeMemberSlots;
+  const cycleRounds =
+    club.totalRounds > 0n
+      ? club.totalRounds
+      : club.maxMembers > 0n
+        ? club.maxMembers
+        : 1n;
   const referenceBtcPrice = 60_000_00000000n; // $60,000 reference BTC price (8 decimals)
   const requiredRoundCirBtc =
     roundPotUsdc > 0n
@@ -208,6 +214,68 @@ export function BondedClubWorkspace({
   const hasDepositedCollateral = club.collateral > 0n;
   const availablePoolUsdc =
     club.totalDeposits > club.totalDebt ? club.totalDeposits - club.totalDebt : 0n;
+
+  const customRateStorageKey = `bonded_custom_rate_pct_${contractAddress.toLowerCase()}`;
+  const defaultRatePctStr = (Number(club.rateBpsPerRound || 50n) / 100).toString();
+  const [ownerRatePctInput, setOwnerRatePctInput] = useState<string>(() => {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        const saved = window.localStorage.getItem(customRateStorageKey);
+        if (saved && saved.trim() !== "") return saved;
+      }
+    } catch {
+      // ignore storage errors
+    }
+    return defaultRatePctStr;
+  });
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        const saved = window.localStorage.getItem(customRateStorageKey);
+        if (saved && saved.trim() !== "") {
+          setOwnerRatePctInput(saved);
+          return;
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
+    if (club.rateBpsPerRound > 0n) {
+      setOwnerRatePctInput((Number(club.rateBpsPerRound) / 100).toString());
+    }
+  }, [customRateStorageKey, club.rateBpsPerRound]);
+
+  const handleUpdateOwnerRatePct = (val: string) => {
+    setOwnerRatePctInput(val);
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        if (val.trim() === "") {
+          window.localStorage.removeItem(customRateStorageKey);
+        } else {
+          window.localStorage.setItem(customRateStorageKey, val.trim());
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const parsedOwnerRatePct = Number(ownerRatePctInput);
+  const effectiveRateBps =
+    ownerRatePctInput.trim() !== "" && Number.isFinite(parsedOwnerRatePct) && parsedOwnerRatePct >= 0
+      ? BigInt(Math.round(parsedOwnerRatePct * 100))
+      : club.rateBpsPerRound;
+  const effectiveRatePctStr = (Number(effectiveRateBps) / 100).toFixed(2);
+  const cycleRatePctStr = ((Number(effectiveRateBps) * Number(cycleRounds)) / 100).toFixed(2);
+  const roundInterestTotalUsdc = (roundPotUsdc * effectiveRateBps) / 10000n;
+  const cycleInterestTotalUsdc = roundInterestTotalUsdc * cycleRounds;
+  const memberCyclePrincipalUsdc = club.contributionAmount * cycleRounds;
+  const memberRoundInterestUsdc =
+    activeMemberSlots > 0n ? roundInterestTotalUsdc / activeMemberSlots : 0n;
+  const memberCycleInterestUsdc =
+    activeMemberSlots > 0n ? cycleInterestTotalUsdc / activeMemberSlots : 0n;
+  const memberRoundTotalPayoutUsdc = club.contributionAmount + memberRoundInterestUsdc;
+  const memberCycleTotalPayoutUsdc = memberCyclePrincipalUsdc + memberCycleInterestUsdc;
 
   const [collateralInput, setCollateralInput] = useState(requiredRoundCirBtcStr);
   useEffect(() => {
@@ -220,10 +288,18 @@ export function BondedClubWorkspace({
   useEffect(() => {
     if (availablePoolUsdc > 0n) {
       setBorrowInput(formatUsdcExact(availablePoolUsdc));
+    } else {
+      setBorrowInput("0.00");
     }
   }, [availablePoolUsdc]);
   const [repayInput, setRepayInput] = useState("");
   const [interestInput, setInterestInput] = useState("");
+  useEffect(() => {
+    const targetInterest = club.interestOwed > 0n ? club.interestOwed : roundInterestTotalUsdc;
+    if (targetInterest > 0n) {
+      setInterestInput(formatUsdcExact(targetInterest));
+    }
+  }, [club.interestOwed, roundInterestTotalUsdc]);
   const [removeMemberInput, setRemoveMemberInput] = useState("");
   const [mockBtcPriceInput, setMockBtcPriceInput] = useState("60000");
 
@@ -1137,11 +1213,62 @@ export function BondedClubWorkspace({
               <div>
                 <dt className="text-xs text-slate-400">{isVi ? "Lãi suất / Vòng" : "Rate per Round"}</dt>
                 <dd className="mt-1 text-2xl font-extrabold tabular-nums text-white">
-                  {(Number(club.rateBpsPerRound) / 100).toFixed(2)}%
+                  {effectiveRatePctStr}%
                 </dd>
-                <dd className="text-xs text-slate-400">{isVi ? "chủ nhóm chi trả" : "paid by owner"}</dd>
+                <dd className="text-xs text-slate-400">{isVi ? `Cả chu kỳ: ${cycleRatePctStr}%` : `Full cycle: ${cycleRatePctStr}%`}</dd>
               </div>
             </dl>
+
+            {/* Per-Wallet 1-Cycle Payout Breakdown for All Members */}
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4 space-y-2" data-testid="bonded-cycle-payout-summary">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs sm:text-sm font-bold text-emerald-300">
+                  {isVi
+                    ? `Quyền lợi mỗi ví thành viên sau 1 chu kỳ (${cycleRounds.toString()} vòng)`
+                    : `Expected Payout per Member Wallet After 1 Cycle (${cycleRounds.toString()} rounds)`}
+                </span>
+                <span className="rounded-lg border border-emerald-500/35 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-200">
+                  {isVi
+                    ? `Lãi suất: ${effectiveRatePctStr}%/vòng (${cycleRatePctStr}%/chu kỳ)`
+                    : `Interest: ${effectiveRatePctStr}%/round (${cycleRatePctStr}%/cycle)`}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+                <div className="rounded-xl border border-slate-800 bg-black/40 px-3 py-2.5">
+                  <div className="text-slate-400">
+                    {isVi ? `Vốn gốc 1 ví (${cycleRounds.toString()} vòng)` : `Principal per wallet (${cycleRounds.toString()} rounds)`}
+                  </div>
+                  <div className="mt-0.5 text-sm font-bold text-white tabular-nums">
+                    {displayUsdc(memberCyclePrincipalUsdc)} USDC
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {isVi ? `${displayUsdc(club.contributionAmount)} USDC / vòng` : `${displayUsdc(club.contributionAmount)} USDC / round`}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-black/40 px-3 py-2.5">
+                  <div className="text-slate-400">
+                    {isVi ? "Lãi mỗi ví nhận được (1 chu kỳ)" : "Interest per wallet (1 cycle)"}
+                  </div>
+                  <div className="mt-0.5 text-sm font-bold text-emerald-400 tabular-nums">
+                    +{displayUsdc(memberCycleInterestUsdc)} USDC
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {isVi ? `+${displayUsdc(memberRoundInterestUsdc)} USDC / vòng` : `+${displayUsdc(memberRoundInterestUsdc)} USDC / round`}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-emerald-500/35 bg-emerald-950/30 px-3 py-2.5">
+                  <div className="text-emerald-200 font-semibold">
+                    {isVi ? "Tổng mỗi ví nhận sau 1 chu kỳ" : "Total per wallet after 1 cycle"}
+                  </div>
+                  <div className="mt-0.5 text-base font-extrabold text-emerald-300 tabular-nums">
+                    {displayUsdc(memberCycleTotalPayoutUsdc)} USDC
+                  </div>
+                  <div className="text-xs text-emerald-200/80">
+                    {isVi ? `Sau 1 vòng: ${displayUsdc(memberRoundTotalPayoutUsdc)} USDC/ví` : `Per round: ${displayUsdc(memberRoundTotalPayoutUsdc)} USDC/wallet`}
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <BondedRiskBanner club={club} language={language} />
 
@@ -1538,18 +1665,44 @@ export function BondedClubWorkspace({
 
             {/* Position Summary */}
             {(club.isMember || club.userDeposit > 0n) && (
-            <div className="grid grid-cols-2 gap-3 bg-black/40 rounded-2xl p-4 border border-slate-800">
-              <div>
-                <span className="text-xs text-slate-400 block">{isVi ? "Đã góp:" : "Deposited:"}</span>
-                <span className="text-base font-bold text-white tabular-nums">
-                  {club.positionAvailable && !club.isLoading && !club.error ? `${displayUsdc(club.userDeposit)} USDC` : financialPlaceholder}
-                </span>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 bg-black/40 rounded-2xl p-4 border border-slate-800">
+                <div>
+                  <span className="text-xs text-slate-400 block">{isVi ? "Đã góp:" : "Deposited:"}</span>
+                  <span className="text-base font-bold text-white tabular-nums">
+                    {club.positionAvailable && !club.isLoading && !club.error ? `${displayUsdc(club.userDeposit)} USDC` : financialPlaceholder}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs text-slate-400 block">{isVi ? "Lãi chờ nhận:" : "Pending Interest:"}</span>
+                  <span className="text-base font-bold text-emerald-400 tabular-nums">
+                    {club.positionAvailable && !club.isLoading && !club.error ? `${displayUsdc(club.pendingInterest)} USDC` : financialPlaceholder}
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-xs text-slate-400 block">{isVi ? "Lãi chờ nhận:" : "Pending Interest:"}</span>
-                <span className="text-base font-bold text-emerald-400 tabular-nums">
-                  {club.positionAvailable && !club.isLoading && !club.error ? `${displayUsdc(club.pendingInterest)} USDC` : financialPlaceholder}
-                </span>
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 px-3.5 py-3 text-xs space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-emerald-300">
+                    {isVi
+                      ? `Dự tính ví nhận sau 1 chu kỳ (${cycleRounds.toString()} vòng):`
+                      : `Wallet Payout After 1 Cycle (${cycleRounds.toString()} rounds):`}
+                  </span>
+                  <strong className="text-sm font-extrabold text-emerald-300 tabular-nums">
+                    {displayUsdc(memberCycleTotalPayoutUsdc)} USDC
+                  </strong>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-slate-300">
+                  <span>
+                    {isVi
+                      ? `Gốc ${cycleRounds.toString()} vòng: ${displayUsdc(memberCyclePrincipalUsdc)} USDC`
+                      : `Principal (${cycleRounds.toString()} rounds): ${displayUsdc(memberCyclePrincipalUsdc)} USDC`}
+                  </span>
+                  <span className="text-emerald-300 font-semibold">
+                    {isVi
+                      ? `+ Lãi (${cycleRatePctStr}%): +${displayUsdc(memberCycleInterestUsdc)} USDC`
+                      : `+ Interest (${cycleRatePctStr}%): +${displayUsdc(memberCycleInterestUsdc)} USDC`}
+                  </span>
+                </div>
               </div>
             </div>
             )}
@@ -1844,16 +1997,18 @@ export function BondedClubWorkspace({
                         <div className="relative flex-1">
                           <input
                             value={borrowInput}
+                            disabled={availablePoolUsdc === 0n}
                             onChange={(e) => setBorrowInput(e.target.value)}
                             placeholder="USDC borrow"
-                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden"
+                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden disabled:opacity-60 disabled:cursor-not-allowed"
                           />
                           <button
                             type="button"
+                            disabled={availablePoolUsdc === 0n}
                             onClick={() => {
                               setBorrowInput(formatUsdcExact(availablePoolUsdc));
                             }}
-                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                           >
                             {isVi ? "Tối đa" : "Max"}
                           </button>
@@ -1863,12 +2018,15 @@ export function BondedClubWorkspace({
                           disabled={
                             isPending ||
                             club.state !== BONDED_STATE.ACTIVE ||
+                            availablePoolUsdc === 0n ||
                             staleBlocksPriceAction
                           }
                           onClick={handleBorrow}
-                          className="shrink-0 rounded-xl bg-amber-500/20 px-3.5 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 disabled:opacity-40 transition-all cursor-pointer"
+                          className="shrink-0 rounded-xl bg-amber-500/20 px-3.5 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                         >
-                          {isVi ? "Vay USDC" : "Borrow"}
+                          {availablePoolUsdc === 0n && club.totalDebt > 0n
+                            ? (isVi ? "Đã vay hết quỹ" : "Fully Borrowed")
+                            : (isVi ? "Vay USDC" : "Borrow")}
                         </button>
                       </div>
                       {staleBlocksPriceAction && (
@@ -1896,7 +2054,7 @@ export function BondedClubWorkspace({
                             value={repayInput}
                             onChange={(e) => setRepayInput(e.target.value)}
                             placeholder="USDC repay"
-                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-hidden"
+                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden"
                           />
                           <button
                             type="button"
@@ -1919,11 +2077,85 @@ export function BondedClubWorkspace({
                       </div>
                     </div>
 
+                    {/* Owner Interest Rate Input & Per-Member Cycle Payout Calculator */}
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 space-y-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label className="text-xs font-bold text-amber-300">
+                          {isVi
+                            ? "Nhập lãi suất chia cho thành viên (% / vòng)"
+                            : "Set Member Interest Rate (% per round)"}
+                        </label>
+                        <span className="text-xs text-amber-200">
+                          {isVi
+                            ? `Cả chu kỳ (${cycleRounds.toString()} vòng): ${cycleRatePctStr}%`
+                            : `Full cycle (${cycleRounds.toString()} rounds): ${cycleRatePctStr}%`}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="relative flex-1 min-w-[120px]">
+                          <input
+                            type="number"
+                            step="any"
+                            min="0"
+                            value={ownerRatePctInput}
+                            onChange={(e) => handleUpdateOwnerRatePct(e.target.value)}
+                            placeholder="0.5"
+                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-1.5 pr-16 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-amber-300">
+                            % / {isVi ? "vòng" : "round"}
+                          </span>
+                        </div>
+                        <div className="flex gap-1">
+                          {["0.5", "1", "2", "5", "10"].map((pct) => (
+                            <button
+                              key={pct}
+                              type="button"
+                              onClick={() => handleUpdateOwnerRatePct(pct)}
+                              className={`rounded-lg border px-2 py-1 text-xs font-semibold transition-colors cursor-pointer ${
+                                ownerRatePctInput === pct
+                                  ? "border-amber-400 bg-amber-500/25 text-amber-200"
+                                  : "border-slate-700 bg-black/40 text-slate-300 hover:border-amber-500/50"
+                              }`}
+                            >
+                              {pct}%
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-slate-800 bg-black/50 p-2.5 space-y-1 text-xs">
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span>{isVi ? "Tổng lãi Chủ hụi trả (1 vòng / cả chu kỳ):" : "Total Owner interest (1 round / cycle):"}</span>
+                          <strong className="text-amber-300">
+                            {displayUsdc(roundInterestTotalUsdc)} / {displayUsdc(cycleInterestTotalUsdc)} USDC
+                          </strong>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span>{isVi ? `Vốn gốc mỗi ví đóng (${cycleRounds.toString()} vòng):` : `Principal per wallet (${cycleRounds.toString()} rounds):`}</span>
+                          <strong className="text-white">{displayUsdc(memberCyclePrincipalUsdc)} USDC</strong>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-300">
+                          <span>{isVi ? "Tiền lãi mỗi ví nhận sau 1 chu kỳ:" : "Interest per wallet after 1 cycle:"}</span>
+                          <strong className="text-emerald-400">+{displayUsdc(memberCycleInterestUsdc)} USDC</strong>
+                        </div>
+                        <div className="flex items-center justify-between border-t border-slate-800 pt-1 text-emerald-300 font-bold">
+                          <span>{isVi ? "Mỗi ví nhận về sau 1 chu kỳ (Gốc + Lãi):" : "Each wallet receives after 1 cycle:"}</span>
+                          <strong className="text-sm text-emerald-300">{displayUsdc(memberCycleTotalPayoutUsdc)} USDC</strong>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Pay Interest (with Max) */}
                     <div className="space-y-1">
-                      <label className="text-xs text-slate-300 font-semibold block">
-                        {isVi ? "Trả lãi USDC (Pay Interest USDC)" : "Pay Interest USDC"}
-                      </label>
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-xs text-slate-300 font-semibold block">
+                          {isVi ? "Trả lãi USDC (Pay Interest USDC)" : "Pay Interest USDC"}
+                        </label>
+                        <span className="text-xs text-slate-400">
+                          {isVi ? "Lãi mỗi vòng:" : "Per round:"}{" "}
+                          <strong className="text-emerald-300">{displayUsdc(roundInterestTotalUsdc)} USDC</strong>
+                        </span>
+                      </div>
                       <p className="text-xs text-slate-400 leading-relaxed">
                         {isVi
                           ? "Thanh toán tiền lãi phát sinh mỗi vòng trên số nợ đã vay để chia cho các thành viên."
@@ -1934,13 +2166,14 @@ export function BondedClubWorkspace({
                           <input
                             value={interestInput}
                             onChange={(e) => setInterestInput(e.target.value)}
-                            placeholder={displayUsdc(club.interestOwed)}
-                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-hidden"
+                            placeholder={displayUsdc(club.interestOwed > 0n ? club.interestOwed : roundInterestTotalUsdc)}
+                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden"
                           />
                           <button
                             type="button"
                             onClick={() => {
-                              setInterestInput(formatUsdcExact(club.interestOwed));
+                              const target = club.interestOwed > 0n ? club.interestOwed : roundInterestTotalUsdc;
+                              setInterestInput(formatUsdcExact(target));
                             }}
                             className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
                           >

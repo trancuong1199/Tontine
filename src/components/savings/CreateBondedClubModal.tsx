@@ -398,6 +398,97 @@ export function CreateBondedClubModal({
             </div>
           </div>
 
+          {/* Field 5: Interest Rate & Per-Wallet 1-Cycle Payout Preview */}
+          <div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-950/15 p-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="text-xs font-semibold text-amber-300">
+                {isEn
+                  ? "Interest Rate Paid to Members (% per round)"
+                  : "Lãi Suất Chủ Hụi Trả Cho Thành Viên (% / vòng)"}
+              </label>
+              <span className="text-xs font-bold text-amber-200">
+                {(rateBps / 100).toFixed(2)}% / {isEn ? "round" : "vòng"} ({((rateBps * maxMembers) / 100).toFixed(2)}% / {isEn ? "cycle" : "chu kỳ"})
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[120px]">
+                <input
+                  type="number"
+                  step="any"
+                  min="0.01"
+                  max="50"
+                  value={Number((rateBps / 100).toFixed(2))}
+                  onChange={(e) => {
+                    const pct = Number(e.target.value);
+                    if (Number.isFinite(pct) && pct >= 0) {
+                      setRateBps(Math.max(1, Math.round(pct * 100)));
+                    }
+                  }}
+                  disabled={isDeploying}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-900/90 text-white text-xs focus:border-amber-500 focus:outline-none pr-16"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-amber-300">
+                  % / {isEn ? "round" : "vòng"}
+                </span>
+              </div>
+              <div className="flex gap-1.5">
+                {[50, 100, 200, 500].map((bps) => (
+                  <button
+                    key={bps}
+                    type="button"
+                    disabled={isDeploying}
+                    onClick={() => setRateBps(bps)}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                      rateBps === bps
+                        ? "bg-amber-500/25 border-amber-400 text-amber-200"
+                        : "bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-800"
+                    }`}
+                  >
+                    {(bps / 100).toFixed(1)}%
+                  </button>
+                ))}
+              </div>
+            </div>
+            {isAmountValid && (
+              <div className="rounded-xl border border-slate-800 bg-black/50 p-2.5 text-xs space-y-1">
+                <div className="flex items-center justify-between text-slate-300">
+                  <span>
+                    {isEn
+                      ? `Principal per wallet (1 cycle = ${maxMembers} rounds):`
+                      : `Vốn gốc mỗi ví đóng (1 chu kỳ = ${maxMembers} vòng):`}
+                  </span>
+                  <strong className="text-white">
+                    {formatUsdc(parsedAmount * BigInt(maxMembers))} USDC
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between text-slate-300">
+                  <span>
+                    {isEn
+                      ? "Interest earned per wallet (1 cycle):"
+                      : "Tiền lãi mỗi ví nhận thêm (1 chu kỳ):"}
+                  </span>
+                  <strong className="text-emerald-400">
+                    +{formatUsdc((parsedAmount * BigInt(maxMembers) * BigInt(rateBps)) / 10000n)} USDC
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-800 pt-1 text-emerald-300 font-bold">
+                  <span>
+                    {isEn
+                      ? "Total each wallet receives after 1 cycle:"
+                      : "Tổng mỗi ví nhận về sau 1 chu kỳ (Gốc + Lãi):"}
+                  </span>
+                  <strong className="text-sm text-emerald-300">
+                    {formatUsdc(
+                      parsedAmount * BigInt(maxMembers) +
+                        (parsedAmount * BigInt(maxMembers) * BigInt(rateBps)) / 10000n
+                    )}{" "}
+                    USDC
+                  </strong>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Collapsible Advanced Parameters */}
           <div className="pt-2 border-t border-slate-800/80">
             <button
