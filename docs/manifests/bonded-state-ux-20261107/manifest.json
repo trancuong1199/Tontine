@@ -1,10 +1,10 @@
 {
   "taskId": "bonded-state-ux-20261107",
-  "frozenAt": "2026-11-09T06:43:34.029Z",
+  "frozenAt": "2026-11-09T06:48:58.429Z",
   "status": "FROZEN",
   "files": {
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "25220b00d18ed89288fc72cab6b76aeb85f595bdc483e4d2486669312912df10",
+      "sha256": "a4eae619cfe99b0b3b5d1405a1397df10cc2e375b0eae41c2858f014468019d8",
       "baselineSha256": "6020fca50259e264fbcb2bd4aa8994f5b66b7592120acb839cf9c0c01ef74459",
       "isNew": false
     },
@@ -24,7 +24,7 @@
       "isNew": true
     },
     "src/components/savings/CreateBondedClubModal.tsx": {
-      "sha256": "8bc92b5f8cf826e46e1d2b4a4a0ddbb9c55532980ae9ba581b3dfa7f30f933aa",
+      "sha256": "2e4cf89ea7e99304355456594a036b467e4760ac1a7c20432f4b412819cebdb2",
       "baselineSha256": "4c11ad8cd9dd0a3a95fc103f691edd72bb6202a31d1b93bd668b3429d7c7c928",
       "isNew": false
     },

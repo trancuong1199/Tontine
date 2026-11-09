@@ -1171,55 +1171,19 @@ export function BondedClubWorkspace({
               </div>
             </dl>
 
-            {/* Per-Wallet 1-Cycle Payout Breakdown for All Members */}
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4 space-y-2" data-testid="bonded-cycle-payout-summary">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs sm:text-sm font-bold text-emerald-300">
-                  {isVi
-                    ? `Quyền lợi mỗi ví thành viên sau 1 chu kỳ (${cycleRounds.toString()} vòng)`
-                    : `Expected Payout per Member Wallet After 1 Cycle (${cycleRounds.toString()} rounds)`}
+            {/* Compact 1-line Per-Wallet 1-Cycle Payout Summary */}
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-500/25 bg-emerald-950/15 px-3.5 py-2 text-xs" data-testid="bonded-cycle-payout-summary">
+              <span className="text-slate-300">
+                {isVi
+                  ? `Mỗi ví nhận sau 1 chu kỳ (${cycleRounds.toString()} vòng):`
+                  : `Payout per wallet after 1 cycle (${cycleRounds.toString()} rounds):`}
+              </span>
+              <span className="font-semibold text-emerald-300 tabular-nums">
+                {displayUsdc(memberCycleTotalPayoutUsdc)} USDC{" "}
+                <span className="text-slate-400 font-normal">
+                  ({isVi ? "Gốc" : "Principal"} {displayUsdc(memberCyclePrincipalUsdc)} + {isVi ? "Lãi" : "Interest"} {displayUsdc(memberCycleInterestUsdc)})
                 </span>
-                <span className="rounded-lg border border-emerald-500/35 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-200">
-                  {isVi
-                    ? `Lãi suất: ${effectiveRatePctStr}%/vòng (${cycleRatePctStr}%/chu kỳ)`
-                    : `Interest: ${effectiveRatePctStr}%/round (${cycleRatePctStr}%/cycle)`}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
-                <div className="rounded-xl border border-slate-800 bg-black/40 px-3 py-2.5">
-                  <div className="text-slate-400">
-                    {isVi ? `Vốn gốc 1 ví (${cycleRounds.toString()} vòng)` : `Principal per wallet (${cycleRounds.toString()} rounds)`}
-                  </div>
-                  <div className="mt-0.5 text-sm font-bold text-white tabular-nums">
-                    {displayUsdc(memberCyclePrincipalUsdc)} USDC
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    {isVi ? `${displayUsdc(club.contributionAmount)} USDC / vòng` : `${displayUsdc(club.contributionAmount)} USDC / round`}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-slate-800 bg-black/40 px-3 py-2.5">
-                  <div className="text-slate-400">
-                    {isVi ? "Lãi mỗi ví nhận được (1 chu kỳ)" : "Interest per wallet (1 cycle)"}
-                  </div>
-                  <div className="mt-0.5 text-sm font-bold text-emerald-400 tabular-nums">
-                    +{displayUsdc(memberCycleInterestUsdc)} USDC
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    {isVi ? `+${displayUsdc(memberRoundInterestUsdc)} USDC / vòng` : `+${displayUsdc(memberRoundInterestUsdc)} USDC / round`}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-emerald-500/35 bg-emerald-950/30 px-3 py-2.5">
-                  <div className="text-emerald-200 font-semibold">
-                    {isVi ? "Tổng mỗi ví nhận sau 1 chu kỳ" : "Total per wallet after 1 cycle"}
-                  </div>
-                  <div className="mt-0.5 text-base font-extrabold text-emerald-300 tabular-nums">
-                    {displayUsdc(memberCycleTotalPayoutUsdc)} USDC
-                  </div>
-                  <div className="text-xs text-emerald-200/80">
-                    {isVi ? `Sau 1 vòng: ${displayUsdc(memberRoundTotalPayoutUsdc)} USDC/ví` : `Per round: ${displayUsdc(memberRoundTotalPayoutUsdc)} USDC/wallet`}
-                  </div>
-                </div>
-              </div>
+              </span>
             </div>
 
             <BondedRiskBanner club={club} language={language} />
@@ -1617,7 +1581,6 @@ export function BondedClubWorkspace({
 
             {/* Position Summary */}
             {(club.isMember || club.userDeposit > 0n) && (
-            <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3 bg-black/40 rounded-2xl p-4 border border-slate-800">
                 <div>
                   <span className="text-xs text-slate-400 block">{isVi ? "Đã góp:" : "Deposited:"}</span>
@@ -1632,31 +1595,6 @@ export function BondedClubWorkspace({
                   </span>
                 </div>
               </div>
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 px-3.5 py-3 text-xs space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-emerald-300">
-                    {isVi
-                      ? `Dự tính ví nhận sau 1 chu kỳ (${cycleRounds.toString()} vòng):`
-                      : `Wallet Payout After 1 Cycle (${cycleRounds.toString()} rounds):`}
-                  </span>
-                  <strong className="text-sm font-extrabold text-emerald-300 tabular-nums">
-                    {displayUsdc(memberCycleTotalPayoutUsdc)} USDC
-                  </strong>
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-2 text-slate-300">
-                  <span>
-                    {isVi
-                      ? `Gốc ${cycleRounds.toString()} vòng: ${displayUsdc(memberCyclePrincipalUsdc)} USDC`
-                      : `Principal (${cycleRounds.toString()} rounds): ${displayUsdc(memberCyclePrincipalUsdc)} USDC`}
-                  </span>
-                  <span className="text-emerald-300 font-semibold">
-                    {isVi
-                      ? `+ Lãi (${cycleRatePctStr}%): +${displayUsdc(memberCycleInterestUsdc)} USDC`
-                      : `+ Interest (${cycleRatePctStr}%): +${displayUsdc(memberCycleInterestUsdc)} USDC`}
-                  </span>
-                </div>
-              </div>
-            </div>
             )}
 
       {/* Unverified Club Warning & Confirmation Gate (T6.7) */}
@@ -1887,12 +1825,12 @@ export function BondedClubWorkspace({
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <label className="text-xs text-slate-300 font-semibold">
-                      {isVi ? "Nạp cọc CirBTC (theo mỗi vòng)" : "Deposit CirBTC Collateral (per round)"}
+                      {isVi ? "Nạp cọc CirBTC" : "Deposit CirBTC"}
                     </label>
                     <span className="text-xs text-amber-300">
                       {isVi
-                        ? `Mỗi vòng ${displayUsdc(roundPotUsdc)} USDC → Quy đổi: ${requiredRoundCirBtcStr} cirBTC`
-                        : `Per round ${displayUsdc(roundPotUsdc)} USDC → Auto bond: ${requiredRoundCirBtcStr} cirBTC`}
+                        ? `${displayUsdc(roundPotUsdc)} USDC/vòng → ${requiredRoundCirBtcStr} cirBTC`
+                        : `${displayUsdc(roundPotUsdc)} USDC/round → ${requiredRoundCirBtcStr} cirBTC`}
                     </span>
                   </div>
                   <div className="flex gap-2">
@@ -1917,34 +1855,29 @@ export function BondedClubWorkspace({
                 </div>
 
                 {/* Active Cycle Loan & Interest Controls (Collapsed while OPEN so Start Rounds stays prominent) */}
-                <details open={club.state === BONDED_STATE.ACTIVE || undefined} className="group rounded-2xl border border-slate-800 bg-black/30 p-3 space-y-3">
+                <details open={club.state === BONDED_STATE.ACTIVE || undefined} className="group rounded-2xl border border-slate-800 bg-black/30 p-3 space-y-2.5">
                   <summary className="flex cursor-pointer select-none list-none items-center justify-between text-xs font-semibold text-slate-300">
                     <span>
                       {isVi
-                        ? "Vay vốn & Trả nợ/lãi USDC (Mở khi chu kỳ đang chạy)"
-                        : "Borrow & Repay USDC (Active during running rounds)"}
+                        ? "Vay vốn & Trả gốc / lãi USDC"
+                        : "Borrow & Repay USDC"}
                     </span>
                     <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" />
                   </summary>
-                  <div className="space-y-3 pt-2">
+                  <div className="space-y-2.5 pt-1">
                     {/* Borrow USDC (with Max) */}
                     <div className="space-y-1">
                       <div className="flex items-center justify-between gap-2">
                         <label className="text-xs text-slate-300 font-semibold">
-                          {isVi ? "Vay USDC từ quỹ (Borrow USDC)" : "Borrow USDC"}
+                          {isVi ? "Vay USDC" : "Borrow USDC"}
                         </label>
                         <span className="text-xs text-slate-400">
-                          {isVi ? "Có thể vay tối đa:" : "Max borrowable:"}{" "}
+                          {isVi ? "Khả dụng:" : "Available:"}{" "}
                           <strong className="text-amber-300">
                             {`${displayUsdc(availablePoolUsdc)} USDC`}
                           </strong>
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        {isVi
-                          ? "Rút USDC thành viên đã đóng trong quỹ về ví Chủ hụi (tối đa bằng toàn bộ số dư quỹ khả dụng khi đã đóng cọc)."
-                          : "Withdraw contributed USDC from the club pool to the Owner wallet (up to full available pool balance once collateral is deposited)."}
-                      </p>
                       <div className="flex gap-2">
                         <div className="relative flex-1">
                           <input
@@ -1992,14 +1925,15 @@ export function BondedClubWorkspace({
 
                     {/* Repay Principal (Fixed to totalDebt) */}
                     <div className="space-y-1">
-                      <label className="text-xs text-slate-300 font-semibold block">
-                        {isVi ? "Trả nợ gốc USDC (Repay Principal USDC)" : "Repay Principal USDC"}
-                      </label>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        {isVi
-                          ? "Hoàn trả lại số tiền gốc USDC mà Chủ hụi đã vay vào lại quỹ trước khi kết thúc chu kỳ."
-                          : "Pay back the borrowed USDC principal into the club pool before the cycle ends."}
-                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-xs text-slate-300 font-semibold">
+                          {isVi ? "Trả nợ gốc USDC" : "Repay Principal"}
+                        </label>
+                        <span className="text-xs text-slate-400">
+                          {isVi ? "Đang vay:" : "Debt:"}{" "}
+                          <strong className="text-white">{displayUsdc(club.totalDebt)} USDC</strong>
+                        </span>
+                      </div>
                       <div className="flex gap-2">
                         <input
                           value={repayInput}
@@ -2019,56 +1953,17 @@ export function BondedClubWorkspace({
                       </div>
                     </div>
 
-                    {/* Fixed Interest Rate & Per-Member Cycle Payout Summary (Locked from Creation) */}
-                    <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 space-y-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-amber-300">
-                          {isVi
-                            ? "Lãi suất cố định (đã khóa từ lúc tạo nhóm)"
-                            : "Fixed Interest Rate (locked at club creation)"}
-                        </span>
-                        <span className="rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-200">
-                          {effectiveRatePctStr}% / {isVi ? "vòng" : "round"} ({cycleRatePctStr}% / {isVi ? "chu kỳ" : "cycle"})
-                        </span>
-                      </div>
-                      <div className="rounded-lg border border-slate-800 bg-black/50 p-2.5 space-y-1 text-xs">
-                        <div className="flex items-center justify-between text-slate-300">
-                          <span>{isVi ? "Định mức lãi Chủ hụi đóng (1 vòng / cả chu kỳ):" : "Fixed Owner interest (1 round / cycle):"}</span>
-                          <strong className="text-amber-300">
-                            {displayUsdc(roundInterestTotalUsdc)} / {displayUsdc(cycleInterestTotalUsdc)} USDC
-                          </strong>
-                        </div>
-                        <div className="flex items-center justify-between text-slate-300">
-                          <span>{isVi ? `Vốn gốc mỗi ví đóng (${cycleRounds.toString()} vòng):` : `Principal per wallet (${cycleRounds.toString()} rounds):`}</span>
-                          <strong className="text-white">{displayUsdc(memberCyclePrincipalUsdc)} USDC</strong>
-                        </div>
-                        <div className="flex items-center justify-between text-slate-300">
-                          <span>{isVi ? "Tiền lãi mỗi ví nhận sau 1 chu kỳ:" : "Interest per wallet after 1 cycle:"}</span>
-                          <strong className="text-emerald-400">+{displayUsdc(memberCycleInterestUsdc)} USDC</strong>
-                        </div>
-                        <div className="flex items-center justify-between border-t border-slate-800 pt-1 text-emerald-300 font-bold">
-                          <span>{isVi ? "Mỗi ví nhận về sau 1 chu kỳ (Gốc + Lãi):" : "Each wallet receives after 1 cycle:"}</span>
-                          <strong className="text-sm text-emerald-300">{displayUsdc(memberCycleTotalPayoutUsdc)} USDC</strong>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Pay Interest (Fixed to locked interest rate) */}
                     <div className="space-y-1">
                       <div className="flex items-center justify-between gap-2">
-                        <label className="text-xs text-slate-300 font-semibold block">
-                          {isVi ? "Trả lãi USDC cố định (Pay Interest USDC)" : "Pay Fixed Interest USDC"}
+                        <label className="text-xs text-slate-300 font-semibold">
+                          {isVi ? `Trả lãi cố định (${effectiveRatePctStr}%/vòng)` : `Pay Fixed Interest (${effectiveRatePctStr}%/round)`}
                         </label>
                         <span className="text-xs text-slate-400">
-                          {isVi ? "Mức lãi cố định / vòng:" : "Fixed per round:"}{" "}
-                          <strong className="text-emerald-300">{displayUsdc(roundInterestTotalUsdc)} USDC</strong>
+                          {isVi ? "Chu kỳ:" : "Cycle:"}{" "}
+                          <strong className="text-emerald-300">{displayUsdc(cycleInterestTotalUsdc)} USDC</strong>
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        {isVi
-                          ? "Số tiền lãi được cố định theo lãi suất lúc tạo nhóm (không thể chỉnh sửa). Khi hết vòng/chu kỳ, Chủ hụi bấm nút bên dưới để đóng đúng số lãi này cho các thành viên."
-                          : "Interest is fixed at the rate set when creating the club (cannot be modified). At the end of the round/cycle, click below to pay this exact interest amount to members."}
-                      </p>
                       <div className="flex gap-2">
                         <input
                           value={interestInput}

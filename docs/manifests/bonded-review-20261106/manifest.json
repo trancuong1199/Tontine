@@ -1,6 +1,6 @@
 {
   "taskId": "bonded-review-20261106",
-  "frozenAt": "2026-11-09T06:43:33.728Z",
+  "frozenAt": "2026-11-09T06:48:58.290Z",
   "status": "FROZEN",
   "files": {
     "docs/oracle-operations.md": {
@@ -69,7 +69,7 @@
       "isNew": false
     },
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "25220b00d18ed89288fc72cab6b76aeb85f595bdc483e4d2486669312912df10",
+      "sha256": "a4eae619cfe99b0b3b5d1405a1397df10cc2e375b0eae41c2858f014468019d8",
       "baselineSha256": "65033f51d84b02f8d2198a0361b6bcb3ddd8d9acd924469a0aefb3ff9e763f5a",
       "isNew": false
     },
@@ -84,7 +84,7 @@
       "isNew": false
     },
     "src/components/savings/CreateBondedClubModal.tsx": {
-      "sha256": "8bc92b5f8cf826e46e1d2b4a4a0ddbb9c55532980ae9ba581b3dfa7f30f933aa",
+      "sha256": "2e4cf89ea7e99304355456594a036b467e4760ac1a7c20432f4b412819cebdb2",
       "baselineSha256": "ca7eb3df443d93cfce04077193df0c1f7a37d4afde66fdefa7d053c0ab6dd678",
       "isNew": false
     },

@@ -450,41 +450,22 @@ export function CreateBondedClubModal({
               </div>
             </div>
             {isAmountValid && (
-              <div className="rounded-xl border border-slate-800 bg-black/50 p-2.5 text-xs space-y-1">
-                <div className="flex items-center justify-between text-slate-300">
-                  <span>
-                    {isEn
-                      ? `Principal per wallet (1 cycle = ${maxMembers} rounds):`
-                      : `Vốn gốc mỗi ví đóng (1 chu kỳ = ${maxMembers} vòng):`}
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 bg-black/50 px-3 py-2 text-xs">
+                <span className="text-slate-300">
+                  {isEn
+                    ? `1 cycle (${maxMembers} rounds) per wallet:`
+                    : `Mỗi ví nhận sau 1 chu kỳ (${maxMembers} vòng):`}
+                </span>
+                <strong className="text-emerald-300 tabular-nums">
+                  {formatUsdc(
+                    parsedAmount * BigInt(maxMembers) +
+                      (parsedAmount * BigInt(maxMembers) * BigInt(rateBps)) / 10000n
+                  )}{" "}
+                  USDC{" "}
+                  <span className="text-slate-400 font-normal">
+                    ({isEn ? "Principal" : "Gốc"} {formatUsdc(parsedAmount * BigInt(maxMembers))} + {isEn ? "Interest" : "Lãi"} {formatUsdc((parsedAmount * BigInt(maxMembers) * BigInt(rateBps)) / 10000n)})
                   </span>
-                  <strong className="text-white">
-                    {formatUsdc(parsedAmount * BigInt(maxMembers))} USDC
-                  </strong>
-                </div>
-                <div className="flex items-center justify-between text-slate-300">
-                  <span>
-                    {isEn
-                      ? "Fixed interest per wallet (1 cycle):"
-                      : "Tiền lãi cố định mỗi ví nhận (1 chu kỳ):"}
-                  </span>
-                  <strong className="text-emerald-400">
-                    +{formatUsdc((parsedAmount * BigInt(maxMembers) * BigInt(rateBps)) / 10000n)} USDC
-                  </strong>
-                </div>
-                <div className="flex items-center justify-between border-t border-slate-800 pt-1 text-emerald-300 font-bold">
-                  <span>
-                    {isEn
-                      ? "Total each wallet receives after 1 cycle:"
-                      : "Tổng mỗi ví nhận về sau 1 chu kỳ (Gốc + Lãi):"}
-                  </span>
-                  <strong className="text-sm text-emerald-300">
-                    {formatUsdc(
-                      parsedAmount * BigInt(maxMembers) +
-                        (parsedAmount * BigInt(maxMembers) * BigInt(rateBps)) / 10000n
-                    )}{" "}
-                    USDC
-                  </strong>
-                </div>
+                </strong>
               </div>
             )}
           </div>
