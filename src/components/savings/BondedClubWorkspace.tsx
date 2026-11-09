@@ -664,7 +664,7 @@ export function BondedClubWorkspace({
   const financialPlaceholder = club.isLoading ? (isVi ? "Đang tải…" : "Loading…") : (isVi ? "Chưa có dữ liệu" : "Unavailable");
   const isOracleRelevant =
     club.state === BONDED_STATE.OPEN || club.state === BONDED_STATE.ACTIVE;
-  const staleBlocksPriceAction = isOracleRelevant && club.oracleError;
+  const staleBlocksPriceAction = isAutomatedRiskTest && isOracleRelevant && club.oracleError;
 
   // U3.3: Short reasons for disabled Keeper actions
   const finalizeDisabledReason = canFinalize
