@@ -235,6 +235,14 @@ export function BondedClubWorkspace({
     }
   }, [hasDepositedCollateral, requiredRoundCirBtc, requiredRoundCirBtcStr]);
   const [withdrawColInput, setWithdrawColInput] = useState("");
+  useEffect(() => {
+    setWithdrawColInput(formatUnitsExact(club.collateral, 8));
+  }, [club.collateral]);
+  const cannotWithdrawCollateral =
+    club.collateral === 0n ||
+    club.totalDebt > 0n ||
+    club.interestOwed > 0n ||
+    club.state === BONDED_STATE.ACTIVE;
   const [borrowInput, setBorrowInput] = useState("");
   useEffect(() => {
     if (availablePoolUsdc > 0n) {
@@ -1985,38 +1993,33 @@ export function BondedClubWorkspace({
                   </div>
                 </details>
 
-                {/* Withdraw Collateral (with Max) */}
+                {/* Withdraw Collateral (Locked until debt & interest are repaid and cycle ends) */}
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-400 font-medium">
-                    {isVi ? "Rút cọc CirBTC" : "Withdraw CirBTC Collateral"}
-                  </label>
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-xs text-slate-300 font-semibold">
+                      {isVi ? "Rút cọc CirBTC" : "Withdraw CirBTC"}
+                    </label>
+                    <span className="text-xs text-slate-400">
+                      {club.totalDebt > 0n || club.interestOwed > 0n
+                        ? (isVi ? "Cần trả hết gốc & lãi trước" : "Repay principal & interest first")
+                        : club.state === BONDED_STATE.ACTIVE
+                          ? (isVi ? "Mở sau khi hoàn tất chu kỳ" : "Unlocks after cycle completes")
+                          : `${formatUnitsExact(club.collateral, 8)} cirBTC`}
+                    </span>
+                  </div>
                   <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        value={withdrawColInput}
-                        onChange={(e) => setWithdrawColInput(e.target.value)}
-                        placeholder="cirBTC withdraw"
-                        className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-500 focus:border-amber-400 focus:outline-hidden"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setWithdrawColInput(formatUnitsExact(club.collateral, 8));
-                        }}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
-                      >
-                        {isVi ? "Tối đa" : "Max"}
-                      </button>
-                    </div>
+                    <input
+                      value={withdrawColInput}
+                      disabled={cannotWithdrawCollateral}
+                      onChange={(e) => setWithdrawColInput(e.target.value)}
+                      placeholder="0.00000000"
+                      className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
                     <button
                       type="button"
-                      disabled={
-                        isPending ||
-                        club.collateral === 0n ||
-                        (staleBlocksPriceAction && club.totalDebt + club.interestOwed > 0n)
-                      }
+                      disabled={isPending || cannotWithdrawCollateral}
                       onClick={handleWithdrawCollateral}
-                      className="shrink-0 rounded-xl border border-slate-700 px-3.5 py-2 text-xs font-semibold text-slate-200 hover:border-amber-400 disabled:opacity-40 transition-all cursor-pointer"
+                      className="shrink-0 rounded-xl border border-slate-700 px-3.5 py-2 text-xs font-semibold text-slate-200 hover:border-amber-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                     >
                       {isVi ? "Rút cọc" : "Withdraw"}
                     </button>
