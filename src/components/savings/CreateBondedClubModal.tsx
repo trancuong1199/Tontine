@@ -398,13 +398,13 @@ export function CreateBondedClubModal({
             </div>
           </div>
 
-          {/* Field 5: Interest Rate & Per-Wallet 1-Cycle Payout Preview */}
+          {/* Field 5: Fixed Interest Rate & Per-Wallet 1-Cycle Payout Preview */}
           <div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-950/15 p-3.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="text-xs font-semibold text-amber-300">
                 {isEn
-                  ? "Interest Rate Paid to Members (% per round)"
-                  : "Lãi Suất Chủ Hụi Trả Cho Thành Viên (% / vòng)"}
+                  ? "Fixed Interest Rate Paid to Members (% per round)"
+                  : "Lãi Suất Cố Định Chủ Hụi Trả (% / vòng — không thể sửa sau khi tạo)"}
               </label>
               <span className="text-xs font-bold text-amber-200">
                 {(rateBps / 100).toFixed(2)}% / {isEn ? "round" : "vòng"} ({((rateBps * maxMembers) / 100).toFixed(2)}% / {isEn ? "cycle" : "chu kỳ"})
@@ -464,8 +464,8 @@ export function CreateBondedClubModal({
                 <div className="flex items-center justify-between text-slate-300">
                   <span>
                     {isEn
-                      ? "Interest earned per wallet (1 cycle):"
-                      : "Tiền lãi mỗi ví nhận thêm (1 chu kỳ):"}
+                      ? "Fixed interest per wallet (1 cycle):"
+                      : "Tiền lãi cố định mỗi ví nhận (1 chu kỳ):"}
                   </span>
                   <strong className="text-emerald-400">
                     +{formatUsdc((parsedAmount * BigInt(maxMembers) * BigInt(rateBps)) / 10000n)} USDC
@@ -500,8 +500,8 @@ export function CreateBondedClubModal({
                 <Shield className="w-3.5 h-3.5 text-amber-400" />
                 <span>
                   {isEn
-                    ? "Advanced Parameters (Interest & CirBTC Margins)"
-                    : "Thông số nâng cao (Lãi suất & Tỷ lệ cọc CirBTC)"}
+                    ? "Advanced Parameters (CirBTC Safety & Grace Margins)"
+                    : "Thông số nâng cao (Tỷ lệ cọc CirBTC & Thời gian ân hạn)"}
                 </span>
               </span>
               {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -510,22 +510,6 @@ export function CreateBondedClubModal({
             {showAdvanced && (
               <div className="mt-3 p-4 rounded-2xl bg-black/40 border border-slate-800 space-y-3.5 text-xs animate-in fade-in duration-150">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <span className="text-slate-400">
-                      {isEn ? "Interest per Round" : "Lãi suất / vòng"}
-                    </span>
-                    <input
-                      type="number"
-                      value={rateBps}
-                      onChange={(e) => setRateBps(Number(e.target.value))}
-                      disabled={isDeploying}
-                      className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white"
-                    />
-                    <span className="text-xs text-slate-500">
-                      {(rateBps / 100).toFixed(2)}% ({aprPct.toFixed(1)}% APR)
-                    </span>
-                  </div>
-
                   <div>
                     <span className="text-slate-400">
                       {isEn ? "Safety Margin" : "Tỷ lệ cọc an toàn"}

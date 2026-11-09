@@ -215,56 +215,7 @@ export function BondedClubWorkspace({
   const availablePoolUsdc =
     club.totalDeposits > club.totalDebt ? club.totalDeposits - club.totalDebt : 0n;
 
-  const customRateStorageKey = `bonded_custom_rate_pct_${contractAddress.toLowerCase()}`;
-  const defaultRatePctStr = (Number(club.rateBpsPerRound || 50n) / 100).toString();
-  const [ownerRatePctInput, setOwnerRatePctInput] = useState<string>(() => {
-    try {
-      if (typeof window !== "undefined" && window.localStorage) {
-        const saved = window.localStorage.getItem(customRateStorageKey);
-        if (saved && saved.trim() !== "") return saved;
-      }
-    } catch {
-      // ignore storage errors
-    }
-    return defaultRatePctStr;
-  });
-  useEffect(() => {
-    try {
-      if (typeof window !== "undefined" && window.localStorage) {
-        const saved = window.localStorage.getItem(customRateStorageKey);
-        if (saved && saved.trim() !== "") {
-          setOwnerRatePctInput(saved);
-          return;
-        }
-      }
-    } catch {
-      // ignore storage errors
-    }
-    if (club.rateBpsPerRound > 0n) {
-      setOwnerRatePctInput((Number(club.rateBpsPerRound) / 100).toString());
-    }
-  }, [customRateStorageKey, club.rateBpsPerRound]);
-
-  const handleUpdateOwnerRatePct = (val: string) => {
-    setOwnerRatePctInput(val);
-    try {
-      if (typeof window !== "undefined" && window.localStorage) {
-        if (val.trim() === "") {
-          window.localStorage.removeItem(customRateStorageKey);
-        } else {
-          window.localStorage.setItem(customRateStorageKey, val.trim());
-        }
-      }
-    } catch {
-      // ignore storage errors
-    }
-  };
-
-  const parsedOwnerRatePct = Number(ownerRatePctInput);
-  const effectiveRateBps =
-    ownerRatePctInput.trim() !== "" && Number.isFinite(parsedOwnerRatePct) && parsedOwnerRatePct >= 0
-      ? BigInt(Math.round(parsedOwnerRatePct * 100))
-      : club.rateBpsPerRound;
+  const effectiveRateBps = club.rateBpsPerRound;
   const effectiveRatePctStr = (Number(effectiveRateBps) / 100).toFixed(2);
   const cycleRatePctStr = ((Number(effectiveRateBps) * Number(cycleRounds)) / 100).toFixed(2);
   const roundInterestTotalUsdc = (roundPotUsdc * effectiveRateBps) / 10000n;
@@ -293,12 +244,13 @@ export function BondedClubWorkspace({
     }
   }, [availablePoolUsdc]);
   const [repayInput, setRepayInput] = useState("");
+  useEffect(() => {
+    setRepayInput(formatUsdcExact(club.totalDebt));
+  }, [club.totalDebt]);
   const [interestInput, setInterestInput] = useState("");
   useEffect(() => {
     const targetInterest = club.interestOwed > 0n ? club.interestOwed : roundInterestTotalUsdc;
-    if (targetInterest > 0n) {
-      setInterestInput(formatUsdcExact(targetInterest));
-    }
+    setInterestInput(formatUsdcExact(targetInterest));
   }, [club.interestOwed, roundInterestTotalUsdc]);
   const [removeMemberInput, setRemoveMemberInput] = useState("");
   const [mockBtcPriceInput, setMockBtcPriceInput] = useState("60000");
@@ -2038,7 +1990,7 @@ export function BondedClubWorkspace({
                       )}
                     </div>
 
-                    {/* Repay Principal (with Max) */}
+                    {/* Repay Principal (Fixed to totalDebt) */}
                     <div className="space-y-1">
                       <label className="text-xs text-slate-300 font-semibold block">
                         {isVi ? "Trả nợ gốc USDC (Repay Principal USDC)" : "Repay Principal USDC"}
@@ -2049,83 +2001,39 @@ export function BondedClubWorkspace({
                           : "Pay back the borrowed USDC principal into the club pool before the cycle ends."}
                       </p>
                       <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            value={repayInput}
-                            onChange={(e) => setRepayInput(e.target.value)}
-                            placeholder="USDC repay"
-                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRepayInput(formatUsdcExact(club.totalDebt));
-                            }}
-                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
-                          >
-                            {isVi ? "Tối đa" : "Max"}
-                          </button>
-                        </div>
+                        <input
+                          value={repayInput}
+                          disabled
+                          onChange={(e) => setRepayInput(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden disabled:opacity-60 disabled:cursor-not-allowed"
+                        />
                         <button
                           type="button"
                           disabled={isPending || club.totalDebt === 0n}
                           onClick={handleRepay}
-                          className="shrink-0 rounded-xl bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 transition-all cursor-pointer"
+                          className="shrink-0 rounded-xl bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                         >
                           {isVi ? "Trả gốc" : "Repay"}
                         </button>
                       </div>
                     </div>
 
-                    {/* Owner Interest Rate Input & Per-Member Cycle Payout Calculator */}
-                    <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 space-y-2.5">
+                    {/* Fixed Interest Rate & Per-Member Cycle Payout Summary (Locked from Creation) */}
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-3 space-y-2">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <label className="text-xs font-bold text-amber-300">
+                        <span className="text-xs font-bold text-amber-300">
                           {isVi
-                            ? "Nhập lãi suất chia cho thành viên (% / vòng)"
-                            : "Set Member Interest Rate (% per round)"}
-                        </label>
-                        <span className="text-xs text-amber-200">
-                          {isVi
-                            ? `Cả chu kỳ (${cycleRounds.toString()} vòng): ${cycleRatePctStr}%`
-                            : `Full cycle (${cycleRounds.toString()} rounds): ${cycleRatePctStr}%`}
+                            ? "Lãi suất cố định (đã khóa từ lúc tạo nhóm)"
+                            : "Fixed Interest Rate (locked at club creation)"}
                         </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="relative flex-1 min-w-[120px]">
-                          <input
-                            type="number"
-                            step="any"
-                            min="0"
-                            value={ownerRatePctInput}
-                            onChange={(e) => handleUpdateOwnerRatePct(e.target.value)}
-                            placeholder="0.5"
-                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-1.5 pr-16 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden"
-                          />
-                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-amber-300">
-                            % / {isVi ? "vòng" : "round"}
-                          </span>
-                        </div>
-                        <div className="flex gap-1">
-                          {["0.5", "1", "2", "5", "10"].map((pct) => (
-                            <button
-                              key={pct}
-                              type="button"
-                              onClick={() => handleUpdateOwnerRatePct(pct)}
-                              className={`rounded-lg border px-2 py-1 text-xs font-semibold transition-colors cursor-pointer ${
-                                ownerRatePctInput === pct
-                                  ? "border-amber-400 bg-amber-500/25 text-amber-200"
-                                  : "border-slate-700 bg-black/40 text-slate-300 hover:border-amber-500/50"
-                              }`}
-                            >
-                              {pct}%
-                            </button>
-                          ))}
-                        </div>
+                        <span className="rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-0.5 text-xs font-bold text-amber-200">
+                          {effectiveRatePctStr}% / {isVi ? "vòng" : "round"} ({cycleRatePctStr}% / {isVi ? "chu kỳ" : "cycle"})
+                        </span>
                       </div>
                       <div className="rounded-lg border border-slate-800 bg-black/50 p-2.5 space-y-1 text-xs">
                         <div className="flex items-center justify-between text-slate-300">
-                          <span>{isVi ? "Tổng lãi Chủ hụi trả (1 vòng / cả chu kỳ):" : "Total Owner interest (1 round / cycle):"}</span>
+                          <span>{isVi ? "Định mức lãi Chủ hụi đóng (1 vòng / cả chu kỳ):" : "Fixed Owner interest (1 round / cycle):"}</span>
                           <strong className="text-amber-300">
                             {displayUsdc(roundInterestTotalUsdc)} / {displayUsdc(cycleInterestTotalUsdc)} USDC
                           </strong>
@@ -2145,46 +2053,35 @@ export function BondedClubWorkspace({
                       </div>
                     </div>
 
-                    {/* Pay Interest (with Max) */}
+                    {/* Pay Interest (Fixed to locked interest rate) */}
                     <div className="space-y-1">
                       <div className="flex items-center justify-between gap-2">
                         <label className="text-xs text-slate-300 font-semibold block">
-                          {isVi ? "Trả lãi USDC (Pay Interest USDC)" : "Pay Interest USDC"}
+                          {isVi ? "Trả lãi USDC cố định (Pay Interest USDC)" : "Pay Fixed Interest USDC"}
                         </label>
                         <span className="text-xs text-slate-400">
-                          {isVi ? "Lãi mỗi vòng:" : "Per round:"}{" "}
+                          {isVi ? "Mức lãi cố định / vòng:" : "Fixed per round:"}{" "}
                           <strong className="text-emerald-300">{displayUsdc(roundInterestTotalUsdc)} USDC</strong>
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 leading-relaxed">
                         {isVi
-                          ? "Thanh toán tiền lãi phát sinh mỗi vòng trên số nợ đã vay để chia cho các thành viên."
-                          : "Pay the per-round interest owed on your borrowed debt so members can claim their interest."}
+                          ? "Số tiền lãi được cố định theo lãi suất lúc tạo nhóm (không thể chỉnh sửa). Khi hết vòng/chu kỳ, Chủ hụi bấm nút bên dưới để đóng đúng số lãi này cho các thành viên."
+                          : "Interest is fixed at the rate set when creating the club (cannot be modified). At the end of the round/cycle, click below to pay this exact interest amount to members."}
                       </p>
                       <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            value={interestInput}
-                            onChange={(e) => setInterestInput(e.target.value)}
-                            placeholder={displayUsdc(club.interestOwed > 0n ? club.interestOwed : roundInterestTotalUsdc)}
-                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const target = club.interestOwed > 0n ? club.interestOwed : roundInterestTotalUsdc;
-                              setInterestInput(formatUsdcExact(target));
-                            }}
-                            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-amber-300 hover:bg-slate-700 cursor-pointer"
-                          >
-                            {isVi ? "Tối đa" : "Max"}
-                          </button>
-                        </div>
+                        <input
+                          value={interestInput}
+                          disabled
+                          onChange={(e) => setInterestInput(e.target.value)}
+                          placeholder={displayUsdc(club.interestOwed > 0n ? club.interestOwed : roundInterestTotalUsdc)}
+                          className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden disabled:opacity-60 disabled:cursor-not-allowed"
+                        />
                         <button
                           type="button"
                           disabled={isPending || club.interestOwed === 0n}
                           onClick={handlePayInterest}
-                          className="shrink-0 rounded-xl bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 transition-all cursor-pointer"
+                          className="shrink-0 rounded-xl bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                         >
                           {isVi ? "Trả lãi" : "Pay Interest"}
                         </button>
