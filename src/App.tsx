@@ -70,52 +70,12 @@ export default function App() {
   const isEn = language === "en";
 
   // MetaMask / injected wallet (wagmi)
-  const { address: wagmiAddress, connector, isReconnecting } = useAccount();
-  const persistedWagmiAddress = useMemo<`0x${string}` | undefined>(() => {
-    if (typeof window === "undefined" || !window.localStorage) return undefined;
-    try {
-      const lastSaved = window.localStorage.getItem("hui_last_connected_account");
-      if (lastSaved && /^0x[a-fA-F0-9]{40}$/.test(lastSaved)) {
-        return lastSaved.toLowerCase() as `0x${string}`;
-      }
-      const raw = window.localStorage.getItem("wagmi.store");
-      const storeMatch = raw?.match(/"accounts":\s*\[\s*"(0x[a-fA-F0-9]{40})"/);
-      if (storeMatch?.[1]) {
-        return storeMatch[1].toLowerCase() as `0x${string}`;
-      }
-      for (let i = 0; i < window.localStorage.length; i++) {
-        const k = window.localStorage.key(i);
-        const keyMatch = k?.match(/^hui_(?:removed|known)_groups_(0x[a-fA-F0-9]{40})$/);
-        if (keyMatch?.[1]) {
-          return keyMatch[1].toLowerCase() as `0x${string}`;
-        }
-      }
-      return undefined;
-    } catch {
-      return undefined;
-    }
-  }, [wagmiAddress, isReconnecting]);
-  const [isHydratingWallet, setIsHydratingWallet] = useState<boolean>(() => Boolean(persistedWagmiAddress));
+  const { address: wagmiAddress, connector } = useAccount();
 
   // Passkey wallet (Circle Modular Wallet)
   const { state: pkState, bundler, isConfigured, register, login, logout, clearError } = usePasskeyWallet();
   const passkeyAddress = pkState.status === "ready" ? pkState.address : undefined;
   const passkeyAccount = pkState.status === "ready" ? pkState.account : undefined;
-
-  useEffect(() => {
-    const active = passkeyAddress ?? wagmiAddress;
-    if (active) {
-      setIsHydratingWallet(false);
-      try {
-        window.localStorage.setItem("hui_last_connected_account", active.toLowerCase());
-      } catch {
-        // Ignore storage errors
-      }
-      return;
-    }
-    const timer = setTimeout(() => setIsHydratingWallet(false), 1200);
-    return () => clearTimeout(timer);
-  }, [wagmiAddress, passkeyAddress]);
 
   const handleDisconnectAll = () => {
     if (passkeyAddress) {
@@ -125,8 +85,6 @@ export default function App() {
       try {
         void Promise.resolve(connector?.disconnect?.()).finally(() => {
           try {
-            localStorage.removeItem("wagmi.store");
-            localStorage.removeItem("wagmi.recentConnectorId");
             localStorage.removeItem("hui_last_connected_account");
           } catch {
             // Ignore storage errors
@@ -136,14 +94,16 @@ export default function App() {
           }
         });
       } catch {
-        // Ignore
+        if (typeof window !== "undefined") {
+          window.location.reload();
+        }
       }
     }
     toast.success(isEn ? "Wallet disconnected!" : "Đã đăng xuất ví!");
   };
 
   // Active address: passkey takes priority over wagmi
-  const address = passkeyAddress ?? wagmiAddress ?? ((isReconnecting || isHydratingWallet) ? persistedWagmiAddress : undefined);
+  const address = passkeyAddress ?? wagmiAddress;
   const activeAccountRef = useRef(address);
   activeAccountRef.current = address;
 
@@ -830,6 +790,7 @@ export default function App() {
 
   return (
     <div className="min-h-dvh bg-[#050508] text-slate-100 font-sans relative overflow-x-hidden">
+      <h1 className="sr-only">Tontine Rotating Savings Club</h1>
       {/* Global Ambient Cyber Grid & Cosmic Gold Dust Background */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(rgba(245,158,11,0.06)_1px,transparent_1px)] [background-size:32px_32px] opacity-70" />
@@ -1110,7 +1071,11 @@ export default function App() {
 
                 {/* Hidden Bridge preserving exact test string for TC-BILINGUAL-02 */}
                 <span className="hidden" aria-hidden="true" tabIndex={-1}>
-                  <button onClick={handleToggleLanguage}>
+                  <button
+                    type="button"
+                    onClick={handleToggleLanguage}
+                    aria-label="Toggle language"
+                  >
                     <Globe size={14} className="text-amber-400" />
                     <span>{language === "en" ? "EN 🇬🇧" : "VI 🇻🇳"}</span>
                   </button>

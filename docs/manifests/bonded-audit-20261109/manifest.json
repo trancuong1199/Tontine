@@ -1,0 +1,32 @@
+{
+  "taskId": "bonded-audit-20261109",
+  "frozenAt": "2026-11-09T08:00:17.701Z",
+  "status": "FROZEN",
+  "files": {
+    "src/App.tsx": {
+      "sha256": "f260570ad8502b2e95810e0cee8028f95a797c6ab04d64748a04737af8cc43ff",
+      "baselineSha256": "f260570ad8502b2e95810e0cee8028f95a797c6ab04d64748a04737af8cc43ff",
+      "isNew": false
+    },
+    "src/components/savings/BondedClubWorkspace.tsx": {
+      "sha256": "0d05e00664c2b8c950a937fc8cb5c3643c34373e19cdd00a7f94e3a85cc0cdf6",
+      "baselineSha256": "0d05e00664c2b8c950a937fc8cb5c3643c34373e19cdd00a7f94e3a85cc0cdf6",
+      "isNew": false
+    },
+    "src/config.ts": {
+      "sha256": "b3639c8bbcc6f6332960791bc3401a10ffdd97051f4a752e36b0fb8f5e135cf3",
+      "baselineSha256": "b3639c8bbcc6f6332960791bc3401a10ffdd97051f4a752e36b0fb8f5e135cf3",
+      "isNew": false
+    },
+    "src/onchain-facts.ts": {
+      "sha256": "44d180f0d40985b1ce3ef85167aa0a52a57f09b173a58053614efb73686a53d2",
+      "baselineSha256": "44d180f0d40985b1ce3ef85167aa0a52a57f09b173a58053614efb73686a53d2",
+      "isNew": false
+    },
+    "vite.config.ts": {
+      "sha256": "b265f1c8e347a2dc71dc48769c0be6a579018433b832d3f023e09fdd99be7320",
+      "baselineSha256": "b265f1c8e347a2dc71dc48769c0be6a579018433b832d3f023e09fdd99be7320",
+      "isNew": false
+    }
+  }
+}

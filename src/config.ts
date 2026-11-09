@@ -16,18 +16,6 @@ if (!arcRpcUrl) throw new Error('Arc Testnet RPC is not configured')
 // Pre-register chain RPC URLs so trace events show correct chain names immediately
 registerChain(arcTestnet.id, arcRpcUrl)
 
-if (typeof window !== 'undefined' && window.localStorage) {
-  try {
-    const rawStore = window.localStorage.getItem('wagmi.store')
-    const match = rawStore?.match(/"accounts":\s*\[\s*"(0x[a-fA-F0-9]{40})"/)
-    if (match?.[1]) {
-      window.localStorage.setItem('hui_last_connected_account', match[1].toLowerCase())
-    }
-  } catch {
-    // ignore storage errors
-  }
-}
-
 export const arcTestnetWithRpc = {
   ...arcTestnet,
   rpcUrls: {
