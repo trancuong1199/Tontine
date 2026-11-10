@@ -65,20 +65,10 @@ export function getRemovedGroups(account?: string): Set<string> {
     const raw = window.localStorage.getItem(key);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
     if (Array.isArray(parsed)) {
-      const canonicalDefault = ARC_TESTNET_DEFAULT_BONDED_CLUB.toLowerCase();
-      const allowRemoveCanonical = hasMajorityCancelVotes(canonicalDefault, 2n);
       const list = parsed
         .map((a) => (typeof a === "string" ? a.toLowerCase() : ""))
         .filter(Boolean);
-      const filtered = list.filter((a) => a !== canonicalDefault || allowRemoveCanonical);
-      if (filtered.length !== list.length) {
-        try {
-          window.localStorage.setItem(key, JSON.stringify(filtered));
-        } catch {
-          // ignore
-        }
-      }
-      return new Set(filtered);
+      return new Set(list);
     }
     return new Set<string>();
   } catch (_err) {
@@ -120,16 +110,22 @@ export function getKnownGroups(account?: string): SavingsClubItem[] {
     const removedAddresses = getRemovedGroups(acc ?? undefined);
     const raw = window.localStorage.getItem(getAccountKnownStorageKey(account));
     if (!raw) {
-      return DEFAULT_SAVINGS_CLUBS.filter(
-        (def) => !removedAddresses.has(def.address.toLowerCase())
-      );
+      if (!acc) {
+        return DEFAULT_SAVINGS_CLUBS.filter(
+          (def) => !removedAddresses.has(def.address.toLowerCase())
+        );
+      }
+      return [];
     }
 
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
-      return DEFAULT_SAVINGS_CLUBS.filter(
-        (def) => !removedAddresses.has(def.address.toLowerCase())
-      );
+      if (!acc) {
+        return DEFAULT_SAVINGS_CLUBS.filter(
+          (def) => !removedAddresses.has(def.address.toLowerCase())
+        );
+      }
+      return [];
     }
 
     const seenAddresses = new Set<string>();
@@ -182,13 +178,15 @@ export function getKnownGroups(account?: string): SavingsClubItem[] {
       }
     }
 
-    // Append default groups if not already present and not removed
-    for (const def of DEFAULT_SAVINGS_CLUBS) {
-      const lower = def.address.toLowerCase();
-      if (removedAddresses.has(lower)) continue;
-      if (!seenAddresses.has(lower)) {
-        seenAddresses.add(lower);
-        result.push({ ...def });
+    // Append default groups if not already present, not removed, and guest (no account specified)
+    if (!acc) {
+      for (const def of DEFAULT_SAVINGS_CLUBS) {
+        const lower = def.address.toLowerCase();
+        if (removedAddresses.has(lower)) continue;
+        if (!seenAddresses.has(lower)) {
+          seenAddresses.add(lower);
+          result.push({ ...def });
+        }
       }
     }
 
@@ -469,24 +467,81 @@ export async function syncFactoryBondedClubs(
       )
     );
 
-    for (let j = 0; j < validEntries.length; j++) {
-      const clubAddr = validEntries[j].addr;
-      const lower = clubAddr.toLowerCase();
-      // If user previously removed this club, do not revive it on sync
-      if (removedAddresses.has(lower) || getRemovedGroups(account).has(lower)) {
-        continue;
+    const userLower = account && isValidAddress(account) ? account.toLowerCase() : null;
+
+    if (userLower) {
+      const [owners, members] = await Promise.all([
+        Promise.all(
+          validEntries.map((entry) =>
+            reader
+              .readContract({
+                address: entry.addr,
+                abi: tontineAbi,
+                functionName: "owner",
+                args: [],
+              })
+              .catch(() => undefined) as Promise<string | undefined>
+          )
+        ),
+        Promise.all(
+          validEntries.map((entry) =>
+            reader
+              .readContract({
+                address: entry.addr,
+                abi: tontineAbi,
+                functionName: "isMember",
+                args: [userLower as `0x${string}`],
+              })
+              .catch(() => false) as Promise<boolean>
+          )
+        ),
+      ]);
+
+      for (let j = 0; j < validEntries.length; j++) {
+        const clubAddr = validEntries[j].addr;
+        const lower = clubAddr.toLowerCase();
+        if (removedAddresses.has(lower) || getRemovedGroups(account).has(lower)) {
+          continue;
+        }
+        const clubOwner = owners[j];
+        const isMem = Boolean(members[j]);
+        const isOwn = Boolean(clubOwner && typeof clubOwner === "string" && clubOwner.toLowerCase() === userLower);
+
+        // Chỉ lưu vào danh bạ của ví nếu ví là chủ nhóm hoặc thành viên
+        if (isOwn || isMem) {
+          let groupName = names[j]?.trim() || `Bonded Club #${validEntries[j].i + 1}`;
+          saveKnownGroup({
+            address: clubAddr,
+            name: groupName,
+            version: "v2-bonded",
+          }, account);
+          synced.push({
+            address: lower as `0x${string}`,
+            name: groupName,
+            version: "v2-bonded",
+          });
+        }
       }
-      let groupName = names[j]?.trim() || `Bonded Club #${validEntries[j].i + 1}`;
-      saveKnownGroup({
-        address: clubAddr,
-        name: groupName,
-        version: "v2-bonded",
-      }, account);
-      synced.push({
-        address: lower as `0x${string}`,
-        name: groupName,
-        version: "v2-bonded",
-      });
+    } else {
+      for (let j = 0; j < validEntries.length; j++) {
+        const clubAddr = validEntries[j].addr;
+        const lower = clubAddr.toLowerCase();
+        // If user previously removed this club, do not revive it on sync
+        if (removedAddresses.has(lower) || getRemovedGroups(account).has(lower)) {
+          continue;
+        }
+        let groupName = names[j]?.trim() || `Bonded Club #${validEntries[j].i + 1}`;
+        saveKnownGroup({
+          address: clubAddr,
+          name: groupName,
+          version: "v2-bonded",
+        }, account);
+        synced.push({
+          address: lower as `0x${string}`,
+          name: groupName,
+          version: "v2-bonded",
+        });
+      }
     }
   } catch {
     // Graceful catch on network error

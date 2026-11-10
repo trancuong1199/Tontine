@@ -302,6 +302,14 @@ export interface Translations {
     clearOldClubsBtn: string;
     clearOldClubsSuccess: string;
     clearOldClubsEmpty: string;
+    myClubsTab: string;
+    allClubsTab: string;
+    myClubsEmptyTitle: string;
+    myClubsEmptyDesc: string;
+    viewAllClubsBtn: string;
+    myClubsCount: string;
+    ownerBadge: string;
+    memberBadge: string;
     deleteClubTooltip: string;
     deleteClubDisabledTooltip: string;
     deleteActiveError: string;
@@ -742,6 +750,14 @@ export const translations: Record<Language, Translations> = {
       clearOldClubsBtn: "Dọn dẹp nhóm cũ",
       clearOldClubsSuccess: "Đã dọn dẹp danh sách nhóm hụi cũ!",
       clearOldClubsEmpty: "Danh bạ hiện đã sạch sẽ, chỉ chứa các nhóm mặc định.",
+      myClubsTab: "Nhóm của tôi",
+      allClubsTab: "Tất cả nhóm",
+      myClubsEmptyTitle: "Bạn chưa tham gia nhóm nào",
+      myClubsEmptyDesc: "Hãy tạo một nhóm mới hoặc chuyển sang tab 'Tất cả nhóm' để khám phá và tham gia các nhóm đang mở.",
+      viewAllClubsBtn: "Xem tất cả nhóm",
+      myClubsCount: "{count} nhóm của bạn",
+      ownerBadge: "Chủ nhóm",
+      memberBadge: "Thành viên",
       deleteClubTooltip: "Xóa nhóm khỏi danh sách (đã hủy / hết hạn / không chơi nữa)",
       deleteClubDisabledTooltip: "Không thể xóa nhóm đang hoạt động (Mở tham gia / Đang chạy)",
       deleteActiveError: "Không thể xóa nhóm đang hoạt động!",
@@ -1180,6 +1196,14 @@ export const translations: Record<Language, Translations> = {
       clearOldClubsBtn: "Clear old clubs",
       clearOldClubsSuccess: "Cleaned up old savings clubs!",
       clearOldClubsEmpty: "Directory is already clean with default clubs.",
+      myClubsTab: "My Clubs",
+      allClubsTab: "All Clubs",
+      myClubsEmptyTitle: "No Clubs Joined Yet",
+      myClubsEmptyDesc: "Create a new club or switch to 'All Clubs' to discover and join open savings groups.",
+      viewAllClubsBtn: "View All Clubs",
+      myClubsCount: "{count} clubs joined",
+      ownerBadge: "Owner",
+      memberBadge: "Member",
       deleteClubTooltip: "Remove club from directory (cancelled / expired / not playing)",
       deleteClubDisabledTooltip: "Cannot remove active savings club (Open / Active)",
       deleteActiveError: "Cannot remove a savings club that is currently active!",

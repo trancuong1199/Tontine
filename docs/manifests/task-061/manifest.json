@@ -1,0 +1,22 @@
+{
+  "taskId": "task-061",
+  "frozenAt": "2026-11-10T17:10:26.773Z",
+  "status": "FROZEN",
+  "files": {
+    "src/lib/savingsClubDirectory.ts": {
+      "sha256": "97b507f95497a17d9f3ec65bed68a1e7155ce7f8c3fec075b609ab258254cc61",
+      "baselineSha256": "ad11ded73b0515c136d58108bc9eda096f00b45d81d167d27b13da864c390ce7",
+      "isNew": false
+    },
+    "src/lib/i18n.ts": {
+      "sha256": "caa5d25b7623449cc120967d66810ab0ee72042d0999fc6ab78afab0a99e2752",
+      "baselineSha256": "e9b9ec0552059b69634f3b2074cf96853d46c48a877ecb4f691799b7dea72a91",
+      "isNew": false
+    },
+    "src/components/savings/ClubDirectoryModal.tsx": {
+      "sha256": "9d4d680374ca20f4393086bf8fea36a505d348c485187e3f41d5e1c70da5685d",
+      "baselineSha256": "2ed5ff55d071db7b1dfe7f7dc257489a0a4990b679f62c82511796aad04e96e3",
+      "isNew": false
+    }
+  }
+}

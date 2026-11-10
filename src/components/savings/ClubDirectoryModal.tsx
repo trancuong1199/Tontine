@@ -15,6 +15,8 @@ import {
   Trash2,
   AlertTriangle,
   Pencil,
+  UserCheck,
+  Globe,
 } from "lucide-react";
 import {
   formatAddress,
@@ -22,6 +24,7 @@ import {
   ROTATING_SAVINGS_ABI,
   ARC_TESTNET_CHAIN_ID,
   GROUP_STATE,
+  isValidAddress,
 } from "../../contract";
 import { buildAddressExplorerUrl } from "../../onchain-facts";
 import {
@@ -82,6 +85,7 @@ export function ClubDirectoryModal({
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [confirmingClub, setConfirmingClub] = useState<SavingsClubItem | null>(null);
   const [editingClub, setEditingClub] = useState<SavingsClubItem | null>(null);
+  const isConnected = Boolean(account && isValidAddress(account));
   const isEn = language === "en";
 
   const displayedGroups = useMemo(() => {
@@ -99,7 +103,7 @@ export function ClubDirectoryModal({
     });
 
     const hasBonded = list.some((g) => g.version === "v2-bonded");
-    if (!hasBonded) {
+    if (!hasBonded && !account) {
       const fallback = CANONICAL_BONDED_CLUBS.filter(
         (c) => !removed.has(c.address.toLowerCase())
       );
@@ -115,7 +119,7 @@ export function ClubDirectoryModal({
     if (isOpen) {
       let currentKnown = getKnownGroups(account);
       const hasBonded = currentKnown.some((g) => g.version === "v2-bonded");
-      if (!hasBonded) {
+      if (!hasBonded && !account) {
         const removed = getRemovedGroups(account);
         for (const item of CANONICAL_BONDED_CLUBS) {
           if (!removed.has(item.address.toLowerCase())) {
@@ -255,9 +259,20 @@ export function ClubDirectoryModal({
           functionName: "owner",
           chainId: ARC_TESTNET_CHAIN_ID,
         },
+        {
+          address: g.address,
+          abi,
+          functionName: "isMember",
+          args: [
+            account && isValidAddress(account)
+              ? (account as `0x${string}`)
+              : ("0x0000000000000000000000000000000000000000" as `0x${string}`),
+          ],
+          chainId: ARC_TESTNET_CHAIN_ID,
+        },
       ];
     });
-  }, [displayedGroups]);
+  }, [displayedGroups, account]);
 
   const { data: stateData } = useReadContracts({
     contracts: stateContracts,
@@ -266,10 +281,44 @@ export function ClubDirectoryModal({
     },
   });
 
-  const visibleGroups = displayedGroups.map((group, groupIndex) => ({ group, groupIndex })).filter(({ group, groupIndex }) => {
-    const result = stateData?.[groupIndex * 6];
-    return result?.status !== "success" || Number(result.result) !== (group.version === "v2-bonded" ? 4 : GROUP_STATE.CANCELLED);
-  });
+  const STRIDE = 7;
+
+  const allNonCancelledGroups = useMemo(() => {
+    return displayedGroups
+      .map((group, groupIndex) => ({ group, groupIndex }))
+      .filter(({ group, groupIndex }) => {
+        const result = stateData?.[groupIndex * STRIDE];
+        return (
+          result?.status !== "success" ||
+          Number(result.result) !==
+            (group.version === "v2-bonded" ? 4 : GROUP_STATE.CANCELLED)
+        );
+      });
+  }, [displayedGroups, stateData]);
+
+  const visibleGroups = useMemo(() => {
+    return allNonCancelledGroups.filter(({ group, groupIndex }) => {
+      if (!isConnected) return true;
+      const baseIdx = groupIndex * STRIDE;
+      const rawOwner =
+        stateData?.[baseIdx + 5]?.status === "success"
+          ? String(stateData[baseIdx + 5].result)
+          : undefined;
+      const isOwner = Boolean(
+        rawOwner && account && rawOwner.toLowerCase() === account.toLowerCase()
+      );
+      const isMember = Boolean(
+        stateData?.[baseIdx + 6]?.status === "success" &&
+          stateData[baseIdx + 6].result
+      );
+      const isCreator = Boolean(
+        group.creator &&
+          account &&
+          group.creator.toLowerCase() === account.toLowerCase()
+      );
+      return isOwner || isMember || isCreator;
+    });
+  }, [allNonCancelledGroups, isConnected, stateData, account]);
 
   const customGroupsCount = useMemo(() => {
     return groups.filter((g) => !g.isDefault).length;
@@ -341,21 +390,14 @@ export function ClubDirectoryModal({
     const groupIndex = displayedGroups.findIndex(
       (g) => g.address.toLowerCase() === group.address.toLowerCase()
     );
-    const baseIdx = groupIndex * 6;
+    const baseIdx = groupIndex * STRIDE;
     const rawState =
       stateData?.[baseIdx]?.status === "success"
         ? (stateData[baseIdx].result as number)
         : undefined;
-    const isBonded = group.version === "v2-bonded";
-    const memberCount = isBonded
-      ? (stateData?.[baseIdx + 1]?.status === "success" ? BigInt(stateData[baseIdx + 1].result as any) : 0n)
-      : (stateData?.[baseIdx + 1]?.status === "success" && stateData[baseIdx + 1].result ? 1n : 0n);
-    const hasMember0 = memberCount > 0n && !hasMajorityCancelVotes(group.address, memberCount);
-    const isActive =
-      rawState === GROUP_STATE.ACTIVE ||
-      (rawState === GROUP_STATE.OPEN && hasMember0);
 
-    if (group.isDefault || isActive) {
+    // Chỉ chặn xóa nếu nhóm đang chạy vòng hụi ACTIVE
+    if (rawState === GROUP_STATE.ACTIVE) {
       toast.error(
         isEn
           ? t("clubDirectoryModal.deleteActiveError", language)
@@ -372,21 +414,13 @@ export function ClubDirectoryModal({
     const groupIndex = displayedGroups.findIndex(
       (g) => g.address.toLowerCase() === group.address.toLowerCase()
     );
-    const baseIdx = groupIndex * 6;
+    const baseIdx = groupIndex * STRIDE;
     const rawState =
       stateData?.[baseIdx]?.status === "success"
         ? (stateData[baseIdx].result as number)
         : undefined;
-    const isBonded = group.version === "v2-bonded";
-    const memberCount = isBonded
-      ? (stateData?.[baseIdx + 1]?.status === "success" ? BigInt(stateData[baseIdx + 1].result as any) : 0n)
-      : (stateData?.[baseIdx + 1]?.status === "success" && stateData[baseIdx + 1].result ? 1n : 0n);
-    const hasMember0 = memberCount > 0n && !hasMajorityCancelVotes(group.address, memberCount);
-    const isActive =
-      rawState === GROUP_STATE.ACTIVE ||
-      (rawState === GROUP_STATE.OPEN && hasMember0);
 
-    if (group.isDefault || isActive) {
+    if (rawState === GROUP_STATE.ACTIVE) {
       toast.error(
         isEn
           ? t("clubDirectoryModal.deleteActiveError", language)
@@ -499,13 +533,34 @@ export function ClubDirectoryModal({
         {/* Club List */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
           {visibleGroups.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-xs sm:text-sm">
-              {isEn ? t("clubDirectoryModal.noClubs", language) : "Chưa có nhóm nào trong danh sách."}
+            <div className="text-center py-12 px-4 space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center mx-auto text-slate-400">
+                <Layers size={24} />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-sm sm:text-base font-bold text-white">
+                  {isEn ? "No Savings Clubs Found" : "Chưa có nhóm nào trong danh sách"}
+                </h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                  {isEn
+                    ? "This wallet has not created or joined any savings clubs yet. Create a new club to get started!"
+                    : "Ví này chưa tham gia hoặc sở hữu nhóm hụi nào. Hãy tạo một nhóm mới để bắt đầu!"}
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCreateNew}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-xs font-bold text-slate-950 transition-all cursor-pointer shadow-md"
+                >
+                  {isEn ? "+ Create Club" : "+ Tạo nhóm mới"}
+                </button>
+              </div>
             </div>
           ) : (
             visibleGroups.map(({ group, groupIndex }) => {
               const isCurrent = group.address.toLowerCase() === currentAddress.toLowerCase();
-              const baseIdx = groupIndex * 6;
+              const baseIdx = groupIndex * STRIDE;
               const rawState =
                 stateData?.[baseIdx]?.status === "success"
                   ? (stateData[baseIdx].result as number)
@@ -530,6 +585,12 @@ export function ClubDirectoryModal({
                 stateData?.[baseIdx + 5]?.status === "success"
                   ? String(stateData[baseIdx + 5].result)
                   : undefined;
+              const isOwner = Boolean(
+                isConnected && owner && account && owner.toLowerCase() === account.toLowerCase()
+              );
+              const isMember = Boolean(
+                isConnected && stateData?.[baseIdx + 6]?.status === "success" && stateData[baseIdx + 6].result
+              );
               const hasMember0 = memberCount > 0n && !hasMajorityCancelVotes(group.address, memberCount);
               const isActive =
                 rawState === GROUP_STATE.ACTIVE ||
@@ -562,6 +623,17 @@ export function ClubDirectoryModal({
                         >
                           <Pencil size={14} />
                         </button>
+
+                        {/* Owner / Member badge */}
+                        {isOwner ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            {isEn ? "Owner" : "Chủ nhóm"}
+                          </span>
+                        ) : isMember ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            {isEn ? "Member" : "Thành viên"}
+                          </span>
+                        ) : null}
 
                         {/* On-chain Status Badge with Real Member Count */}
                         {rawState === GROUP_STATE.OPEN && (
