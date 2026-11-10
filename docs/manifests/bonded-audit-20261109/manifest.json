@@ -1,6 +1,6 @@
 {
   "taskId": "bonded-audit-20261109",
-  "frozenAt": "2026-11-10T04:05:14.796Z",
+  "frozenAt": "2026-11-10T04:25:36.844Z",
   "status": "FROZEN",
   "files": {
     "src/App.tsx": {
@@ -9,12 +9,12 @@
       "isNew": false
     },
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "66125a6c67aa5f02337e8cd6ab98603b0fe630ea2da676af2dbafb15e41e878f",
+      "sha256": "c4ef7d84d6972d5fe87815f6ae69710f673a4399b7f2ccb33dc606e74b1a3c71",
       "baselineSha256": "0d05e00664c2b8c950a937fc8cb5c3643c34373e19cdd00a7f94e3a85cc0cdf6",
       "isNew": false
     },
     "src/components/savings/CreateBondedClubModal.tsx": {
-      "sha256": "e7fef3d991f6d3661462f32bc1f81d4861b0f28c7856803bb2ca5b483ae6e60f",
+      "sha256": "563e6128b3de0432d67dee26ef2332d04ffb32a6dab19d8b808e23a51989a4be",
       "baselineSha256": null,
       "isNew": false
     },

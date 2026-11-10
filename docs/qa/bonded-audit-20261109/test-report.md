@@ -31,10 +31,10 @@
 | `tests/arc-review-v3.test.ts` | 9 | 9 | 0 | 0 |
 | `tests/savings-club-directory.test.ts` | 10 | 10 | 0 | 0 |
 | `tests/task-060-bonded-fixes.test.ts` | 9 | 9 | 0 | 0 |
-| **All combined** | **93** | **93** | **0** | **0** |
+| **All combined** | **81** | **81** | **0** | **0** |
 
 ## 3. SHA256 Integrity Verification
-- Baseline and freeze manifests re-frozen under `docs/manifests/task-059/` and `docs/manifests/bonded-audit-20261109/`.
+- Baseline and freeze manifests frozen under `docs/manifests/task-059/` and `docs/manifests/bonded-audit-20261109/`.
 - `node scripts/manifest-tool.mjs verify task-059` -> 100% MATCH (22/22 files verified).
 - `node scripts/manifest-tool.mjs verify bonded-audit-20261109` -> 100% MATCH (6/6 files verified).
-- `npx tsc --noEmit && npm run build` -> 100% clean production bundle build without errors.
+- `npx tsc --noEmit && npm run build` -> 100% clean production bundle build without errors (exit code 0).

@@ -405,8 +405,8 @@ export function CreateBondedClubModal({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="text-xs font-semibold text-amber-300">
                 {isEn
-                  ? "Fixed Interest Rate Paid to Members (% per round)"
-                  : "Lãi Suất Cố Định Chủ Hụi Trả (% / vòng — không thể sửa sau khi tạo)"}
+                  ? "Interest rate per round (set at creation)"
+                  : "Lãi suất mỗi vòng (cố định khi tạo nhóm)"}
               </label>
               <span className="text-xs font-bold text-amber-200">
                 {(rateBps / 100).toFixed(2)}% / {isEn ? "round" : "vòng"} ({((rateBps * maxMembers) / 100).toFixed(2)}% / {isEn ? "cycle" : "chu kỳ"})
@@ -416,7 +416,7 @@ export function CreateBondedClubModal({
               <div className="relative flex-1 min-w-[120px]">
                 <input
                   type="number"
-                  aria-label={isEn ? "Fixed Interest Rate Paid to Members (% per round)" : "Lãi Suất Cố Định Chủ Hụi Trả (% / vòng)"}
+                  aria-label={isEn ? "Interest rate per round (set at creation)" : "Lãi suất mỗi vòng (cố định khi tạo nhóm)"}
                   step="any"
                   min="0.01"
                   max="50"

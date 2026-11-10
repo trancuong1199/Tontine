@@ -111,11 +111,17 @@ export function formatDeadlineDateTime(timestampSec: bigint, isVi: boolean): str
   const d = new Date(Number(timestampSec) * 1000);
   const now = new Date();
   const isToday = d.toDateString() === now.toDateString();
-  const timeStr = d.toLocaleTimeString();
+  const locale = isVi ? "vi-VN" : "en-US";
+  const timeStr = d.toLocaleTimeString(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: !isVi,
+  });
   if (isToday) return timeStr;
-  const dateStr = d.toLocaleDateString(isVi ? "vi-VN" : "en-US", {
-    month: "numeric",
-    day: "numeric",
+  const dateStr = d.toLocaleDateString(locale, {
+    day: "2-digit",
+    month: "2-digit",
     year: "numeric",
   });
   return `${timeStr}, ${dateStr}`;
@@ -923,7 +929,7 @@ export function BondedClubWorkspace({
   const ownerNextStep = club.state === BONDED_STATE.OPEN
     ? club.collateral === 0n ? (isVi ? "Bước tiếp theo: nạp cọc CirBTC lớn hơn 0. Sau đó mời ít nhất 2 thành viên để bắt đầu." : "Next: deposit a positive CirBTC bond, then recruit at least 2 members to start.")
       : club.memberCount < 2n ? (isVi ? "Bước tiếp theo: mời thêm thành viên; cần ít nhất 2 người để bắt đầu." : "Next: invite members; at least 2 are required to start.")
-        : (isVi ? "Nhóm đủ điều kiện cơ bản để bắt đầu chu kỳ (Chủ hụi + đủ hụi viên & đã nạp cọc). Bấm 'Bắt đầu các vòng (Start Rounds)' ngay bên dưới để mở Vòng 1 cho thành viên đóng hụi!" : "The club meets the basic conditions to start its cycle. Click 'Start Rounds' right below to open Round 1 so members can contribute!")
+        : (isVi ? "Nhóm đủ điều kiện cơ bản để bắt đầu chu kỳ (Chủ hụi + đủ thành viên & đã nạp cọc). Bấm 'Bắt đầu các vòng (Start Rounds)' ngay bên dưới để mở Vòng 1 cho thành viên đóng hụi!" : "The club meets the basic conditions to start its cycle. Click 'Start Rounds' right below to open Round 1 so members can contribute!")
     : club.interestOwed > 0n ? (isVi ? "Bước tiếp theo: thanh toán lãi đến hạn và kiểm tra lịch trả nợ." : "Next: pay outstanding interest and review repayment deadlines.")
       : club.totalDebt > 0n ? (isVi ? "Bước tiếp theo: hoàn trả khoản vay trước hạn tất toán." : "Next: repay the loan before settlement is due.")
         : club.cycleEnded ? (isVi ? "Chu kỳ đã hết hạn; kiểm tra điều kiện để hoàn tất." : "The cycle has ended; review completion eligibility.")
@@ -1293,9 +1299,13 @@ export function BondedClubWorkspace({
                         {deadline > 0n ? formatDeadlineDateTime(deadline, isVi) : ""}
                       </div>
                       <div className="mt-2 text-xs text-slate-400 leading-relaxed border-t border-slate-800/60 pt-1.5">
-                        {isVi
-                          ? "Quá hạn: bất kỳ ai cũng có thể kích hoạt tuyên bố vỡ nợ và cọc bị tịch thu."
-                          : "Overdue: anyone can declare default and collateral will be seized."}
+                        {isOverdue
+                          ? (isVi
+                              ? "Quá hạn: bất kỳ ai cũng có thể kích hoạt tuyên bố vỡ nợ và cọc bị tịch thu."
+                              : "Overdue: anyone can declare default and collateral will be seized.")
+                          : (isVi
+                              ? "Hạn trả khoản lãi phát sinh sau mỗi vòng."
+                              : "Interest payment due after each round.")}
                       </div>
                     </div>
                   );
@@ -1346,9 +1356,13 @@ export function BondedClubWorkspace({
                           : ""}
                       </div>
                       <div className="mt-2 text-xs text-slate-400 leading-relaxed border-t border-slate-800/60 pt-1.5">
-                        {isVi
-                          ? "Quá hạn: bất kỳ ai cũng có thể kích hoạt tuyên bố vỡ nợ và cọc bị tịch thu."
-                          : "Overdue: anyone can declare default and collateral will be seized."}
+                        {isOverdue
+                          ? (isVi
+                              ? "Quá hạn: bất kỳ ai cũng có thể kích hoạt tuyên bố vỡ nợ và cọc bị tịch thu."
+                              : "Overdue: anyone can declare default and collateral will be seized.")
+                          : (isVi
+                              ? "Hạn tất toán toàn bộ nợ gốc khi kết thúc chu kỳ."
+                              : "Full principal settlement due at cycle end.")}
                       </div>
                     </div>
                   );
@@ -1462,7 +1476,7 @@ export function BondedClubWorkspace({
                               {m.slice(0, 6)}...{m.slice(-4)}
                             </a>
                             <span className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-300 border border-slate-700">
-                              {isVi ? "Hụi viên" : "Member"}
+                              {isVi ? "Thành viên" : "Member"}
                             </span>
                             {isCurrent && (
                               <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-300 border border-amber-500/30">
@@ -1723,7 +1737,7 @@ export function BondedClubWorkspace({
                     </div>
                     <p className="text-slate-300 leading-relaxed">
                       {isVi
-                        ? `Trong BondedTontine, Chủ hụi nạp cọc cirBTC và bấm "Bắt đầu các vòng" bên dưới để mở Vòng 1. Ngay khi Vòng 1 bắt đầu, các Hụi viên sẽ đóng ${displayUsdc(club.contributionAmount)} USDC/vòng.`
+                        ? `Trong BondedTontine, Chủ hụi nạp cọc cirBTC và bấm "Bắt đầu các vòng" bên dưới để mở Vòng 1. Ngay khi Vòng 1 bắt đầu, các thành viên sẽ đóng ${displayUsdc(club.contributionAmount)} USDC/vòng.`
                         : `In BondedTontine, the Club Owner deposits cirBTC collateral and clicks "Start Rounds" below to open Round 1. Once Round 1 starts, Members contribute ${displayUsdc(club.contributionAmount)} USDC per round.`}
                     </p>
                   </div>

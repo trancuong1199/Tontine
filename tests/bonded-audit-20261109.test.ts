@@ -60,12 +60,14 @@ test('AUDIT-V1: Bilateral risk consent text and overdue consequence warnings', (
   assert.ok(modal.includes('default may be declared and all CirBTC collateral seized'));
   assert.ok(workspace.includes('Quá hạn: bất kỳ ai cũng có thể kích hoạt tuyên bố vỡ nợ và cọc bị tịch thu.'));
   assert.ok(workspace.includes('Overdue: anyone can declare default and collateral will be seized.'));
+  assert.ok(workspace.includes('Hạn trả khoản lãi phát sinh sau mỗi vòng.'));
+  assert.ok(workspace.includes('Hạn tất toán toàn bộ nợ gốc khi kết thúc chu kỳ.'));
 });
 
 test('AUDIT-V2: Accessible names match visible text, inputs labeled, and main landmark present', () => {
   assert.ok(modal.includes('aria-label={isEn ? "Close modal" : "Đóng cửa sổ"}'));
   assert.ok(modal.includes('aria-label={isEn ? "Contribution per Round (USDC)" : "Mức Đóng Mỗi Vòng (USDC)"}'));
-  assert.ok(modal.includes('aria-label={isEn ? "Fixed Interest Rate Paid to Members (% per round)" : "Lãi Suất Cố Định Chủ Hụi Trả (% / vòng)"}'));
+  assert.ok(modal.includes('aria-label={isEn ? "Interest rate per round (set at creation)" : "Lãi suất mỗi vòng (cố định khi tạo nhóm)"}'));
   assert.ok(workspace.includes('aria-label={copiedInviteLink ? (isVi ? "Đã chép link mời!" : "Link Copied!") : (isVi ? "Sao chép link mời" : "Copy Club Link")}'));
   assert.ok(app.includes('aria-label={language === "en" ? "EN 🇬🇧" : "VI 🇻🇳"}'));
   assert.ok(app.includes('<main>'));
@@ -74,12 +76,16 @@ test('AUDIT-V2: Accessible names match visible text, inputs labeled, and main la
 
 test('AUDIT-V3 & AUDIT-V5: Timeline format helper and digital countdown standards', () => {
   assert.ok(workspace.includes('export function formatDeadlineDateTime'));
+  assert.ok(workspace.includes('const locale = isVi ? "vi-VN" : "en-US";'));
+  assert.ok(workspace.includes('d.toLocaleTimeString(locale'));
   assert.ok(workspace.includes('formatDeadlineDateTime(currentRoundEnd, isVi)'));
   assert.ok(workspace.includes('formatDeadlineDateTime(deadline, isVi)'));
   assert.ok(workspace.includes('formatDeadlineDateTime(settlementDeadline, isVi)'));
   assert.ok(workspace.includes('if (seconds <= 0) return isVi ? "00:00:00 (Hết giờ)" : "00:00:00 (Ended)";'));
   assert.ok(workspace.includes('aria-live="off"'));
   assert.ok(!workspace.includes('💡'));
+  assert.ok(!workspace.includes('hụi viên'));
+  assert.ok(!workspace.includes('Hụi viên'));
 });
 
 test('AUDIT-V4: Clock drift synchronization against RPC latest block timestamp', () => {
