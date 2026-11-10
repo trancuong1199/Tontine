@@ -482,7 +482,7 @@ export function CreateBondedClubModal({
                 <span>
                   {isEn
                     ? "Advanced Parameters (CirBTC Safety & Grace Margins)"
-                    : "Thông số nâng cao (Tỷ lệ cọc CirBTC & Thời gian ân hạn)"}
+                    : "Thông số nâng cao (Tỷ lệ cọc CirBTC & Hạn chót)"}
                 </span>
               </span>
               {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -525,7 +525,7 @@ export function CreateBondedClubModal({
 
                   <div>
                     <span className="text-slate-400">
-                      {isEn ? "Grace Period (s)" : "Thời gian ân hạn (giây)"}
+                      {isEn ? "Grace Period (s)" : "Thời gian gia hạn thêm (giây)"}
                     </span>
                     <input
                       type="number"
@@ -583,7 +583,7 @@ export function CreateBondedClubModal({
               <span className="text-slate-300 leading-relaxed">
                 {isEn
                   ? `I accept the terms: interest grace ${formatRoundDuration(interestGraceSec, true)}, settlement grace ${formatRoundDuration(settlementGraceSec, true)}. Default can seize all CirBTC collateral.`
-                  : `Tôi đồng ý điều kiện: ân hạn lãi ${formatRoundDuration(interestGraceSec, false)}, tất toán ${formatRoundDuration(settlementGraceSec, false)}. Vỡ nợ có thể mất toàn bộ cọc CirBTC.`}
+                  : `Tôi đồng ý điều kiện: hạn trả lãi ${formatRoundDuration(interestGraceSec, false)}, tất toán ${formatRoundDuration(settlementGraceSec, false)}. Vỡ nợ có thể mất toàn bộ cọc CirBTC.`}
               </span>
             </label>
           </div>

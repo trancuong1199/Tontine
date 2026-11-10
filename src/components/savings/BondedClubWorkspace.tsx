@@ -1232,7 +1232,7 @@ export function BondedClubWorkspace({
                     >
                       <div className="flex items-center justify-between font-semibold">
                         <span className={isOverdue ? "text-red-300 font-bold" : "text-white"}>
-                          {isVi ? "Hạn trả lãi (+ ân hạn)" : "Interest Deadline (+ Grace)"}
+                          {isVi ? "Hạn chót trả lãi" : "Interest Deadline"}
                         </span>
                         {isOverdue && (
                           <span className="rounded bg-red-500 px-1.5 py-0.5 text-xs font-extrabold text-black uppercase">
@@ -1248,8 +1248,7 @@ export function BondedClubWorkspace({
                             : formatDigitalTimelineCountdown(remainingSec, isVi)}
                       </div>
                       <div className="mt-1 text-slate-400">
-                        {deadline > 0n ? new Date(Number(deadline) * 1000).toLocaleTimeString() : ""} ({isVi ? "ân hạn" : "grace"}:{" "}
-                        {formatRoundDuration(Number(club.interestGrace), !isVi)})
+                        {deadline > 0n ? new Date(Number(deadline) * 1000).toLocaleTimeString() : ""}
                       </div>
                     </div>
                   );
@@ -1277,7 +1276,7 @@ export function BondedClubWorkspace({
                     >
                       <div className="flex items-center justify-between font-semibold">
                         <span className={isOverdue ? "text-red-300 font-bold" : "text-white"}>
-                          {isVi ? "Hạn tất toán chu kỳ (+ ân hạn)" : "Settlement Deadline"}
+                          {isVi ? "Hạn tất toán chu kỳ" : "Settlement Deadline"}
                         </span>
                         {isOverdue && (
                           <span className="rounded bg-red-500 px-1.5 py-0.5 text-xs font-extrabold text-black uppercase">
@@ -1297,8 +1296,7 @@ export function BondedClubWorkspace({
                       <div className="mt-1 text-slate-400">
                         {settlementDeadline > 0n
                           ? new Date(Number(settlementDeadline) * 1000).toLocaleTimeString()
-                          : ""}{" "}
-                        ({isVi ? "ân hạn" : "grace"}: {formatRoundDuration(Number(club.settlementGrace), !isVi)})
+                          : ""}
                       </div>
                     </div>
                   );

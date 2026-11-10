@@ -193,8 +193,8 @@ export const BONDED_TONTINE_ERROR_MESSAGES: Record<
     en: "Position is still healthy above the liquidation threshold and cannot be liquidated",
   },
   NotDefaultable: {
-    vi: "Chưa hết thời gian ân hạn trả lãi hoặc tất toán, chưa thể tuyên bố vỡ nợ",
-    en: "Interest or settlement grace period has not elapsed yet; cannot declare default",
+    vi: "Chưa hết hạn chót trả lãi hoặc tất toán, chưa thể tuyên bố vỡ nợ",
+    en: "Interest or settlement deadline has not elapsed yet; cannot declare default",
   },
   NotFinalizable: {
     vi: "Chưa kết thúc chu kỳ hoặc chủ hụi chưa hoàn trả đủ gốc và lãi để tất toán",

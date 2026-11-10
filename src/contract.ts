@@ -243,7 +243,7 @@ export function parseContractError(error: unknown): string {
   if (msg.includes("staleprice")) return "Giá BTC/USD từ Oracle đã quá hạn (stale), vui lòng cập nhật giá trước khi thực hiện.";
   if (msg.includes("badprice")) return "Dữ liệu giá BTC/USD từ Oracle không hợp lệ.";
   if (msg.includes("notliquidatable")) return "Vị thế cọc vẫn an toàn trên ngưỡng thanh lý, chưa thể kích hoạt thanh lý.";
-  if (msg.includes("notdefaultable")) return "Chưa hết thời gian ân hạn trả lãi hoặc tất toán, chưa thể tuyên bố vỡ nợ.";
+  if (msg.includes("notdefaultable")) return "Chưa hết hạn chót trả lãi hoặc tất toán, chưa thể tuyên bố vỡ nợ.";
   if (msg.includes("notfinalizable")) return "Chưa kết thúc chu kỳ hoặc chủ hụi chưa hoàn trả đủ gốc và lãi để tất toán.";
   if (msg.includes("ownercannotjoin")) return "Chủ hụi (người vay) không được phép tham gia làm thành viên đóng tiền trong cùng nhóm.";
   if (msg.includes("renouncedisabled")) return "Chức năng từ bỏ quyền chủ hụi đã bị khóa để bảo vệ nghĩa vụ trả nợ.";
