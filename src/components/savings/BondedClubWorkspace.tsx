@@ -92,7 +92,7 @@ function formatFriendlyDuration(sec: number, isVi: boolean): string {
 const displayUsdc = formatFinancialAmount;
 
 export function formatDigitalTimelineCountdown(seconds: number, isVi: boolean): string {
-  if (seconds <= 0) return isVi ? "00:00 (Hết giờ)" : "00:00 (Ended)";
+  if (seconds <= 0) return isVi ? "00:00:00 (Hết giờ)" : "00:00:00 (Ended)";
   const days = Math.floor(seconds / 86400);
   const rem = seconds % 86400;
   const h = Math.floor(rem / 3600);
@@ -104,6 +104,21 @@ export function formatDigitalTimelineCountdown(seconds: number, isVi: boolean): 
     return isVi ? `${days} ngày ${timeStr}` : `${days}d ${timeStr}`;
   }
   return timeStr;
+}
+
+export function formatDeadlineDateTime(timestampSec: bigint, isVi: boolean): string {
+  if (timestampSec === 0n) return "";
+  const d = new Date(Number(timestampSec) * 1000);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const timeStr = d.toLocaleTimeString();
+  if (isToday) return timeStr;
+  const dateStr = d.toLocaleDateString(isVi ? "vi-VN" : "en-US", {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+  });
+  return `${timeStr}, ${dateStr}`;
 }
 
 const ERC20_APPROVE_ABI = [
@@ -260,13 +275,7 @@ export function BondedClubWorkspace({
     club.interestOwed > 0n ||
     club.state === BONDED_STATE.ACTIVE;
   const [borrowInput, setBorrowInput] = useState("");
-  useEffect(() => {
-    setBorrowInput(maxBorrowUsdc > 0n ? formatUsdcExact(maxBorrowUsdc) : "");
-  }, [maxBorrowUsdc]);
   const [repayInput, setRepayInput] = useState("");
-  useEffect(() => {
-    setRepayInput(formatUsdcExact(club.totalDebt));
-  }, [club.totalDebt]);
   const [interestInput, setInterestInput] = useState("");
   useEffect(() => {
     setInterestInput(formatUsdcExact(club.interestOwed));
@@ -515,10 +524,18 @@ export function BondedClubWorkspace({
     );
 
   const handleBorrow = () => {
+    const trimmed = borrowInput.trim();
+    if (!trimmed) {
+      toast.error(
+        isVi
+          ? "Vui lòng nhập số tiền vay hợp lệ (> 0)"
+          : "Please enter a valid borrow amount (> 0)"
+      );
+      return;
+    }
     let amt = 0n;
     try {
-      const trimmed = borrowInput.trim();
-      amt = trimmed ? parseUsdc(trimmed) : maxBorrowUsdc;
+      amt = parseUsdc(trimmed);
       if (amt <= 0n) throw new Error();
     } catch {
       toast.error(
@@ -690,13 +707,38 @@ export function BondedClubWorkspace({
     club.healthBps !== null &&
     club.healthBps < club.liquidationBps;
 
+  const [clockDriftSec, setClockDriftSec] = useState<number>(0);
+  useEffect(() => {
+    if (!publicClient) return;
+    let active = true;
+    const syncBlockTime = async () => {
+      try {
+        const blk = await publicClient.getBlock({ blockTag: "latest" });
+        if (!active) return;
+        const blockSec = Number(blk.timestamp);
+        const clientSec = Math.floor(Date.now() / 1000);
+        setClockDriftSec(blockSec - clientSec);
+      } catch {
+        // preserve current drift
+      }
+    };
+    syncBlockTime();
+    const interval = setInterval(syncBlockTime, 30000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [publicClient]);
+
   const [nowSec, setNowSec] = useState<bigint>(() => BigInt(Math.floor(Date.now() / 1000)));
   useEffect(() => {
-    const timer = setInterval(() => {
-      setNowSec(BigInt(Math.floor(Date.now() / 1000)));
-    }, 1000);
+    const updateTime = () => {
+      setNowSec(BigInt(Math.floor(Date.now() / 1000) + clockDriftSec));
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [clockDriftSec]);
   const canDeclareDefault =
     club.state === BONDED_STATE.ACTIVE &&
     club.interestOwed > 0n &&
@@ -953,7 +995,7 @@ export function BondedClubWorkspace({
             onClick={handleCopyInviteLink}
             className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/70 hover:bg-amber-900/80 px-3 text-xs font-semibold text-amber-200 hover:border-amber-400/70 shadow-sm transition-colors cursor-pointer"
             title={isVi ? "Sao chép link mời thành viên (?group=...)" : "Copy club invite link (?group=...)"}
-            aria-label={isVi ? "Sao chép link mời" : "Copy club invite link"}
+            aria-label={copiedInviteLink ? (isVi ? "Đã chép link mời!" : "Link Copied!") : (isVi ? "Sao chép link mời" : "Copy Club Link")}
           >
             {copiedInviteLink ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5 text-amber-300" />}
             <span className="hidden sm:inline">{copiedInviteLink ? (isVi ? "Đã chép link mời!" : "Link Copied!") : (isVi ? "Sao chép link mời" : "Copy Club Link")}</span>
@@ -1169,7 +1211,7 @@ export function BondedClubWorkspace({
                   <Clock className="h-4 w-4 text-amber-400" />
                   {isVi ? "Mốc thời gian & Hạn chót (Deadlines)" : "Timeline & Deadlines"}
                 </h3>
-                <span className="ml-auto flex items-center gap-2 text-xs font-semibold text-slate-300">{nextDeadlineLabel}<ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" /></span>
+                <span className="ml-auto flex items-center gap-2 text-xs font-semibold text-slate-300" aria-live="off">{nextDeadlineLabel}<ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true" /></span>
               </summary>
               <div className="space-y-4 px-5 pb-5">
               <p className="text-xs text-slate-400">{isVi ? "Chu kỳ:" : "Cycle duration:"} {formatFriendlyDuration(Number(club.roundDuration), isVi)} × {Number(club.totalRounds)} {isVi ? "vòng" : "rounds"}</p>
@@ -1206,7 +1248,7 @@ export function BondedClubWorkspace({
                             : formatDigitalTimelineCountdown(remainingSec, isVi)}
                       </div>
                       <div className="mt-1 text-slate-400">
-                        {currentRoundEnd > 0n ? new Date(Number(currentRoundEnd) * 1000).toLocaleTimeString() : ""}
+                        {currentRoundEnd > 0n ? formatDeadlineDateTime(currentRoundEnd, isVi) : ""}
                       </div>
                     </div>
                   );
@@ -1248,7 +1290,12 @@ export function BondedClubWorkspace({
                             : formatDigitalTimelineCountdown(remainingSec, isVi)}
                       </div>
                       <div className="mt-1 text-slate-400">
-                        {deadline > 0n ? new Date(Number(deadline) * 1000).toLocaleTimeString() : ""}
+                        {deadline > 0n ? formatDeadlineDateTime(deadline, isVi) : ""}
+                      </div>
+                      <div className="mt-2 text-xs text-slate-400 leading-relaxed border-t border-slate-800/60 pt-1.5">
+                        {isVi
+                          ? "Quá hạn: bất kỳ ai cũng có thể kích hoạt tuyên bố vỡ nợ và cọc bị tịch thu."
+                          : "Overdue: anyone can declare default and collateral will be seized."}
                       </div>
                     </div>
                   );
@@ -1295,8 +1342,13 @@ export function BondedClubWorkspace({
                       </div>
                       <div className="mt-1 text-slate-400">
                         {settlementDeadline > 0n
-                          ? new Date(Number(settlementDeadline) * 1000).toLocaleTimeString()
+                          ? formatDeadlineDateTime(settlementDeadline, isVi)
                           : ""}
+                      </div>
+                      <div className="mt-2 text-xs text-slate-400 leading-relaxed border-t border-slate-800/60 pt-1.5">
+                        {isVi
+                          ? "Quá hạn: bất kỳ ai cũng có thể kích hoạt tuyên bố vỡ nợ và cọc bị tịch thu."
+                          : "Overdue: anyone can declare default and collateral will be seized."}
                       </div>
                     </div>
                   );
@@ -1819,7 +1871,7 @@ export function BondedClubWorkspace({
                       <div className="flex gap-2">
                         <div className="relative flex-1">
                           <input
-                            value={club.totalDebt === 0n ? "0.00" : repayInput}
+                            value={repayInput}
                             disabled={club.totalDebt === 0n}
                             onChange={(e) => setRepayInput(e.target.value)}
                             placeholder="0.00"
@@ -1849,8 +1901,8 @@ export function BondedClubWorkspace({
                       {club.totalDebt === 0n && club.interestOwed > 0n && (
                         <p className="text-xs text-amber-300/90 font-medium pt-0.5">
                           {isVi
-                            ? "💡 Bạn không có nợ gốc (0.00 USDC). Hiện tại chỉ cần thanh toán khoản lãi ở mục 'Trả lãi USDC' bên dưới."
-                            : "💡 No principal debt (0.00 USDC). You only need to pay the accrued interest below."}
+                            ? "Bạn không có nợ gốc (0.00 USDC). Hiện tại chỉ cần thanh toán khoản lãi ở mục 'Trả lãi USDC' bên dưới."
+                            : "No principal debt (0.00 USDC). You only need to pay the accrued interest below."}
                         </p>
                       )}
                     </div>

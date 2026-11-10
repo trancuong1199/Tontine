@@ -1,16 +1,21 @@
 {
   "taskId": "bonded-audit-20261109",
-  "frozenAt": "2026-11-10T03:07:42.579Z",
+  "frozenAt": "2026-11-10T04:05:14.796Z",
   "status": "FROZEN",
   "files": {
     "src/App.tsx": {
-      "sha256": "f260570ad8502b2e95810e0cee8028f95a797c6ab04d64748a04737af8cc43ff",
+      "sha256": "790de23bf3a01beda505fa66a1183797f0406fb0c0e4d1cd1b9df631a16d2344",
       "baselineSha256": "f260570ad8502b2e95810e0cee8028f95a797c6ab04d64748a04737af8cc43ff",
       "isNew": false
     },
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "1dd07073d5876dddbbf0b2aea5e68285335abc92d182e27d2a42135735ca4f7b",
+      "sha256": "66125a6c67aa5f02337e8cd6ab98603b0fe630ea2da676af2dbafb15e41e878f",
       "baselineSha256": "0d05e00664c2b8c950a937fc8cb5c3643c34373e19cdd00a7f94e3a85cc0cdf6",
+      "isNew": false
+    },
+    "src/components/savings/CreateBondedClubModal.tsx": {
+      "sha256": "e7fef3d991f6d3661462f32bc1f81d4861b0f28c7856803bb2ca5b483ae6e60f",
+      "baselineSha256": null,
       "isNew": false
     },
     "src/config.ts": {
@@ -24,7 +29,7 @@
       "isNew": false
     },
     "vite.config.ts": {
-      "sha256": "7323332e2ae1606a0ecf11ac435117df8931f76586c1f4f57c43b34a0f7c8082",
+      "sha256": "c152ee7040f44bef2e2104d5273b7c4291b5e3caec14e196fb3c5b01db42b746",
       "baselineSha256": "b265f1c8e347a2dc71dc48769c0be6a579018433b832d3f023e09fdd99be7320",
       "isNew": false
     }

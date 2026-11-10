@@ -41,7 +41,7 @@ export default defineConfig({
     exclude: ['@mysten/dapp-kit', '@mysten/sui'],
   },
   server: {
-    host: true,
+    host: process.env.VITE_HOST === 'true' ? true : false,
     port: 5173,
     allowedHosts: true,
     cors: true,

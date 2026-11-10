@@ -253,6 +253,7 @@ export function CreateBondedClubModal({
             type="button"
             onClick={onClose}
             disabled={isDeploying}
+            aria-label={isEn ? "Close modal" : "Đóng cửa sổ"}
             className="text-slate-400 hover:text-white p-2 rounded-xl border border-slate-800 hover:bg-slate-800/80 transition-colors disabled:opacity-50 cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -310,6 +311,7 @@ export function CreateBondedClubModal({
             <div className="relative">
               <input
                 type="number"
+                aria-label={isEn ? "Contribution per Round (USDC)" : "Mức Đóng Mỗi Vòng (USDC)"}
                 step="any"
                 min="1"
                 value={contributionAmount}
@@ -414,6 +416,7 @@ export function CreateBondedClubModal({
               <div className="relative flex-1 min-w-[120px]">
                 <input
                   type="number"
+                  aria-label={isEn ? "Fixed Interest Rate Paid to Members (% per round)" : "Lãi Suất Cố Định Chủ Hụi Trả (% / vòng)"}
                   step="any"
                   min="0.01"
                   max="50"
@@ -481,7 +484,7 @@ export function CreateBondedClubModal({
                 <Shield className="w-3.5 h-3.5 text-amber-400" />
                 <span>
                   {isEn
-                    ? "Advanced Parameters (CirBTC Safety & Grace Margins)"
+                    ? "Advanced Parameters (CirBTC Collateral Ratio & Deadlines)"
                     : "Thông số nâng cao (Tỷ lệ cọc CirBTC & Hạn chót)"}
                 </span>
               </span>
@@ -492,10 +495,12 @@ export function CreateBondedClubModal({
               <div className="mt-3 p-4 rounded-2xl bg-black/40 border border-slate-800 space-y-3.5 text-xs animate-in fade-in duration-150">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <span className="text-slate-400">
+                    <label htmlFor="safety-bps-input" className="text-slate-400 block">
                       {isEn ? "Safety Margin" : "Tỷ lệ cọc an toàn"}
-                    </span>
+                    </label>
                     <input
+                      id="safety-bps-input"
+                      aria-label={isEn ? "Safety Margin" : "Tỷ lệ cọc an toàn"}
                       type="number"
                       value={safetyBps}
                       onChange={(e) => setSafetyBps(Number(e.target.value))}
@@ -508,10 +513,12 @@ export function CreateBondedClubModal({
                   </div>
 
                   <div>
-                    <span className="text-slate-400">
+                    <label htmlFor="liquidation-bps-input" className="text-slate-400 block">
                       {isEn ? "Liquidation Threshold" : "Ngưỡng thanh lý"}
-                    </span>
+                    </label>
                     <input
+                      id="liquidation-bps-input"
+                      aria-label={isEn ? "Liquidation Threshold" : "Ngưỡng thanh lý"}
                       type="number"
                       value={liquidationBps}
                       onChange={(e) => setLiquidationBps(Number(e.target.value))}
@@ -524,10 +531,12 @@ export function CreateBondedClubModal({
                   </div>
 
                   <div>
-                    <span className="text-slate-400">
-                      {isEn ? "Grace Period (s)" : "Thời gian gia hạn thêm (giây)"}
-                    </span>
+                    <label htmlFor="interest-grace-input" className="text-slate-400 block">
+                      {isEn ? "Extra grace period for interest / settlement (s)" : "Thời gian gia hạn thêm sau mỗi vòng (giây)"}
+                    </label>
                     <input
+                      id="interest-grace-input"
+                      aria-label={isEn ? "Extra grace period for interest / settlement (s)" : "Thời gian gia hạn thêm sau mỗi vòng (giây)"}
                       type="number"
                       value={interestGraceSec}
                       onChange={(e) => setInterestGraceSec(Number(e.target.value))}
@@ -582,8 +591,8 @@ export function CreateBondedClubModal({
               />
               <span className="text-slate-300 leading-relaxed">
                 {isEn
-                  ? `I accept the terms: interest grace ${formatRoundDuration(interestGraceSec, true)}, settlement grace ${formatRoundDuration(settlementGraceSec, true)}. Default can seize all CirBTC collateral.`
-                  : `Tôi đồng ý điều kiện: hạn trả lãi ${formatRoundDuration(interestGraceSec, false)}, tất toán ${formatRoundDuration(settlementGraceSec, false)}. Vỡ nợ có thể mất toàn bộ cọc CirBTC.`}
+                  ? `If I do not pay interest within ${formatRoundDuration(interestGraceSec, true)} after a round ends, or do not settle within ${formatRoundDuration(settlementGraceSec, true)} after the cycle ends, default may be declared and all CirBTC collateral seized.`
+                  : `Nếu tôi không trả lãi trong vòng ${formatRoundDuration(interestGraceSec, false)} sau khi vòng kết thúc, hoặc không tất toán trong vòng ${formatRoundDuration(settlementGraceSec, false)} sau khi chu kỳ kết thúc, nhóm có thể bị tuyên bố vỡ nợ và toàn bộ cọc CirBTC bị tịch thu.`}
               </span>
             </label>
           </div>

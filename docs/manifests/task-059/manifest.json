@@ -1,6 +1,6 @@
 {
   "taskId": "task-059",
-  "frozenAt": "2026-11-09T06:54:37.053Z",
+  "frozenAt": "2026-11-10T04:04:50.247Z",
   "status": "FROZEN",
   "files": {
     "contracts/BondedTontine.sol": {
@@ -54,12 +54,12 @@
       "isNew": false
     },
     "src/App.tsx": {
-      "sha256": "402e42219e3a1a42a2f22e0bc0b6e08114898f5a8b3ac8319c973bde35ab1b61",
+      "sha256": "790de23bf3a01beda505fa66a1183797f0406fb0c0e4d1cd1b9df631a16d2344",
       "baselineSha256": null,
       "isNew": false
     },
     "src/components/savings/BondedClubWorkspace.tsx": {
-      "sha256": "975eeba0914240a9d032c0a07a1ff5ee3618d7882b62a38c253482e2882788ce",
+      "sha256": "66125a6c67aa5f02337e8cd6ab98603b0fe630ea2da676af2dbafb15e41e878f",
       "baselineSha256": null,
       "isNew": false
     },
@@ -74,7 +74,7 @@
       "isNew": false
     },
     "src/contract.ts": {
-      "sha256": "72784ee59404ae3c74bd7a379ccb6e5a72918451a86db1fc8945e76f9f3544a6",
+      "sha256": "4051fb6b12650807c30a6011ef246df11cebb9243fe109dc942e4f4830d70816",
       "baselineSha256": null,
       "isNew": false
     },
@@ -104,7 +104,7 @@
       "isNew": false
     },
     "src/lib/bondedTontine.ts": {
-      "sha256": "c29726e3b97df9addff6fa0a32d752120a8ba8f3ff92f7265ba9dbc694021258",
+      "sha256": "a26ebbb980b765fdc56f86a718816d26d69b409868082a7c8f4e48e778a4426c",
       "baselineSha256": null,
       "isNew": false
     },

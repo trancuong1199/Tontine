@@ -1059,7 +1059,7 @@ export default function App() {
                   onClick={() => setIsPasskeyLangOpen(!isPasskeyLangOpen)}
                   className="flex items-center gap-1 sm:gap-1.5 px-1.5 py-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs sm:text-sm font-bold border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 text-slate-200 hover:text-amber-300 transition-all active:scale-95 shadow-2xs cursor-pointer whitespace-nowrap"
                   title={language === "vi" ? "Chọn ngôn ngữ (Select Language)" : "Select Language (Chọn ngôn ngữ)"}
-                  aria-label="Select language"
+                  aria-label={language === "en" ? "EN 🇬🇧" : "VI 🇻🇳"}
                   aria-haspopup="listbox"
                   aria-expanded={isPasskeyLangOpen}
                 >
@@ -1233,16 +1233,18 @@ export default function App() {
       )}
 
       {activeTab === "home" ? (
-        <LandingPage
-          onLaunchApp={() => handleSelectTab("app")}
-          onSelectClub={(addr) => {
-            handleSwitchGroup(addr);
-            setActiveTab("app");
-          }}
-          onOpenCreateModal={() => setShowCreateModal(true)}
-          onOpenGuideModal={() => setShowGuide(true)}
-          language={language}
-        />
+        <main>
+          <LandingPage
+            onLaunchApp={() => handleSelectTab("app")}
+            onSelectClub={(addr) => {
+              handleSwitchGroup(addr);
+              setActiveTab("app");
+            }}
+            onOpenCreateModal={() => setShowCreateModal(true)}
+            onOpenGuideModal={() => setShowGuide(true)}
+            language={language}
+          />
+        </main>
       ) : (
         <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 relative z-10">
         {hasNoActiveClub ? (
