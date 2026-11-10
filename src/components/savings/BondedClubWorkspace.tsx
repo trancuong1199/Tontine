@@ -91,6 +91,21 @@ function formatFriendlyDuration(sec: number, isVi: boolean): string {
 
 const displayUsdc = formatFinancialAmount;
 
+export function formatDigitalTimelineCountdown(seconds: number, isVi: boolean): string {
+  if (seconds <= 0) return isVi ? "00:00 (Hết giờ)" : "00:00 (Ended)";
+  const days = Math.floor(seconds / 86400);
+  const rem = seconds % 86400;
+  const h = Math.floor(rem / 3600);
+  const m = Math.floor((rem % 3600) / 60);
+  const s = rem % 60;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  const timeStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  if (days > 0) {
+    return isVi ? `${days} ngày ${timeStr}` : `${days}d ${timeStr}`;
+  }
+  return timeStr;
+}
+
 const ERC20_APPROVE_ABI = [
   {
     type: "function",
@@ -675,7 +690,13 @@ export function BondedClubWorkspace({
     club.healthBps !== null &&
     club.healthBps < club.liquidationBps;
 
-  const nowSec = BigInt(Math.floor(Date.now() / 1000));
+  const [nowSec, setNowSec] = useState<bigint>(() => BigInt(Math.floor(Date.now() / 1000)));
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowSec(BigInt(Math.floor(Date.now() / 1000)));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
   const canDeclareDefault =
     club.state === BONDED_STATE.ACTIVE &&
     club.interestOwed > 0n &&
@@ -883,9 +904,9 @@ export function BondedClubWorkspace({
   const nextDeadlineLabel = timelineInterestOverdue
     ? (isVi ? "Quá hạn trả lãi!" : "Interest overdue!")
     : timelineRoundLeft > 0
-      ? `${isVi ? `Vòng ${club.currentRoundIndex} đóng sau` : `Round ${club.currentRoundIndex} closes in`} ${formatRoundDuration(timelineRoundLeft, !isVi)}`
+      ? `${isVi ? `Vòng ${club.currentRoundIndex} đóng sau` : `Round ${club.currentRoundIndex} closes in`} ${formatDigitalTimelineCountdown(timelineRoundLeft, isVi)}`
       : timelineHasDebt && timelineInterestLeft > 0
-        ? `${isVi ? "Hạn trả lãi sau" : "Interest due in"} ${formatRoundDuration(timelineInterestLeft, !isVi)}`
+        ? `${isVi ? "Hạn trả lãi sau" : "Interest due in"} ${formatDigitalTimelineCountdown(timelineInterestLeft, isVi)}`
         : (isVi ? "Không có hạn gấp" : "No urgent deadline");
   return (
     <div className="space-y-6 text-slate-100 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-0" data-testid="bonded-workspace">
@@ -1177,12 +1198,12 @@ export function BondedClubWorkspace({
                       <div className="font-semibold text-white">
                         {isVi ? `Hạn đóng tiền vòng ${club.currentRoundIndex}` : `Round ${club.currentRoundIndex} Cutoff`}
                       </div>
-                      <div className="mt-1 font-mono text-base font-bold">
+                      <div className="mt-1 font-mono text-base font-bold text-amber-300">
                         {currentRoundEnd === 0n
                           ? "—"
                           : isPast
                             ? (isVi ? "Vòng đã kết thúc" : "Round ended")
-                            : `${formatRoundDuration(remainingSec, !isVi)} ${isVi ? "còn lại" : "left"}`}
+                            : formatDigitalTimelineCountdown(remainingSec, isVi)}
                       </div>
                       <div className="mt-1 text-slate-400">
                         {currentRoundEnd > 0n ? new Date(Number(currentRoundEnd) * 1000).toLocaleTimeString() : ""}
@@ -1219,12 +1240,12 @@ export function BondedClubWorkspace({
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 font-mono text-base font-bold">
+                      <div className={`mt-1 font-mono text-base font-bold ${isOverdue ? "text-red-300" : "text-amber-300"}`}>
                         {deadline === 0n || !hasDebtOrInterest
                           ? (isVi ? "Không nợ lãi" : "No interest due")
                           : isOverdue
-                            ? (isVi ? `ĐÃ QUÁ HẠN (${formatFriendlyDuration(Number(nowSec - deadline), isVi)})` : `OVERDUE (${formatFriendlyDuration(Number(nowSec - deadline), isVi)} ago)`)
-                            : `${formatRoundDuration(remainingSec, !isVi)} ${isVi ? "còn lại" : "left"}`}
+                            ? (isVi ? `ĐÃ QUÁ HẠN (${formatDigitalTimelineCountdown(Number(nowSec - deadline), isVi)})` : `OVERDUE (${formatDigitalTimelineCountdown(Number(nowSec - deadline), isVi)} ago)`)
+                            : formatDigitalTimelineCountdown(remainingSec, isVi)}
                       </div>
                       <div className="mt-1 text-slate-400">
                         {deadline > 0n ? new Date(Number(deadline) * 1000).toLocaleTimeString() : ""} ({isVi ? "ân hạn" : "grace"}:{" "}
@@ -1264,12 +1285,14 @@ export function BondedClubWorkspace({
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 font-mono text-base font-bold">
+                      <div className={`mt-1 font-mono text-base font-bold ${isOverdue ? "text-red-300" : "text-amber-300"}`}>
                         {settlementDeadline === 0n
                           ? "—"
                           : isOverdue
-                            ? (isVi ? "ĐÃ QUÁ HẠN TẤT TOÁN" : "OVERDUE SETTLEMENT")
-                            : `${formatRoundDuration(remainingSec, !isVi)} ${isVi ? "còn lại" : "left"}`}
+                            ? (isVi ? `ĐÃ QUÁ HẠN (${formatDigitalTimelineCountdown(Number(nowSec - settlementDeadline), isVi)})` : `OVERDUE (${formatDigitalTimelineCountdown(Number(nowSec - settlementDeadline), isVi)} ago)`)
+                            : remainingSec <= 0
+                              ? (isVi ? "Đến hạn tất toán" : "Settlement due")
+                              : formatDigitalTimelineCountdown(remainingSec, isVi)}
                       </div>
                       <div className="mt-1 text-slate-400">
                         {settlementDeadline > 0n
@@ -1792,26 +1815,46 @@ export function BondedClubWorkspace({
                         </label>
                         <span className="text-xs text-slate-400">
                           {isVi ? "Đang vay:" : "Debt:"}{" "}
-                          <strong className="text-white">{displayUsdc(club.totalDebt)} USDC</strong>
+                          <strong className={club.totalDebt > 0n ? "text-amber-300 font-bold" : "text-white"}>{displayUsdc(club.totalDebt)} USDC</strong>
                         </span>
                       </div>
                       <div className="flex gap-2">
-                        <input
-                          value={repayInput}
-                          disabled
-                          onChange={(e) => setRepayInput(e.target.value)}
-                          placeholder="0.00"
-                          className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden disabled:opacity-60 disabled:cursor-not-allowed"
-                        />
+                        <div className="relative flex-1">
+                          <input
+                            value={club.totalDebt === 0n ? "0.00" : repayInput}
+                            disabled={club.totalDebt === 0n}
+                            onChange={(e) => setRepayInput(e.target.value)}
+                            placeholder="0.00"
+                            className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 pr-14 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden disabled:opacity-60 disabled:cursor-not-allowed"
+                          />
+                          {club.totalDebt > 0n && (
+                            <button
+                              type="button"
+                              onClick={() => setRepayInput(formatUsdcExact(club.totalDebt))}
+                              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-slate-800 px-2 py-0.5 text-xs font-medium text-emerald-300 hover:bg-slate-700 cursor-pointer"
+                            >
+                              {isVi ? "Tối đa" : "Max"}
+                            </button>
+                          )}
+                        </div>
                         <button
                           type="button"
                           disabled={isPending || club.totalDebt === 0n}
                           onClick={handleRepay}
                           className="shrink-0 rounded-xl bg-emerald-500/20 px-3.5 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                         >
-                          {isVi ? "Trả gốc" : "Repay"}
+                          {club.totalDebt === 0n
+                            ? (isVi ? "Không có nợ gốc" : "No debt")
+                            : (isVi ? "Trả gốc" : "Repay")}
                         </button>
                       </div>
+                      {club.totalDebt === 0n && club.interestOwed > 0n && (
+                        <p className="text-xs text-amber-300/90 font-medium pt-0.5">
+                          {isVi
+                            ? "💡 Bạn không có nợ gốc (0.00 USDC). Hiện tại chỉ cần thanh toán khoản lãi ở mục 'Trả lãi USDC' bên dưới."
+                            : "💡 No principal debt (0.00 USDC). You only need to pay the accrued interest below."}
+                        </p>
+                      )}
                     </div>
 
                     {/* Pay Interest */}
