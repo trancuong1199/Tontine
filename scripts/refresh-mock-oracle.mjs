@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import process from "node:process";
 /** Read-only: node scripts/refresh-mock-oracle.mjs --status (or --dry-run).
- * Write: DEPLOYER_PRIVATE_KEY=... node scripts/refresh-mock-oracle.mjs --price 60000 --interval 1800
+ * Write: DEPLOYER_PRIVATE_KEY=... node scripts/refresh-mock-oracle.mjs --live --interval 1800
  */
 import { createPublicClient, createWalletClient, http, formatUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -12,12 +12,40 @@ import { ARC_TESTNET_MOCK_FEED, ARC_TESTNET_DEFAULT_BONDED_CLUB } from "../src/c
 import { MOCK_AGGREGATOR_V3_ABI, BONDED_TONTINE_ABI } from "../src/lib/bondedTontine.ts";
 import { parseUnitsExact } from "../src/onchain-money.ts";
 
+/** Fetch real-time market price of BTC from Binance (fallback to Coinbase) */
+export async function getLiveBtcPrice() {
+  try {
+    const res = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT", {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const val = parseFloat(data.price);
+      if (val > 0) return val.toFixed(2);
+    }
+  } catch {}
+
+  try {
+    const res = await fetch("https://api.coinbase.com/v2/prices/BTC-USD/spot", {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const val = parseFloat(data?.data?.amount);
+      if (val > 0) return val.toFixed(2);
+    }
+  } catch {}
+
+  return null;
+}
+
 /** @param {string[]} args */
 export function parseOptions(args) {
-  let price = "60000", interval = null, readOnly = false;
+  let price = null, interval = null, readOnly = false, live = false;
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === "--status" || arg === "--dry-run") readOnly = true;
+    else if (arg === "--live") live = true;
     else if (arg === "--price") {
       price = args[++i];
       if (!price || !/^\d+(\.\d{1,8})?$/.test(price) || parseUnitsExact(price, 8) <= 0n) throw new Error("--price must be positive with at most 8 decimals");
@@ -26,11 +54,10 @@ export function parseOptions(args) {
       if (!Number.isSafeInteger(interval) || interval < 60) throw new Error("--interval must be an integer >= 60 seconds");
     } else throw new Error(`Unknown argument: ${arg}`);
   }
-  return { price, interval, readOnly };
+  return { price, interval, readOnly, live };
 }
 
 export async function main(args = process.argv.slice(2)) {
-  // Validate all syntax before key access, signing or any network request.
   const options = parseOptions(args);
   const publicClient = createPublicClient({ chain: arcTestnet, transport: http(ARC_RPC) });
   const [maxPriceAge, feed, decimals, round] = await Promise.all([
@@ -50,13 +77,20 @@ export async function main(args = process.argv.slice(2)) {
   const admin = await publicClient.readContract({ address: feed, abi: MOCK_AGGREGATOR_V3_ABI, functionName: "admin" });
   if (admin.toLowerCase() !== account.address.toLowerCase()) throw new Error("Configured signer is not the live oracle admin");
   const wallet = createWalletClient({ account, chain: arcTestnet, transport: http(ARC_RPC) });
-  const answer = parseUnitsExact(options.price, decimals);
+
   const refresh = async () => {
+    let priceStr = options.price;
+    if (!priceStr || options.live) {
+      const live = await getLiveBtcPrice();
+      priceStr = live || priceStr || "74000";
+    }
+    const answer = parseUnitsExact(priceStr, decimals);
     const hash = await wallet.writeContract({ address: feed, abi: MOCK_AGGREGATOR_V3_ABI, functionName: "setPrice", args: [answer] });
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     if (receipt.status !== "success") throw new Error(`Refresh reverted: ${hash}`);
-    console.log(`Oracle refreshed: ${hash}`);
+    console.log(`[Oracle] Refreshed with live BTC price $${priceStr} | tx: ${hash}`);
   };
+
   await refresh();
   while (options.interval !== null) {
     await new Promise(resolve => setTimeout(resolve, options.interval * 1000));
