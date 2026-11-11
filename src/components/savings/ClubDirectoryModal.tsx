@@ -282,24 +282,25 @@ export function ClubDirectoryModal({
   });
 
   const STRIDE = 7;
+  const actualStride = stateData && displayedGroups.length > 0 && Math.floor(stateData.length / displayedGroups.length) === 6 ? 6 : STRIDE;
 
   const allNonCancelledGroups = useMemo(() => {
     return displayedGroups
       .map((group, groupIndex) => ({ group, groupIndex }))
       .filter(({ group, groupIndex }) => {
-        const result = stateData?.[groupIndex * STRIDE];
+        const result = stateData?.[groupIndex * actualStride];
         return (
           result?.status !== "success" ||
           Number(result.result) !==
             (group.version === "v2-bonded" ? 4 : GROUP_STATE.CANCELLED)
         );
       });
-  }, [displayedGroups, stateData]);
+  }, [displayedGroups, stateData, actualStride]);
 
   const visibleGroups = useMemo(() => {
     return allNonCancelledGroups.filter(({ group, groupIndex }) => {
       if (!isConnected) return true;
-      const baseIdx = groupIndex * STRIDE;
+      const baseIdx = groupIndex * actualStride;
       const rawOwner =
         stateData?.[baseIdx + 5]?.status === "success"
           ? String(stateData[baseIdx + 5].result)
@@ -318,7 +319,7 @@ export function ClubDirectoryModal({
       );
       return isOwner || isMember || isCreator;
     });
-  }, [allNonCancelledGroups, isConnected, stateData, account]);
+  }, [allNonCancelledGroups, isConnected, stateData, account, actualStride]);
 
   const customGroupsCount = useMemo(() => {
     return groups.filter((g) => !g.isDefault).length;
@@ -390,14 +391,21 @@ export function ClubDirectoryModal({
     const groupIndex = displayedGroups.findIndex(
       (g) => g.address.toLowerCase() === group.address.toLowerCase()
     );
-    const baseIdx = groupIndex * STRIDE;
+    const baseIdx = groupIndex * actualStride;
     const rawState =
       stateData?.[baseIdx]?.status === "success"
         ? (stateData[baseIdx].result as number)
         : undefined;
+    const isBonded = group.version === "v2-bonded";
+    const memberCount = isBonded
+      ? (stateData?.[baseIdx + 1]?.status === "success" ? BigInt(stateData[baseIdx + 1].result as any) : 0n)
+      : (stateData?.[baseIdx + 1]?.status === "success" && stateData[baseIdx + 1].result ? 1n : 0n);
+    const hasMember0 = memberCount > 0n && !hasMajorityCancelVotes(group.address, memberCount);
+    const isActive =
+      rawState === GROUP_STATE.ACTIVE ||
+      (rawState === GROUP_STATE.OPEN && hasMember0);
 
-    // Chỉ chặn xóa nếu nhóm đang chạy vòng hụi ACTIVE
-    if (rawState === GROUP_STATE.ACTIVE) {
+    if (isActive) {
       toast.error(
         isEn
           ? t("clubDirectoryModal.deleteActiveError", language)
@@ -414,13 +422,21 @@ export function ClubDirectoryModal({
     const groupIndex = displayedGroups.findIndex(
       (g) => g.address.toLowerCase() === group.address.toLowerCase()
     );
-    const baseIdx = groupIndex * STRIDE;
+    const baseIdx = groupIndex * actualStride;
     const rawState =
       stateData?.[baseIdx]?.status === "success"
         ? (stateData[baseIdx].result as number)
         : undefined;
+    const isBonded = group.version === "v2-bonded";
+    const memberCount = isBonded
+      ? (stateData?.[baseIdx + 1]?.status === "success" ? BigInt(stateData[baseIdx + 1].result as any) : 0n)
+      : (stateData?.[baseIdx + 1]?.status === "success" && stateData[baseIdx + 1].result ? 1n : 0n);
+    const hasMember0 = memberCount > 0n && !hasMajorityCancelVotes(group.address, memberCount);
+    const isActive =
+      rawState === GROUP_STATE.ACTIVE ||
+      (rawState === GROUP_STATE.OPEN && hasMember0);
 
-    if (rawState === GROUP_STATE.ACTIVE) {
+    if (isActive) {
       toast.error(
         isEn
           ? t("clubDirectoryModal.deleteActiveError", language)
@@ -539,7 +555,7 @@ export function ClubDirectoryModal({
               </div>
               <div className="space-y-1">
                 <h4 className="text-sm sm:text-base font-bold text-white">
-                  {isEn ? "No Savings Clubs Found" : "Chưa có nhóm nào trong danh sách"}
+                  {isEn ? t("clubDirectoryModal.noClubs", language) : "Chưa có nhóm nào trong danh sách"}
                 </h4>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
                   {isEn
@@ -560,7 +576,7 @@ export function ClubDirectoryModal({
           ) : (
             visibleGroups.map(({ group, groupIndex }) => {
               const isCurrent = group.address.toLowerCase() === currentAddress.toLowerCase();
-              const baseIdx = groupIndex * STRIDE;
+              const baseIdx = groupIndex * actualStride;
               const rawState =
                 stateData?.[baseIdx]?.status === "success"
                   ? (stateData[baseIdx].result as number)
@@ -626,11 +642,11 @@ export function ClubDirectoryModal({
 
                         {/* Owner / Member badge */}
                         {isOwner ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                             {isEn ? "Owner" : "Chủ nhóm"}
                           </span>
                         ) : isMember ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                             {isEn ? "Member" : "Thành viên"}
                           </span>
                         ) : null}
