@@ -895,7 +895,7 @@ export const translations: Record<Language, Translations> = {
     },
     arcAppKit: {
       btnLabel: "Arc AppKit",
-      modalTitle: "Bộ Công Cụ Arc AppKit",
+      modalTitle: "Bộ Công Cụ Tontine Toolkit",
       modalDesc: "Hạ tầng Web3 chính thức của Arc & Circle: Hoán đổi USDC/EURC, Ví Passkey, Cầu CCTP và Vòi Faucet.",
       tabSwap: "Swap",
       tabBridge: "Cầu CCTP",
@@ -1341,7 +1341,7 @@ export const translations: Record<Language, Translations> = {
     },
     arcAppKit: {
       btnLabel: "Arc AppKit",
-      modalTitle: "Arc AppKit Web3 Toolkit",
+      modalTitle: "Tontine Toolkit",
       modalDesc: "Official Arc & Circle Web3 tools: USDC/EURC Swap, Passkey Smart Account, CCTP Bridge & Faucet.",
       tabSwap: "Swap",
       tabBridge: "CCTP Bridge",
