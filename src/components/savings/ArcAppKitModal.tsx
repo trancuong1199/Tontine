@@ -599,7 +599,7 @@ export function ArcAppKitModal({
                 </p>
                 <div className="pt-2">
                   <a
-                    href="https://bridge.circle.com/"
+                    href="https://portal.arc.io/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 font-bold text-xs transition-all"

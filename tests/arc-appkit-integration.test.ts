@@ -116,7 +116,7 @@ test("TC-KIT-03 (AC-02.3, AC-02.4): Circle Passkey Smart Account, CCTP Bridge & 
     "Must reference Circle CCTP cross-chain bridge"
   );
   assert.ok(
-    modalSrc.includes("https://bridge.circle.com/") || modalSrc.includes("cctp"),
+    modalSrc.includes("https://portal.arc.io/") || modalSrc.includes("https://bridge.circle.com/") || modalSrc.toLowerCase().includes("cctp"),
     "Must link to Circle Bridge portal"
   );
 
