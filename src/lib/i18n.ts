@@ -476,7 +476,7 @@ export const translations: Record<Language, Translations> = {
   vi: {
     header: {
       appName: "HụiChain",
-      appDesc: "Trustless Rotating Savings Club on Arc Network",
+      appDesc: "Bonded Savings & Credit on Arc Network",
       directoryBtn: "Danh sách nhóm",
       createBtn: "Tạo nhóm",
       guideBtn: "Hướng dẫn",
@@ -922,7 +922,7 @@ export const translations: Record<Language, Translations> = {
   en: {
     header: {
       appName: "HụiChain",
-      appDesc: "Trustless Rotating Savings Club on Arc Network",
+      appDesc: "Bonded Savings & Credit on Arc Network",
       directoryBtn: "Club Directory",
       createBtn: "Create Club",
       guideBtn: "Guide",
