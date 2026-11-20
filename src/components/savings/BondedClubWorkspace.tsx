@@ -265,12 +265,24 @@ export function BondedClubWorkspace({
   const memberMaxInterestUsdc =
     (club.contributionAmount * club.rateBpsPerRound * cycleRounds * (cycleRounds + 1n)) / 2n / 10000n;
 
-  const [collateralInput, setCollateralInput] = useState(suggestedCollateralStr);
+  const [collateralInput, setCollateralInput] = useState(() => {
+    if (club.cirBtcBalance && club.cirBtcBalance > 0n) {
+      if (suggestedCollateralSats && suggestedCollateralSats <= club.cirBtcBalance) {
+        return suggestedCollateralStr;
+      }
+      return formatUnitsExact(club.cirBtcBalance, 8);
+    }
+    return suggestedCollateralStr;
+  });
   useEffect(() => {
     if (!hasDepositedCollateral && suggestedCollateralStr) {
-      setCollateralInput(suggestedCollateralStr);
+      if (club.cirBtcBalance && club.cirBtcBalance > 0n && suggestedCollateralSats && suggestedCollateralSats > club.cirBtcBalance) {
+        setCollateralInput(formatUnitsExact(club.cirBtcBalance, 8));
+      } else {
+        setCollateralInput(suggestedCollateralStr);
+      }
     }
-  }, [hasDepositedCollateral, suggestedCollateralStr]);
+  }, [hasDepositedCollateral, suggestedCollateralStr, club.cirBtcBalance]);
   const [withdrawColInput, setWithdrawColInput] = useState("");
   useEffect(() => {
     setWithdrawColInput(formatUnitsExact(club.collateral, 8));
@@ -481,6 +493,14 @@ export function BondedClubWorkspace({
         isVi
           ? "Vui lòng nhập số lượng cirBTC cọc hợp lệ (> 0)"
           : "Please enter a valid cirBTC collateral amount (> 0)"
+      );
+      return;
+    }
+    if (club.cirBtcBalance !== undefined && sats > club.cirBtcBalance) {
+      toast.error(
+        isVi
+          ? `Số dư CirBTC không đủ (Hiện có: ${formatUnitsExact(club.cirBtcBalance, 8)} cirBTC). Bạn có thể đổi thêm qua Arc AppKit hoặc nạp số nhỏ hơn.`
+          : `Insufficient CirBTC balance (Available: ${formatUnitsExact(club.cirBtcBalance, 8)} cirBTC). You can swap more via Arc AppKit or deposit a smaller amount.`
       );
       return;
     }
@@ -1757,7 +1777,27 @@ export function BondedClubWorkspace({
                     <label className="text-xs text-slate-300 font-semibold">
                       {isVi ? "Nạp cọc CirBTC" : "Deposit CirBTC"}
                     </label>
-                    <span className="text-xs text-amber-300">
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="text-slate-400">
+                        {isVi ? "Ví có:" : "Wallet:"}{" "}
+                        <strong className="text-amber-300 font-mono">
+                          {formatUnitsExact(club.cirBtcBalance ?? 0n, 8)}
+                        </strong>{" "}
+                        cirBTC
+                      </span>
+                      {club.cirBtcBalance > 0n && !hasDepositedCollateral && (
+                        <button
+                          type="button"
+                          onClick={() => setCollateralInput(formatUnitsExact(club.cirBtcBalance, 8))}
+                          className="px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          MAX
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs text-slate-400">
                       {!oraclePriceUsable
                         ? (isVi ? "Chưa có giá oracle hợp lệ" : "No valid oracle price")
                         : isVi
