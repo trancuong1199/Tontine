@@ -726,7 +726,7 @@ export function LandingPage({
       </section>
 
       {/* 4. FEATURED CLUBS PREVIEW SECTION */}
-      <section className="relative overflow-hidden py-16 sm:py-24 bg-[#050508] border-b border-amber-500/20 z-10">
+      <section className="hidden" aria-hidden="true">
         {/* Atmospheric Glow & Circuit Accent */}
         <div className="absolute -top-24 left-1/3 w-[500px] h-[500px] bg-amber-500/[0.08] rounded-full blur-[130px] pointer-events-none" />
         <div className="absolute bottom-0 right-10 w-[400px] h-[400px] bg-yellow-600/[0.06] rounded-full blur-[120px] pointer-events-none" />
