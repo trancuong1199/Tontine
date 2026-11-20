@@ -8,7 +8,7 @@ export function BondedCollateralSummary({ club, language }: { club: BondedClubSn
   const status = club.oracleStatus;
   const ready = club.financialsAvailable && !club.isLoading && !club.error;
   const validEstimate = ready && (status === "fresh" || status === "stale");
-  const coverage = collateralCoverage(club.collateral, validEstimate ? club.oraclePriceRaw : 0n, club.oracleDecimals, club.contributionAmount, club.maxMembers);
+  const coverage = collateralCoverage(club.collateral, validEstimate ? club.oraclePriceRaw : 0n, club.oracleDecimals, club.contributionAmount, club.maxMembers, club.totalRounds);
   const unavailable = en ? "Unavailable" : "Chưa có dữ liệu";
   return <div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-4 text-sm text-amber-100" data-testid="bonded-collateral-summary">
     <h3 className="font-bold text-amber-300">{en ? "Collateral and price risk" : "Cọc và rủi ro giá"}</h3>
@@ -41,7 +41,7 @@ export function BondedRiskBanner({ club, language }: { club: BondedClubSnapshot;
   const status = club.oracleStatus;
   const ready = club.financialsAvailable && !club.isLoading && !club.error;
   const validEstimate = ready && (status === "fresh" || status === "stale");
-  const coverage = collateralCoverage(club.collateral, validEstimate ? club.oraclePriceRaw : 0n, club.oracleDecimals, club.contributionAmount, club.maxMembers);
+  const coverage = collateralCoverage(club.collateral, validEstimate ? club.oraclePriceRaw : 0n, club.oracleDecimals, club.contributionAmount, club.maxMembers, club.totalRounds);
   const full = coverage.value !== null && coverage.maximumPool > 0n && coverage.value >= coverage.maximumPool;
   const tone = !ready
     ? "border-slate-700 bg-black/30 text-slate-300"

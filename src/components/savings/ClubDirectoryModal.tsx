@@ -41,6 +41,7 @@ import {
 } from "../../lib/savingsClubDirectory";
 import {
   CANONICAL_FACTORY,
+  TRUSTED_BONDED_FACTORIES,
   registerRuntimeBondedClub,
   ARC_TESTNET_DEFAULT_BONDED_CLUB,
   HIDDEN_DEMO_CLUBS,
@@ -114,6 +115,7 @@ export function ClubDirectoryModal({
 
   const publicClient = usePublicClient({ chainId: ARC_TESTNET_CHAIN_ID });
   const canonicalFactory = CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
+  const trustedFactories = TRUSTED_BONDED_FACTORIES[ARC_TESTNET_CHAIN_ID] ?? [];
 
   useEffect(() => {
     if (isOpen) {
@@ -140,25 +142,38 @@ export function ClubDirectoryModal({
     setIsSyncing(true);
     void (async () => {
       try {
-        const synced = await syncFactoryBondedClubs(
-          publicClient as unknown as Parameters<typeof syncFactoryBondedClubs>[0],
-          canonicalFactory,
-          BONDED_TONTINE_FACTORY_ABI as unknown as readonly unknown[],
-          BONDED_TONTINE_ABI as unknown as readonly unknown[],
-          account
+        // Sync clubs from every trusted factory (current + previous) so older clubs stay listed.
+        const syncedPerFactory = await Promise.all(
+          trustedFactories.map((factory) =>
+            syncFactoryBondedClubs(
+              publicClient as unknown as Parameters<typeof syncFactoryBondedClubs>[0],
+              factory,
+              BONDED_TONTINE_FACTORY_ABI as unknown as readonly unknown[],
+              BONDED_TONTINE_ABI as unknown as readonly unknown[],
+              account
+            ).catch(() => [])
+          )
         );
+        const synced = syncedPerFactory.flat();
         for (const item of synced) {
           registerRuntimeBondedClub(item.address);
         }
         if (currentAddress && currentAddress.startsWith("0x")) {
           const removed = getRemovedGroups(account);
           if (!removed.has(currentAddress.toLowerCase())) {
-            const isClub = await publicClient.readContract({
-              address: canonicalFactory,
-              abi: BONDED_TONTINE_FACTORY_ABI,
-              functionName: "isClub",
-              args: [currentAddress as `0x${string}`],
-            });
+            const isClubFlags = await Promise.all(
+              trustedFactories.map((factory) =>
+                publicClient
+                  .readContract({
+                    address: factory,
+                    abi: BONDED_TONTINE_FACTORY_ABI,
+                    functionName: "isClub",
+                    args: [currentAddress as `0x${string}`],
+                  })
+                  .catch(() => false)
+              )
+            );
+            const isClub = isClubFlags.some(Boolean);
             if (isClub) {
               registerRuntimeBondedClub(currentAddress);
               let clubName = `Bonded Club ${formatAddress(currentAddress)}`;

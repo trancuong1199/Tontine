@@ -14,6 +14,7 @@ import {
   ARC_TESTNET_CHAIN_ID,
   ARC_TESTNET_DEFAULT_BONDED_CLUB,
   CANONICAL_FACTORY,
+  TRUSTED_BONDED_FACTORIES,
   BONDED_USDC_ADDRESS,
   BONDED_CIRBTC_ADDRESS,
   isKnownBondedClubAddress,
@@ -57,7 +58,6 @@ export interface BondedClubSnapshot {
   roundDuration: bigint;
   rateBpsPerRound: bigint;
   safetyBps: bigint;
-  liquidationBps: bigint;
   interestGrace: bigint;
   settlementGrace: bigint;
   maxPriceAge: bigint;
@@ -75,6 +75,8 @@ export interface BondedClubSnapshot {
   nextInterestDeadline: bigint;
   currentRoundIndex: bigint;
   cycleEnded: boolean;
+  /** Owner already borrowed in the current round (newer clubs allow one borrow per round; older clubs: always false). */
+  hasBorrowedThisRound: boolean;
   memberAddresses: readonly `0x${string}`[];
   memberContributions: Record<string, boolean | null>;
   memberContributionRound: bigint | null;
@@ -104,7 +106,8 @@ export interface BondedClubSnapshot {
   previewPrincipalCirBtc: bigint;
   principalWithdrawn: boolean;
   usdcAllowance: bigint;
-  cirBtcBalance: bigint;
+  /** null = balance not read yet or the RPC read failed (unknown, not zero). */
+  cirBtcBalance: bigint | null;
   cirBtcAllowance: bigint;
   refetch: (options?: { silent?: boolean }) => Promise<void>;
 }
@@ -314,8 +317,7 @@ export function useBondedClub(
     totalRounds: 0n,
     roundDuration: 0n,
     rateBpsPerRound: 0n,
-    safetyBps: 20_000n,
-    liquidationBps: 12_000n,
+    safetyBps: 12_000n,
     interestGrace: 0n,
     settlementGrace: 0n,
     maxPriceAge: 3600n,
@@ -333,6 +335,7 @@ export function useBondedClub(
     nextInterestDeadline: 0n,
     currentRoundIndex: 0n,
     cycleEnded: false,
+    hasBorrowedThisRound: false,
     memberAddresses: [],
     memberContributions: {},
     memberContributionRound: null,
@@ -359,7 +362,7 @@ export function useBondedClub(
     previewPrincipalCirBtc: 0n,
     principalWithdrawn: false,
     usdcAllowance: 0n,
-    cirBtcBalance: 0n,
+    cirBtcBalance: null,
     cirBtcAllowance: 0n,
   });
 
@@ -388,8 +391,7 @@ export function useBondedClub(
       let totalRounds: bigint = 0n;
       let roundDuration: bigint = 0n;
       let rateBpsPerRound: bigint = 0n;
-      let safetyBps: bigint = 20_000n;
-      let liquidationBps: bigint = 12_000n;
+      let safetyBps: bigint = 12_000n;
       let interestGrace: bigint = 0n;
       let settlementGrace: bigint = 0n;
       let maxPriceAge: bigint = 3600n;
@@ -412,7 +414,7 @@ export function useBondedClub(
         try {
           const fnNames = [
             "state", "owner", "groupName", "contributionAmount", "maxMembers",
-            "totalRounds", "roundDuration", "rateBpsPerRound", "safetyBps", "liquidationBps",
+            "totalRounds", "roundDuration", "rateBpsPerRound", "safetyBps",
             "interestGrace", "settlementGrace", "maxPriceAge", "priceFeed", "memberCount",
             "totalDeposits", "totalDebt", "collateral", "interestDueTotal", "interestPaidTotal",
             "interestClaimedTotal", "interestOwed", "startTime", "nextInterestDeadline",
@@ -436,24 +438,23 @@ export function useBondedClub(
             totalRounds = results[5].status === "success" ? BigInt(results[5].result as bigint) : 0n;
             roundDuration = results[6].status === "success" ? BigInt(results[6].result as bigint) : 0n;
             rateBpsPerRound = results[7].status === "success" ? BigInt(results[7].result as bigint) : 0n;
-            safetyBps = results[8].status === "success" ? BigInt(results[8].result as bigint) : 20_000n;
-            liquidationBps = results[9].status === "success" ? BigInt(results[9].result as bigint) : 12_000n;
-            interestGrace = results[10].status === "success" ? BigInt(results[10].result as bigint) : 0n;
-            settlementGrace = results[11].status === "success" ? BigInt(results[11].result as bigint) : 0n;
-            maxPriceAge = results[12].status === "success" ? BigInt(results[12].result as bigint) : 3600n;
-            priceFeed = results[13].status === "success" ? (results[13].result as `0x${string}`) : priceFeed;
-            memberCount = results[14].status === "success" ? BigInt(results[14].result as bigint) : 0n;
-            totalDeposits = results[15].status === "success" ? BigInt(results[15].result as bigint) : 0n;
-            totalDebt = results[16].status === "success" ? BigInt(results[16].result as bigint) : 0n;
-            collateral = results[17].status === "success" ? BigInt(results[17].result as bigint) : 0n;
-            interestDueTotal = results[18].status === "success" ? BigInt(results[18].result as bigint) : 0n;
-            interestPaidTotal = results[19].status === "success" ? BigInt(results[19].result as bigint) : 0n;
-            interestClaimedTotal = results[20].status === "success" ? BigInt(results[20].result as bigint) : 0n;
-            interestOwed = results[21].status === "success" ? BigInt(results[21].result as bigint) : 0n;
-            startTime = results[22].status === "success" ? BigInt(results[22].result as bigint) : 0n;
-            nextInterestDeadline = results[23].status === "success" ? BigInt(results[23].result as bigint) : 0n;
-            currentRoundIndex = results[24].status === "success" ? BigInt(results[24].result as bigint) : 0n;
-            cycleEnded = results[25].status === "success" ? Boolean(results[25].result) : false;
+            safetyBps = results[8].status === "success" ? BigInt(results[8].result as bigint) : 12_000n;
+            interestGrace = results[9].status === "success" ? BigInt(results[9].result as bigint) : 0n;
+            settlementGrace = results[10].status === "success" ? BigInt(results[10].result as bigint) : 0n;
+            maxPriceAge = results[11].status === "success" ? BigInt(results[11].result as bigint) : 3600n;
+            priceFeed = results[12].status === "success" ? (results[12].result as `0x${string}`) : priceFeed;
+            memberCount = results[13].status === "success" ? BigInt(results[13].result as bigint) : 0n;
+            totalDeposits = results[14].status === "success" ? BigInt(results[14].result as bigint) : 0n;
+            totalDebt = results[15].status === "success" ? BigInt(results[15].result as bigint) : 0n;
+            collateral = results[16].status === "success" ? BigInt(results[16].result as bigint) : 0n;
+            interestDueTotal = results[17].status === "success" ? BigInt(results[17].result as bigint) : 0n;
+            interestPaidTotal = results[18].status === "success" ? BigInt(results[18].result as bigint) : 0n;
+            interestClaimedTotal = results[19].status === "success" ? BigInt(results[19].result as bigint) : 0n;
+            interestOwed = results[20].status === "success" ? BigInt(results[20].result as bigint) : 0n;
+            startTime = results[21].status === "success" ? BigInt(results[21].result as bigint) : 0n;
+            nextInterestDeadline = results[22].status === "success" ? BigInt(results[22].result as bigint) : 0n;
+            currentRoundIndex = results[23].status === "success" ? BigInt(results[23].result as bigint) : 0n;
+            cycleEnded = results[24].status === "success" ? Boolean(results[24].result) : false;
             multicallSucceeded = true;
           }
         } catch {
@@ -472,7 +473,6 @@ export function useBondedClub(
           rD,
           rB,
           sB,
-          lB,
           iG,
           sG,
           mP,
@@ -499,7 +499,6 @@ export function useBondedClub(
           readClub<bigint>("roundDuration"),
           readClub<bigint>("rateBpsPerRound"),
           readClub<bigint>("safetyBps"),
-          readClub<bigint>("liquidationBps"),
           readClub<bigint>("interestGrace"),
           readClub<bigint>("settlementGrace"),
           readClub<bigint>("maxPriceAge"),
@@ -527,7 +526,6 @@ export function useBondedClub(
         roundDuration = rD;
         rateBpsPerRound = rB;
         safetyBps = sB;
-        liquidationBps = lB;
         interestGrace = iG;
         settlementGrace = sG;
         maxPriceAge = mP;
@@ -545,6 +543,12 @@ export function useBondedClub(
         currentRoundIndex = cRI;
         cycleEnded = cE;
       }
+
+      // One-borrow-per-round flag; clubs from older factories have no such function -> false.
+      const hasBorrowedThisRound =
+        currentRoundIndex >= 1n
+          ? await readClub<boolean>("hasBorrowedInRound", [currentRoundIndex]).catch(() => false)
+          : false;
 
       // Oracle-dependent reads: catch reverts gracefully when price is stale/invalid (T6.2)
       let oracleError = false;
@@ -565,16 +569,23 @@ export function useBondedClub(
       ]);
 
       // Factory verification (T6.7)
-      const factoryAddress = CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
-      let isVerifiedClub = false;
-      if (factoryAddress) {
-        isVerifiedClub = await (publicClient.readContract({
-          address: factoryAddress,
-          abi: BONDED_TONTINE_FACTORY_ABI,
-          functionName: "isClub" as never,
-          args: [clubAddress] as never,
-        }) as Promise<boolean>).catch(() => false);
-      }
+      // A club is verified if any trusted factory (current or previous) created it.
+      const trustedFactories = TRUSTED_BONDED_FACTORIES[ARC_TESTNET_CHAIN_ID] ?? [];
+      const verifiedFlags = await Promise.all(
+        trustedFactories.map((f) =>
+          (publicClient.readContract({
+            address: f,
+            abi: BONDED_TONTINE_FACTORY_ABI,
+            functionName: "isClub" as never,
+            args: [clubAddress] as never,
+          }) as Promise<boolean>).catch(() => false)
+        )
+      );
+      const verifiedIdx = verifiedFlags.findIndex(Boolean);
+      const isVerifiedClub = verifiedIdx >= 0;
+      const factoryAddress = isVerifiedClub
+        ? trustedFactories[verifiedIdx]
+        : CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
 
       // Oracle metadata (T6.8)
       let oracleDescription = "";
@@ -631,7 +642,7 @@ export function useBondedClub(
       let previewPrincipalCirBtc = 0n;
       let principalWithdrawn = false;
       let usdcAllowance = 0n;
-      let cirBtcBalance = 0n;
+      let cirBtcBalance: bigint | null = null;
       let cirBtcAllowance = 0n;
 
       if (userAddress) {
@@ -648,7 +659,7 @@ export function useBondedClub(
         ] = await Promise.all([
           readClub<boolean>("isMember", [userAddress]).catch(() => { positionAvailable = false; return false; }),
           readClub<bigint>("deposit", [userAddress]).catch(() => { positionAvailable = false; return 0n; }),
-          currentRoundIndex >= 1n && currentRoundIndex <= maxMembers
+          currentRoundIndex >= 1n && currentRoundIndex <= (totalRounds > 0n ? totalRounds : maxMembers)
             ? readClub<boolean>("contributed", [currentRoundIndex, userAddress]).catch(() => { positionAvailable = false; return false; })
             : Promise.resolve(false),
           readClub<bigint>("pendingInterest", [userAddress]).catch(() => { positionAvailable = false; return 0n; }),
@@ -671,7 +682,7 @@ export function useBondedClub(
               functionName: "balanceOf",
               args: [userAddress],
             })
-            .catch(() => 0n),
+            .catch((): bigint | null => null),
           publicClient
             .readContract({
               address: BONDED_CIRBTC_ADDRESS,
@@ -711,7 +722,6 @@ export function useBondedClub(
         roundDuration,
         rateBpsPerRound,
         safetyBps,
-        liquidationBps,
         interestGrace,
         settlementGrace,
         maxPriceAge,
@@ -729,6 +739,7 @@ export function useBondedClub(
         nextInterestDeadline,
         currentRoundIndex,
         cycleEnded,
+        hasBorrowedThisRound,
         positionAvailable,
         oracleError,
         collateralValueUsdc,
@@ -767,7 +778,7 @@ export function useBondedClub(
         memberAddresses.push(userAddress);
       }
 
-      const memberContributionRound = stateRaw === BONDED_STATE.ACTIVE && currentRoundIndex >= 1n && currentRoundIndex <= maxMembers ? currentRoundIndex : null;
+      const memberContributionRound = stateRaw === BONDED_STATE.ACTIVE && currentRoundIndex >= 1n && currentRoundIndex <= (totalRounds > 0n ? totalRounds : maxMembers) ? currentRoundIndex : null;
       const memberContributions: Record<string, boolean | null> = {};
       if (memberContributionRound !== null && memberAddresses.length > 0) {
         await Promise.all(memberAddresses.map(async member => {

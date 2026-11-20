@@ -1,5 +1,5 @@
 import { formatRoundDuration, formatFinancialAmount } from "../../lib/bondedDisplay";
-import { useState, useId, useRef } from "react";
+import { useState, useId, useRef, useEffect } from "react";
 import { useAccount, usePublicClient } from "wagmi";
 import { useArcWriteContract } from "../../hooks/useArcWriteContract";
 import { useModal } from "connectkit";
@@ -29,13 +29,15 @@ import {
 import { buildAddressExplorerUrl } from "../../onchain-facts";
 import {
   ARC_TESTNET_BONDED_FACTORY,
+  TRUSTED_BONDED_FACTORIES,
   registerRuntimeBondedClub,
   DEFAULT_SAFETY_RATIO_BPS,
-  DEFAULT_LIQUIDATION_RATIO_BPS,
   DEFAULT_INTEREST_RATE_BPS,
 } from "@/config/bonded-tontine";
 import {
+  BONDED_TONTINE_ABI,
   BONDED_TONTINE_FACTORY_ABI,
+  LEGACY_BONDED_FACTORY_CREATE_ABI,
   DEFAULT_BONDED_PARAMS,
   validateBondedClubParams,
   calculateAnnualizedAprPct,
@@ -54,11 +56,16 @@ export interface CreateBondedClubModalProps {
 const AMOUNT_PRESETS = ["5", "10", "20", "50"];
 const MEMBER_PRESETS = [3, 5, 10, 15];
 const DURATION_PRESETS = [
-  { labelVi: "1 giờ", labelEn: "1 hour", value: 3600, hintVi: "Thử nghiệm nhanh", hintEn: "Quick test" },
+  { labelVi: "60 giây", labelEn: "60 sec", value: 60, hintVi: "Thử nghiệm nhanh", hintEn: "Quick test" },
   { labelVi: "1 ngày", labelEn: "1 day", value: 86400, hintVi: "Phổ biến", hintEn: "Popular" },
   { labelVi: "3 ngày", labelEn: "3 days", value: 259200, hintVi: "Vừa phải", hintEn: "Moderate" },
   { labelVi: "7 ngày", labelEn: "7 days", value: 604800, hintVi: "1 tuần", hintEn: "1 week" },
 ];
+
+/** Duplicate-name key: trimmed, inner whitespace collapsed, case-insensitive. */
+function normalizeClubName(name: string): string {
+  return name.trim().replace(/\s+/g, " ").toLowerCase();
+}
 
 export function CreateBondedClubModal({
   isOpen,
@@ -77,13 +84,21 @@ export function CreateBondedClubModal({
   const [groupName, setGroupName] = useState("Saigon Bonded Club");
   const [contributionAmount, setContributionAmount] = useState("10");
   const [maxMembers, setMaxMembers] = useState(5);
+  // Number of contribution rounds in the cycle (1..maxMembers). Default: a single round.
+  const [totalRounds, setTotalRounds] = useState(1);
+  // Whether the configured factory supports choosing totalRounds (9-param createClub). Older factories
+  // (8-param) force rounds = maxMembers, so the form falls back to that instead of sending a call that reverts.
+  const [factorySupportsRounds, setFactorySupportsRounds] = useState<boolean | null>(null);
+  const effectiveRounds =
+    factorySupportsRounds === false
+      ? Math.max(maxMembers, 1)
+      : Math.min(Math.max(totalRounds, 1), Math.max(maxMembers, 1));
   const [roundDuration, setRoundDuration] = useState(86400);
 
-  // Advanced configurations (recommended defaults: 200% safety ratio)
+  // Advanced configurations (recommended defaults: 120% safety ratio)
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [rateBps, setRateBps] = useState(DEFAULT_INTEREST_RATE_BPS); // 0.5% per round
-  const [safetyBps, setSafetyBps] = useState(DEFAULT_SAFETY_RATIO_BPS); // 200%
-  const [liquidationBps, setLiquidationBps] = useState(DEFAULT_LIQUIDATION_RATIO_BPS); // 120%
+  const [safetyBps, setSafetyBps] = useState(DEFAULT_SAFETY_RATIO_BPS); // 120%
   const [interestGraceSec, setInterestGraceSec] = useState(86400);
   const [settlementGraceSec, setSettlementGraceSec] = useState(86400);
   const [hasConfirmedCollateralSeizure, setHasConfirmedCollateralSeizure] = useState(false);
@@ -91,23 +106,112 @@ export function CreateBondedClubModal({
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployStep, setDeployStep] = useState<string>("");
 
+  // Names of every club on the trusted factories (current + previous), normalized for duplicate checks.
+  // The current factory also rejects duplicates on-chain (NameTaken); this list gives instant feedback.
+  const [existingNames, setExistingNames] = useState<Set<string> | null>(null);
+  const [nameListStatus, setNameListStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const publicClientRef = useRef(publicClient);
+  publicClientRef.current = publicClient;
+  const hasPublicClient = Boolean(publicClient);
+  useEffect(() => {
+    const publicClient = publicClientRef.current;
+    if (!isOpen || !publicClient) return;
+    let cancelled = false;
+    setNameListStatus("loading");
+    void (async () => {
+      try {
+        const factories = TRUSTED_BONDED_FACTORIES[ARC_TESTNET_CHAIN_ID] ?? [];
+        const names = new Set<string>();
+        for (const factory of factories) {
+          const length = (await publicClient.readContract({
+            address: factory,
+            abi: BONDED_TONTINE_FACTORY_ABI,
+            functionName: "clubsLength",
+            args: [],
+          })) as bigint;
+          const clubs = await Promise.all(
+            Array.from({ length: Number(length) }, (_, i) =>
+              publicClient.readContract({
+                address: factory,
+                abi: BONDED_TONTINE_FACTORY_ABI,
+                functionName: "clubAt",
+                args: [BigInt(i)],
+              }) as Promise<`0x${string}`>
+            )
+          );
+          const clubNames = await Promise.all(
+            clubs.map((club) =>
+              (publicClient.readContract({
+                address: club,
+                abi: BONDED_TONTINE_ABI,
+                functionName: "groupName",
+                args: [],
+              }) as Promise<string>).catch(() => "")
+            )
+          );
+          for (const n of clubNames) {
+            const key = normalizeClubName(n);
+            if (key) names.add(key);
+          }
+        }
+        if (!cancelled) {
+          setExistingNames(names);
+          setNameListStatus("ready");
+        }
+      } catch {
+        if (!cancelled) setNameListStatus("error");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, hasPublicClient]);
+
+  useEffect(() => {
+    const publicClient = publicClientRef.current;
+    if (!isOpen || !publicClient) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        // Only the newer factory has isNameAvailable(); a revert means an older 8-param factory.
+        await publicClient.readContract({
+          address: ARC_TESTNET_BONDED_FACTORY,
+          abi: BONDED_TONTINE_FACTORY_ABI,
+          functionName: "isNameAvailable",
+          args: ["probe"],
+        });
+        if (!cancelled) setFactorySupportsRounds(true);
+      } catch {
+        if (!cancelled) setFactorySupportsRounds(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, hasPublicClient]);
+
   if (!isOpen) return null;
 
   // Validation
   const trimmedName = groupName.trim();
-  const isNameValid = trimmedName.length > 0 && trimmedName.length <= 32;
+  const isNameTaken = Boolean(trimmedName && existingNames?.has(normalizeClubName(trimmedName)));
+  const isNameValid = trimmedName.length > 0 && trimmedName.length <= 32 && !isNameTaken;
   const parsedAmount = parseUsdc(contributionAmount);
   const isAmountValid = parsedAmount > 0n;
   const isMembersValid = Number.isInteger(maxMembers) && maxMembers >= 2 && maxMembers <= 20;
   const isDurationValid = roundDuration >= 60 && roundDuration <= 365 * 86400;
+  const isRoundsValid = Number.isInteger(effectiveRounds) && effectiveRounds >= 1 && effectiveRounds <= maxMembers;
+  const roundPresets = Array.from(new Set([1, 2, 3, maxMembers])).filter((n) => n >= 1 && n <= maxMembers).sort((a, b) => a - b);
 
   const totalPot = isAmountValid && isMembersValid ? parsedAmount * BigInt(maxMembers) : 0n;
   const aprPct = calculateAnnualizedAprPct(rateBps, roundDuration);
 
   const handleDeploy = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!isNameValid || !isAmountValid || !isMembersValid || !isDurationValid || !hasConfirmedCollateralSeizure || isDeploying || deployingRef.current) {
-      if (!hasConfirmedCollateralSeizure) {
+    if (!isNameValid || !isAmountValid || !isMembersValid || !isRoundsValid || !isDurationValid || !hasConfirmedCollateralSeizure || factorySupportsRounds === null || isDeploying || deployingRef.current) {
+      if (isNameTaken) {
+        toast.error(isEn ? "This group name is already taken. Please choose another name." : "Tên nhóm đã tồn tại, vui lòng chọn tên khác.");
+      } else if (!hasConfirmedCollateralSeizure) {
         toast.error(
           isEn
             ? "Please confirm you understand 100% of CirBTC collateral is seized upon default"
@@ -126,10 +230,10 @@ export function CreateBondedClubModal({
       groupName: trimmedName,
       contributionAmount: parsedAmount,
       maxMembers,
+      totalRounds: effectiveRounds,
       roundDuration,
       rateBpsPerRound: rateBps,
       safetyBps,
-      liquidationBps,
       interestGrace: interestGraceSec,
       settlementGrace: settlementGraceSec,
     };
@@ -146,22 +250,40 @@ export function CreateBondedClubModal({
 
     try {
       const factoryAddr = ARC_TESTNET_BONDED_FACTORY;
-      const hash = await writeContractAsync({
-        address: factoryAddr,
-        abi: BONDED_TONTINE_FACTORY_ABI,
-        functionName: "createClub",
-        args: [
-          params.groupName,
-          params.contributionAmount,
-          BigInt(params.maxMembers),
-          BigInt(params.roundDuration),
-          BigInt(params.rateBpsPerRound),
-          BigInt(params.safetyBps),
-          BigInt(params.liquidationBps),
-          BigInt(params.interestGrace),
-          BigInt(params.settlementGrace),
-        ],
-      });
+      const hash =
+        factorySupportsRounds === true
+          ? await writeContractAsync({
+              address: factoryAddr,
+              abi: BONDED_TONTINE_FACTORY_ABI,
+              functionName: "createClub",
+              args: [
+                params.groupName,
+                params.contributionAmount,
+                BigInt(params.maxMembers),
+                BigInt(params.totalRounds),
+                BigInt(params.roundDuration),
+                BigInt(params.rateBpsPerRound),
+                BigInt(params.safetyBps),
+                BigInt(params.interestGrace),
+                BigInt(params.settlementGrace),
+              ],
+            })
+          : await writeContractAsync({
+              // Older factory: no totalRounds argument; the club runs one round per member slot.
+              address: factoryAddr,
+              abi: LEGACY_BONDED_FACTORY_CREATE_ABI,
+              functionName: "createClub",
+              args: [
+                params.groupName,
+                params.contributionAmount,
+                BigInt(params.maxMembers),
+                BigInt(params.roundDuration),
+                BigInt(params.rateBpsPerRound),
+                BigInt(params.safetyBps),
+                BigInt(params.interestGrace),
+                BigInt(params.settlementGrace),
+              ],
+            });
 
       setDeployStep(isEn ? "Deploying on Arc Testnet blockchain..." : "Đang tạo nhóm trên blockchain Arc Testnet...");
       toast.info(isEn ? "Transaction sent, waiting for receipt..." : "Đã gửi giao dịch, đang chờ xác nhận trên chuỗi...");
@@ -189,6 +311,7 @@ export function CreateBondedClubModal({
 
       // Register runtime bonded club
       registerRuntimeBondedClub(newClubAddress);
+      setExistingNames((prev) => new Set(prev ?? []).add(normalizeClubName(params.groupName)));
 
       // Save to directory
       saveKnownGroup({
@@ -216,7 +339,14 @@ export function CreateBondedClubModal({
       onClose();
     } catch (err: any) {
       console.error("Bonded club creation failed:", err);
-      toast.error(parseBondedTontineError(err, language));
+      const rawError = `${err?.name ?? ""} ${err?.message ?? ""} ${err?.shortMessage ?? ""}`;
+      if (rawError.includes("NameTaken")) {
+        // Factory rejected a duplicate group name (someone may have taken it after the list loaded).
+        setExistingNames((prev) => new Set(prev ?? []).add(normalizeClubName(trimmedName)));
+        toast.error(isEn ? "This group name is already taken. Please choose another name." : "Tên nhóm đã tồn tại, vui lòng chọn tên khác.");
+      } else {
+        toast.error(parseBondedTontineError(err, language));
+      }
     } finally {
       deployingRef.current = false;
       setIsDeploying(false);
@@ -278,9 +408,8 @@ export function CreateBondedClubModal({
             <h3 className="font-bold text-amber-300">{isEn ? "Essential terms before creation" : "Điều kiện cần biết trước khi tạo"}</h3>
             <p>{isEn ? "Owner borrowing interest per round" : "Lãi vay chủ nhóm mỗi vòng"}: {(rateBps / 100).toFixed(2)}%</p>
             <p>{isEn ? "Initial collateral: 0 cirBTC; creation does not deposit collateral. Initial borrowing capacity: 0 USDC until collateral is deposited and a fresh price is available." : "Cọc ban đầu: 0 cirBTC; tạo nhóm không tự nạp cọc. Hạn mức vay ban đầu: 0 USDC cho đến khi nạp cọc và có giá còn hạn."}</p>
-            <p>{isEn ? "To start: positive CirBTC collateral and at least 2 members. There is no requirement to collateralize 200% of the whole pool to start." : "Điều kiện bắt đầu: cọc CirBTC lớn hơn 0 và ít nhất 2 thành viên. Không bắt buộc cọc 200% toàn bộ quỹ để bắt đầu."}</p>
+            <p>{isEn ? "To start: positive CirBTC collateral and at least 2 members. There is no requirement to collateralize 120% of the whole pool to start." : "Điều kiện bắt đầu: cọc CirBTC lớn hơn 0 và ít nhất 2 thành viên. Không bắt buộc cọc 120% toàn bộ quỹ để bắt đầu."}</p>
             <p>{isEn ? "Borrowing safety margin" : "Biên an toàn khoản vay"}: {safetyBps / 100}% — {isEn ? `$${safetyBps / 100} collateral per $100 exposure, including interest.` : `$${safetyBps / 100} cọc cho mỗi $100 dư nợ tính cả lãi.`}</p>
-            <p>{isEn ? "Liquidation threshold" : "Ngưỡng thanh lý"}: {liquidationBps / 100}% {isEn ? "of exposure; separate from the start conditions." : "dư nợ; khác với điều kiện bắt đầu."}</p>
           </section>
 
           {/* Field 1: Group Name */}
@@ -296,8 +425,18 @@ export function CreateBondedClubModal({
               placeholder={isEn ? "e.g. Saigon Bonded Club" : "Ví dụ: Câu lạc bộ Sài Gòn"}
               maxLength={32}
               disabled={isDeploying}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-900/80 text-white text-sm focus:border-amber-500 focus:outline-none transition-colors"
+              aria-invalid={isNameTaken || undefined}
+              className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-900/80 text-white text-sm focus:outline-none transition-colors ${
+                isNameTaken ? "border-red-500/70 focus:border-red-400" : "border-slate-700 focus:border-amber-500"
+              }`}
             />
+            {isNameTaken ? (
+              <p className="text-xs text-red-300">
+                {isEn ? "This group name is already taken. Please choose another name." : "Tên nhóm đã tồn tại, vui lòng chọn tên khác."}
+              </p>
+            ) : nameListStatus === "loading" ? (
+              <p className="text-xs text-slate-500">{isEn ? "Checking existing group names…" : "Đang kiểm tra tên các nhóm hiện có…"}</p>
+            ) : null}
           </div>
 
           {/* Field 2: Contribution Amount */}
@@ -371,6 +510,42 @@ export function CreateBondedClubModal({
             </div>
           </div>
 
+          {/* Field 3b: Number of Rounds */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+              <span>{isEn ? "Number of Rounds" : "Số Vòng"}</span>
+              <span className="text-xs text-slate-400">
+                {effectiveRounds} {isEn ? (effectiveRounds === 1 ? "round" : "rounds") : "vòng"}
+              </span>
+            </label>
+            <div className="flex gap-2">
+              {roundPresets.map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => setTotalRounds(num)}
+                  disabled={isDeploying || factorySupportsRounds === false}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                    effectiveRounds === num
+                      ? "bg-amber-500/20 border-amber-500/50 text-amber-300"
+                      : "bg-slate-900/50 border-slate-800 text-slate-400 hover:bg-slate-800"
+                  }`}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500">
+              {factorySupportsRounds === false
+                ? isEn
+                  ? `The current factory does not support choosing rounds yet: rounds = number of members (${maxMembers}).`
+                  : `Factory hiện tại chưa hỗ trợ chọn số vòng: số vòng = số thành viên (${maxMembers}).`
+                : isEn
+                  ? `1 to ${maxMembers} rounds (max = number of members).`
+                  : `Từ 1 đến ${maxMembers} vòng (tối đa bằng số thành viên).`}
+            </p>
+          </div>
+
           {/* Field 4: Round Duration */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-300">
@@ -409,7 +584,7 @@ export function CreateBondedClubModal({
                   : "Lãi suất mỗi vòng (cố định khi tạo nhóm)"}
               </label>
               <span className="text-xs font-bold text-amber-200">
-                {(rateBps / 100).toFixed(2)}% / {isEn ? "round" : "vòng"} ({((rateBps * maxMembers) / 100).toFixed(2)}% / {isEn ? "cycle" : "chu kỳ"})
+                {(rateBps / 100).toFixed(2)}% / {isEn ? "round" : "vòng"} ({((rateBps * effectiveRounds) / 100).toFixed(2)}% / {isEn ? "cycle" : "chu kỳ"})
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -456,17 +631,17 @@ export function CreateBondedClubModal({
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 bg-black/50 px-3 py-2 text-xs">
                 <span className="text-slate-300">
                   {isEn
-                    ? `1 cycle (${maxMembers} rounds) per wallet:`
-                    : `Mỗi ví nhận sau 1 chu kỳ (${maxMembers} vòng):`}
+                    ? `1 cycle (${effectiveRounds} ${effectiveRounds === 1 ? "round" : "rounds"}) per wallet:`
+                    : `Mỗi ví nhận sau 1 chu kỳ (${effectiveRounds} vòng):`}
                 </span>
                 <strong className="text-emerald-300 tabular-nums">
                   {formatUsdc(
-                    parsedAmount * BigInt(maxMembers) +
-                      (parsedAmount * BigInt(maxMembers) * BigInt(rateBps)) / 10000n
+                    parsedAmount * BigInt(effectiveRounds) +
+                      (parsedAmount * BigInt(effectiveRounds) * BigInt(rateBps)) / 10000n
                   )}{" "}
                   USDC{" "}
                   <span className="text-slate-400 font-normal">
-                    ({isEn ? "Principal" : "Gốc"} {formatUsdc(parsedAmount * BigInt(maxMembers))} + {isEn ? "Interest" : "Lãi"} {formatUsdc((parsedAmount * BigInt(maxMembers) * BigInt(rateBps)) / 10000n)})
+                    ({isEn ? "Principal" : "Gốc"} {formatUsdc(parsedAmount * BigInt(effectiveRounds))} + {isEn ? "Interest" : "Lãi"} {formatUsdc((parsedAmount * BigInt(effectiveRounds) * BigInt(rateBps)) / 10000n)})
                   </span>
                 </strong>
               </div>
@@ -513,24 +688,6 @@ export function CreateBondedClubModal({
                   </div>
 
                   <div>
-                    <label htmlFor="liquidation-bps-input" className="text-slate-400 block">
-                      {isEn ? "Liquidation Threshold" : "Ngưỡng thanh lý"}
-                    </label>
-                    <input
-                      id="liquidation-bps-input"
-                      aria-label={isEn ? "Liquidation Threshold" : "Ngưỡng thanh lý"}
-                      type="number"
-                      value={liquidationBps}
-                      onChange={(e) => setLiquidationBps(Number(e.target.value))}
-                      disabled={isDeploying}
-                      className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white"
-                    />
-                    <span className="text-xs text-slate-500">
-                      {(liquidationBps / 100).toFixed(0)}% (Thanh lý nếu cọc &lt; nợ x {liquidationBps / 10000})
-                    </span>
-                  </div>
-
-                  <div>
                     <label htmlFor="interest-grace-input" className="text-slate-400 block">
                       {isEn ? "Extra grace period for interest / settlement (s)" : "Thời gian gia hạn thêm sau mỗi vòng (giây)"}
                     </label>
@@ -564,7 +721,7 @@ export function CreateBondedClubModal({
               <span>{isEn ? "Full Cycle Duration:" : "Thời gian toàn chu kỳ:"}</span>
               <span className="text-slate-200 font-medium">
                 {isMembersValid && isDurationValid
-                  ? `${formatRoundDuration(maxMembers * roundDuration, isEn)} (${maxMembers} ${isEn ? "rounds" : "vòng"})`
+                  ? `${formatRoundDuration(effectiveRounds * roundDuration, isEn)} (${effectiveRounds} ${isEn ? (effectiveRounds === 1 ? "round" : "rounds") : "vòng"})`
                   : "--"}
               </span>
             </div>
@@ -615,7 +772,7 @@ export function CreateBondedClubModal({
             <button
               type="submit"
               form={formId}
-              disabled={!isNameValid || !isAmountValid || !isMembersValid || !isDurationValid || !hasConfirmedCollateralSeizure || isDeploying}
+              disabled={!isNameValid || !isAmountValid || !isMembersValid || !isRoundsValid || !isDurationValid || !hasConfirmedCollateralSeizure || factorySupportsRounds === null || isDeploying}
               className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
             >
               {isDeploying ? (

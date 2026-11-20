@@ -4,6 +4,29 @@ import mockAggregatorV3Artifact from "../../contracts/out/MockAggregatorV3.sol/M
 
 export const BONDED_TONTINE_ABI = bondedTontineArtifact.abi;
 export const BONDED_TONTINE_FACTORY_ABI = bondedTontineFactoryArtifact.abi;
+
+/**
+ * createClub of factories deployed before `totalRounds` existed (e.g. 0x8fD5…): 8 params, rounds = maxMembers.
+ * Used when the configured factory does not expose `isNameAvailable` (the newer 9-param factory does).
+ */
+export const LEGACY_BONDED_FACTORY_CREATE_ABI = [
+  {
+    type: "function",
+    name: "createClub",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "groupName", type: "string" },
+      { name: "contributionAmount", type: "uint256" },
+      { name: "maxMembers", type: "uint256" },
+      { name: "roundDuration", type: "uint256" },
+      { name: "rateBpsPerRound", type: "uint256" },
+      { name: "safetyBps", type: "uint256" },
+      { name: "interestGrace", type: "uint256" },
+      { name: "settlementGrace", type: "uint256" },
+    ],
+    outputs: [{ name: "club", type: "address" }],
+  },
+] as const;
 export const MOCK_AGGREGATOR_V3_ABI = mockAggregatorV3Artifact.abi;
 
 export const BONDED_STATE = {
@@ -28,10 +51,11 @@ export interface BondedClubConfigParams {
   groupName: string;
   contributionAmount: bigint; // USDC 6 decimals
   maxMembers: number; // 2..20
+  totalRounds?: number; // 1..maxMembers (contract param); omitted = maxMembers
   roundDuration: number; // seconds, 60..31536000
   rateBpsPerRound: number; // 1..1000
-  safetyBps: number; // 15000..50000
-  liquidationBps: number; // 11000..safetyBps-2000
+  safetyBps: number; // 10000..50000
+  liquidationBps?: number; // legacy optional
   interestGrace: number; // 0..604800
   settlementGrace: number; // 3600..1209600
 }
@@ -42,8 +66,7 @@ export const DEFAULT_BONDED_PARAMS: BondedClubConfigParams = {
   maxMembers: 10,
   roundDuration: 86_400, // 1 day
   rateBpsPerRound: 200, // 2% per round
-  safetyBps: 20_000, // 200%
-  liquidationBps: 12_000, // 120%
+  safetyBps: 12_000, // 120% default
   interestGrace: 86_400, // 1 day
   settlementGrace: 172_800, // 2 days
 };
@@ -75,20 +98,20 @@ export function validateBondedClubParams(params: BondedClubConfigParams): {
   if (params.maxMembers < 2 || params.maxMembers > 20) {
     return { valid: false, reason: "InvalidConfiguration: maxMembers must be 2..20" };
   }
+  if (
+    params.totalRounds !== undefined &&
+    (!Number.isInteger(params.totalRounds) || params.totalRounds < 1 || params.totalRounds > params.maxMembers)
+  ) {
+    return { valid: false, reason: "InvalidConfiguration: totalRounds must be 1..maxMembers" };
+  }
   if (params.roundDuration < 60 || params.roundDuration > 365 * 86_400) {
     return { valid: false, reason: "InvalidConfiguration: roundDuration must be 60..31536000" };
   }
   if (params.rateBpsPerRound < 1 || params.rateBpsPerRound > 1000) {
     return { valid: false, reason: "InvalidConfiguration: rateBpsPerRound must be 1..1000" };
   }
-  if (params.safetyBps < 15_000 || params.safetyBps > 50_000) {
-    return { valid: false, reason: "InvalidConfiguration: safetyBps must be 15000..50000" };
-  }
-  if (params.liquidationBps < 11_000 || params.liquidationBps > params.safetyBps - 2_000) {
-    return {
-      valid: false,
-      reason: "InvalidConfiguration: liquidationBps must be 11000..safetyBps-2000",
-    };
+  if (params.safetyBps < 10_000 || params.safetyBps > 50_000) {
+    return { valid: false, reason: "InvalidConfiguration: safetyBps must be 10000..50000" };
   }
   if (params.interestGrace < 0 || params.interestGrace > 7 * 86_400) {
     return { valid: false, reason: "InvalidConfiguration: interestGrace must be 0..604800" };
@@ -265,6 +288,15 @@ export function parseBondedTontineError(
         ? `${err.name} ${err.message} ${(err as { shortMessage?: string }).shortMessage ?? ""}`
         : String(err ?? "");
 
+  // Errors added after the 21-entry dictionary (newer factory/club versions).
+  if (raw.includes("AlreadyBorrowedThisRound")) {
+    return lang === "vi"
+      ? "Mỗi vòng chỉ được vay 1 lần. Bạn đã vay trong vòng này rồi."
+      : "Only one borrow per round. You have already borrowed in this round.";
+  }
+  if (raw.includes("NameTaken")) {
+    return lang === "vi" ? "Tên nhóm đã tồn tại, vui lòng chọn tên khác." : "This group name is already taken. Please choose another name.";
+  }
   for (const [errorName, msg] of Object.entries(BONDED_TONTINE_ERROR_MESSAGES)) {
     if (raw.includes(errorName)) {
       return msg[lang];

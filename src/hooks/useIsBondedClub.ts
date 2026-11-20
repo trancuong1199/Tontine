@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useReadContract } from "wagmi";
+import { useReadContracts } from "wagmi";
+import type { Abi } from "viem";
 import { BONDED_TONTINE_FACTORY_ABI } from "../lib/bondedTontine.ts";
 import {
   ARC_TESTNET_CHAIN_ID,
   ARC_TESTNET_DEFAULT_BONDED_CLUB,
-  CANONICAL_FACTORY,
+  TRUSTED_BONDED_FACTORIES,
   isKnownBondedClubAddress,
   registerRuntimeBondedClub,
 } from "../config/bonded-tontine.ts";
@@ -23,11 +24,11 @@ export interface IsBondedClubResult {
 /**
  * Decides whether `address` is a BondedTontine club.
  * 1. Immediate: default club, known-club list, or directory entry marked `v2-bonded`.
- * 2. Otherwise: reads `factory.isClub(address)` from the canonical factory (R7).
+ * 2. Otherwise: reads `factory.isClub(address)` from every trusted factory (current + previous) (R7).
  * The global registry is only updated inside an effect (never during render).
  */
 export function useIsBondedClub(address?: `0x${string}`, account?: string): IsBondedClubResult {
-  const factory = CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
+  const factories = TRUSTED_BONDED_FACTORIES[ARC_TESTNET_CHAIN_ID] ?? [];
   const lower = address?.toLowerCase();
 
   const locallyKnown = Boolean(
@@ -37,18 +38,24 @@ export function useIsBondedClub(address?: `0x${string}`, account?: string): IsBo
         getKnownGroups(account).find((g) => g.address.toLowerCase() === lower)?.version === "v2-bonded")
   );
 
-  const shouldCheckOnChain = Boolean(address && factory && !locallyKnown);
+  const shouldCheckOnChain = Boolean(address && factories.length > 0 && !locallyKnown);
 
-  const read = useReadContract({
-    address: factory,
-    abi: BONDED_TONTINE_FACTORY_ABI,
-    functionName: "isClub",
-    args: address ? [address] : undefined,
-    chainId: ARC_TESTNET_CHAIN_ID,
+  const read = useReadContracts({
+    contracts: factories.map((factory) => ({
+      address: factory,
+      abi: BONDED_TONTINE_FACTORY_ABI as Abi,
+      functionName: "isClub",
+      args: address ? [address] : undefined,
+      chainId: ARC_TESTNET_CHAIN_ID,
+    })),
     query: { enabled: shouldCheckOnChain, retry: 1, staleTime: 60_000 },
   });
 
-  const verifiedOnChain = read.data === true;
+  const results = read.data ?? [];
+  const verifiedOnChain = results.some((r) => r.status === "success" && r.result === true);
+  // Error only if no factory confirmed the club and every factory read failed.
+  const allReadsFailed =
+    read.isError || (results.length > 0 && results.every((r) => r.status === "failure"));
   const isBonded = locallyKnown || verifiedOnChain;
   const [, setRegistryVersion] = useState(0);
 
@@ -63,7 +70,7 @@ export function useIsBondedClub(address?: `0x${string}`, account?: string): IsBo
   return {
     isBonded,
     isChecking: shouldCheckOnChain && read.isLoading,
-    isError: shouldCheckOnChain && read.isError,
+    isError: shouldCheckOnChain && !verifiedOnChain && allReadsFailed,
     refetch: read.refetch,
   };
 }

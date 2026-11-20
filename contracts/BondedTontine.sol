@@ -56,6 +56,7 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
     error InvalidConfiguration();
     error InvalidAmount();
     error InsufficientLiquidity();
+    error AlreadyBorrowedThisRound();
     error ExceedsBorrowLimit();
     error CollateralLocked();
     error NothingToClaim();
@@ -98,7 +99,6 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
     uint256 public immutable roundDuration;
     uint256 public immutable rateBpsPerRound;
     uint256 public immutable safetyBps;
-    uint256 public immutable liquidationBps;
     uint256 public immutable interestGrace;
     uint256 public immutable settlementGrace;
 
@@ -116,6 +116,8 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
     uint256 public collateral;
     uint256 public totalDebt;
     mapping(uint256 => uint256) public peakDebt;
+    /// @notice The owner may borrow at most once per round (no re-borrowing after a repay in the same round).
+    mapping(uint256 => bool) public hasBorrowedInRound;
     mapping(uint256 => uint256) public interestDue;
     uint256 public lastRolledRound;
     uint256 public interestDueTotal;
@@ -140,10 +142,10 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         string memory groupName_,
         uint256 contributionAmount_,
         uint256 maxMembers_,
+        uint256 totalRounds_,
         uint256 roundDuration_,
         uint256 rateBpsPerRound_,
         uint256 safetyBps_,
-        uint256 liquidationBps_,
         uint256 interestGrace_,
         uint256 settlementGrace_
     ) Ownable(owner_ == address(0) ? msg.sender : owner_) {
@@ -188,14 +190,14 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
             contributionAmount_ == 0 ||
             maxMembers_ < 2 ||
             maxMembers_ > 20 ||
+            totalRounds_ < 1 ||
+            totalRounds_ > maxMembers_ ||
             roundDuration_ < 60 ||
             roundDuration_ > 365 days ||
             rateBpsPerRound_ < 1 ||
             rateBpsPerRound_ > 1000 ||
-            safetyBps_ < 15000 ||
+            safetyBps_ < 10000 ||
             safetyBps_ > 50000 ||
-            liquidationBps_ < 11000 ||
-            liquidationBps_ > safetyBps_ - 2000 ||
             interestGrace_ > 7 days ||
             settlementGrace_ < 1 hours ||
             settlementGrace_ > 14 days ||
@@ -213,11 +215,10 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         groupName = groupName_;
         contributionAmount = contributionAmount_;
         maxMembers = maxMembers_;
-        totalRounds = maxMembers_;
+        totalRounds = totalRounds_;
         roundDuration = roundDuration_;
         rateBpsPerRound = rateBpsPerRound_;
         safetyBps = safetyBps_;
-        liquidationBps = liquidationBps_;
         interestGrace = interestGrace_;
         settlementGrace = settlementGrace_;
         state = State.OPEN;
@@ -318,14 +319,14 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         if (memberCount < 2 || collateral == 0) revert InvalidConfiguration();
         state = State.ACTIVE;
         startTime = block.timestamp;
-        emit RoundsStarted(startTime, maxMembers);
+        emit RoundsStarted(startTime, totalRounds);
     }
 
     function contribute() external nonReentrant inState(State.ACTIVE) {
         _rollRounds();
         if (_isDefaultOrLiquidationPending()) revert DefaultPending();
         uint256 idx = currentRoundIndex();
-        if (idx < 1 || idx > maxMembers) revert RoundNotActive();
+        if (idx < 1 || idx > totalRounds) revert RoundNotActive();
         if (!isMember[msg.sender]) revert NotMember();
         if (contributed[idx][msg.sender]) revert AlreadyContributed();
 
@@ -367,8 +368,9 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
     function borrow(uint256 amount) external onlyOwner nonReentrant inState(State.ACTIVE) {
         _rollRounds();
         uint256 idx = currentRoundIndex();
-        if (idx < 1 || idx > maxMembers) revert RoundNotActive();
+        if (idx < 1 || idx > totalRounds) revert RoundNotActive();
         if (amount == 0) revert InvalidAmount();
+        if (hasBorrowedInRound[idx]) revert AlreadyBorrowedThisRound();
         if (amount > totalDeposits - totalDebt) revert InsufficientLiquidity();
 
         uint256 newDebt = totalDebt + amount;
@@ -379,6 +381,7 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
 
         if (exposureAfter > borrowLimit()) revert ExceedsBorrowLimit();
 
+        hasBorrowedInRound[idx] = true;
         totalDebt = newDebt;
         peakDebt[idx] = newPeak;
         usdc.safeTransfer(msg.sender, amount);
@@ -417,7 +420,7 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         _rollRounds();
         bool intOverdue = _interestOverdue();
         bool settleOverdue = block.timestamp >=
-            startTime + (maxMembers * roundDuration) + settlementGrace &&
+            startTime + (totalRounds * roundDuration) + settlementGrace &&
             (totalDebt > 0 || interestPaidTotal < interestDueTotal);
 
         if (!intOverdue && !settleOverdue) revert NotDefaultable();
@@ -426,16 +429,6 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
             ? DefaultReason.INTEREST_OVERDUE
             : DefaultReason.SETTLEMENT_OVERDUE;
         _settle(true, reason);
-    }
-
-    function liquidate() external nonReentrant inState(State.ACTIVE) {
-        _rollRounds();
-        uint256 debtAndInterest = totalDebt + (interestDueTotal - interestPaidTotal);
-        uint256 maxSupportedDebt = Math.mulDiv(collateralValueUsdc(), 10000, liquidationBps);
-        if (debtAndInterest == 0 || maxSupportedDebt >= debtAndInterest) {
-            revert NotLiquidatable();
-        }
-        _settle(true, DefaultReason.UNDERCOLLATERALIZED);
     }
 
     function withdrawPrincipal() external nonReentrant {
@@ -464,15 +457,15 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         if (state != State.ACTIVE) return 0;
         uint256 elapsed = block.timestamp - startTime;
         uint256 idx = (elapsed / roundDuration) + 1;
-        if (idx > maxMembers) {
-            return maxMembers + 1;
+        if (idx > totalRounds) {
+            return totalRounds + 1;
         }
         return idx;
     }
 
     function cycleEnded() public view returns (bool) {
         if (startTime == 0) return false;
-        return block.timestamp >= startTime + (maxMembers * roundDuration);
+        return block.timestamp >= startTime + (totalRounds * roundDuration);
     }
 
     function collateralValueUsdc() public view returns (uint256) {
@@ -532,7 +525,7 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         if (state != State.ACTIVE) return 0;
         uint256 idx = currentRoundIndex();
         uint256 cumulativeDue = 0;
-        for (uint256 k = 1; k <= maxMembers; k++) {
+        for (uint256 k = 1; k <= totalRounds; k++) {
             uint256 roundDue;
             if (k <= lastRolledRound) {
                 roundDue = interestDue[k];
@@ -550,7 +543,7 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
                 return startTime + (k * roundDuration) + interestGrace;
             }
         }
-        return startTime + (maxMembers * roundDuration) + settlementGrace;
+        return startTime + (totalRounds * roundDuration) + settlementGrace;
     }
 
     // =========================================================================
@@ -559,7 +552,7 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
 
     function _rollRounds() internal {
         uint256 idx = currentRoundIndex();
-        for (uint256 k = lastRolledRound + 1; k < idx && k <= maxMembers; k++) {
+        for (uint256 k = lastRolledRound + 1; k < idx && k <= totalRounds; k++) {
             if (totalDebt > peakDebt[k]) {
                 peakDebt[k] = totalDebt;
             }
@@ -568,7 +561,7 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
             interestDueTotal += due;
             lastRolledRound = k;
         }
-        if (idx >= 1 && idx <= maxMembers) {
+        if (idx >= 1 && idx <= totalRounds) {
             if (totalDebt > peakDebt[idx]) {
                 peakDebt[idx] = totalDebt;
             }
@@ -581,11 +574,11 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
             return (dueTotal, 0);
         }
         uint256 idx = currentRoundIndex();
-        for (uint256 k = lastRolledRound + 1; k < idx && k <= maxMembers; k++) {
+        for (uint256 k = lastRolledRound + 1; k < idx && k <= totalRounds; k++) {
             uint256 pk = totalDebt > peakDebt[k] ? totalDebt : peakDebt[k];
             dueTotal += Math.mulDiv(pk, rateBpsPerRound, 10000);
         }
-        if (idx >= 1 && idx <= maxMembers) {
+        if (idx >= 1 && idx <= totalRounds) {
             currentPeak = totalDebt > peakDebt[idx] ? totalDebt : peakDebt[idx];
         }
     }
@@ -604,17 +597,10 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
     function _isDefaultOrLiquidationPending() internal view returns (bool) {
         if (_interestOverdue()) return true;
         if (
-            block.timestamp >= startTime + (maxMembers * roundDuration) + settlementGrace &&
+            block.timestamp >= startTime + (totalRounds * roundDuration) + settlementGrace &&
             (totalDebt > 0 || interestPaidTotal < interestDueTotal)
         ) {
             return true;
-        }
-        uint256 debtAndInterest = totalDebt + (interestDueTotal - interestPaidTotal);
-        if (debtAndInterest > 0) {
-            (bool ok, uint256 colVal) = _tryCollateralValueUsdc();
-            if (ok && Math.mulDiv(colVal, 10000, liquidationBps) < debtAndInterest) {
-                return true;
-            }
         }
         return false;
     }

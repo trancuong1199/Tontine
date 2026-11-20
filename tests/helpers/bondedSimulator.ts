@@ -214,8 +214,8 @@ export class BondedTontineSimulator {
     this.totalRounds = BigInt(opts.params.maxMembers);
     this.roundDuration = BigInt(opts.params.roundDuration);
     this.rateBpsPerRound = BigInt(opts.params.rateBpsPerRound);
-    this.safetyBps = BigInt(opts.params.safetyBps);
-    this.liquidationBps = BigInt(opts.params.liquidationBps);
+    this.safetyBps = BigInt(opts.params.safetyBps ?? 12_000);
+    this.liquidationBps = BigInt(opts.params.liquidationBps ?? 12_000);
     this.interestGrace = BigInt(opts.params.interestGrace);
     this.settlementGrace = BigInt(opts.params.settlementGrace);
     this.usdcLedger = opts.usdcLedger;

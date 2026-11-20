@@ -70,14 +70,28 @@ export default function App() {
   const isEn = language === "en";
 
   // MetaMask / injected wallet (wagmi)
-  const { address: wagmiAddress, connector } = useAccount();
+  const { address: wagmiAddress, connector, isReconnecting: isWagmiReconnecting, status: wagmiStatus } = useAccount();
 
   // Passkey wallet (Circle Modular Wallet)
   const { state: pkState, bundler, isConfigured, register, login, logout, clearError } = usePasskeyWallet();
   const passkeyAddress = pkState.status === "ready" ? pkState.address : undefined;
   const passkeyAccount = pkState.status === "ready" ? pkState.account : undefined;
 
+  const [lastKnownAccount, setLastKnownAccount] = useState<string | null>(() => {
+    try {
+      return typeof window !== "undefined" ? localStorage.getItem("hui_last_connected_account") : null;
+    } catch {
+      return null;
+    }
+  });
+
   const handleDisconnectAll = () => {
+    setLastKnownAccount(null);
+    try {
+      localStorage.removeItem("hui_last_connected_account");
+    } catch {
+      // Ignore storage errors
+    }
     if (passkeyAddress) {
       logout();
     }
@@ -107,10 +121,33 @@ export default function App() {
   const activeAccountRef = useRef(address);
   activeAccountRef.current = address;
 
+  useEffect(() => {
+    if (address) {
+      setLastKnownAccount(address);
+      try {
+        localStorage.setItem("hui_last_connected_account", address);
+      } catch {
+        // Ignore storage errors
+      }
+    }
+  }, [address]);
+
+  const isWalletReconnecting =
+    isWagmiReconnecting ||
+    pkState.status === "loading" ||
+    (Boolean(lastKnownAccount) && !address && wagmiStatus !== "disconnected");
+
   // Dynamic contract address: initialized from ?group= URL query param or official default BondedTontine V2 club
   const [contractAddress, setContractAddress] = useState<`0x${string}`>(() => {
     if (typeof window !== "undefined") {
-      const removed = getRemovedGroups(address);
+      let cachedAccount: string | null = null;
+      try {
+        cachedAccount = localStorage.getItem("hui_last_connected_account");
+      } catch {
+        // Ignore
+      }
+      const initialAccount = address || (cachedAccount as `0x${string}` | undefined);
+      const removed = getRemovedGroups(initialAccount);
       const params = new URLSearchParams(window.location.search);
       const group = params.get("group");
       if (
@@ -175,7 +212,7 @@ export default function App() {
         url.searchParams.delete("view");
         url.searchParams.set("tab", "app");
         if (contractAddress && contractAddress.toLowerCase() !== ROTATING_SAVINGS_ADDRESS.toLowerCase()) {
-          if (address && hasExplicitGroup) {
+          if (hasExplicitGroup) {
             url.searchParams.set("group", contractAddress);
             window.history.pushState({}, "", url.toString());
           } else {
@@ -744,9 +781,10 @@ export default function App() {
 
   const isLoading = clubInfo.isLoading;
 
+  const effectiveAccountForDirectory = address || (isWalletReconnecting ? (lastKnownAccount as `0x${string}` | undefined) : undefined);
   const knownClub = getKnownGroups(address).find((c) => c.address.toLowerCase() === contractAddress.toLowerCase());
-  const knownGroupsList = getKnownGroups(address);
-  const removedGroupsSet = getRemovedGroups(address);
+  const knownGroupsList = getKnownGroups(effectiveAccountForDirectory);
+  const removedGroupsSet = getRemovedGroups(effectiveAccountForDirectory);
   const hiddenGroupsSet = new Set(HIDDEN_DEMO_CLUBS.map((a) => a.toLowerCase()));
   const activeDirectoryClubs = knownGroupsList.filter((g) => {
     const addr = g.address.toLowerCase();
@@ -1282,6 +1320,56 @@ export default function App() {
               </button>
             </div>
           </div>
+        ) : isBondedClub && !hasExplicitGroup ? (
+            // A club is only shown when opened via its link (?group=<address>), the directory, or right after creation.
+            <div
+              data-testid="bonded-no-club-selected"
+              className="bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] rounded-3xl p-10 sm:p-14 text-center border border-amber-500/30 shadow-xl max-w-2xl mx-auto my-8 space-y-6"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400 shadow-lg shadow-amber-500/10">
+                <PiggyBank size={34} />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                  {isEn ? "No club selected" : "Chưa chọn nhóm"}
+                </h2>
+                <p className="text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+                  {isEn
+                    ? "Open a club using its invite link, pick one from the Club Directory, or create a new club."
+                    : "Hãy mở nhóm bằng đường link mời, chọn nhóm trong Danh sách nhóm, hoặc tạo nhóm mới."}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                {address ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCreateModalMode("bonded");
+                      setShowCreateModal(true);
+                    }}
+                    className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+                  >
+                    {isEn ? "+ Create Savings Club" : "+ Tạo nhóm mới"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => openConnectModal?.(true)}
+                    className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    <Wallet size={18} />
+                    <span>{isEn ? "Connect Wallet" : "Kết nối ví"}</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowDirectoryModal(true)}
+                  className="px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-bold text-sm border border-amber-500/30 transition-all cursor-pointer"
+                >
+                  {isEn ? "Open Club Directory" : "Mở Danh sách nhóm"}
+                </button>
+              </div>
+            </div>
         ) : isBondedClub ? (
           !address ? (
             <div className="bg-gradient-to-br from-[#161722] via-[#0e0f18] to-[#07080d] rounded-3xl p-6 sm:p-8 border border-amber-500/30 shadow-xl max-w-3xl mx-auto my-6 space-y-5">
@@ -1922,7 +2010,8 @@ export default function App() {
           setShowDirectoryModal(false);
           setNameUpdateTrigger((prev) => prev + 1);
         }}
-        currentAddress={contractAddress}
+        // Only a club opened via link/directory/creation counts as "Current"; otherwise every club stays selectable.
+        currentAddress={hasExplicitGroup ? contractAddress : ""}
         onSelectGroup={handleSwitchGroup}
         onOpenCreateModal={() => {
           setShowDirectoryModal(false);

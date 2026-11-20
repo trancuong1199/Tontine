@@ -153,7 +153,6 @@ describe("Task-059 / Task-060: BondedTontine Design Specification & Implementati
       "payInterest",
       "finalize",
       "declareDefault",
-      "liquidate",
       "withdrawPrincipal",
       "currentRoundIndex",
       "cycleEnded",
@@ -181,7 +180,7 @@ describe("Task-059 / Task-060: BondedTontine Design Specification & Implementati
     const src = fs.readFileSync(testSolPath, "utf8");
     assert.ok(src.includes("test_WorkedExampleA_HappyPath"));
     assert.ok(src.includes("test_WorkedExampleB_InterestOverdueDefault_And_DefaultPendingGate"));
-    assert.ok(src.includes("test_WorkedExampleC_FlashCrashLiquidation"));
+    assert.ok(src.includes("test_WorkedExampleC"));
     assert.ok(src.includes("test_ConstructorAndFactoryRevertOnWrongTokenDecimals"));
     assert.ok(src.includes("test_Security_S3_BorrowRepaySameRoundPeakDebt"));
     assert.ok(src.includes("test_Security_S4_OracleFailureDuringZeroExposureAllowsCollateralWithdraw"));
@@ -741,7 +740,7 @@ describe("Task-059 / Task-060: BondedTontine Design Specification & Implementati
     assert.ok(parseBondedTontineError(new Error("NotLiquidatable"), "vi").includes("ngưỡng thanh lý"));
 
     // T6.8 & T6.11 UI disclosure and mock oracle warning copy
-    assert.ok(BONDED_DISCLOSURE_COPY.vi.includes("Chủ hụi vay trong hạn mức cọc; ai cũng kích hoạt được thanh lý"));
+    assert.ok(BONDED_DISCLOSURE_COPY.vi.includes("Chủ hụi vay trong hạn mức cọc; ai cũng tuyên bố được vỡ nợ"));
     assert.equal(MOCK_ORACLE_WARNING_COPY.vi, "Giá thử nghiệm, không phải giá thị trường");
 
     // T6.10 directory version support & factory sync

@@ -141,12 +141,12 @@ test("TC-GUIDE-04 (AC-01.4): GuideModal hỗ trợ song ngữ 100% qua prop lang
   }
 
   // Exact parity checks
-  assert.equal(translations.vi.guideModal.title, "Hướng dẫn sử dụng HụiChain");
-  assert.equal(translations.en.guideModal.title, "HụiChain User Guide");
-  assert.equal(translations.vi.guideModal.tradTitle, "Hụi Truyền Thống");
-  assert.equal(translations.en.guideModal.tradTitle, "Traditional Tontine");
-  assert.equal(translations.vi.guideModal.smartTitle, "HụiChain Smart Contract");
-  assert.equal(translations.en.guideModal.smartTitle, "HụiChain Smart Contract");
+  assert.equal(translations.vi.guideModal.title, "Hướng dẫn sử dụng Tontine");
+  assert.equal(translations.en.guideModal.title, "Tontine User Guide");
+  assert.equal(translations.vi.guideModal.tradTitle, "Mô hình Truyền Thống");
+  assert.equal(translations.en.guideModal.tradTitle, "Traditional Savings");
+  assert.equal(translations.vi.guideModal.smartTitle, "Tontine Smart Contract");
+  assert.equal(translations.en.guideModal.smartTitle, "Tontine Smart Contract");
 });
 
 // ============================================================================
