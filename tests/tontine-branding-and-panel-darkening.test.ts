@@ -228,12 +228,12 @@ test("TC-TONTINE-11 (AC-03.3): Tệp index.html cấu hình thẻ <link rel='ico
 // REQ-04: Đổi Tên Thương Hiệu Thành "Tontine"
 // ============================================================================
 
-test("TC-TONTINE-12 (AC-04.1): Tiêu đề <title> trong index.html được đổi thành 'Tontine — Trustless Rotating Savings Club on Arc Network'", () => {
+test("TC-TONTINE-12 (AC-04.1): Tiêu đề <title> trong index.html được đổi thành 'Tontine — Bonded Savings & Credit on Arc Network'", () => {
   const htmlContent = readSource("index.html");
 
   assert.ok(
-    htmlContent.includes("<title>Tontine — Trustless Rotating Savings Club on Arc Network</title>"),
-    "index.html <title> must be set to 'Tontine — Trustless Rotating Savings Club on Arc Network'"
+    htmlContent.includes("<title>Tontine — Bonded Savings &amp; Credit on Arc Network</title>"),
+    "index.html <title> must be set to 'Tontine — Bonded Savings & Credit on Arc Network'"
   );
 });
 
