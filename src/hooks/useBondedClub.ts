@@ -104,7 +104,8 @@ export interface BondedClubSnapshot {
   previewPrincipalCirBtc: bigint;
   principalWithdrawn: boolean;
   usdcAllowance: bigint;
-  cirBtcBalance: bigint;
+  /** null = balance not read yet or the RPC read failed (unknown, not zero). */
+  cirBtcBalance: bigint | null;
   cirBtcAllowance: bigint;
   refetch: (options?: { silent?: boolean }) => Promise<void>;
 }
@@ -359,7 +360,7 @@ export function useBondedClub(
     previewPrincipalCirBtc: 0n,
     principalWithdrawn: false,
     usdcAllowance: 0n,
-    cirBtcBalance: 0n,
+    cirBtcBalance: null,
     cirBtcAllowance: 0n,
   });
 
@@ -627,7 +628,7 @@ export function useBondedClub(
       let previewPrincipalCirBtc = 0n;
       let principalWithdrawn = false;
       let usdcAllowance = 0n;
-      let cirBtcBalance = 0n;
+      let cirBtcBalance: bigint | null = null;
       let cirBtcAllowance = 0n;
 
       if (userAddress) {
@@ -667,7 +668,7 @@ export function useBondedClub(
               functionName: "balanceOf",
               args: [userAddress],
             })
-            .catch(() => 0n),
+            .catch((): bigint | null => null),
           publicClient
             .readContract({
               address: BONDED_CIRBTC_ADDRESS,

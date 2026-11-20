@@ -265,24 +265,24 @@ export function BondedClubWorkspace({
   const memberMaxInterestUsdc =
     (club.contributionAmount * club.rateBpsPerRound * cycleRounds * (cycleRounds + 1n)) / 2n / 10000n;
 
-  const [collateralInput, setCollateralInput] = useState(() => {
-    if (club.cirBtcBalance && club.cirBtcBalance > 0n) {
-      if (suggestedCollateralSats && suggestedCollateralSats <= club.cirBtcBalance) {
-        return suggestedCollateralStr;
-      }
-      return formatUnitsExact(club.cirBtcBalance, 8);
-    }
-    return suggestedCollateralStr;
-  });
+  // null = wallet balance unknown (still loading or RPC read failed) — never treat it as zero.
+  const cirBtcBelowSuggested =
+    club.cirBtcBalance !== null &&
+    suggestedCollateralSats > 0n &&
+    club.cirBtcBalance < suggestedCollateralSats;
+  // Prefill: suggested amount, capped at the wallet balance when the balance is known and lower.
+  const prefillCollateralStr =
+    cirBtcBelowSuggested && club.cirBtcBalance !== null && club.cirBtcBalance > 0n
+      ? formatUnitsExact(club.cirBtcBalance, 8)
+      : suggestedCollateralStr;
+  const [collateralInput, setCollateralInput] = useState(prefillCollateralStr);
+  // Once the owner types or presses MAX, background refetches must not overwrite the input.
+  const collateralInputTouched = useRef(false);
   useEffect(() => {
-    if (!hasDepositedCollateral && suggestedCollateralStr) {
-      if (club.cirBtcBalance && club.cirBtcBalance > 0n && suggestedCollateralSats && suggestedCollateralSats > club.cirBtcBalance) {
-        setCollateralInput(formatUnitsExact(club.cirBtcBalance, 8));
-      } else {
-        setCollateralInput(suggestedCollateralStr);
-      }
+    if (!hasDepositedCollateral && prefillCollateralStr && !collateralInputTouched.current) {
+      setCollateralInput(prefillCollateralStr);
     }
-  }, [hasDepositedCollateral, suggestedCollateralStr, club.cirBtcBalance]);
+  }, [hasDepositedCollateral, prefillCollateralStr]);
   const [withdrawColInput, setWithdrawColInput] = useState("");
   useEffect(() => {
     setWithdrawColInput(formatUnitsExact(club.collateral, 8));
@@ -496,7 +496,7 @@ export function BondedClubWorkspace({
       );
       return;
     }
-    if (club.cirBtcBalance !== undefined && sats > club.cirBtcBalance) {
+    if (club.cirBtcBalance !== null && sats > club.cirBtcBalance) {
       toast.error(
         isVi
           ? `Số dư CirBTC không đủ (Hiện có: ${formatUnitsExact(club.cirBtcBalance, 8)} cirBTC). Bạn có thể đổi thêm qua Arc AppKit hoặc nạp số nhỏ hơn.`
@@ -1647,34 +1647,47 @@ export function BondedClubWorkspace({
 
               {club.state === BONDED_STATE.ACTIVE && club.isMember && (
                 <div className="space-y-1.5">
-                  <button
-                    type="button"
-                    disabled={
-                      isPending ||
-                      isPasskeyUser ||
-                      club.hasContributedCurrentRound ||
-                      !canContributeWithAcknowledgement ||
-                      contributeBlockedByVerification ||
-                      club.cycleEnded ||
-                      canDeclareDefault ||
-                      canLiquidate
-                    }
-                    onClick={handleContribute}
-                    className={`w-full py-3.5 px-4 font-bold rounded-2xl text-sm sm:text-base transition-all flex items-center justify-center gap-2 ${
-                      club.hasContributedCurrentRound
-                        ? "border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 cursor-default"
-                        : "bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 disabled:opacity-50 text-slate-950 shadow-lg shadow-amber-500/20 cursor-pointer"
-                    }`}
-                  >
-                    <CheckCircle2 className="h-4 w-4 shrink-0" />
-                    {club.hasContributedCurrentRound
-                      ? (isVi
-                          ? `Đã góp tiền Vòng ${club.currentRoundIndex.toString()} (${displayUsdc(club.contributionAmount)} USDC)`
-                          : `Paid Round ${club.currentRoundIndex.toString()} (${displayUsdc(club.contributionAmount)} USDC) — Completed`)
-                      : (isVi
-                          ? `Approve & Góp ${displayUsdc(club.contributionAmount)} USDC`
-                          : `Approve & Contribute ${displayUsdc(club.contributionAmount)} USDC`)}
-                  </button>
+                  {club.hasContributedCurrentRound ? (
+                    <div
+                      role="status"
+                      className="w-full rounded-2xl border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 flex items-center gap-3"
+                    >
+                      <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-emerald-300 truncate">
+                          {isVi
+                            ? `Đã góp Vòng ${club.currentRoundIndex.toString()}`
+                            : `Round ${club.currentRoundIndex.toString()} paid`}
+                        </p>
+                        <p className="text-xs text-emerald-400/70 truncate">
+                          {isVi ? "Hoàn tất — chờ vòng tiếp theo" : "Completed — waiting for next round"}
+                        </p>
+                      </div>
+                      <span className="shrink-0 font-mono text-sm font-semibold text-emerald-300 whitespace-nowrap">
+                        {displayUsdc(club.contributionAmount)} USDC
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={
+                        isPending ||
+                        isPasskeyUser ||
+                        !canContributeWithAcknowledgement ||
+                        contributeBlockedByVerification ||
+                        club.cycleEnded ||
+                        canDeclareDefault ||
+                        canLiquidate
+                      }
+                      onClick={handleContribute}
+                      className="w-full py-3.5 px-4 font-bold rounded-2xl text-sm sm:text-base transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 disabled:opacity-50 text-slate-950 shadow-lg shadow-amber-500/20 cursor-pointer"
+                    >
+                      <CheckCircle2 className="h-4 w-4 shrink-0" />
+                      {isVi
+                        ? `Approve & Góp ${displayUsdc(club.contributionAmount)} USDC`
+                        : `Approve & Contribute ${displayUsdc(club.contributionAmount)} USDC`}
+                    </button>
+                  )}
                   {(club.cycleEnded || canDeclareDefault || canLiquidate) && !club.hasContributedCurrentRound && (
                     <p className="text-xs text-red-300 text-center">
                       {club.cycleEnded
@@ -1781,14 +1794,18 @@ export function BondedClubWorkspace({
                       <span className="text-slate-400">
                         {isVi ? "Ví có:" : "Wallet:"}{" "}
                         <strong className="text-amber-300 font-mono">
-                          {formatUnitsExact(club.cirBtcBalance ?? 0n, 8)}
+                          {club.cirBtcBalance !== null ? formatUnitsExact(club.cirBtcBalance, 8) : "—"}
                         </strong>{" "}
                         cirBTC
                       </span>
-                      {club.cirBtcBalance > 0n && !hasDepositedCollateral && (
+                      {club.cirBtcBalance !== null && club.cirBtcBalance > 0n && !hasDepositedCollateral && (
                         <button
                           type="button"
-                          onClick={() => setCollateralInput(formatUnitsExact(club.cirBtcBalance, 8))}
+                          onClick={() => {
+                            if (club.cirBtcBalance === null) return;
+                            collateralInputTouched.current = true;
+                            setCollateralInput(formatUnitsExact(club.cirBtcBalance, 8));
+                          }}
                           className="px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-xs font-bold transition-colors cursor-pointer"
                         >
                           MAX
@@ -1805,11 +1822,21 @@ export function BondedClubWorkspace({
                           : `Suggested ${suggestedCollateralStr} cirBTC (covers full ${displayUsdc(maxCyclePoolUsdc)} USDC pool)`}
                     </span>
                   </div>
+                  {!hasDepositedCollateral && cirBtcBelowSuggested && (
+                    <p className="text-xs text-amber-300">
+                      {isVi
+                        ? "Số dư ví thấp hơn mức đề xuất — nếu nạp ít hơn, hạn mức vay sẽ không đủ để vay hết quỹ."
+                        : "Wallet balance is below the suggested amount — depositing less means the borrow limit will not cover the full pool."}
+                    </p>
+                  )}
                   <div className="flex gap-2">
                     <input
                       value={hasDepositedCollateral ? formatUnitsExact(club.collateral, 8) : collateralInput}
                       disabled={hasDepositedCollateral}
-                      onChange={(e) => setCollateralInput(e.target.value)}
+                      onChange={(e) => {
+                        collateralInputTouched.current = true;
+                        setCollateralInput(e.target.value);
+                      }}
                       placeholder={suggestedCollateralStr || "0.0"}
                       className="w-full rounded-xl border border-slate-700 bg-black/60 px-3 py-2 text-xs text-white placeholder-slate-400 focus:border-amber-400 focus:outline-hidden disabled:opacity-60 disabled:cursor-not-allowed"
                     />
