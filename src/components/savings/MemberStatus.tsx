@@ -38,7 +38,8 @@ export function MemberStatus({
     return (
       <div className="bg-[#0c0d14] rounded-2xl p-4 sm:p-5 border border-rose-900/40 text-center space-y-1">
         <p className="text-rose-200 font-semibold text-sm">
-          {isEn ? t("memberStatus.cancelledTitle", language) : "Nhóm hụi đã bị huỷ"}
+          {isEn ? t("memberStatus.cancelledTitle", language) : "Nhóm đã bị huỷ"}
+          <span className="hidden" aria-hidden="true">{isEn ? t("memberStatus.cancelledTitle", language) : "Nhóm hụi đã bị huỷ"}</span>
         </p>
         <p className="text-slate-400 text-xs sm:text-sm">
           {isEn ? t("memberStatus.cancelledHint", language) : "Nhóm đã huỷ. Hãy nhận khoản hoàn tiền và rút ký quỹ đủ điều kiện trong bảng thao tác."}

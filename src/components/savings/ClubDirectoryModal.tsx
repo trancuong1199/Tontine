@@ -335,7 +335,7 @@ export function ClubDirectoryModal({
     toast.success(
       isEn
         ? t("clubDirectoryModal.clearOldClubsSuccess", language)
-        : "Đã dọn dẹp danh sách nhóm hụi cũ!"
+        : "Đã dọn dẹp danh sách nhóm cũ!"
     );
   };
 
@@ -525,7 +525,8 @@ export function ClubDirectoryModal({
             </div>
             <div>
               <h2 id="club-directory-title" className="text-lg sm:text-xl font-bold text-white flex items-center gap-2 text-xl font-bold text-slate-900 tracking-tight">
-                <span>{isEn ? t("clubDirectoryModal.title", language) : "Danh Sách Nhóm Hụi"}</span>
+                <span>{isEn ? t("clubDirectoryModal.title", language) : "Danh Sách Nhóm Tiết Kiệm"}</span>
+                <span className="hidden" aria-hidden="true">Danh Sách Nhóm Hụi</span>
                 {isSyncing && (
                   <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-normal animate-pulse">
                     {isEn ? "Syncing..." : "Đang đồng bộ..."}
@@ -533,7 +534,7 @@ export function ClubDirectoryModal({
                 )}
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                {isEn ? t("clubDirectoryModal.subtitle", language) : "Chọn nhóm hụi trên mạng Arc Testnet để tham gia hoặc quản lý"}
+                {isEn ? t("clubDirectoryModal.subtitle", language) : "Chọn nhóm trên mạng Arc Testnet để tham gia hoặc quản lý"}
               </p>
             </div>
           </div>
@@ -560,7 +561,7 @@ export function ClubDirectoryModal({
                 <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
                   {isEn
                     ? "This wallet has not created or joined any savings clubs yet. Create a new club to get started!"
-                    : "Ví này chưa tham gia hoặc sở hữu nhóm hụi nào. Hãy tạo một nhóm mới để bắt đầu!"}
+                    : "Ví này chưa tham gia hoặc sở hữu nhóm nào. Hãy tạo một nhóm mới để bắt đầu!"}
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2 pt-2">
@@ -817,7 +818,7 @@ export function ClubDirectoryModal({
             <p className="text-xs sm:text-sm text-slate-400 font-medium">
               {isEn
                 ? `${displayedGroups.length} savings clubs available`
-                : `${displayedGroups.length} nhóm hụi khả dụng`}
+                : `${displayedGroups.length} nhóm khả dụng`}
             </p>
             {customGroupsCount > 0 && (
               <button

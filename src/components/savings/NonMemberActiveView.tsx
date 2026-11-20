@@ -22,7 +22,7 @@ export function NonMemberActiveView({
       </div>
       <div className="space-y-1">
         <h4 className="font-bold text-white text-base sm:text-lg">
-          {isEn ? "Club is in Progress" : "Nhóm hụi đang diễn ra"}
+          {isEn ? "Club is in Progress" : "Nhóm đang diễn ra"}
         </h4>
         <p className="text-slate-400 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
           {isEn

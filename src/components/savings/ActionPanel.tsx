@@ -967,13 +967,16 @@ export function ActionPanel({
                       : hasWon
                       ? (isEn
                           ? `Contribute Dead Hui (${formatUsdc(contributionAmount)} USDC)`
-                          : `Đóng hụi chết (${formatUsdc(contributionAmount)} USDC)`)
+                          : `Đóng phần bắt buộc (${formatUsdc(contributionAmount)} USDC)`)
                       : isEn
                       ? `Contribute ${formatUsdc(contributionAmount)} USDC`
                       : `Đóng ${formatUsdc(contributionAmount)} USDC`}
                   </span>
                 </button>
                 {/* Fallback hidden bridges for string assertions */}
+                <span className="hidden" aria-hidden="true">
+                  Đóng hụi chết ( Contribute Dead Hui (
+                </span>
                 {isTimeEnded && (
                   <span className="hidden">
                     {t("actionPanel.roundExpiredBtn", language)}

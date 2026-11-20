@@ -24,6 +24,37 @@ import {
   Calendar,
 } from "lucide-react";
 import { Language, t } from "../../lib/i18n";
+
+function sanitizeLandingText(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/HụiChain/g, "Tontine")
+    .replace(/Hụi Xoay Vòng/g, "Xoay Vòng Vốn")
+    .replace(/hụi xoay vòng/g, "xoay vòng vốn")
+    .replace(/Hụi Truyền Thống/g, "Mô Hình Truyền Thống")
+    .replace(/hụi truyền thống/g, "mô hình truyền thống")
+    .replace(/Hụi Trustless/g, "Tontine Trustless")
+    .replace(/hụi trustless/g, "tontine trustless")
+    .replace(/Chủ hụi/g, "Chủ nhóm")
+    .replace(/chủ hụi/g, "chủ nhóm")
+    .replace(/hốt hụi sớm/g, "nhận vốn sớm")
+    .replace(/hốt hụi chót/g, "nhận vốn sau")
+    .replace(/hốt hụi/g, "nhận vốn sớm")
+    .replace(/Hốt hụi/g, "Nhận vốn sớm")
+    .replace(/vỡ dây hụi/g, "vỡ dây góp vốn")
+    .replace(/bể hụi/g, "vỡ quỹ")
+    .replace(/Bể Hụi/g, "Vỡ Quỹ")
+    .replace(/đóng hụi/g, "góp tiền")
+    .replace(/Đóng hụi/g, "Góp tiền")
+    .replace(/nhóm hụi/g, "nhóm tiết kiệm")
+    .replace(/Nhóm hụi/g, "Nhóm tiết kiệm")
+    .replace(/Nhóm Hụi/g, "Nhóm Tiết Kiệm")
+    .replace(/vòng hụi/g, "vòng")
+    .replace(/Vòng hụi/g, "Vòng")
+    .replace(/dây hụi/g, "dây tiết kiệm")
+    .replace(/Hụi/g, "Tiết kiệm")
+    .replace(/hụi/g, "tiết kiệm");
+}
 import {
   formatAddress,
 } from "../../lib/savingsClubDirectory";
@@ -119,24 +150,24 @@ export function LandingPage({
 
   const faqItems = [
     {
-      q: t("landingPage.q1", language),
-      a: t("landingPage.a1", language),
+      q: sanitizeLandingText(t("landingPage.q1", language)),
+      a: sanitizeLandingText(t("landingPage.a1", language)),
     },
     {
-      q: t("landingPage.q2", language),
-      a: t("landingPage.a2", language),
+      q: sanitizeLandingText(t("landingPage.q2", language)),
+      a: sanitizeLandingText(t("landingPage.a2", language)),
     },
     {
-      q: t("landingPage.q3", language),
-      a: t("landingPage.a3", language),
+      q: sanitizeLandingText(t("landingPage.q3", language)),
+      a: sanitizeLandingText(t("landingPage.a3", language)),
     },
     {
-      q: t("landingPage.q4", language),
-      a: t("landingPage.a4", language),
+      q: sanitizeLandingText(t("landingPage.q4", language)),
+      a: sanitizeLandingText(t("landingPage.a4", language)),
     },
     {
-      q: t("landingPage.q5", language),
-      a: t("landingPage.a5", language),
+      q: sanitizeLandingText(t("landingPage.q5", language)),
+      a: sanitizeLandingText(t("landingPage.a5", language)),
     },
   ];
 
@@ -508,7 +539,7 @@ export function LandingPage({
                 </div>
                 <div>
                   <h3 className="text-lg sm:text-xl font-bold text-rose-200">
-                    {isEn ? "Traditional Tontine Risks" : "Rủi Ro Hụi Truyền Thống"}
+                    {isEn ? "Traditional Tontine Risks" : "Rủi Ro Mô Hình Truyền Thống"}
                   </h3>
                   <p className="text-xs text-rose-400">
                     {isEn
@@ -756,7 +787,7 @@ export function LandingPage({
                   onClick={() => onSelectClub(ARC_TESTNET_DEFAULT_BONDED_CLUB)}
                   className="w-full md:w-auto px-6 py-3.5 rounded-xl text-sm font-bold text-slate-950 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <span>{isEn ? "Enter Savings Club" : "Vào Nhóm Hụi"}</span>
+                  <span>{isEn ? "Enter Savings Club" : "Vào Nhóm Tiết Kiệm"}</span>
                   <ArrowRight size={16} />
                 </button>
               </div>

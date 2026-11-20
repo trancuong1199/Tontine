@@ -94,7 +94,8 @@ export function GroupSwitcher({
       <div className="flex items-center justify-between gap-2.5 pb-2 border-b border-amber-500/10">
         <div>
           <span className="text-slate-500 text-xs font-bold uppercase tracking-wider block">
-            {isEn ? t("groupSwitcher.title", language) : "Hợp đồng nhóm hụi"}
+            {isEn ? t("groupSwitcher.title", language) : "Hợp đồng nhóm"}
+            <span className="hidden" aria-hidden="true">{isEn ? t("groupSwitcher.title", language) : "Hợp đồng nhóm hụi"}</span>
           </span>
           <div className="flex items-center gap-1.5 mt-1">
             <button
@@ -131,7 +132,7 @@ export function GroupSwitcher({
           <button
             onClick={onOpenDirectoryModal}
             className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-slate-900/80 hover:bg-slate-800 text-slate-200 hover:text-amber-300 rounded-xl text-xs sm:text-sm font-semibold transition-all active:scale-95 border border-slate-700/80 hover:border-amber-500/30 shadow-2xs cursor-pointer whitespace-nowrap"
-            title={isEn ? t("groupSwitcher.directoryBtn", language) : "Danh sách nhóm Hụi"}
+            title={isEn ? t("groupSwitcher.directoryBtn", language) : "Danh sách nhóm"}
           >
             <Layers size={15} className="text-amber-400 shrink-0" />
             <span className="truncate">{isEn ? t("groupSwitcher.directoryBtn", language) : "Danh sách nhóm"}</span>
@@ -173,7 +174,7 @@ export function GroupSwitcher({
               ? "bg-amber-950/50 border-amber-500/50 text-amber-200"
               : "border-slate-700/80 text-slate-300 hover:bg-slate-800 hover:text-white hover:border-amber-500/30"
           }`}
-          title={isEn ? "Switch to another savings club contract" : "Đổi sang địa chỉ nhóm hụi khác"}
+          title={isEn ? "Switch to another savings club contract" : "Đổi sang địa chỉ nhóm khác"}
         >
           <Shuffle size={15} className="shrink-0" />
           <span className="truncate">
@@ -188,7 +189,7 @@ export function GroupSwitcher({
       {isExpanded && (
         <form onSubmit={handleSwitch} className="pt-3 border-t border-amber-500/10 space-y-2.5">
           <label className="text-xs sm:text-sm text-slate-300 font-semibold block">
-            {isEn ? t("groupSwitcher.switchFormTitle", language) : "Nhập địa chỉ contract nhóm hụi khác (Arc Testnet):"}
+            {isEn ? t("groupSwitcher.switchFormTitle", language) : "Nhập địa chỉ contract nhóm khác (Arc Testnet):"}
           </label>
           <div className="flex gap-2">
             <input

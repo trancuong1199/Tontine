@@ -95,7 +95,7 @@ export function EditClubNameModal({
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                {isEn ? t("editClubModal.title", language) : "Đổi tên nhóm hụi"}
+                {isEn ? t("editClubModal.title", language) : "Đổi tên nhóm"}
               </h3>
               <p className="text-xs text-slate-400 font-mono">
                 {formatAddress(club.address)}
@@ -114,7 +114,7 @@ export function EditClubNameModal({
         {/* Input Form */}
         <div className="space-y-2">
           <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
-            <span>{isEn ? t("editClubModal.nameLabel", language) : "Tên nhóm hụi"}</span>
+            <span>{isEn ? t("editClubModal.nameLabel", language) : "Tên nhóm"}</span>
             <span className="text-xs text-slate-400 tabular-nums">
               {nameInput.length}/40
             </span>
@@ -130,7 +130,7 @@ export function EditClubNameModal({
             maxLength={40}
           />
           <p className="text-xs text-slate-400 leading-relaxed">
-            {isEn ? t("editClubModal.desc", language) : "Tùy chỉnh tên nhóm để dễ dàng nhận diện và quản lý trong danh bạ hụi của bạn."}
+            {isEn ? t("editClubModal.desc", language) : "Tùy chỉnh tên nhóm để dễ dàng nhận diện và quản lý trong danh bạ của bạn."}
           </p>
         </div>
 

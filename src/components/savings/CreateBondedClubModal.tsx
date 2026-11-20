@@ -245,7 +245,7 @@ export function CreateBondedClubModal({
               <p className="hidden sm:block text-xs text-slate-400 mt-0.5">
                 {isEn
                   ? "Factory-deployed club with BTC/USD Oracle & anti-default bond"
-                  : "Nhóm hụi thế chấp CirBTC định giá Oracle, chống bùng hụi qua Factory"}
+                  : "Nhóm tiết kiệm thế chấp CirBTC định giá Oracle, chống vỡ quỹ qua Factory"}
               </p>
             </div>
           </div>
@@ -293,7 +293,7 @@ export function CreateBondedClubModal({
               type="text"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
-              placeholder={isEn ? "e.g. Saigon Bonded Club" : "Ví dụ: Hụi Vàng Sài Gòn"}
+              placeholder={isEn ? "e.g. Saigon Bonded Club" : "Ví dụ: Câu lạc bộ Sài Gòn"}
               maxLength={32}
               disabled={isDeploying}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-900/80 text-white text-sm focus:border-amber-500 focus:outline-none transition-colors"
