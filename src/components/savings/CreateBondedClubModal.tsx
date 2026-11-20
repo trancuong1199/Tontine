@@ -81,7 +81,7 @@ export function CreateBondedClubModal({
   const formId = useId();
   const deployingRef = useRef(false);
 
-  const [groupName, setGroupName] = useState("Saigon Bonded Club");
+  const [groupName, setGroupName] = useState("Bonded Club");
   const [contributionAmount, setContributionAmount] = useState("10");
   const [maxMembers, setMaxMembers] = useState(5);
   // Number of contribution rounds in the cycle (1..maxMembers). Default: a single round.
@@ -422,7 +422,7 @@ export function CreateBondedClubModal({
               type="text"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
-              placeholder={isEn ? "e.g. Saigon Bonded Club" : "Ví dụ: Câu lạc bộ Sài Gòn"}
+              placeholder={isEn ? "e.g. Bonded Club" : "Ví dụ: Bonded Club"}
               maxLength={32}
               disabled={isDeploying}
               aria-invalid={isNameTaken || undefined}

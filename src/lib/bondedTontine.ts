@@ -61,7 +61,7 @@ export interface BondedClubConfigParams {
 }
 
 export const DEFAULT_BONDED_PARAMS: BondedClubConfigParams = {
-  groupName: "Saigon Bonded Club",
+  groupName: "Bonded Club",
   contributionAmount: 50_000_000n, // 50 USDC
   maxMembers: 10,
   roundDuration: 86_400, // 1 day
