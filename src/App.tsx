@@ -70,14 +70,28 @@ export default function App() {
   const isEn = language === "en";
 
   // MetaMask / injected wallet (wagmi)
-  const { address: wagmiAddress, connector } = useAccount();
+  const { address: wagmiAddress, connector, isReconnecting: isWagmiReconnecting, status: wagmiStatus } = useAccount();
 
   // Passkey wallet (Circle Modular Wallet)
   const { state: pkState, bundler, isConfigured, register, login, logout, clearError } = usePasskeyWallet();
   const passkeyAddress = pkState.status === "ready" ? pkState.address : undefined;
   const passkeyAccount = pkState.status === "ready" ? pkState.account : undefined;
 
+  const [lastKnownAccount, setLastKnownAccount] = useState<string | null>(() => {
+    try {
+      return typeof window !== "undefined" ? localStorage.getItem("hui_last_connected_account") : null;
+    } catch {
+      return null;
+    }
+  });
+
   const handleDisconnectAll = () => {
+    setLastKnownAccount(null);
+    try {
+      localStorage.removeItem("hui_last_connected_account");
+    } catch {
+      // Ignore storage errors
+    }
     if (passkeyAddress) {
       logout();
     }
@@ -107,10 +121,33 @@ export default function App() {
   const activeAccountRef = useRef(address);
   activeAccountRef.current = address;
 
+  useEffect(() => {
+    if (address) {
+      setLastKnownAccount(address);
+      try {
+        localStorage.setItem("hui_last_connected_account", address);
+      } catch {
+        // Ignore storage errors
+      }
+    }
+  }, [address]);
+
+  const isWalletReconnecting =
+    isWagmiReconnecting ||
+    pkState.status === "loading" ||
+    (Boolean(lastKnownAccount) && !address && wagmiStatus !== "disconnected");
+
   // Dynamic contract address: initialized from ?group= URL query param or official default BondedTontine V2 club
   const [contractAddress, setContractAddress] = useState<`0x${string}`>(() => {
     if (typeof window !== "undefined") {
-      const removed = getRemovedGroups(address);
+      let cachedAccount: string | null = null;
+      try {
+        cachedAccount = localStorage.getItem("hui_last_connected_account");
+      } catch {
+        // Ignore
+      }
+      const initialAccount = address || (cachedAccount as `0x${string}` | undefined);
+      const removed = getRemovedGroups(initialAccount);
       const params = new URLSearchParams(window.location.search);
       const group = params.get("group");
       if (
@@ -744,9 +781,10 @@ export default function App() {
 
   const isLoading = clubInfo.isLoading;
 
+  const effectiveAccountForDirectory = address || (isWalletReconnecting ? (lastKnownAccount as `0x${string}` | undefined) : undefined);
   const knownClub = getKnownGroups(address).find((c) => c.address.toLowerCase() === contractAddress.toLowerCase());
-  const knownGroupsList = getKnownGroups(address);
-  const removedGroupsSet = getRemovedGroups(address);
+  const knownGroupsList = getKnownGroups(effectiveAccountForDirectory);
+  const removedGroupsSet = getRemovedGroups(effectiveAccountForDirectory);
   const hiddenGroupsSet = new Set(HIDDEN_DEMO_CLUBS.map((a) => a.toLowerCase()));
   const activeDirectoryClubs = knownGroupsList.filter((g) => {
     const addr = g.address.toLowerCase();
