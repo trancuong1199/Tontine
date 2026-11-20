@@ -30,8 +30,8 @@ export interface BondedClubConfigParams {
   maxMembers: number; // 2..20
   roundDuration: number; // seconds, 60..31536000
   rateBpsPerRound: number; // 1..1000
-  safetyBps: number; // 15000..50000
-  liquidationBps: number; // 11000..safetyBps-2000
+  safetyBps: number; // 10000..50000
+  liquidationBps?: number; // legacy optional
   interestGrace: number; // 0..604800
   settlementGrace: number; // 3600..1209600
 }
@@ -42,8 +42,7 @@ export const DEFAULT_BONDED_PARAMS: BondedClubConfigParams = {
   maxMembers: 10,
   roundDuration: 86_400, // 1 day
   rateBpsPerRound: 200, // 2% per round
-  safetyBps: 20_000, // 200%
-  liquidationBps: 12_000, // 120%
+  safetyBps: 12_000, // 120% default
   interestGrace: 86_400, // 1 day
   settlementGrace: 172_800, // 2 days
 };
@@ -81,14 +80,8 @@ export function validateBondedClubParams(params: BondedClubConfigParams): {
   if (params.rateBpsPerRound < 1 || params.rateBpsPerRound > 1000) {
     return { valid: false, reason: "InvalidConfiguration: rateBpsPerRound must be 1..1000" };
   }
-  if (params.safetyBps < 15_000 || params.safetyBps > 50_000) {
-    return { valid: false, reason: "InvalidConfiguration: safetyBps must be 15000..50000" };
-  }
-  if (params.liquidationBps < 11_000 || params.liquidationBps > params.safetyBps - 2_000) {
-    return {
-      valid: false,
-      reason: "InvalidConfiguration: liquidationBps must be 11000..safetyBps-2000",
-    };
+  if (params.safetyBps < 10_000 || params.safetyBps > 50_000) {
+    return { valid: false, reason: "InvalidConfiguration: safetyBps must be 10000..50000" };
   }
   if (params.interestGrace < 0 || params.interestGrace > 7 * 86_400) {
     return { valid: false, reason: "InvalidConfiguration: interestGrace must be 0..604800" };

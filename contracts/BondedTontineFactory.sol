@@ -74,7 +74,6 @@ contract BondedTontineFactory {
         uint256 roundDuration,
         uint256 rateBpsPerRound,
         uint256 safetyBps,
-        uint256 liquidationBps,
         uint256 interestGrace,
         uint256 settlementGrace
     ) external returns (address club) {
@@ -91,7 +90,6 @@ contract BondedTontineFactory {
                 roundDuration,
                 rateBpsPerRound,
                 safetyBps,
-                liquidationBps,
                 interestGrace,
                 settlementGrace
             )

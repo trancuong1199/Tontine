@@ -31,7 +31,6 @@ import {
   ARC_TESTNET_BONDED_FACTORY,
   registerRuntimeBondedClub,
   DEFAULT_SAFETY_RATIO_BPS,
-  DEFAULT_LIQUIDATION_RATIO_BPS,
   DEFAULT_INTEREST_RATE_BPS,
 } from "@/config/bonded-tontine";
 import {
@@ -79,11 +78,10 @@ export function CreateBondedClubModal({
   const [maxMembers, setMaxMembers] = useState(5);
   const [roundDuration, setRoundDuration] = useState(86400);
 
-  // Advanced configurations (recommended defaults: 200% safety ratio)
+  // Advanced configurations (recommended defaults: 120% safety ratio)
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [rateBps, setRateBps] = useState(DEFAULT_INTEREST_RATE_BPS); // 0.5% per round
-  const [safetyBps, setSafetyBps] = useState(DEFAULT_SAFETY_RATIO_BPS); // 200%
-  const [liquidationBps, setLiquidationBps] = useState(DEFAULT_LIQUIDATION_RATIO_BPS); // 120%
+  const [safetyBps, setSafetyBps] = useState(DEFAULT_SAFETY_RATIO_BPS); // 120%
   const [interestGraceSec, setInterestGraceSec] = useState(86400);
   const [settlementGraceSec, setSettlementGraceSec] = useState(86400);
   const [hasConfirmedCollateralSeizure, setHasConfirmedCollateralSeizure] = useState(false);
@@ -129,7 +127,6 @@ export function CreateBondedClubModal({
       roundDuration,
       rateBpsPerRound: rateBps,
       safetyBps,
-      liquidationBps,
       interestGrace: interestGraceSec,
       settlementGrace: settlementGraceSec,
     };
@@ -157,7 +154,6 @@ export function CreateBondedClubModal({
           BigInt(params.roundDuration),
           BigInt(params.rateBpsPerRound),
           BigInt(params.safetyBps),
-          BigInt(params.liquidationBps),
           BigInt(params.interestGrace),
           BigInt(params.settlementGrace),
         ],
@@ -278,9 +274,8 @@ export function CreateBondedClubModal({
             <h3 className="font-bold text-amber-300">{isEn ? "Essential terms before creation" : "Điều kiện cần biết trước khi tạo"}</h3>
             <p>{isEn ? "Owner borrowing interest per round" : "Lãi vay chủ nhóm mỗi vòng"}: {(rateBps / 100).toFixed(2)}%</p>
             <p>{isEn ? "Initial collateral: 0 cirBTC; creation does not deposit collateral. Initial borrowing capacity: 0 USDC until collateral is deposited and a fresh price is available." : "Cọc ban đầu: 0 cirBTC; tạo nhóm không tự nạp cọc. Hạn mức vay ban đầu: 0 USDC cho đến khi nạp cọc và có giá còn hạn."}</p>
-            <p>{isEn ? "To start: positive CirBTC collateral and at least 2 members. There is no requirement to collateralize 200% of the whole pool to start." : "Điều kiện bắt đầu: cọc CirBTC lớn hơn 0 và ít nhất 2 thành viên. Không bắt buộc cọc 200% toàn bộ quỹ để bắt đầu."}</p>
+            <p>{isEn ? "To start: positive CirBTC collateral and at least 2 members. There is no requirement to collateralize 120% of the whole pool to start." : "Điều kiện bắt đầu: cọc CirBTC lớn hơn 0 và ít nhất 2 thành viên. Không bắt buộc cọc 120% toàn bộ quỹ để bắt đầu."}</p>
             <p>{isEn ? "Borrowing safety margin" : "Biên an toàn khoản vay"}: {safetyBps / 100}% — {isEn ? `$${safetyBps / 100} collateral per $100 exposure, including interest.` : `$${safetyBps / 100} cọc cho mỗi $100 dư nợ tính cả lãi.`}</p>
-            <p>{isEn ? "Liquidation threshold" : "Ngưỡng thanh lý"}: {liquidationBps / 100}% {isEn ? "of exposure; separate from the start conditions." : "dư nợ; khác với điều kiện bắt đầu."}</p>
           </section>
 
           {/* Field 1: Group Name */}
@@ -509,24 +504,6 @@ export function CreateBondedClubModal({
                     />
                     <span className="text-xs text-slate-500">
                       {(safetyBps / 100).toFixed(0)}% (Hạn mức vay = Cọc / {safetyBps / 10000})
-                    </span>
-                  </div>
-
-                  <div>
-                    <label htmlFor="liquidation-bps-input" className="text-slate-400 block">
-                      {isEn ? "Liquidation Threshold" : "Ngưỡng thanh lý"}
-                    </label>
-                    <input
-                      id="liquidation-bps-input"
-                      aria-label={isEn ? "Liquidation Threshold" : "Ngưỡng thanh lý"}
-                      type="number"
-                      value={liquidationBps}
-                      onChange={(e) => setLiquidationBps(Number(e.target.value))}
-                      disabled={isDeploying}
-                      className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white"
-                    />
-                    <span className="text-xs text-slate-500">
-                      {(liquidationBps / 100).toFixed(0)}% (Thanh lý nếu cọc &lt; nợ x {liquidationBps / 10000})
                     </span>
                   </div>
 

@@ -49,16 +49,15 @@ export const LEGACY_TEST_CLUB_ADDRESSES: readonly `0x${string}`[] = [
 ] as const;
 
 // Shared BondedTontine configuration presets
-export const DEFAULT_SAFETY_RATIO_BPS = 20000; // 200% recommended default (design)
-export const DEFAULT_LIQUIDATION_RATIO_BPS = 12000; // 120%
+export const DEFAULT_SAFETY_RATIO_BPS = 12000; // 120% recommended default
 export const DEFAULT_INTEREST_RATE_BPS = 50; // 0.5% per round
 export const TESTNET_MAX_PRICE_AGE = 3600; // 1 hour testnet heartbeat
 
 export const BONDED_SAFETY_RATIO_PRESETS = [
-  { label: "150% (Minimum)", value: 15000 },
-  { label: "175%", value: 17500 },
-  { label: "200% (Recommended)", value: 20000 },
-  { label: "250%", value: 25000 },
+  { label: "100%", value: 10000 },
+  { label: "120% (Recommended)", value: 12000 },
+  { label: "150%", value: 15000 },
+  { label: "200%", value: 20000 },
 ] as const;
 
 export const BONDED_ROUND_DURATION_PRESETS = [

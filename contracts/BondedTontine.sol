@@ -98,7 +98,6 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
     uint256 public immutable roundDuration;
     uint256 public immutable rateBpsPerRound;
     uint256 public immutable safetyBps;
-    uint256 public immutable liquidationBps;
     uint256 public immutable interestGrace;
     uint256 public immutable settlementGrace;
 
@@ -143,7 +142,6 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         uint256 roundDuration_,
         uint256 rateBpsPerRound_,
         uint256 safetyBps_,
-        uint256 liquidationBps_,
         uint256 interestGrace_,
         uint256 settlementGrace_
     ) Ownable(owner_ == address(0) ? msg.sender : owner_) {
@@ -192,10 +190,8 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
             roundDuration_ > 365 days ||
             rateBpsPerRound_ < 1 ||
             rateBpsPerRound_ > 1000 ||
-            safetyBps_ < 15000 ||
+            safetyBps_ < 10000 ||
             safetyBps_ > 50000 ||
-            liquidationBps_ < 11000 ||
-            liquidationBps_ > safetyBps_ - 2000 ||
             interestGrace_ > 7 days ||
             settlementGrace_ < 1 hours ||
             settlementGrace_ > 14 days ||
@@ -217,7 +213,6 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         roundDuration = roundDuration_;
         rateBpsPerRound = rateBpsPerRound_;
         safetyBps = safetyBps_;
-        liquidationBps = liquidationBps_;
         interestGrace = interestGrace_;
         settlementGrace = settlementGrace_;
         state = State.OPEN;
@@ -428,16 +423,6 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         _settle(true, reason);
     }
 
-    function liquidate() external nonReentrant inState(State.ACTIVE) {
-        _rollRounds();
-        uint256 debtAndInterest = totalDebt + (interestDueTotal - interestPaidTotal);
-        uint256 maxSupportedDebt = Math.mulDiv(collateralValueUsdc(), 10000, liquidationBps);
-        if (debtAndInterest == 0 || maxSupportedDebt >= debtAndInterest) {
-            revert NotLiquidatable();
-        }
-        _settle(true, DefaultReason.UNDERCOLLATERALIZED);
-    }
-
     function withdrawPrincipal() external nonReentrant {
         if (state != State.COMPLETED && state != State.DEFAULTED) revert WrongState();
         uint256 dep = deposit[msg.sender];
@@ -608,13 +593,6 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
             (totalDebt > 0 || interestPaidTotal < interestDueTotal)
         ) {
             return true;
-        }
-        uint256 debtAndInterest = totalDebt + (interestDueTotal - interestPaidTotal);
-        if (debtAndInterest > 0) {
-            (bool ok, uint256 colVal) = _tryCollateralValueUsdc();
-            if (ok && Math.mulDiv(colVal, 10000, liquidationBps) < debtAndInterest) {
-                return true;
-            }
         }
         return false;
     }

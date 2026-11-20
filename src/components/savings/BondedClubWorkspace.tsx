@@ -706,12 +706,7 @@ export function BondedClubWorkspace({
     club.totalDebt === 0n &&
     club.interestOwed === 0n;
 
-  const canLiquidate =
-    club.state === BONDED_STATE.ACTIVE &&
-    !club.oracleError &&
-    club.totalDebt + club.interestOwed > 0n &&
-    club.healthBps !== null &&
-    club.healthBps < club.liquidationBps;
+  const canLiquidate = false;
 
   const [clockDriftSec, setClockDriftSec] = useState<number>(0);
   useEffect(() => {
@@ -1165,7 +1160,7 @@ export function BondedClubWorkspace({
                   <div>
                     <dt className="text-xs text-slate-400">{isVi ? "Hệ số sức khỏe" : "Health Ratio"}</dt>
                     <dd className="font-semibold tabular-nums text-white">{healthRatioDisplay}</dd>
-                    <dd className="text-xs text-slate-400">{isVi ? "Thanh lý:" : "Liquidation:"} {(Number(club.liquidationBps) / 100).toFixed(0)}%</dd>
+                    <dd className="text-xs text-slate-400">{isVi ? "An toàn:" : "Safety:"} {(Number(club.safetyBps) / 100).toFixed(0)}%</dd>
                   </div>
                 </dl>
                 <p className="text-xs text-slate-400">
@@ -1675,7 +1670,7 @@ export function BondedClubWorkspace({
                     <p className="text-xs text-red-300 text-center">
                       {club.cycleEnded
                         ? (isVi ? "Chu kỳ đã kết thúc, không thể góp thêm" : "Cycle has ended, no further contributions")
-                        : (isVi ? "Nhóm đang chờ xử lý vỡ nợ hoặc thanh lý" : "Default or liquidation pending")}
+                        : (isVi ? "Nhóm đang chờ xử lý vỡ nợ quá hạn" : "Default pending")}
                     </p>
                   )}
                 </div>
@@ -2072,19 +2067,21 @@ export function BondedClubWorkspace({
                 )}
               </div>
 
-              <div className="space-y-1">
-                <button
-                  type="button"
-                  disabled={isPending || !canLiquidate}
-                  onClick={handleLiquidate}
-                  className="w-full py-2.5 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 disabled:opacity-40 text-orange-300 font-semibold text-xs transition-all cursor-pointer"
-                >
-                  {isVi ? "Thanh lý do thiếu cọc" : "Liquidate Undercollateralized"}
-                </button>
-                {liquidateDisabledReason && (
-                  <p className="text-xs text-slate-400">{liquidateDisabledReason}</p>
-                )}
-              </div>
+              {canLiquidate && (
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    disabled={isPending || !canLiquidate}
+                    onClick={handleLiquidate}
+                    className="w-full py-2.5 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 disabled:opacity-40 text-orange-300 font-semibold text-xs transition-all cursor-pointer"
+                  >
+                    {isVi ? "Thanh lý do thiếu cọc" : "Liquidate Undercollateralized"}
+                  </button>
+                  {liquidateDisabledReason && (
+                    <p className="text-xs text-slate-400">{liquidateDisabledReason}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* U3.2: Testnet Mock Oracle Simulation Bar — ONLY visible to oracleAdmin on Testnet */}

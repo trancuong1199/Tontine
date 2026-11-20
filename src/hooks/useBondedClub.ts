@@ -314,7 +314,7 @@ export function useBondedClub(
     totalRounds: 0n,
     roundDuration: 0n,
     rateBpsPerRound: 0n,
-    safetyBps: 20_000n,
+    safetyBps: 12_000n,
     liquidationBps: 12_000n,
     interestGrace: 0n,
     settlementGrace: 0n,
@@ -388,7 +388,7 @@ export function useBondedClub(
       let totalRounds: bigint = 0n;
       let roundDuration: bigint = 0n;
       let rateBpsPerRound: bigint = 0n;
-      let safetyBps: bigint = 20_000n;
+      let safetyBps: bigint = 12_000n;
       let liquidationBps: bigint = 12_000n;
       let interestGrace: bigint = 0n;
       let settlementGrace: bigint = 0n;
@@ -412,7 +412,7 @@ export function useBondedClub(
         try {
           const fnNames = [
             "state", "owner", "groupName", "contributionAmount", "maxMembers",
-            "totalRounds", "roundDuration", "rateBpsPerRound", "safetyBps", "liquidationBps",
+            "totalRounds", "roundDuration", "rateBpsPerRound", "safetyBps",
             "interestGrace", "settlementGrace", "maxPriceAge", "priceFeed", "memberCount",
             "totalDeposits", "totalDebt", "collateral", "interestDueTotal", "interestPaidTotal",
             "interestClaimedTotal", "interestOwed", "startTime", "nextInterestDeadline",
@@ -436,24 +436,23 @@ export function useBondedClub(
             totalRounds = results[5].status === "success" ? BigInt(results[5].result as bigint) : 0n;
             roundDuration = results[6].status === "success" ? BigInt(results[6].result as bigint) : 0n;
             rateBpsPerRound = results[7].status === "success" ? BigInt(results[7].result as bigint) : 0n;
-            safetyBps = results[8].status === "success" ? BigInt(results[8].result as bigint) : 20_000n;
-            liquidationBps = results[9].status === "success" ? BigInt(results[9].result as bigint) : 12_000n;
-            interestGrace = results[10].status === "success" ? BigInt(results[10].result as bigint) : 0n;
-            settlementGrace = results[11].status === "success" ? BigInt(results[11].result as bigint) : 0n;
-            maxPriceAge = results[12].status === "success" ? BigInt(results[12].result as bigint) : 3600n;
-            priceFeed = results[13].status === "success" ? (results[13].result as `0x${string}`) : priceFeed;
-            memberCount = results[14].status === "success" ? BigInt(results[14].result as bigint) : 0n;
-            totalDeposits = results[15].status === "success" ? BigInt(results[15].result as bigint) : 0n;
-            totalDebt = results[16].status === "success" ? BigInt(results[16].result as bigint) : 0n;
-            collateral = results[17].status === "success" ? BigInt(results[17].result as bigint) : 0n;
-            interestDueTotal = results[18].status === "success" ? BigInt(results[18].result as bigint) : 0n;
-            interestPaidTotal = results[19].status === "success" ? BigInt(results[19].result as bigint) : 0n;
-            interestClaimedTotal = results[20].status === "success" ? BigInt(results[20].result as bigint) : 0n;
-            interestOwed = results[21].status === "success" ? BigInt(results[21].result as bigint) : 0n;
-            startTime = results[22].status === "success" ? BigInt(results[22].result as bigint) : 0n;
-            nextInterestDeadline = results[23].status === "success" ? BigInt(results[23].result as bigint) : 0n;
-            currentRoundIndex = results[24].status === "success" ? BigInt(results[24].result as bigint) : 0n;
-            cycleEnded = results[25].status === "success" ? Boolean(results[25].result) : false;
+            safetyBps = results[8].status === "success" ? BigInt(results[8].result as bigint) : 12_000n;
+            interestGrace = results[9].status === "success" ? BigInt(results[9].result as bigint) : 0n;
+            settlementGrace = results[10].status === "success" ? BigInt(results[10].result as bigint) : 0n;
+            maxPriceAge = results[11].status === "success" ? BigInt(results[11].result as bigint) : 3600n;
+            priceFeed = results[12].status === "success" ? (results[12].result as `0x${string}`) : priceFeed;
+            memberCount = results[13].status === "success" ? BigInt(results[13].result as bigint) : 0n;
+            totalDeposits = results[14].status === "success" ? BigInt(results[14].result as bigint) : 0n;
+            totalDebt = results[15].status === "success" ? BigInt(results[15].result as bigint) : 0n;
+            collateral = results[16].status === "success" ? BigInt(results[16].result as bigint) : 0n;
+            interestDueTotal = results[17].status === "success" ? BigInt(results[17].result as bigint) : 0n;
+            interestPaidTotal = results[18].status === "success" ? BigInt(results[18].result as bigint) : 0n;
+            interestClaimedTotal = results[19].status === "success" ? BigInt(results[19].result as bigint) : 0n;
+            interestOwed = results[20].status === "success" ? BigInt(results[20].result as bigint) : 0n;
+            startTime = results[21].status === "success" ? BigInt(results[21].result as bigint) : 0n;
+            nextInterestDeadline = results[22].status === "success" ? BigInt(results[22].result as bigint) : 0n;
+            currentRoundIndex = results[23].status === "success" ? BigInt(results[23].result as bigint) : 0n;
+            cycleEnded = results[24].status === "success" ? Boolean(results[24].result) : false;
             multicallSucceeded = true;
           }
         } catch {
@@ -472,7 +471,6 @@ export function useBondedClub(
           rD,
           rB,
           sB,
-          lB,
           iG,
           sG,
           mP,
@@ -499,7 +497,6 @@ export function useBondedClub(
           readClub<bigint>("roundDuration"),
           readClub<bigint>("rateBpsPerRound"),
           readClub<bigint>("safetyBps"),
-          readClub<bigint>("liquidationBps"),
           readClub<bigint>("interestGrace"),
           readClub<bigint>("settlementGrace"),
           readClub<bigint>("maxPriceAge"),
@@ -527,7 +524,6 @@ export function useBondedClub(
         roundDuration = rD;
         rateBpsPerRound = rB;
         safetyBps = sB;
-        liquidationBps = lB;
         interestGrace = iG;
         settlementGrace = sG;
         maxPriceAge = mP;

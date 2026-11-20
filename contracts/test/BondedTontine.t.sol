@@ -191,8 +191,7 @@ contract BondedTontineTest is Test {
     uint256 public constant MAX_MEMBERS = 4;
     uint256 public constant ROUND_DURATION = 1 days; // 86400
     uint256 public constant RATE_BPS = 200; // 2% per round
-    uint256 public constant SAFETY_BPS = 20_000; // 200%
-    uint256 public constant LIQUIDATION_BPS = 12_000; // 120%
+    uint256 public constant SAFETY_BPS = 12_000; // 120% default
     uint256 public constant INTEREST_GRACE = 1 days;
     uint256 public constant SETTLEMENT_GRACE = 2 days;
     uint256 public constant MAX_PRICE_AGE = 3600;
@@ -222,7 +221,6 @@ contract BondedTontineTest is Test {
             ROUND_DURATION,
             RATE_BPS,
             SAFETY_BPS,
-            LIQUIDATION_BPS,
             INTEREST_GRACE,
             SETTLEMENT_GRACE
         );
@@ -282,7 +280,24 @@ contract BondedTontineTest is Test {
             ROUND_DURATION,
             RATE_BPS,
             SAFETY_BPS,
-            LIQUIDATION_BPS,
+            INTEREST_GRACE,
+            SETTLEMENT_GRACE
+        );
+
+        // safetyBps < 10000 (100%) reverts
+        vm.expectRevert(BondedTontine.InvalidConfiguration.selector);
+        new BondedTontine(
+            clubOwner,
+            address(usdc),
+            address(cirBtc),
+            address(oracle),
+            MAX_PRICE_AGE,
+            "Bad Safety Bps",
+            CONTRIBUTION,
+            MAX_MEMBERS,
+            ROUND_DURATION,
+            RATE_BPS,
+            9_999,
             INTEREST_GRACE,
             SETTLEMENT_GRACE
         );
@@ -311,7 +326,6 @@ contract BondedTontineTest is Test {
             ROUND_DURATION,
             RATE_BPS,
             SAFETY_BPS,
-            LIQUIDATION_BPS,
             INTEREST_GRACE,
             SETTLEMENT_GRACE
         );
@@ -329,7 +343,6 @@ contract BondedTontineTest is Test {
             ROUND_DURATION,
             RATE_BPS,
             SAFETY_BPS,
-            LIQUIDATION_BPS,
             INTEREST_GRACE,
             SETTLEMENT_GRACE
         );
@@ -399,7 +412,7 @@ contract BondedTontineTest is Test {
         vm.startPrank(clubOwner);
         club.depositCollateral(5_000_000);
         assertEq(club.collateralValueUsdc(), 3_000e6);
-        assertEq(club.borrowLimit(), 1_500e6);
+        assertEq(club.borrowLimit(), 2_500e6);
 
         club.startRounds();
         vm.stopPrank();
@@ -572,10 +585,10 @@ contract BondedTontineTest is Test {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 5. Worked Example C — BTC Flash Crash Liquidation & DefaultPending Gate
+    // 5. Worked Example C — Price Drop Does Not Trigger Liquidation & Default On Overdue Settlement
     // ─────────────────────────────────────────────────────────────────────────
 
-    function test_WorkedExampleC_FlashCrashLiquidation() public {
+    function test_WorkedExampleC_PriceDropDoesNotLiquidate_SettlementOverdueDefault() public {
         vm.prank(member1);
         club.joinGroup();
         vm.prank(member2);
@@ -614,35 +627,43 @@ contract BondedTontineTest is Test {
         club.borrow(500e6);
         assertEq(club.totalDebt(), 500e6);
 
-        vm.expectRevert(BondedTontine.NotLiquidatable.selector);
-        club.liquidate();
-
-        // BTC drops to $11,500 -> collateralUsd = $575 < $600 liquidation floor
+        // BTC drops to $11,500 ($575 collateral value)
         oracle.setPrice(11_500e8);
         assertEq(club.collateralValueUsdc(), 575e6);
 
-        // Advance to Round 4: while undercollateralized, contribute() reverts DefaultPending
+        // Advance to Round 4: price drop does NOT block contribution (no price-based default)
         vm.warp(vm.getBlockTimestamp() + ROUND_DURATION);
         oracle.setPrice(11_500e8);
         uint256 owed = club.interestOwed();
         vm.prank(clubOwner);
-        club.payInterest(owed); // pay interest so only undercollateralization is pending
+        club.payInterest(owed);
+
+        // Contributions succeed
         vm.prank(member1);
-        vm.expectRevert(BondedTontine.DefaultPending.selector);
+        club.contribute();
+        vm.prank(member2);
+        club.contribute();
+        vm.prank(member3);
+        club.contribute();
+        vm.prank(member4);
         club.contribute();
 
+        // Warp past roundDuration * 4 + settlementGrace (2 days)
+        vm.warp(club.startTime() + (MAX_MEMBERS * ROUND_DURATION) + SETTLEMENT_GRACE + 1);
+
+        // Keeper triggers declareDefault because owner failed to repay principal
         vm.prank(keeper);
-        club.liquidate();
+        club.declareDefault();
 
         assertEq(uint256(club.state()), uint256(BondedTontine.State.DEFAULTED));
-        assertEq(club.settledRecoveredUsdc(), 100e6);
+        assertEq(club.settledRecoveredUsdc(), 300e6);
         assertEq(club.settledCollateral(), 5_000_000);
 
         uint256 usdcBefore = usdc.balanceOf(member1);
         uint256 btcBefore = cirBtc.balanceOf(member1);
         vm.prank(member1);
         club.withdrawPrincipal();
-        assertEq(usdc.balanceOf(member1) - usdcBefore, 25e6);
+        assertEq(usdc.balanceOf(member1) - usdcBefore, 75e6);
         assertEq(cirBtc.balanceOf(member1) - btcBefore, 1_250_000);
     }
 
@@ -698,9 +719,6 @@ contract BondedTontineTest is Test {
         vm.prank(clubOwner);
         vm.expectRevert(BondedTontine.BadPrice.selector);
         club.borrow(10e6);
-
-        vm.expectRevert(BondedTontine.BadPrice.selector);
-        club.liquidate();
 
         vm.prank(clubOwner);
         club.withdrawCollateral(2_000_000);

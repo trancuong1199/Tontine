@@ -153,7 +153,6 @@ describe("Task-059 / Task-060: BondedTontine Design Specification & Implementati
       "payInterest",
       "finalize",
       "declareDefault",
-      "liquidate",
       "withdrawPrincipal",
       "currentRoundIndex",
       "cycleEnded",
@@ -181,7 +180,7 @@ describe("Task-059 / Task-060: BondedTontine Design Specification & Implementati
     const src = fs.readFileSync(testSolPath, "utf8");
     assert.ok(src.includes("test_WorkedExampleA_HappyPath"));
     assert.ok(src.includes("test_WorkedExampleB_InterestOverdueDefault_And_DefaultPendingGate"));
-    assert.ok(src.includes("test_WorkedExampleC_FlashCrashLiquidation"));
+    assert.ok(src.includes("test_WorkedExampleC"));
     assert.ok(src.includes("test_ConstructorAndFactoryRevertOnWrongTokenDecimals"));
     assert.ok(src.includes("test_Security_S3_BorrowRepaySameRoundPeakDebt"));
     assert.ok(src.includes("test_Security_S4_OracleFailureDuringZeroExposureAllowsCollateralWithdraw"));
