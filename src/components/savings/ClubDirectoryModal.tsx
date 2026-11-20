@@ -129,7 +129,7 @@ export function ClubDirectoryModal({
               address: item.address,
               name: item.name,
               version: "v2-bonded",
-            }, account);
+            }, account, { revive: false });
             registerRuntimeBondedClub(item.address);
           }
         }
@@ -189,12 +189,16 @@ export function ClubDirectoryModal({
               } catch {
                 // ignore
               }
-              saveKnownGroup({
-                address: currentAddress as `0x${string}`,
-                name: clubName,
-                version: "v2-bonded",
-              }, account);
-              if (!cancelled) onGroupNameUpdated?.(currentAddress as `0x${string}`, clubName);
+              // The user may have removed this club while the reads above were in flight (or the
+              // directory switched away from it): never re-add it from this background check.
+              if (!cancelled) {
+                saveKnownGroup({
+                  address: currentAddress as `0x${string}`,
+                  name: clubName,
+                  version: "v2-bonded",
+                }, account, { revive: false });
+                onGroupNameUpdated?.(currentAddress as `0x${string}`, clubName);
+              }
             }
           }
         }

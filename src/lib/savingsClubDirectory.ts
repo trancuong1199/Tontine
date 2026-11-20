@@ -202,11 +202,15 @@ export function saveKnownGroup(item: {
   initialCollateral?: string;
   creator?: string;
   version?: ClubVersion;
-}, account?: string): void {
+}, account?: string, options: { revive?: boolean } = {}): void {
   if (!item || !isValidAddress(item.address)) return;
   if (typeof window === "undefined" || !window.localStorage) return;
 
   const normalized = item.address.toLowerCase() as `0x${string}`;
+  // Background syncs pass revive:false: a club the user removed must never come back on its own.
+  // Only explicit user actions (create, open by address) may re-add a removed club.
+  const revive = options.revive ?? true;
+  if (!revive && getRemovedGroups(account).has(normalized)) return;
   const defaultMatch = DEFAULT_SAVINGS_CLUBS.find(
     (d) => d.address.toLowerCase() === normalized
   );
@@ -514,7 +518,7 @@ export async function syncFactoryBondedClubs(
             address: clubAddr,
             name: groupName,
             version: "v2-bonded",
-          }, account);
+          }, account, { revive: false });
           synced.push({
             address: lower as `0x${string}`,
             name: groupName,
@@ -535,7 +539,7 @@ export async function syncFactoryBondedClubs(
           address: clubAddr,
           name: groupName,
           version: "v2-bonded",
-        }, account);
+        }, account, { revive: false });
         synced.push({
           address: lower as `0x${string}`,
           name: groupName,
