@@ -207,7 +207,7 @@ export function PasskeyActionPanel({
       });
     } else {
       toast.success("Đã sao chép link mời nhóm!", {
-        description: "Gửi link này cho bạn bè để cùng tham gia hụi.",
+        description: "Gửi link này cho bạn bè để cùng tham gia.",
       });
     }
     setTimeout(() => setCopiedInvite(false), 2000);
@@ -560,7 +560,7 @@ export function PasskeyActionPanel({
                   <p className="text-emerald-400/90 text-xs sm:text-sm mt-0.5 leading-relaxed">
                     {isEn
                       ? "The club is currently in the Registration phase (OPEN). Round contributions will start when Round 1 begins."
-                      : "Nhóm hiện ở Giai đoạn đăng ký (OPEN). Tiền đóng hụi sẽ thu khi Vòng 1 mở."}
+                      : "Nhóm hiện ở Giai đoạn đăng ký (OPEN). Tiền đóng góp sẽ thu khi Vòng 1 mở."}
                   </p>
                 </div>
               </div>
@@ -791,7 +791,7 @@ export function PasskeyActionPanel({
                     ? t("actionPanel.deadHuiDesc", language)
                     : (isEn
                         ? t("actionPanel.contributeCardDesc", language)
-                        : "Đóng phần hụi của bạn trong vòng này để mở quyền đấu giá nhận Pot và không bị phạt.")}
+                        : "Đóng phần của bạn trong vòng này để mở quyền đấu giá nhận Pot và không bị phạt.")}
                 </p>
 
                 {/* Round Expired Banner */}
@@ -1178,7 +1178,7 @@ export function PasskeyActionPanel({
           </div>
           <div>
             <h3 className="font-bold text-slate-900 text-lg sm:text-xl">
-              {isEn ? t("actionPanel.cancelledTitle", language) : "Nhóm hụi đã bị huỷ"}
+              {isEn ? t("actionPanel.cancelledTitle", language) : "Nhóm đã bị huỷ"}
             </h3>
             <p className="text-slate-600 text-sm mt-2 leading-relaxed max-w-md mx-auto">
               {isEn
@@ -1189,7 +1189,7 @@ export function PasskeyActionPanel({
           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
             {isEn
               ? t("actionPanel.cancelledNavHint", language)
-              : "Bạn có thể sử dụng các nút điều hướng phía trên (Danh sách nhóm hoặc Tạo nhóm mới) để khám phá hoặc khởi tạo nhóm hụi khác."}
+              : "Bạn có thể sử dụng các nút điều hướng phía trên (Danh sách nhóm hoặc Tạo nhóm mới) để khám phá hoặc khởi tạo nhóm khác."}
           </div>
         </div>
       )}

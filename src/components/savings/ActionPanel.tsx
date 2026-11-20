@@ -208,7 +208,7 @@ export function ActionPanel({
       });
     } else {
       toast.success("Đã sao chép link mời nhóm!", {
-        description: "Gửi link này cho bạn bè để cùng tham gia hụi.",
+        description: "Gửi link này cho bạn bè để cùng tham gia.",
       });
     }
     setTimeout(() => setCopiedInvite(false), 2000);
@@ -560,7 +560,7 @@ export function ActionPanel({
         </div>
         <div>
           <h3 className="font-bold text-white text-lg sm:text-xl">
-            {isEn ? t("actionPanel.notConnectedTitle", language) : "Tham gia nhóm hụi"}
+            {isEn ? t("actionPanel.notConnectedTitle", language) : "Tham gia nhóm tiết kiệm"}
           </h3>
           <p className="text-slate-300 text-sm mt-1.5 leading-relaxed max-w-sm mx-auto">
             {isEn
@@ -912,7 +912,7 @@ export function ActionPanel({
                     ? t("actionPanel.deadHuiDesc", language)
                     : (isEn
                         ? t("actionPanel.contributeCardDesc", language)
-                        : "Đóng phần hụi của bạn trong vòng này để mở quyền đấu giá nhận Pot và không bị phạt.")}
+                        : "Đóng phần của bạn trong vòng này để mở quyền đấu giá nhận Pot và không bị phạt.")}
                 </p>
 
                 {currentRound === 1n && !hasWon && (
@@ -1299,7 +1299,7 @@ export function ActionPanel({
               <span>
                 {isEn
                   ? "Final Payout & Refund Distribution Report"
-                  : "Bảng Tổng Kết & Phân Bổ Tiền Hụi Công Khai"}
+                  : "Bảng Tổng Kết & Phân Bổ Tiền Quỹ Công Khai"}
               </span>
             </span>
           </div>
@@ -1485,7 +1485,7 @@ export function ActionPanel({
                       ? loadingLabel
                       : isEn
                       ? `🔄 Start New Cycle (Continue Round ${(Number(currentRound) + 1).toString()})`
-                      : `🔄 Mở Chu Kỳ Hụi Mới (Đóng tiếp Vòng ${(Number(currentRound) + 1).toString()} trên nhóm này)`}
+                      : `🔄 Mở Chu Kỳ Mới (Đóng tiếp Vòng ${(Number(currentRound) + 1).toString()} trên nhóm này)`}
                   </span>
                 </button>
               )}
@@ -1523,7 +1523,7 @@ export function ActionPanel({
           </div>
           <div>
             <h3 className="font-bold text-slate-900 text-lg sm:text-xl">
-              {isEn ? t("actionPanel.cancelledTitle", language) : "Nhóm hụi đã bị huỷ"}
+              {isEn ? t("actionPanel.cancelledTitle", language) : "Nhóm đã bị huỷ"}
             </h3>
             <p className="text-slate-600 text-sm mt-2 leading-relaxed max-w-md mx-auto">
               {isEn
@@ -1534,7 +1534,7 @@ export function ActionPanel({
           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
             {isEn
               ? t("actionPanel.cancelledNavHint", language)
-              : "Bạn có thể sử dụng các nút điều hướng phía trên (Danh sách nhóm hoặc Tạo nhóm mới) để khám phá hoặc khởi tạo nhóm hụi khác."}
+              : "Bạn có thể sử dụng các nút điều hướng phía trên (Danh sách nhóm hoặc Tạo nhóm mới) để khám phá hoặc khởi tạo nhóm khác."}
           </div>
         </div>
       )}

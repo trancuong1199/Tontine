@@ -1254,12 +1254,12 @@ export default function App() {
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                {isEn ? "No Savings Clubs Available" : "Chưa có nhóm Hụi nào trong danh sách"}
+                {isEn ? "No Savings Clubs Available" : "Chưa có nhóm nào trong danh sách"}
               </h2>
               <p className="text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
                 {isEn
                   ? "You have removed all clubs from your directory. Create a new Savings Club or open the directory to join via contract address."
-                  : "Bạn đã xóa toàn bộ nhóm Hụi khỏi danh sách. Hãy tạo một nhóm Hụi mới hoặc mở danh sách nhóm để tham gia qua địa chỉ hợp đồng."}
+                  : "Bạn đã xóa toàn bộ nhóm khỏi danh sách. Hãy tạo một nhóm mới hoặc mở danh sách nhóm để tham gia qua địa chỉ hợp đồng."}
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -1271,7 +1271,7 @@ export default function App() {
                 }}
                 className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
               >
-                {isEn ? "+ Create Savings Club" : "+ Tạo nhóm Hụi mới"}
+                {isEn ? "+ Create Savings Club" : "+ Tạo nhóm mới"}
               </button>
               <button
                 type="button"
@@ -1344,7 +1344,7 @@ export default function App() {
               <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0" />
               <div>
                 <div className="font-bold text-amber-300">
-                  {isEn ? "Viewing Legacy V1 Club (No Collateral)" : "Bạn đang xem Nhóm Hụi V1 Cũ (Không Thế Chấp)"}
+                  {isEn ? "Viewing Legacy V1 Club (No Collateral)" : "Bạn đang xem Nhóm V1 Cũ (Không Thế Chấp)"}
                 </div>
                 <div className="text-slate-300 text-xs mt-0.5">
                   {isEn
@@ -1383,12 +1383,12 @@ export default function App() {
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                {isEn ? "No Savings Clubs Available" : "Chưa có nhóm Hụi nào trong danh sách"}
+                {isEn ? "No Savings Clubs Available" : "Chưa có nhóm nào trong danh sách"}
               </h2>
               <p className="text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
                 {isEn
                   ? "You have removed all clubs from your directory. Create a new Savings Club or open the directory to join via contract address."
-                  : "Bạn đã xóa toàn bộ nhóm Hụi khỏi danh sách. Hãy tạo một nhóm Hụi mới hoặc mở danh sách nhóm để tham gia qua địa chỉ hợp đồng."}
+                  : "Bạn đã xóa toàn bộ nhóm khỏi danh sách. Hãy tạo một nhóm mới hoặc mở danh sách nhóm để tham gia qua địa chỉ hợp đồng."}
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -1397,7 +1397,7 @@ export default function App() {
                 onClick={() => setShowCreateModal(true)}
                 className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
               >
-                {isEn ? "+ Create Savings Club" : "+ Tạo nhóm Hụi mới"}
+                {isEn ? "+ Create Savings Club" : "+ Tạo nhóm mới"}
               </button>
               <button
                 type="button"
@@ -1419,17 +1419,17 @@ export default function App() {
             <div className="space-y-2">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 {hasExplicitGroup
-                  ? (isEn ? `You're invited to join: ${displayedGroupName || "Savings Club"}` : `Bạn được mời tham gia: ${displayedGroupName || "Nhóm Hụi"}`)
-                  : isEn ? "Connect Wallet to View Your Clubs" : "Vui lòng kết nối ví để xem Nhóm Hụi"}
+                  ? (isEn ? `You're invited to join: ${displayedGroupName || "Savings Club"}` : `Bạn được mời tham gia: ${displayedGroupName || "Nhóm"}`)
+                  : isEn ? "Connect Wallet to View Your Clubs" : "Vui lòng kết nối ví để xem Nhóm"}
               </h2>
               <p className="text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
                 {hasExplicitGroup
                   ? (isEn
                       ? "Connect your wallet to review club details, deposit collateral, and join."
-                      : "Kết nối ví của bạn để xem chi tiết nhóm, nộp tiền cọc và cùng tham gia hụi.")
+                      : "Kết nối ví của bạn để xem chi tiết nhóm, nộp tiền cọc và cùng tham gia.")
                   : isEn
                       ? "Connect your wallet to manage savings clubs you've created or joined, or create a new rotating savings club on Arc Testnet."
-                      : "Bạn chưa kết nối ví. Vui lòng kết nối ví để xem các nhóm hụi do bạn tạo hoặc đã tham gia, hoặc tạo nhóm mới."}
+                      : "Bạn chưa kết nối ví. Vui lòng kết nối ví để xem các nhóm do bạn tạo hoặc đã tham gia, hoặc tạo nhóm mới."}
               </p>
             </div>
             <div className="flex items-center justify-center pt-2">
@@ -1457,12 +1457,12 @@ export default function App() {
             </div>
             <div className="space-y-2">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                {isEn ? "No Savings Clubs Yet" : "Bạn chưa tham gia nhóm Hụi nào"}
+                {isEn ? "No Savings Clubs Yet" : "Bạn chưa tham gia nhóm nào"}
               </h2>
               <p className="text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
                 {isEn
                   ? "Your connected wallet hasn't created or joined any savings clubs yet. Create a new club or choose one from the directory to participate."
-                  : "Ví của bạn hiện chưa tạo hoặc tham gia nhóm hụi nào. Hãy tạo nhóm mới để làm Chủ nhóm hoặc mở danh sách nhóm để tham gia!"}
+                  : "Ví của bạn hiện chưa tạo hoặc tham gia nhóm nào. Hãy tạo nhóm mới để làm Chủ nhóm hoặc mở danh sách nhóm để tham gia!"}
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -1472,7 +1472,7 @@ export default function App() {
                 className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex items-center gap-2"
               >
                 <Plus size={18} />
-                <span>{isEn ? "+ Create Savings Club" : "+ Tạo nhóm Hụi mới"}</span>
+                <span>{isEn ? "+ Create Savings Club" : "+ Tạo nhóm mới"}</span>
               </button>
               <button
                 type="button"

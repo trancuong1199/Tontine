@@ -25,7 +25,7 @@ interface OnboardingScreenProps {
 const FEATURES = [
   { icon: Shield, title: "Trustless", desc: "Contract giữ tiền, không ai tự ý rút" },
   { icon: Zap, title: "Phí ≈ $0", desc: "Arc Testnet — USDC là gas token" },
-  { icon: Users, title: "Toàn cầu", desc: "Hụi / Susu / Tanda — 80+ quốc gia" },
+  { icon: Users, title: "Toàn cầu", desc: "ROSCA / Susu / Tanda — 80+ quốc gia" },
 ];
 
 type Mode = "landing" | "register" | "login-loading" | "login-error";
@@ -114,7 +114,7 @@ export function OnboardingScreen({
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                    Hụi trustless
+                    Tiết kiệm trustless
                   </h1>
                   <p className="text-slate-500 text-sm mt-1.5 text-pretty max-w-[260px] mx-auto">
                     Góp USDC mỗi vòng, bid để nhận pot sớm.

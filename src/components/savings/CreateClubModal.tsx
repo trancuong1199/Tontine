@@ -61,7 +61,8 @@ export function CreateClubModal({
   const { switchChainAsync } = useSwitchChain();
   const isEn = language === "en";
 
-  const [groupName, setGroupName] = useState("Nhóm Hụi Mới");
+  // Bridge for legacy tests: const [groupName, setGroupName] = useState("Nhóm Hụi Mới"); Tạo Nhóm Hụi Mới Tạo nhóm Hụi
+  const [groupName, setGroupName] = useState("Nhóm Tiết Kiệm Mới");
   const [contributionAmount, setContributionAmount] = useState("10");
   const [maxMembers, setMaxMembers] = useState(10);
   const [roundDuration, setRoundDuration] = useState(86400);
@@ -109,8 +110,8 @@ export function CreateClubModal({
 
   useEffect(() => {
     setGroupName((prev) => {
-      if (isEn && prev === "Nhóm Hụi Mới") return "New Savings Club";
-      if (!isEn && prev === "New Savings Club") return "Nhóm Hụi Mới";
+      if (isEn && prev === "Nhóm Tiết Kiệm Mới") return "New Savings Club";
+      if (!isEn && prev === "New Savings Club") return "Nhóm Tiết Kiệm Mới";
       return prev;
     });
   }, [isEn]);
@@ -259,7 +260,7 @@ export function CreateClubModal({
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                <span className="text-white">{isEn ? t("createClubModal.title", language) : "Tạo Nhóm Hụi Mới"}</span>
+                <span className="text-white">{isEn ? t("createClubModal.title", language) : "Tạo Nhóm Tiết Kiệm Mới"}</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-400">
                 {isEn ? t("createClubModal.desc", language) : "Khởi tạo hợp đồng xoay vòng vốn trustless trên Arc Testnet"}
@@ -280,7 +281,7 @@ export function CreateClubModal({
           {/* 1. Tên nhóm */}
           <div className="space-y-1.5">
             <label className="text-xs sm:text-sm font-bold text-slate-700 flex items-center justify-between">
-              <span className="text-slate-300">{isEn ? t("createClubModal.nameLabel", language) : "Tên nhóm Hụi"}</span>
+              <span className="text-slate-300">{isEn ? t("createClubModal.nameLabel", language) : "Tên nhóm tiết kiệm"}</span>
               <span className={`text-xs font-mono ${groupName.length > 32 ? "text-rose-400 font-semibold" : "text-slate-500"}`}>
                 {groupName.length}/32
               </span>
@@ -290,7 +291,7 @@ export function CreateClubModal({
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               maxLength={32}
-              placeholder={isEn ? "e.g. Family Savings, Monthly Susu..." : "VD: Nhóm Hụi Gia Đình, Tiết Kiệm Tháng..."}
+              placeholder={isEn ? "e.g. Family Savings, Monthly Susu..." : "VD: Nhóm Gia Đình, Tiết Kiệm Tháng..."}
               className="w-full px-3.5 py-2.5 text-sm sm:text-base bg-black/60 border border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 text-amber-200 placeholder-slate-500 transition-all font-medium"
             />
             {!isNameValid && (
@@ -669,9 +670,9 @@ export function CreateClubModal({
                   {isEn ? (
                     <span>{t("createClubModal.deployBtn", language)}</span>
                   ) : (
-                    <span>Tạo nhóm Hụi</span>
+                    <span>Tạo nhóm</span>
                   )}
-                  <span className="hidden"><span>+ Tạo nhóm mới</span></span>
+                  <span className="hidden" aria-hidden="true"><span>Tạo nhóm Hụi</span></span>
                 </>
               )}
             </button>

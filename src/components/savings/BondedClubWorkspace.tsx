@@ -929,7 +929,7 @@ export function BondedClubWorkspace({
   const ownerNextStep = club.state === BONDED_STATE.OPEN
     ? club.collateral === 0n ? (isVi ? "Bước tiếp theo: nạp cọc CirBTC lớn hơn 0. Sau đó mời ít nhất 2 thành viên để bắt đầu." : "Next: deposit a positive CirBTC bond, then recruit at least 2 members to start.")
       : club.memberCount < 2n ? (isVi ? "Bước tiếp theo: mời thêm thành viên; cần ít nhất 2 người để bắt đầu." : "Next: invite members; at least 2 are required to start.")
-        : (isVi ? "Nhóm đủ điều kiện cơ bản để bắt đầu chu kỳ (Chủ hụi + đủ thành viên & đã nạp cọc). Bấm 'Bắt đầu các vòng (Start Rounds)' ngay bên dưới để mở Vòng 1 cho thành viên đóng hụi!" : "The club meets the basic conditions to start its cycle. Click 'Start Rounds' right below to open Round 1 so members can contribute!")
+        : (isVi ? "Nhóm đủ điều kiện cơ bản để bắt đầu chu kỳ (Chủ nhóm + đủ thành viên & đã nạp cọc). Bấm 'Bắt đầu các vòng (Start Rounds)' ngay bên dưới để mở Vòng 1 cho thành viên góp tiền!" : "The club meets the basic conditions to start its cycle. Click 'Start Rounds' right below to open Round 1 so members can contribute!")
     : club.interestOwed > 0n ? (isVi ? "Bước tiếp theo: thanh toán lãi đến hạn và kiểm tra lịch trả nợ." : "Next: pay outstanding interest and review repayment deadlines.")
       : club.totalDebt > 0n ? (isVi ? "Bước tiếp theo: hoàn trả khoản vay trước hạn tất toán." : "Next: repay the loan before settlement is due.")
         : club.cycleEnded ? (isVi ? "Chu kỳ đã hết hạn; kiểm tra điều kiện để hoàn tất." : "The cycle has ended; review completion eligibility.")
@@ -1071,7 +1071,7 @@ export function BondedClubWorkspace({
                 </h2>
                 <p className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                   <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-950/30 px-2.5 py-0.5 text-amber-200">
-                    <span className="font-semibold text-amber-300">{isVi ? "Chủ hụi (Owner):" : "Club Owner:"}</span>
+                    <span className="font-semibold text-amber-300">{isVi ? "Chủ nhóm (Owner):" : "Club Owner:"}</span>
                     <a
                       href={buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, club.owner)}
                       target="_blank"
@@ -1129,14 +1129,14 @@ export function BondedClubWorkspace({
                 <dd className="mt-1 text-2xl font-extrabold tabular-nums text-white">
                   {effectiveRatePctStr}%
                 </dd>
-                <dd className="text-xs text-slate-400">{isVi ? "trên dư nợ Chủ hụi vay" : "on owner's borrowed debt"}</dd>
+                <dd className="text-xs text-slate-400">{isVi ? "trên dư nợ Chủ nhóm vay" : "on owner's borrowed debt"}</dd>
               </div>
             </dl>
 
             {/* Interest ceiling (not a promise): 0 if the owner never borrows */}
             <p className="text-xs text-slate-400" data-testid="bonded-cycle-payout-summary">
               {isVi
-                ? `Lãi mỗi ví: tối đa ${displayUsdc(memberMaxInterestUsdc)} USDC/chu kỳ nếu Chủ hụi vay hết quỹ mỗi vòng; bằng 0 nếu không vay. Đã phát sinh: ${displayUsdc(club.interestDueTotal)} USDC.`
+                ? `Lãi mỗi ví: tối đa ${displayUsdc(memberMaxInterestUsdc)} USDC/chu kỳ nếu Chủ nhóm vay hết quỹ mỗi vòng; bằng 0 nếu không vay. Đã phát sinh: ${displayUsdc(club.interestDueTotal)} USDC.`
                 : `Interest per wallet: up to ${displayUsdc(memberMaxInterestUsdc)} USDC/cycle if the owner borrows the full pool every round; 0 if not borrowed. Accrued so far: ${displayUsdc(club.interestDueTotal)} USDC.`}
             </p>
 
@@ -1151,7 +1151,7 @@ export function BondedClubWorkspace({
                 <BondedLiquiditySummary club={club} language={language} />
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
                   <div>
-                    <dt className="text-xs text-slate-400">{isVi ? "Cọc CirBTC của Chủ hụi" : "Owner CirBTC Collateral"}</dt>
+                    <dt className="text-xs text-slate-400">{isVi ? "Cọc CirBTC của Chủ nhóm" : "Owner CirBTC Collateral"}</dt>
                     <dd className="font-semibold tabular-nums text-emerald-300">{formatUnitsExact(club.collateral, 8)} cirBTC</dd>
                     <dd className="text-xs text-slate-400">≈ {club.collateralValueUsdc !== null ? `${displayUsdc(club.collateralValueUsdc)} USDC` : "N/A"}</dd>
                   </div>
@@ -1377,7 +1377,7 @@ export function BondedClubWorkspace({
                     <span>
                       <strong>{isVi ? "CẢNH BÁO QUÁ HẠN:" : "CRITICAL OVERDUE ALERT:"}</strong>{" "}
                       {isVi
-                        ? "Chủ hụi đã trễ hạn trả lãi! Bất kỳ ai cũng có thể bấm 'Tuyên bố vỡ nợ' bên dưới để tịch thu 100% cọc CirBTC chia cho thành viên."
+                        ? "Chủ nhóm đã trễ hạn trả lãi! Bất kỳ ai cũng có thể bấm 'Tuyên bố vỡ nợ' bên dưới để tịch thu 100% cọc CirBTC chia cho thành viên."
                         : "Owner has missed interest deadline! Anyone can click 'Declare Default' below to seize 100% CirBTC collateral for members."}
                     </span>
                   </div>
@@ -1402,7 +1402,7 @@ export function BondedClubWorkspace({
                 <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-amber-500/40 bg-amber-950/25 p-3.5 text-xs text-slate-200">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 text-xs font-extrabold text-amber-300 shrink-0">
-                      {isVi ? "Chủ hụi (Owner)" : "Club Owner"}
+                      {isVi ? "Chủ nhóm (Owner)" : "Club Owner"}
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                       <a
@@ -1535,7 +1535,7 @@ export function BondedClubWorkspace({
             {club.owner && club.owner !== "0x0000000000000000000000000000000000000000" && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-500/25 bg-amber-950/20 px-3.5 py-2.5 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-amber-300">{isVi ? "Chủ hụi (Club Owner):" : "Club Owner:"}</span>
+                  <span className="font-semibold text-amber-300">{isVi ? "Chủ nhóm (Club Owner):" : "Club Owner:"}</span>
                   <a
                     href={buildAddressExplorerUrl(ARC_TESTNET_CHAIN_ID, club.owner)}
                     target="_blank"
@@ -1630,12 +1630,12 @@ export function BondedClubWorkspace({
                     className="w-full px-4 py-3 rounded-xl border border-amber-500/35 bg-black/50 text-amber-200 font-bold text-xs sm:text-sm leading-snug cursor-not-allowed"
                   >
                     {isVi
-                      ? `Đóng hụi ${displayUsdc(club.contributionAmount)} USDC (Chờ mở Vòng 1)`
+                      ? `Góp tiền ${displayUsdc(club.contributionAmount)} USDC (Chờ mở Vòng 1)`
                       : `Contribute ${displayUsdc(club.contributionAmount)} USDC (Waiting for Round 1)`}
                   </button>
                   <p className="px-0.5 text-xs text-slate-300 leading-relaxed">
                     {isVi
-                      ? `Nhóm đang ở Vòng 0/${club.totalRounds.toString()}. Khi Chủ hụi (${club.owner.slice(0, 6)}...${club.owner.slice(-4)}) bấm "Bắt đầu các vòng", nút đóng ${displayUsdc(club.contributionAmount)} USDC sẽ mở khóa.`
+                      ? `Nhóm đang ở Vòng 0/${club.totalRounds.toString()}. Khi Chủ nhóm (${club.owner.slice(0, 6)}...${club.owner.slice(-4)}) bấm "Bắt đầu các vòng", nút đóng ${displayUsdc(club.contributionAmount)} USDC sẽ mở khóa.`
                       : `Club is at Round 0/${club.totalRounds.toString()}. Once the Owner (${club.owner.slice(0, 6)}...${club.owner.slice(-4)}) clicks "Start Rounds", this ${displayUsdc(club.contributionAmount)} USDC button will unlock.`}
                   </p>
                 </div>
@@ -1665,7 +1665,7 @@ export function BondedClubWorkspace({
                     <CheckCircle2 className="h-4 w-4 shrink-0" />
                     {club.hasContributedCurrentRound
                       ? (isVi
-                          ? `Đã đóng hụi Vòng ${club.currentRoundIndex.toString()} (${displayUsdc(club.contributionAmount)} USDC)`
+                          ? `Đã góp tiền Vòng ${club.currentRoundIndex.toString()} (${displayUsdc(club.contributionAmount)} USDC)`
                           : `Paid Round ${club.currentRoundIndex.toString()} (${displayUsdc(club.contributionAmount)} USDC) — Completed`)
                       : (isVi
                           ? `Approve & Góp ${displayUsdc(club.contributionAmount)} USDC`
@@ -1721,7 +1721,7 @@ export function BondedClubWorkspace({
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/15 pb-3">
                 <h3 className="flex items-center gap-2 text-sm sm:text-base font-bold text-white">
                   <Lock className="h-4 w-4 text-amber-400" />
-                  {isVi ? "Bảng điều khiển Chủ hụi (Owner)" : "Club Owner Controls"}
+                  {isVi ? "Bảng điều khiển Chủ nhóm (Owner)" : "Club Owner Controls"}
                 </h3>
                 <span className="text-xs text-slate-400">
                   Owner: {club.owner.slice(0, 6)}...{club.owner.slice(-4)}
@@ -1733,11 +1733,11 @@ export function BondedClubWorkspace({
                 <div className="space-y-3 rounded-2xl border border-amber-500/40 bg-amber-950/20 p-4">
                   <div className="text-xs text-slate-200 space-y-1">
                     <div className="font-bold text-amber-300">
-                      {isVi ? "Trạng thái mở vòng & đóng hụi (Vòng 0)" : "Round Launch & Contribution Status (Round 0)"}
+                      {isVi ? "Trạng thái mở vòng & góp tiền (Vòng 0)" : "Round Launch & Contribution Status (Round 0)"}
                     </div>
                     <p className="text-slate-300 leading-relaxed">
                       {isVi
-                        ? `Trong BondedTontine, Chủ hụi nạp cọc cirBTC và bấm "Bắt đầu các vòng" bên dưới để mở Vòng 1. Ngay khi Vòng 1 bắt đầu, các thành viên sẽ đóng ${displayUsdc(club.contributionAmount)} USDC/vòng.`
+                        ? `Trong BondedTontine, Chủ nhóm nạp cọc cirBTC và bấm "Bắt đầu các vòng" bên dưới để mở Vòng 1. Ngay khi Vòng 1 bắt đầu, các thành viên sẽ đóng ${displayUsdc(club.contributionAmount)} USDC/vòng.`
                         : `In BondedTontine, the Club Owner deposits cirBTC collateral and clicks "Start Rounds" below to open Round 1. Once Round 1 starts, Members contribute ${displayUsdc(club.contributionAmount)} USDC per round.`}
                     </p>
                   </div>
@@ -1747,7 +1747,7 @@ export function BondedClubWorkspace({
                     onClick={handleStartRounds}
                     className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 disabled:opacity-40 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
                   >
-                    {isVi ? "Bắt đầu các vòng (Mở Vòng 1 để đóng hụi)" : "Start Rounds (Open Round 1 for Contributions)"}
+                    {isVi ? "Bắt đầu các vòng (Mở Vòng 1 để góp tiền)" : "Start Rounds (Open Round 1 for Contributions)"}
                   </button>
                 </div>
               )}
@@ -2134,7 +2134,7 @@ export function BondedClubWorkspace({
             </h3>
             <p className="text-xs text-slate-300">
               {isVi
-                ? "Gọi cancelOpen(): nhóm chuyển sang Đã hủy, không thể hoàn tác. Thành viên rút lại tiền đã góp, cọc trả về Chủ hụi."
+                ? "Gọi cancelOpen(): nhóm chuyển sang Đã hủy, không thể hoàn tác. Thành viên rút lại tiền đã góp, cọc trả về Chủ nhóm."
                 : "Calls cancelOpen(): the club becomes Cancelled and this cannot be undone. Members withdraw deposits; collateral returns to the owner."}
             </p>
             <div className="flex items-center justify-end gap-2.5 pt-2">

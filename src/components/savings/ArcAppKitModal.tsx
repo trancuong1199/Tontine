@@ -623,7 +623,7 @@ export function ArcAppKitModal({
                 <p className="text-xs text-slate-300 leading-relaxed">
                   {isEn
                     ? "Claim free testnet USDC and EURC directly from Circle's official faucet to participate in savings clubs and test round bidding."
-                    : "Nhận miễn phí USDC và EURC testnet từ Circle để tham gia các nhóm hụi và trải nghiệm đóng quỹ, đấu giá."}
+                    : "Nhận miễn phí USDC và EURC testnet từ Circle để tham gia các nhóm tiết kiệm và trải nghiệm đóng quỹ, đấu giá."}
                 </p>
 
                 <div className="space-y-2 pt-2 text-left">
