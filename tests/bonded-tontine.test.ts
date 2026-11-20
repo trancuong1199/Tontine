@@ -740,7 +740,7 @@ describe("Task-059 / Task-060: BondedTontine Design Specification & Implementati
     assert.ok(parseBondedTontineError(new Error("NotLiquidatable"), "vi").includes("ngưỡng thanh lý"));
 
     // T6.8 & T6.11 UI disclosure and mock oracle warning copy
-    assert.ok(BONDED_DISCLOSURE_COPY.vi.includes("Chủ hụi vay trong hạn mức cọc; ai cũng kích hoạt được thanh lý"));
+    assert.ok(BONDED_DISCLOSURE_COPY.vi.includes("Chủ hụi vay trong hạn mức cọc; ai cũng tuyên bố được vỡ nợ"));
     assert.equal(MOCK_ORACLE_WARNING_COPY.vi, "Giá thử nghiệm, không phải giá thị trường");
 
     // T6.10 directory version support & factory sync

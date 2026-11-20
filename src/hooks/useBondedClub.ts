@@ -57,7 +57,6 @@ export interface BondedClubSnapshot {
   roundDuration: bigint;
   rateBpsPerRound: bigint;
   safetyBps: bigint;
-  liquidationBps: bigint;
   interestGrace: bigint;
   settlementGrace: bigint;
   maxPriceAge: bigint;
@@ -316,7 +315,6 @@ export function useBondedClub(
     roundDuration: 0n,
     rateBpsPerRound: 0n,
     safetyBps: 12_000n,
-    liquidationBps: 12_000n,
     interestGrace: 0n,
     settlementGrace: 0n,
     maxPriceAge: 3600n,
@@ -390,7 +388,6 @@ export function useBondedClub(
       let roundDuration: bigint = 0n;
       let rateBpsPerRound: bigint = 0n;
       let safetyBps: bigint = 12_000n;
-      let liquidationBps: bigint = 12_000n;
       let interestGrace: bigint = 0n;
       let settlementGrace: bigint = 0n;
       let maxPriceAge: bigint = 3600n;
@@ -708,7 +705,6 @@ export function useBondedClub(
         roundDuration,
         rateBpsPerRound,
         safetyBps,
-        liquidationBps,
         interestGrace,
         settlementGrace,
         maxPriceAge,

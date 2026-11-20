@@ -682,16 +682,6 @@ export function BondedClubWorkspace({
       })
     );
 
-  const handleLiquidate = () =>
-    runAction(isVi ? "Kích hoạt thanh lý (Liquidate)" : "Trigger Liquidation", () =>
-      writeContractAsync({
-        address: contractAddress,
-        abi: BONDED_TONTINE_ABI,
-        functionName: "liquidate",
-        args: [],
-      })
-    );
-
   // Mock oracle price update for testnet simulation
   const handleSetMockPrice = (usdPrice: string) =>
     runAction(
@@ -725,8 +715,6 @@ export function BondedClubWorkspace({
     club.cycleEnded &&
     club.totalDebt === 0n &&
     club.interestOwed === 0n;
-
-  const canLiquidate = false;
 
   const [clockDriftSec, setClockDriftSec] = useState<number>(0);
   useEffect(() => {
@@ -769,7 +757,7 @@ export function BondedClubWorkspace({
   const contributeBlockedByVerification = !club.isVerifiedClub && !unverifiedConfirmed;
   const hasCapacity = club.maxMembers > 0n && club.memberCount < club.maxMembers;
   const joinEligible = Boolean(userAddress) && !isPasskeyUser && financialsReady && club.positionAvailable && club.state === BONDED_STATE.OPEN && hasCapacity && !isOwner && !club.isMember;
-  const contributeEligible = Boolean(userAddress) && financialsReady && club.positionAvailable && club.state === BONDED_STATE.ACTIVE && club.isMember && !isPasskeyUser && !club.hasContributedCurrentRound && !club.cycleEnded && !canDeclareDefault && !canLiquidate;
+  const contributeEligible = Boolean(userAddress) && financialsReady && club.positionAvailable && club.state === BONDED_STATE.ACTIVE && club.isMember && !isPasskeyUser && !club.hasContributedCurrentRound && !club.cycleEnded && !canDeclareDefault;
   const hasFundingAction = joinEligible || contributeEligible;
   const canJoinWithAcknowledgement = joinEligible && !riskBlocked;
   const canContributeWithAcknowledgement = contributeEligible && !riskBlocked && !contributeBlockedByVerification;
@@ -811,23 +799,6 @@ export function BondedClubWorkspace({
         ? "Chưa quá hạn lãi / tất toán"
         : "Not overdue on interest or settlement";
 
-  const liquidateDisabledReason = canLiquidate
-    ? null
-    : club.state !== BONDED_STATE.ACTIVE
-      ? isVi
-        ? "Nhóm chưa ở trạng thái đang chạy"
-        : "Club not in active state"
-      : club.oracleError
-        ? isVi
-          ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật"
-          : "Oracle price is invalid, unavailable or stale; refresh first"
-        : club.totalDebt + club.interestOwed === 0n
-          ? isVi
-            ? "Không có dư nợ"
-            : "No active debt"
-          : isVi
-            ? "Giá còn an toàn"
-            : "Collateral ratio is still safe";
 
   const stateConfig: Record<
     number,
@@ -1676,8 +1647,7 @@ export function BondedClubWorkspace({
                         !canContributeWithAcknowledgement ||
                         contributeBlockedByVerification ||
                         club.cycleEnded ||
-                        canDeclareDefault ||
-                        canLiquidate
+                        canDeclareDefault
                       }
                       onClick={handleContribute}
                       className="w-full py-3.5 px-4 font-bold rounded-2xl text-sm sm:text-base transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 hover:from-amber-300 hover:via-amber-400 disabled:opacity-50 text-slate-950 shadow-lg shadow-amber-500/20 cursor-pointer"
@@ -1688,7 +1658,7 @@ export function BondedClubWorkspace({
                         : `Approve & Contribute ${displayUsdc(club.contributionAmount)} USDC`}
                     </button>
                   )}
-                  {(club.cycleEnded || canDeclareDefault || canLiquidate) && !club.hasContributedCurrentRound && (
+                  {(club.cycleEnded || canDeclareDefault) && !club.hasContributedCurrentRound && (
                     <p className="text-xs text-red-300 text-center">
                       {club.cycleEnded
                         ? (isVi ? "Chu kỳ đã kết thúc, không thể góp thêm" : "Cycle has ended, no further contributions")
@@ -2086,7 +2056,7 @@ export function BondedClubWorkspace({
           )}
 
           {/* 3. Permissionless Keeper Actions (T6.5, U3.2 & U3.3) */}
-          <details data-testid="bonded-keeper-actions" open={(canFinalize || canDeclareDefault || canLiquidate) || undefined} className="group rounded-2xl border border-slate-800 bg-[#0c0d14] text-slate-100 shadow-xl">
+          <details data-testid="bonded-keeper-actions" open={(canFinalize || canDeclareDefault) || undefined} className="group rounded-2xl border border-slate-800 bg-[#0c0d14] text-slate-100 shadow-xl">
             <summary className="flex cursor-pointer select-none list-none items-center justify-between gap-2 p-5"><h3 className="flex items-center gap-2 text-sm font-bold text-white">
               <Flame className="h-4 w-4 text-orange-400" />
               {isVi
@@ -2122,22 +2092,6 @@ export function BondedClubWorkspace({
                   <p className="text-xs text-slate-400">{declareDefaultDisabledReason}</p>
                 )}
               </div>
-
-              {canLiquidate && (
-                <div className="space-y-1">
-                  <button
-                    type="button"
-                    disabled={isPending || !canLiquidate}
-                    onClick={handleLiquidate}
-                    className="w-full py-2.5 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 disabled:opacity-40 text-orange-300 font-semibold text-xs transition-all cursor-pointer"
-                  >
-                    {isVi ? "Thanh lý do thiếu cọc" : "Liquidate Undercollateralized"}
-                  </button>
-                  {liquidateDisabledReason && (
-                    <p className="text-xs text-slate-400">{liquidateDisabledReason}</p>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* U3.2: Testnet Mock Oracle Simulation Bar — ONLY visible to oracleAdmin on Testnet */}

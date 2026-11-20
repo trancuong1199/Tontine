@@ -26,7 +26,7 @@ test('MIN-03 secondary sections are collapsible and keeper actions open when act
     assert.ok(workspace.includes(`data-testid="${id}"`), id);
   }
   assert.ok(workspace.includes('open={timelineUrgent || undefined}'));
-  assert.ok(workspace.includes('open={(canFinalize || canDeclareDefault || canLiquidate) || undefined}'));
+  assert.ok(workspace.includes('open={(canFinalize || canDeclareDefault) || undefined}'));
 });
 
 test('MIN-04 risk acknowledgement warning removed by user request', () => {

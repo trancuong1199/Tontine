@@ -124,8 +124,8 @@ export const MAINNET_ORACLE_ALLOWLIST: Record<number, readonly `0x${string}`[]> 
 };
 
 export const BONDED_DISCLOSURE_COPY = {
-  vi: "Chủ hụi vay trong hạn mức cọc; ai cũng kích hoạt được thanh lý; rủi ro còn lại gồm giá CirBTC giảm nhanh hơn thanh lý, CirBTC lệch giá so với BTC, và rủi ro nhà phát hành token",
-  en: "Club owner borrows within collateral limit; anyone can trigger liquidation; remaining risks include CirBTC price dropping faster than liquidation, CirBTC depeg vs BTC, and token issuer risk",
+  vi: "Chủ hụi vay trong hạn mức cọc; ai cũng tuyên bố được vỡ nợ khi chủ hụi trễ lãi hoặc quá hạn tất toán; không có thanh lý theo giá nên rủi ro còn lại gồm giá CirBTC giảm làm cọc không đủ bù nợ, CirBTC lệch giá so với BTC, và rủi ro nhà phát hành token",
+  en: "Club owner borrows within collateral limit; anyone can declare default when interest or settlement is overdue; there is no price-based liquidation, so remaining risks include a CirBTC price drop leaving collateral short of the debt, CirBTC depeg vs BTC, and token issuer risk",
 } as const;
 
 export const MOCK_ORACLE_WARNING_COPY = {
