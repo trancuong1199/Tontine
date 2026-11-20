@@ -15,6 +15,36 @@ import {
 } from "lucide-react";
 import { Language, t } from "../../lib/i18n";
 
+function sanitizeGuideText(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/HụiChain/g, "Tontine")
+    .replace(/Hụi Xoay Vòng/g, "Xoay Vòng Vốn")
+    .replace(/hụi xoay vòng/g, "xoay vòng vốn")
+    .replace(/Hụi Truyền Thống/g, "Mô Hình Truyền Thống")
+    .replace(/hụi truyền thống/g, "mô hình truyền thống")
+    .replace(/Hụi Trustless/g, "Tontine Trustless")
+    .replace(/hụi trustless/g, "tontine trustless")
+    .replace(/Chủ hụi/g, "Chủ nhóm")
+    .replace(/chủ hụi/g, "chủ nhóm")
+    .replace(/hốt hụi sớm/g, "nhận vốn sớm")
+    .replace(/hốt hụi/g, "nhận vốn sớm")
+    .replace(/Hốt hụi/g, "Nhận vốn sớm")
+    .replace(/vỡ dây hụi/g, "vỡ dây góp vốn")
+    .replace(/bể hụi/g, "vỡ quỹ")
+    .replace(/Bể Hụi/g, "Vỡ Quỹ")
+    .replace(/đóng hụi/g, "góp tiền")
+    .replace(/Đóng hụi/g, "Góp tiền")
+    .replace(/nhóm hụi/g, "nhóm tiết kiệm")
+    .replace(/Nhóm hụi/g, "Nhóm tiết kiệm")
+    .replace(/Nhóm Hụi/g, "Nhóm Tiết Kiệm")
+    .replace(/vòng hụi/g, "vòng")
+    .replace(/Vòng hụi/g, "Vòng")
+    .replace(/dây hụi/g, "dây tiết kiệm")
+    .replace(/Hụi/g, "Tontine")
+    .replace(/hụi/g, "tiết kiệm");
+}
+
 export interface GuideModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -64,10 +94,10 @@ export function GuideModal({
                 id="guide-modal-title"
                 className="text-lg sm:text-xl font-bold text-white tracking-tight"
               >
-                {t("guideModal.title", language).replace(/HụiChain/g, "Tontine")}
+                {sanitizeGuideText(t("guideModal.title", language))}
               </h2>
               <p className="text-xs text-slate-400 font-medium hidden sm:block">
-                {t("guideModal.subtitle", language)}
+                {sanitizeGuideText(t("guideModal.subtitle", language))}
               </p>
             </div>
           </div>
@@ -90,11 +120,11 @@ export function GuideModal({
                 1
               </div>
               <h3 className="text-base sm:text-lg font-bold text-white">
-                {t("guideModal.pillar1Title", language)}
+                {sanitizeGuideText(t("guideModal.pillar1Title", language))}
               </h3>
             </div>
             <p className="text-sm text-slate-300 leading-relaxed font-normal">
-              {t("guideModal.pillar1Desc", language).replace(/HụiChain/g, "Tontine")}
+              {sanitizeGuideText(t("guideModal.pillar1Desc", language))}
             </p>
             <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
               <span className="px-2.5 py-1 rounded-lg bg-amber-950/40 text-amber-300 border border-amber-500/30">
@@ -117,11 +147,11 @@ export function GuideModal({
                   2
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-white">
-                  {t("guideModal.pillar2Title", language).replace(/HụiChain/g, "Tontine")}
+                  {sanitizeGuideText(t("guideModal.pillar2Title", language))}
                 </h3>
               </div>
               <p className="text-xs sm:text-sm text-slate-400 ml-9.5">
-                {t("guideModal.pillar2Subtitle", language)}
+                {sanitizeGuideText(t("guideModal.pillar2Subtitle", language))}
               </p>
             </div>
 
@@ -132,26 +162,26 @@ export function GuideModal({
                   <div className="flex items-center gap-2 mb-3 pb-2 border-b border-rose-900/40">
                     <AlertTriangle size={18} className="text-rose-400 shrink-0" />
                     <h4 className="font-bold text-rose-200 text-sm sm:text-base">
-                      {t("guideModal.tradTitle", language)}
+                      {sanitizeGuideText(t("guideModal.tradTitle", language))}
                     </h4>
                   </div>
                   <ul className="space-y-2.5 text-xs sm:text-sm text-rose-300">
                     <li className="flex items-start gap-2">
                       <XCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
-                      <span>{t("guideModal.tradRisk1", language)}</span>
+                      <span>{sanitizeGuideText(t("guideModal.tradRisk1", language))}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <XCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
-                      <span>{t("guideModal.tradRisk2", language)}</span>
+                      <span>{sanitizeGuideText(t("guideModal.tradRisk2", language))}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <XCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
-                      <span>{t("guideModal.tradRisk3", language)}</span>
+                      <span>{sanitizeGuideText(t("guideModal.tradRisk3", language))}</span>
                     </li>
                   </ul>
                 </div>
                 <div className="mt-4 pt-2 border-t border-rose-900/30 text-xs font-medium text-rose-400">
-                  {isEn ? "⚠️ High risk of tontine collapse & loss of funds" : "⚠️ Nguy cơ bể hụi, mất vốn rất cao"}
+                  {isEn ? "⚠️ High risk of tontine collapse & loss of funds" : "⚠️ Nguy cơ vỡ quỹ, mất vốn rất cao"}
                 </div>
               </div>
 
@@ -161,21 +191,21 @@ export function GuideModal({
                   <div className="flex items-center gap-2 mb-3 pb-2 border-b border-amber-500/30">
                     <ShieldCheck size={18} className="text-amber-400 shrink-0" />
                     <h4 className="font-bold text-white text-sm sm:text-base">
-                      {t("guideModal.smartTitle", language).replace(/HụiChain/g, "Tontine")}
+                      {sanitizeGuideText(t("guideModal.smartTitle", language))}
                     </h4>
                   </div>
                   <ul className="space-y-2.5 text-xs sm:text-sm text-slate-300">
                     <li className="flex items-start gap-2">
                       <CheckCircle2 size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                      <span>{t("guideModal.smartBenefit1", language)}</span>
+                      <span>{sanitizeGuideText(t("guideModal.smartBenefit1", language))}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                      <span>{t("guideModal.smartBenefit2", language)}</span>
+                      <span>{sanitizeGuideText(t("guideModal.smartBenefit2", language))}</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                      <span>{t("guideModal.smartBenefit3", language)}</span>
+                      <span>{sanitizeGuideText(t("guideModal.smartBenefit3", language))}</span>
                     </li>
                   </ul>
                 </div>
@@ -195,11 +225,11 @@ export function GuideModal({
                   3
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-white">
-                  {t("guideModal.pillar3Title", language)}
+                  {sanitizeGuideText(t("guideModal.pillar3Title", language))}
                 </h3>
               </div>
               <p className="text-xs sm:text-sm text-slate-400 ml-9.5">
-                {t("guideModal.pillar3Subtitle", language)}
+                {sanitizeGuideText(t("guideModal.pillar3Subtitle", language))}
               </p>
             </div>
 
@@ -211,11 +241,11 @@ export function GuideModal({
                     <Users size={16} />
                   </div>
                   <h4 className="font-bold text-white text-sm">
-                    {t("guideModal.step1Title", language)}
+                    {sanitizeGuideText(t("guideModal.step1Title", language))}
                   </h4>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                  {t("guideModal.step1Desc", language)}
+                  {sanitizeGuideText(t("guideModal.step1Desc", language))}
                 </p>
               </div>
 
@@ -226,11 +256,11 @@ export function GuideModal({
                     <Coins size={16} />
                   </div>
                   <h4 className="font-bold text-white text-sm">
-                    {t("guideModal.step2Title", language)}
+                    {sanitizeGuideText(t("guideModal.step2Title", language))}
                   </h4>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                  {t("guideModal.step2Desc", language)}
+                  {sanitizeGuideText(t("guideModal.step2Desc", language))}
                 </p>
               </div>
 
@@ -241,11 +271,11 @@ export function GuideModal({
                     <TrendingUp size={16} />
                   </div>
                   <h4 className="font-bold text-white text-sm">
-                    {t("guideModal.step3Title", language)}
+                    {sanitizeGuideText(t("guideModal.step3Title", language))}
                   </h4>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                  {t("guideModal.step3Desc", language)}
+                  {sanitizeGuideText(t("guideModal.step3Desc", language))}
                 </p>
               </div>
 
@@ -256,11 +286,11 @@ export function GuideModal({
                     <Wallet size={16} />
                   </div>
                   <h4 className="font-bold text-white text-sm">
-                    {t("guideModal.step4Title", language)}
+                    {sanitizeGuideText(t("guideModal.step4Title", language))}
                   </h4>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                  {t("guideModal.step4Desc", language)}
+                  {sanitizeGuideText(t("guideModal.step4Desc", language))}
                 </p>
               </div>
             </div>
@@ -273,11 +303,11 @@ export function GuideModal({
                 4
               </div>
               <h3 className="text-base sm:text-lg font-bold text-amber-300">
-                {t("guideModal.pillar4Title", language)}
+                {sanitizeGuideText(t("guideModal.pillar4Title", language))}
               </h3>
             </div>
             <p className="text-sm text-slate-300 leading-relaxed font-normal">
-              {t("guideModal.pillar4Desc", language)}
+              {sanitizeGuideText(t("guideModal.pillar4Desc", language))}
             </p>
           </section>
 
@@ -288,11 +318,11 @@ export function GuideModal({
                 <Zap size={14} />
               </div>
               <h3 className="text-base sm:text-lg font-bold text-amber-300">
-                {t("guideModal.pillar5Title", language)}
+                {sanitizeGuideText(t("guideModal.pillar5Title", language))}
               </h3>
             </div>
             <p className="text-sm text-slate-300 leading-relaxed font-normal">
-              {t("guideModal.pillar5Desc", language)}
+              {sanitizeGuideText(t("guideModal.pillar5Desc", language))}
             </p>
           </section>
         </div>

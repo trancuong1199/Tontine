@@ -1143,7 +1143,7 @@ export default function App() {
               <button
                 onClick={() => setShowGuide(true)}
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-700/80 hover:border-amber-500/30 transition-all active:scale-95 shadow-2xs cursor-pointer whitespace-nowrap"
-                title={isEn ? "View guide and rules" : "Xem hướng dẫn cách chơi và luật hụi"}
+                title={isEn ? "View guide and rules" : "Xem hướng dẫn cách chơi và quy tắc"}
               >
                 <BookOpen size={14} className="text-amber-400" />
                 <span>{isEn ? t("header.guideBtn", language) : "Hướng dẫn"}</span>

@@ -62,7 +62,7 @@ export function WaitingView({
             </>
           ) : (
             <>
-              Theo quy tắc Smart Contract Hụi xoay vòng (Tontine), tiền đóng hụi (<strong>{formatUsdc(contributionAmount)} USDC</strong>/vòng) chỉ bắt đầu thu khi <strong>Vòng 1 chính thức bắt đầu</strong>. Điều này giúp đảm bảo thời gian đếm ngược và đấu giá được tính chuẩn cho tất cả thành viên.
+              Theo quy tắc Smart Contract Xoay vòng vốn (Tontine), tiền đóng góp (<strong>{formatUsdc(contributionAmount)} USDC</strong>/vòng) chỉ bắt đầu thu khi <strong>Vòng 1 chính thức bắt đầu</strong>. Điều này giúp đảm bảo thời gian đếm ngược và đấu giá được tính chuẩn cho tất cả thành viên.
             </>
           )}
         </p>
