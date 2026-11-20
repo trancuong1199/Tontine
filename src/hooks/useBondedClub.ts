@@ -545,8 +545,9 @@ export function useBondedClub(
       }
 
       // One-borrow-per-round flag; clubs from older factories have no such function -> false.
+      const roundCount = totalRounds > 0n ? totalRounds : maxMembers;
       const hasBorrowedThisRound =
-        currentRoundIndex >= 1n
+        currentRoundIndex >= 1n && currentRoundIndex <= roundCount
           ? await readClub<boolean>("hasBorrowedInRound", [currentRoundIndex]).catch(() => false)
           : false;
 

@@ -252,7 +252,14 @@ export function BondedClubWorkspace({
   const availablePoolUsdc =
     club.totalDeposits > club.totalDebt ? club.totalDeposits - club.totalDebt : 0n;
   // Mirrors BondedTontine.borrow(): debt + owed + peak * rate must stay within borrowLimit().
+  // Mirrors borrow()'s RoundNotActive check: borrowing is only possible inside rounds 1..totalRounds.
+  const borrowRoundOpen =
+    club.state === BONDED_STATE.ACTIVE &&
+    !club.cycleEnded &&
+    club.currentRoundIndex >= 1n &&
+    club.currentRoundIndex <= cycleRounds;
   const maxBorrowUsdc = (() => {
+    if (!borrowRoundOpen) return 0n;
     // One borrow per round: once the owner borrowed in this round, nothing more until the next round.
     if (club.hasBorrowedThisRound) return 0n;
     if (club.borrowLimit === null || club.borrowLimit <= club.interestOwed) return 0n;
@@ -1902,14 +1909,22 @@ export function BondedClubWorkspace({
                           onClick={handleBorrow}
                           className="shrink-0 rounded-xl bg-amber-500/20 px-3.5 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                         >
-                          {club.hasBorrowedThisRound
+                          {club.state === BONDED_STATE.ACTIVE && !borrowRoundOpen
+                            ? (isVi ? "Hết chu kỳ" : "Cycle ended")
+                            : club.hasBorrowedThisRound
                             ? (isVi ? "Đã vay vòng này" : "Borrowed")
                             : maxBorrowUsdc === 0n && club.totalDebt > 0n
                               ? (isVi ? "Đã hết hạn mức" : "Limit reached")
                               : (isVi ? "Vay USDC" : "Borrow")}
                         </button>
                       </div>
-                      {club.hasBorrowedThisRound ? (
+                      {club.state === BONDED_STATE.ACTIVE && !borrowRoundOpen ? (
+                        <p className="text-xs text-slate-400">
+                          {isVi
+                            ? "Chu kỳ đã kết thúc, không thể vay thêm. Hãy trả hết gốc và lãi rồi tất toán (Finalize)."
+                            : "The cycle has ended; no more borrowing. Repay principal and interest, then finalize."}
+                        </p>
+                      ) : club.hasBorrowedThisRound ? (
                         <p className="text-xs text-slate-400">
                           {isVi
                             ? `Mỗi vòng chỉ được vay 1 lần. Bạn đã vay ở Vòng ${club.currentRoundIndex.toString()}${club.currentRoundIndex < club.totalRounds ? ", có thể vay lại ở vòng tiếp theo." : "."}`
