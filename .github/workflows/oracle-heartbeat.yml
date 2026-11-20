@@ -1,0 +1,31 @@
+name: Oracle Heartbeat (Binance Live Price)
+
+on:
+  schedule:
+    # Runs every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  refresh-oracle:
+    name: Refresh Live BTC Oracle on Arc Testnet
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Refresh Oracle Price
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY || '0xf1a66206d0d40e01681c0d911168f560897885ca88a6f88385db6816c5d5d6f8' }}
+        run: |
+          node scripts/refresh-mock-oracle.mjs --live
