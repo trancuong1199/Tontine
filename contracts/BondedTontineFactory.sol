@@ -9,6 +9,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 /// and maxPriceAge to every BondedTontine club so club owners cannot inject a fake oracle feed.
 contract BondedTontineFactory {
     error InvalidConfiguration();
+    error NameTaken();
 
     address public immutable usdc;
     address public immutable cirBtc;
@@ -17,6 +18,8 @@ contract BondedTontineFactory {
 
     mapping(address => bool) public isClub;
     address[] private _clubs;
+    /// @notice Group names already used on this factory, keyed by nameKey() (ASCII case-insensitive).
+    mapping(bytes32 => bool) public nameTaken;
 
     event ClubCreated(address indexed club, address indexed owner, string groupName);
 
@@ -71,12 +74,16 @@ contract BondedTontineFactory {
         string calldata groupName,
         uint256 contributionAmount,
         uint256 maxMembers,
+        uint256 totalRounds,
         uint256 roundDuration,
         uint256 rateBpsPerRound,
         uint256 safetyBps,
         uint256 interestGrace,
         uint256 settlementGrace
     ) external returns (address club) {
+        bytes32 key = nameKey(groupName);
+        if (nameTaken[key]) revert NameTaken();
+        nameTaken[key] = true;
         club = address(
             new BondedTontine(
                 msg.sender,
@@ -87,6 +94,7 @@ contract BondedTontineFactory {
                 groupName,
                 contributionAmount,
                 maxMembers,
+                totalRounds,
                 roundDuration,
                 rateBpsPerRound,
                 safetyBps,
@@ -97,6 +105,22 @@ contract BondedTontineFactory {
         isClub[club] = true;
         _clubs.push(club);
         emit ClubCreated(club, msg.sender, groupName);
+    }
+
+    /// @notice Case-insensitive key for a group name: ASCII A-Z are lowercased before hashing.
+    function nameKey(string memory groupName) public pure returns (bytes32) {
+        bytes memory b = bytes(groupName);
+        for (uint256 i = 0; i < b.length; i++) {
+            bytes1 c = b[i];
+            if (c >= 0x41 && c <= 0x5A) {
+                b[i] = bytes1(uint8(c) + 32);
+            }
+        }
+        return keccak256(b);
+    }
+
+    function isNameAvailable(string calldata groupName) external view returns (bool) {
+        return !nameTaken[nameKey(groupName)];
     }
 
     function clubsLength() external view returns (uint256) {

@@ -306,6 +306,7 @@ async function runDeploy() {
       "Saigon Bonded Club V2",
       10_000_000n, // 10 USDC
       4n,          // 4 members
+      1n,          // 1 round per cycle
       120n,        // 120s (2 min) round duration for fast testnet cycle
       200n,        // 2% per round
       12_000n,     // 120% safety ratio

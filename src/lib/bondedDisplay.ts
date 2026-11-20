@@ -16,8 +16,9 @@ export function oracleStatus(price: bigint, updatedAt: bigint, answeredInRound: 
   if (price <= 0n || updatedAt > now || answeredInRound < roundId) return "invalid";
   return now - updatedAt > maxAge ? "stale" : "fresh";
 }
-export function collateralCoverage(collateral: bigint, price: bigint, decimals: number | null, contribution: bigint, maxMembers: bigint) {
-  const maximumPool = contribution * maxMembers * maxMembers;
+export function collateralCoverage(collateral: bigint, price: bigint, decimals: number | null, contribution: bigint, maxMembers: bigint, totalRounds: bigint = maxMembers) {
+  // Maximum pool = every member slot contributing in every round of the cycle.
+  const maximumPool = contribution * maxMembers * (totalRounds > 0n ? totalRounds : maxMembers);
   const scale = decimals !== null && Number.isInteger(decimals) && decimals >= 0 && decimals <= 18 && price > 0n
     ? 10n ** BigInt(decimals + 2) : null;
   const numerator = collateral * price;
@@ -55,6 +56,8 @@ export interface ContributionRiskInput {
   oracleError: boolean;
   contributionAmount: bigint;
   maxMembers: bigint;
+  /** Rounds in the cycle; defaults to maxMembers for clubs created before totalRounds was configurable. */
+  totalRounds?: bigint;
   oracleUpdatedAt: bigint;
   maxPriceAge: bigint;
   financialsAvailable: boolean;
@@ -66,7 +69,8 @@ export interface ContributionRiskInput {
 export function requiresRiskAcknowledgement(input: ContributionRiskInput): boolean {
   const { oracleDecimals: decimals } = input;
   if (!input.financialsAvailable || input.isLoading || input.error || input.oracleError || input.oracleStatus !== "fresh" || decimals === null || !Number.isInteger(decimals) || decimals < 0 || decimals > 18 || input.oraclePriceRaw <= 0n || input.contributionAmount <= 0n || input.maxMembers <= 0n) return true;
-  return input.collateral * input.oraclePriceRaw < input.contributionAmount * input.maxMembers * input.maxMembers * 10n ** BigInt(decimals + 2);
+  const rounds = input.totalRounds && input.totalRounds > 0n ? input.totalRounds : input.maxMembers;
+  return input.collateral * input.oraclePriceRaw < input.contributionAmount * input.maxMembers * rounds * 10n ** BigInt(decimals + 2);
 }
 
 export function riskAcknowledgementContext(input: ContributionRiskInput, account?: string, club?: string): string {

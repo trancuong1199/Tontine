@@ -15,16 +15,20 @@ This is the **project memory** - what Arc Studio remembers about building this a
 | Contract | Network | Address |
 |---|---|---|
 | RotatingSavings | Arc Testnet | 0x6afaa0825d2e05ef00d571d4a043ab5dcc03534b |
-| BondedTontineFactory (task-062, 8-param `createClub`, no price liquidation) | Arc Testnet | 0x8fD54f5aeaEF658A346a351adF5BF1B7876D4E30 |
+| BondedTontineFactory (current: 9-param `createClub` with `totalRounds`, unique group names, one borrow per round) | Arc Testnet | 0xF35490acc81DE12b752C6F02e6d11d203F01A80E |
+| BondedTontineFactory (9-param `createClub`, unique names, re-borrow allowed) | Arc Testnet | 0x83b04a0835B8A41a3835F9bA2D20Ba5464Ce9253 |
+| BondedTontineFactory (task-062, 8-param `createClub`, rounds = members) | Arc Testnet | 0x8fD54f5aeaEF658A346a351adF5BF1B7876D4E30 |
 | BondedTontineFactory (legacy, pre-task-062) | Arc Testnet | 0x8cE12D62b0bD565c92164aC7c847620Bfe710eb0 |
 | MockAggregatorV3 (BTC/USD) | Arc Testnet | 0x9c0866b4D6dB662038f805563b8f4CdECA626525 |
-| BondedTontine (Default club, task-062) | Arc Testnet | 0x6B4edE6eF8bC097E33D8BDC0cC8C619a577d9fB7 |
+| BondedTontine (Default club, current factory, 1 round) | Arc Testnet | 0xB34d273bC38457Cd6DF88591A982E6581E798959 |
+| BondedTontine (Default club, 0x83b0 factory, 1 round) | Arc Testnet | 0x1995557D5BcA94B92d59194afEF106c5ac86527F |
+| BondedTontine (Default club, task-062 factory) | Arc Testnet | 0x6B4edE6eF8bC097E33D8BDC0cC8C619a577d9fB7 |
 | BondedTontine (Club #0 - Open, legacy) | Arc Testnet | 0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b |
 | BondedTontine (Club #1 - Completed E2E) | Arc Testnet | 0xe74069717317dbB86d423439fb9c219A5c5bf812 |
 | BondedTontine (Club #2 - Defaulted/Liquidated E2E) | Arc Testnet | 0xF9469568ebb287275009fcE3Db224a16273C5d05 |
 
 - Explorer: https://explorer.testnet.arc.io/address/0x6afaa0825d2e05ef00d571d4a043ab5dcc03534b
-- BondedTontineFactory Explorer: https://explorer.testnet.arc.io/address/0x8fD54f5aeaEF658A346a351adF5BF1B7876D4E30
+- BondedTontineFactory Explorer: https://explorer.testnet.arc.io/address/0xF35490acc81DE12b752C6F02e6d11d203F01A80E
 - USDC: 0x3600000000000000000000000000000000000000 (6 decimals)
 - cirBTC: 0xf0C4a4CE82A5746AbAAd9425360Ab04fbBA432BF (8 decimals)
 - Deploy params: contributionAmount=10 USDC, maxMembers=10, roundDuration=86400s (1 day), groupName="BAVI Savings Club"

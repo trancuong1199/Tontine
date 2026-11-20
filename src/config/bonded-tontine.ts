@@ -13,11 +13,13 @@ export { USDC_ADDRESS as BONDED_USDC_ADDRESS, CIRBTC_ADDRESS as BONDED_CIRBTC_AD
 export const ARC_TESTNET_MOCK_FEED =
   "0x9c0866b4D6dB662038f805563b8f4CdECA626525" as const;
 export const ARC_TESTNET_BONDED_FACTORY =
-  "0x8fD54f5aeaEF658A346a351adF5BF1B7876D4E30" as const;
+  "0xF35490acc81DE12b752C6F02e6d11d203F01A80E" as const; // 9-param createClub (totalRounds), unique names, one borrow per round
 export const ARC_TESTNET_DEFAULT_BONDED_CLUB =
-  "0x6B4edE6eF8bC097E33D8BDC0cC8C619a577d9fB7" as const;
+  "0xB34d273bC38457Cd6DF88591A982E6581E798959" as const;
 
 export const KNOWN_BONDED_TONTINE_CLUBS: readonly `0x${string}`[] = [
+  "0xB34d273bC38457Cd6DF88591A982E6581E798959",
+  "0x1995557D5BcA94B92d59194afEF106c5ac86527F",
   "0x6B4edE6eF8bC097E33D8BDC0cC8C619a577d9fB7",
   "0x3D35E830fe5BA48Ff5b36DbBA9ecEbD3A7BAD59b",
   "0xe74069717317dbB86d423439fb9c219A5c5bf812",
@@ -93,6 +95,22 @@ export interface ChainOracleInfo {
 export const CANONICAL_FACTORY: Record<number, `0x${string}` | undefined> = {
   [ARC_TESTNET_CHAIN_ID]: ARC_TESTNET_BONDED_FACTORY,
   [ARC_MAINNET_CHAIN_ID]: undefined,
+};
+
+/**
+ * Earlier factories whose clubs are still read with the current BondedTontine ABI. New clubs are always
+ * created on CANONICAL_FACTORY; clubs from these factories stay "Verified by Factory" and in the directory.
+ */
+export const ARC_TESTNET_PREVIOUS_BONDED_FACTORIES: readonly `0x${string}`[] = [
+  "0x83b04a0835B8A41a3835F9bA2D20Ba5464Ce9253", // 9-param createClub (totalRounds) + unique names; re-borrow allowed
+  "0x8fD54f5aeaEF658A346a351adF5BF1B7876D4E30", // task-062: 8-param createClub, totalRounds = maxMembers
+] as const;
+
+export const TRUSTED_BONDED_FACTORIES: Record<number, readonly `0x${string}`[]> = {
+  [ARC_TESTNET_CHAIN_ID]: [ARC_TESTNET_BONDED_FACTORY, ...ARC_TESTNET_PREVIOUS_BONDED_FACTORIES].filter(
+    (addr, i, all) => all.findIndex((a) => a.toLowerCase() === addr.toLowerCase()) === i
+  ),
+  [ARC_MAINNET_CHAIN_ID]: [],
 };
 
 export const DEFAULT_BONDED_CLUB_BY_CHAIN: Record<number, `0x${string}` | undefined> = {

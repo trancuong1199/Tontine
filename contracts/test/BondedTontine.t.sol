@@ -218,6 +218,7 @@ contract BondedTontineTest is Test {
             "Saigon Bonded Club #1",
             CONTRIBUTION,
             MAX_MEMBERS,
+            MAX_MEMBERS, // totalRounds = maxMembers (full cycle)
             ROUND_DURATION,
             RATE_BPS,
             SAFETY_BPS,
@@ -266,6 +267,97 @@ contract BondedTontineTest is Test {
         assertEq(club.feedDecimals(), 8);
     }
 
+    function test_FactoryRejectsDuplicateGroupName() public {
+        // Fixture already created "Saigon Bonded Club #1"
+        assertFalse(factory.isNameAvailable("Saigon Bonded Club #1"));
+        assertFalse(factory.isNameAvailable("SAIGON bonded club #1")); // case-insensitive
+        assertTrue(factory.isNameAvailable("Saigon Bonded Club #2"));
+
+        vm.prank(member1);
+        vm.expectRevert(BondedTontineFactory.NameTaken.selector);
+        factory.createClub("saigon BONDED club #1", CONTRIBUTION, MAX_MEMBERS, 1, ROUND_DURATION, RATE_BPS, SAFETY_BPS, INTEREST_GRACE, SETTLEMENT_GRACE);
+
+        vm.prank(member1);
+        factory.createClub("Saigon Bonded Club #2", CONTRIBUTION, MAX_MEMBERS, 1, ROUND_DURATION, RATE_BPS, SAFETY_BPS, INTEREST_GRACE, SETTLEMENT_GRACE);
+        assertFalse(factory.isNameAvailable("Saigon Bonded Club #2"));
+        assertEq(factory.clubsLength(), 2);
+    }
+
+    function test_TotalRoundsBounds() public {
+        // totalRounds = 0 reverts
+        vm.prank(clubOwner);
+        vm.expectRevert(BondedTontine.InvalidConfiguration.selector);
+        factory.createClub("Zero Rounds", CONTRIBUTION, MAX_MEMBERS, 0, ROUND_DURATION, RATE_BPS, SAFETY_BPS, INTEREST_GRACE, SETTLEMENT_GRACE);
+
+        // totalRounds > maxMembers reverts
+        vm.prank(clubOwner);
+        vm.expectRevert(BondedTontine.InvalidConfiguration.selector);
+        factory.createClub("Too Many Rounds", CONTRIBUTION, MAX_MEMBERS, MAX_MEMBERS + 1, ROUND_DURATION, RATE_BPS, SAFETY_BPS, INTEREST_GRACE, SETTLEMENT_GRACE);
+
+        // Default fixture club keeps one round per member slot
+        assertEq(club.totalRounds(), MAX_MEMBERS);
+    }
+
+    function test_SingleRoundClub_FullLifecycle() public {
+        vm.prank(clubOwner);
+        BondedTontine one = BondedTontine(
+            factory.createClub("One Round", CONTRIBUTION, MAX_MEMBERS, 1, ROUND_DURATION, RATE_BPS, SAFETY_BPS, INTEREST_GRACE, SETTLEMENT_GRACE)
+        );
+        assertEq(one.totalRounds(), 1);
+        assertEq(one.maxMembers(), MAX_MEMBERS);
+
+        vm.prank(member1);
+        one.joinGroup();
+        vm.prank(member2);
+        one.joinGroup();
+
+        vm.startPrank(clubOwner);
+        cirBtc.approve(address(one), type(uint256).max);
+        usdc.approve(address(one), type(uint256).max);
+        one.depositCollateral(5_000_000);
+        one.startRounds();
+        vm.stopPrank();
+        assertEq(one.currentRoundIndex(), 1);
+
+        vm.startPrank(member1);
+        usdc.approve(address(one), type(uint256).max);
+        one.contribute();
+        vm.stopPrank();
+        vm.startPrank(member2);
+        usdc.approve(address(one), type(uint256).max);
+        one.contribute();
+        vm.stopPrank();
+
+        vm.prank(clubOwner);
+        one.borrow(50e6);
+
+        // After a single round the cycle is over: no round 2 contribution.
+        vm.warp(one.startTime() + ROUND_DURATION);
+        oracle.setPrice(INITIAL_BTC_PRICE);
+        assertTrue(one.cycleEnded());
+        assertEq(one.currentRoundIndex(), 2);
+        vm.prank(member1);
+        vm.expectRevert(BondedTontine.RoundNotActive.selector);
+        one.contribute();
+
+        uint256 owed = one.interestOwed();
+        assertEq(owed, 1e6); // 2% of 50 USDC peak debt for round 1
+
+        vm.startPrank(clubOwner);
+        one.repay(50e6);
+        one.payInterest(owed);
+        one.finalize();
+        vm.stopPrank();
+        assertEq(uint256(one.state()), uint256(BondedTontine.State.COMPLETED));
+
+        uint256 before = usdc.balanceOf(member1);
+        vm.startPrank(member1);
+        one.claimInterest();
+        one.withdrawPrincipal();
+        vm.stopPrank();
+        assertEq(usdc.balanceOf(member1) - before, CONTRIBUTION + 0.5e6);
+    }
+
     function test_ConstructorRevertsOnInvalidBounds() public {
         vm.expectRevert(BondedTontine.InvalidConfiguration.selector);
         new BondedTontine(
@@ -277,6 +369,7 @@ contract BondedTontineTest is Test {
             "Bad Club",
             0, // invalid contributionAmount
             MAX_MEMBERS,
+            MAX_MEMBERS, // totalRounds = maxMembers (full cycle)
             ROUND_DURATION,
             RATE_BPS,
             SAFETY_BPS,
@@ -295,6 +388,7 @@ contract BondedTontineTest is Test {
             "Bad Safety Bps",
             CONTRIBUTION,
             MAX_MEMBERS,
+            MAX_MEMBERS, // totalRounds = maxMembers (full cycle)
             ROUND_DURATION,
             RATE_BPS,
             9_999,
@@ -323,6 +417,7 @@ contract BondedTontineTest is Test {
             "Bad USDC Decimals",
             CONTRIBUTION,
             MAX_MEMBERS,
+            MAX_MEMBERS, // totalRounds = maxMembers (full cycle)
             ROUND_DURATION,
             RATE_BPS,
             SAFETY_BPS,
@@ -340,6 +435,7 @@ contract BondedTontineTest is Test {
             "Bad CirBTC Decimals",
             CONTRIBUTION,
             MAX_MEMBERS,
+            MAX_MEMBERS, // totalRounds = maxMembers (full cycle)
             ROUND_DURATION,
             RATE_BPS,
             SAFETY_BPS,
@@ -690,9 +786,14 @@ contract BondedTontineTest is Test {
         vm.startPrank(clubOwner);
         club.borrow(100e6);
         assertEq(club.peakDebt(1), 100e6);
+        assertTrue(club.hasBorrowedInRound(1));
         club.repay(100e6);
         assertEq(club.totalDebt(), 0);
         assertEq(club.peakDebt(1), 100e6);
+
+        // Only one borrow per round: re-borrowing after a repay in the same round reverts.
+        vm.expectRevert(BondedTontine.AlreadyBorrowedThisRound.selector);
+        club.borrow(10e6);
         vm.stopPrank();
 
         vm.warp(vm.getBlockTimestamp() + ROUND_DURATION);

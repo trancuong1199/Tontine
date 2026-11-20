@@ -14,6 +14,7 @@ import {
   ARC_TESTNET_CHAIN_ID,
   ARC_TESTNET_DEFAULT_BONDED_CLUB,
   CANONICAL_FACTORY,
+  TRUSTED_BONDED_FACTORIES,
   BONDED_USDC_ADDRESS,
   BONDED_CIRBTC_ADDRESS,
   isKnownBondedClubAddress,
@@ -74,6 +75,8 @@ export interface BondedClubSnapshot {
   nextInterestDeadline: bigint;
   currentRoundIndex: bigint;
   cycleEnded: boolean;
+  /** Owner already borrowed in the current round (newer clubs allow one borrow per round; older clubs: always false). */
+  hasBorrowedThisRound: boolean;
   memberAddresses: readonly `0x${string}`[];
   memberContributions: Record<string, boolean | null>;
   memberContributionRound: bigint | null;
@@ -332,6 +335,7 @@ export function useBondedClub(
     nextInterestDeadline: 0n,
     currentRoundIndex: 0n,
     cycleEnded: false,
+    hasBorrowedThisRound: false,
     memberAddresses: [],
     memberContributions: {},
     memberContributionRound: null,
@@ -540,6 +544,12 @@ export function useBondedClub(
         cycleEnded = cE;
       }
 
+      // One-borrow-per-round flag; clubs from older factories have no such function -> false.
+      const hasBorrowedThisRound =
+        currentRoundIndex >= 1n
+          ? await readClub<boolean>("hasBorrowedInRound", [currentRoundIndex]).catch(() => false)
+          : false;
+
       // Oracle-dependent reads: catch reverts gracefully when price is stale/invalid (T6.2)
       let oracleError = false;
       const [collateralValueUsdc, borrowLimit, exposure, healthBps] = await Promise.all([
@@ -559,16 +569,23 @@ export function useBondedClub(
       ]);
 
       // Factory verification (T6.7)
-      const factoryAddress = CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
-      let isVerifiedClub = false;
-      if (factoryAddress) {
-        isVerifiedClub = await (publicClient.readContract({
-          address: factoryAddress,
-          abi: BONDED_TONTINE_FACTORY_ABI,
-          functionName: "isClub" as never,
-          args: [clubAddress] as never,
-        }) as Promise<boolean>).catch(() => false);
-      }
+      // A club is verified if any trusted factory (current or previous) created it.
+      const trustedFactories = TRUSTED_BONDED_FACTORIES[ARC_TESTNET_CHAIN_ID] ?? [];
+      const verifiedFlags = await Promise.all(
+        trustedFactories.map((f) =>
+          (publicClient.readContract({
+            address: f,
+            abi: BONDED_TONTINE_FACTORY_ABI,
+            functionName: "isClub" as never,
+            args: [clubAddress] as never,
+          }) as Promise<boolean>).catch(() => false)
+        )
+      );
+      const verifiedIdx = verifiedFlags.findIndex(Boolean);
+      const isVerifiedClub = verifiedIdx >= 0;
+      const factoryAddress = isVerifiedClub
+        ? trustedFactories[verifiedIdx]
+        : CANONICAL_FACTORY[ARC_TESTNET_CHAIN_ID];
 
       // Oracle metadata (T6.8)
       let oracleDescription = "";
@@ -642,7 +659,7 @@ export function useBondedClub(
         ] = await Promise.all([
           readClub<boolean>("isMember", [userAddress]).catch(() => { positionAvailable = false; return false; }),
           readClub<bigint>("deposit", [userAddress]).catch(() => { positionAvailable = false; return 0n; }),
-          currentRoundIndex >= 1n && currentRoundIndex <= maxMembers
+          currentRoundIndex >= 1n && currentRoundIndex <= (totalRounds > 0n ? totalRounds : maxMembers)
             ? readClub<boolean>("contributed", [currentRoundIndex, userAddress]).catch(() => { positionAvailable = false; return false; })
             : Promise.resolve(false),
           readClub<bigint>("pendingInterest", [userAddress]).catch(() => { positionAvailable = false; return 0n; }),
@@ -722,6 +739,7 @@ export function useBondedClub(
         nextInterestDeadline,
         currentRoundIndex,
         cycleEnded,
+        hasBorrowedThisRound,
         positionAvailable,
         oracleError,
         collateralValueUsdc,
@@ -760,7 +778,7 @@ export function useBondedClub(
         memberAddresses.push(userAddress);
       }
 
-      const memberContributionRound = stateRaw === BONDED_STATE.ACTIVE && currentRoundIndex >= 1n && currentRoundIndex <= maxMembers ? currentRoundIndex : null;
+      const memberContributionRound = stateRaw === BONDED_STATE.ACTIVE && currentRoundIndex >= 1n && currentRoundIndex <= (totalRounds > 0n ? totalRounds : maxMembers) ? currentRoundIndex : null;
       const memberContributions: Record<string, boolean | null> = {};
       if (memberContributionRound !== null && memberAddresses.length > 0) {
         await Promise.all(memberAddresses.map(async member => {

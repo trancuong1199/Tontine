@@ -236,10 +236,12 @@ export function BondedClubWorkspace({
     club.oraclePriceRaw > 0n &&
     club.oracleDecimals !== null &&
     Number.isInteger(club.oracleDecimals);
-  const maxCyclePoolUsdc = club.contributionAmount * club.maxMembers * club.maxMembers;
+  // Suggested collateral covers ONE round of contributions (maxMembers × contribution), not the whole cycle.
+  // The owner can top up collateral while ACTIVE as the pool grows; the contract's borrowLimit protects members.
+  const oneRoundPoolUsdc = club.contributionAmount * club.maxMembers;
   const suggestedCollateralSats = (() => {
-    if (!oraclePriceUsable || maxCyclePoolUsdc === 0n || club.safetyBps === 0n) return 0n;
-    const exposure = (maxCyclePoolUsdc * (10000n + club.rateBpsPerRound)) / 10000n;
+    if (!oraclePriceUsable || oneRoundPoolUsdc === 0n || club.safetyBps === 0n) return 0n;
+    const exposure = (oneRoundPoolUsdc * (10000n + club.rateBpsPerRound)) / 10000n;
     const valueNeeded = (exposure * club.safetyBps + 9999n) / 10000n; // USDC, 6 decimals
     const scale = 10n ** BigInt((club.oracleDecimals as number) + 2); // sats(8) * price(d) -> USDC(6)
     return (valueNeeded * scale + club.oraclePriceRaw - 1n) / club.oraclePriceRaw;
@@ -251,6 +253,8 @@ export function BondedClubWorkspace({
     club.totalDeposits > club.totalDebt ? club.totalDeposits - club.totalDebt : 0n;
   // Mirrors BondedTontine.borrow(): debt + owed + peak * rate must stay within borrowLimit().
   const maxBorrowUsdc = (() => {
+    // One borrow per round: once the owner borrowed in this round, nothing more until the next round.
+    if (club.hasBorrowedThisRound) return 0n;
     if (club.borrowLimit === null || club.borrowLimit <= club.interestOwed) return 0n;
     const maxDebt =
       ((club.borrowLimit - club.interestOwed) * 10000n) / (10000n + club.rateBpsPerRound);
@@ -265,16 +269,8 @@ export function BondedClubWorkspace({
   const memberMaxInterestUsdc =
     (club.contributionAmount * club.rateBpsPerRound * cycleRounds * (cycleRounds + 1n)) / 2n / 10000n;
 
-  // null = wallet balance unknown (still loading or RPC read failed) — never treat it as zero.
-  const cirBtcBelowSuggested =
-    club.cirBtcBalance !== null &&
-    suggestedCollateralSats > 0n &&
-    club.cirBtcBalance < suggestedCollateralSats;
-  // Prefill: suggested amount, capped at the wallet balance when the balance is known and lower.
-  const prefillCollateralStr =
-    cirBtcBelowSuggested && club.cirBtcBalance !== null && club.cirBtcBalance > 0n
-      ? formatUnitsExact(club.cirBtcBalance, 8)
-      : suggestedCollateralStr;
+  // Prefill the input with the suggested collateral (enough to borrow the full pool).
+  const prefillCollateralStr = suggestedCollateralStr;
   const [collateralInput, setCollateralInput] = useState(prefillCollateralStr);
   // Once the owner types or presses MAX, background refetches must not overwrite the input.
   const collateralInputTouched = useRef(false);
@@ -283,6 +279,15 @@ export function BondedClubWorkspace({
       setCollateralInput(prefillCollateralStr);
     }
   }, [hasDepositedCollateral, prefillCollateralStr]);
+  // null = wallet balance unknown (still loading or RPC read failed) — never treat it as zero.
+  const collateralInputExceedsBalance = (() => {
+    if (club.cirBtcBalance === null || !collateralInput.trim()) return false;
+    try {
+      return parseUnitsExact(collateralInput, 8) > club.cirBtcBalance;
+    } catch {
+      return false;
+    }
+  })();
   const [withdrawColInput, setWithdrawColInput] = useState("");
   useEffect(() => {
     setWithdrawColInput(formatUnitsExact(club.collateral, 8));
@@ -874,9 +879,11 @@ export function BondedClubWorkspace({
   const [showRemoveConfirmModal, setShowRemoveConfirmModal] = useState(false);
   const [showCancelOpenConfirm, setShowCancelOpenConfirm] = useState(false);
   const terminal = club.state === BONDED_STATE.COMPLETED || club.state === BONDED_STATE.DEFAULTED || club.state === BONDED_STATE.CANCELLED;
+  // Only the owner or a member can remove a club from their directory; a visitor who hasn't joined sees no remove action.
   const canRemoveFromDirectory =
     !club.isLoading &&
     club.financialsAvailable &&
+    (isOwner || club.isMember) &&
     (club.memberCount === 0n || terminal || club.state === BONDED_STATE.OPEN);
   const handleRequestRemoveClub = () => {
     if (club.state === BONDED_STATE.ACTIVE) return;
@@ -920,13 +927,13 @@ export function BondedClubWorkspace({
       : club.totalDebt > 0n ? (isVi ? "Bước tiếp theo: hoàn trả khoản vay trước hạn tất toán." : "Next: repay the loan before settlement is due.")
         : club.cycleEnded ? (isVi ? "Chu kỳ đã hết hạn; kiểm tra điều kiện để hoàn tất." : "The cycle has ended; review completion eligibility.")
           : (isVi ? "Theo dõi tiền góp và lịch trả lãi của chu kỳ đang chạy." : "Monitor contributions and interest deadlines during the active cycle.");
-  if (terminal) return <BondedTerminalView club={club} language={language} isOwner={isOwner} isPasskeyUser={isPasskeyUser} pending={isPending} onClaim={() => void handleClaimInterest()} onWithdraw={() => void handleWithdrawPrincipal()} onCollateral={() => void handleTerminalCollateral()} onDirectory={onOpenDirectoryModal} onRemove={handleConfirmRemoveCurrentClub} confirmingRemove={showRemoveConfirmModal} onRequestRemove={handleRequestRemoveClub} onCancelRemove={() => setShowRemoveConfirmModal(false)} />;
+  if (terminal) return <BondedTerminalView club={club} language={language} isOwner={isOwner} isPasskeyUser={isPasskeyUser} pending={isPending} onClaim={() => void handleClaimInterest()} onWithdraw={() => void handleWithdrawPrincipal()} onCollateral={() => void handleTerminalCollateral()} onDirectory={onOpenDirectoryModal} onRemove={canRemoveFromDirectory ? handleConfirmRemoveCurrentClub : undefined} confirmingRemove={showRemoveConfirmModal} onRequestRemove={canRemoveFromDirectory ? handleRequestRemoveClub : undefined} onCancelRemove={() => setShowRemoveConfirmModal(false)} />;
   const mobileReview = hasFundingAction && (riskBlocked || (contributeEligible && contributeBlockedByVerification));
   const mobileUnavailable = !financialsReady || !club.positionAvailable;
   const mobileLabel = mobileUnavailable ? (club.isLoading ? (isVi ? "Đang tải thông tin…" : "Loading details…") : (isVi ? "Chưa tải được thông tin — thử lại" : "Details unavailable — retry")) : mobileReview ? (isVi ? "Xem và xác nhận rủi ro" : "Review and acknowledge risk") : canJoinWithAcknowledgement ? (isVi ? "Tham gia nhóm" : "Join club") : canContributeWithAcknowledgement ? (isVi ? "Góp tiền vòng này" : "Contribute this round") : club.pendingInterest > 0n ? (isVi ? "Nhận lãi đã trả" : "Claim paid interest") : isOwner ? (isVi ? "Xem bước tiếp theo" : "Review next step") : club.state === BONDED_STATE.OPEN && club.isMember ? (isVi ? "Đang chờ chủ nhóm bắt đầu" : "Waiting for the owner to start") : club.state === BONDED_STATE.OPEN && !hasCapacity ? (isVi ? "Nhóm đã đủ thành viên" : "Club is full") : (isVi ? "Hiện chưa có thao tác cần thực hiện" : "No action needed right now");
   const mobileAction = mobileUnavailable ? () => void club.refetch() : mobileReview ? reviewMemberAction : canJoinWithAcknowledgement ? () => void handleJoin() : canContributeWithAcknowledgement ? () => void handleContribute() : club.pendingInterest > 0n ? () => void handleClaimInterest() : isOwner ? () => ownerControlsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }) : undefined;
 
-  const timelineRoundEnd = club.startTime > 0n && club.currentRoundIndex >= 1n && club.currentRoundIndex <= club.maxMembers
+  const timelineRoundEnd = club.startTime > 0n && club.currentRoundIndex >= 1n && club.currentRoundIndex <= cycleRounds
     ? club.startTime + club.currentRoundIndex * club.roundDuration : 0n;
   const timelineRoundLeft = timelineRoundEnd > nowSec ? Number(timelineRoundEnd - nowSec) : 0;
   const timelineInterestOverdue = club.nextInterestDeadline > 0n && nowSec >= club.nextInterestDeadline && club.interestOwed > 0n;
@@ -1212,7 +1219,7 @@ export function BondedClubWorkspace({
                 {/* 1. Current Round Cutoff */}
                 {(() => {
                   const currentRoundEnd =
-                    club.startTime > 0n && club.currentRoundIndex >= 1n && club.currentRoundIndex <= club.maxMembers
+                    club.startTime > 0n && club.currentRoundIndex >= 1n && club.currentRoundIndex <= cycleRounds
                       ? club.startTime + club.currentRoundIndex * club.roundDuration
                       : 0n;
                   const isPast = currentRoundEnd > 0n && nowSec >= currentRoundEnd;
@@ -1478,7 +1485,7 @@ export function BondedClubWorkspace({
                         </div>
                       </div>
 
-                      {club.state === BONDED_STATE.ACTIVE && club.currentRoundIndex >= 1n && club.currentRoundIndex <= club.maxMembers && <span data-testid="member-payment-status" className="text-xs text-amber-200">
+                      {club.state === BONDED_STATE.ACTIVE && club.currentRoundIndex >= 1n && club.currentRoundIndex <= cycleRounds && <span data-testid="member-payment-status" className="text-xs text-amber-200">
                         {club.isLoading ? (isVi ? "Đang tải…" : "Loading…") : club.memberContributionRound !== club.currentRoundIndex || club.memberContributions?.[m.toLowerCase()] == null ? (isVi ? "Chưa rõ trạng thái đóng" : "Contribution unknown") : club.memberContributions?.[m.toLowerCase()] ? (isVi ? "Đã góp vòng này" : "Contributed this round") : (isVi ? "Chưa góp vòng này" : "Not contributed yet")}
                       </span>}
                       {club.state === BONDED_STATE.OPEN && isOwner && (
@@ -1598,20 +1605,41 @@ export function BondedClubWorkspace({
               )}
 
               {club.state === BONDED_STATE.OPEN && club.isMember && (
-                <div className="space-y-2.5 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-4">
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full px-4 py-3 rounded-xl border border-amber-500/35 bg-black/50 text-amber-200 font-bold text-xs sm:text-sm leading-snug cursor-not-allowed"
-                  >
-                    {isVi
-                      ? `Góp tiền ${displayUsdc(club.contributionAmount)} USDC (Chờ mở Vòng 1)`
-                      : `Contribute ${displayUsdc(club.contributionAmount)} USDC (Waiting for Round 1)`}
-                  </button>
-                  <p className="px-0.5 text-xs text-slate-300 leading-relaxed">
-                    {isVi
-                      ? `Nhóm đang ở Vòng 0/${club.totalRounds.toString()}. Khi Chủ nhóm (${club.owner.slice(0, 6)}...${club.owner.slice(-4)}) bấm "Bắt đầu các vòng", nút đóng ${displayUsdc(club.contributionAmount)} USDC sẽ mở khóa.`
-                      : `Club is at Round 0/${club.totalRounds.toString()}. Once the Owner (${club.owner.slice(0, 6)}...${club.owner.slice(-4)}) clicks "Start Rounds", this ${displayUsdc(club.contributionAmount)} USDC button will unlock.`}
+                <div
+                  role="status"
+                  className="w-full rounded-2xl border border-amber-500/30 bg-amber-950/20 px-4 py-3 space-y-2.5"
+                >
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-5 w-5 shrink-0 text-amber-400" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-amber-200 truncate">
+                        {isVi ? "Chờ mở Vòng 1" : "Waiting for Round 1"}
+                      </p>
+                      <p className="text-xs text-slate-400 truncate">
+                        {isVi
+                          ? `Vòng 0/${club.totalRounds.toString()} · chưa thể góp tiền`
+                          : `Round 0/${club.totalRounds.toString()} · contributions locked`}
+                      </p>
+                    </div>
+                    <span className="shrink-0 inline-flex items-center gap-1 font-mono text-sm font-semibold text-amber-200/80 whitespace-nowrap">
+                      <Lock className="h-3.5 w-3.5" />
+                      {displayUsdc(club.contributionAmount)} USDC
+                    </span>
+                  </div>
+                  <p className="border-t border-amber-500/15 pt-2.5 text-xs text-slate-300 leading-relaxed">
+                    {isVi ? (
+                      <>
+                        Nút góp tiền sẽ mở khi Chủ nhóm{" "}
+                        <span className="font-mono text-amber-200">{club.owner.slice(0, 6)}…{club.owner.slice(-4)}</span>{" "}
+                        bấm <span className="font-semibold text-slate-100">"Bắt đầu các vòng"</span>.
+                      </>
+                    ) : (
+                      <>
+                        The contribute button unlocks once the Owner{" "}
+                        <span className="font-mono text-amber-200">{club.owner.slice(0, 6)}…{club.owner.slice(-4)}</span>{" "}
+                        clicks <span className="font-semibold text-slate-100">"Start Rounds"</span>.
+                      </>
+                    )}
                   </p>
                 </div>
               )}
@@ -1783,20 +1811,16 @@ export function BondedClubWorkspace({
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-xs text-slate-400">
-                      {!oraclePriceUsable
-                        ? (isVi ? "Chưa có giá oracle hợp lệ" : "No valid oracle price")
-                        : isVi
-                          ? `Đề xuất ${suggestedCollateralStr} cirBTC (đủ vay hết quỹ ${displayUsdc(maxCyclePoolUsdc)} USDC)`
-                          : `Suggested ${suggestedCollateralStr} cirBTC (covers full ${displayUsdc(maxCyclePoolUsdc)} USDC pool)`}
-                    </span>
-                  </div>
-                  {!hasDepositedCollateral && cirBtcBelowSuggested && (
+                  {!oraclePriceUsable && (
+                    <p className="text-xs text-slate-400">
+                      {isVi ? "Chưa có giá oracle hợp lệ" : "No valid oracle price"}
+                    </p>
+                  )}
+                  {!hasDepositedCollateral && collateralInputExceedsBalance && (
                     <p className="text-xs text-amber-300">
                       {isVi
-                        ? "Số dư ví thấp hơn mức đề xuất — nếu nạp ít hơn, hạn mức vay sẽ không đủ để vay hết quỹ."
-                        : "Wallet balance is below the suggested amount — depositing less means the borrow limit will not cover the full pool."}
+                        ? "Số dư ví không đủ cho số cọc này. Đổi thêm cirBTC qua Arc AppKit hoặc bấm MAX."
+                        : "Wallet balance is too low for this amount. Get more cirBTC via Arc AppKit or press MAX."}
                     </p>
                   )}
                   <div className="flex gap-2">
@@ -1850,7 +1874,7 @@ export function BondedClubWorkspace({
                       <div className="flex gap-2">
                         <div className="relative flex-1">
                           <input
-                            value={borrowInput}
+                            value={maxBorrowUsdc === 0n ? "" : borrowInput}
                             disabled={maxBorrowUsdc === 0n}
                             onChange={(e) => setBorrowInput(e.target.value)}
                             placeholder="USDC borrow"
@@ -1878,11 +1902,26 @@ export function BondedClubWorkspace({
                           onClick={handleBorrow}
                           className="shrink-0 rounded-xl bg-amber-500/20 px-3.5 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                         >
-                          {maxBorrowUsdc === 0n && club.totalDebt > 0n
-                            ? (isVi ? "Đã hết hạn mức" : "Limit reached")
-                            : (isVi ? "Vay USDC" : "Borrow")}
+                          {club.hasBorrowedThisRound
+                            ? (isVi ? "Đã vay vòng này" : "Borrowed")
+                            : maxBorrowUsdc === 0n && club.totalDebt > 0n
+                              ? (isVi ? "Đã hết hạn mức" : "Limit reached")
+                              : (isVi ? "Vay USDC" : "Borrow")}
                         </button>
                       </div>
+                      {club.hasBorrowedThisRound ? (
+                        <p className="text-xs text-slate-400">
+                          {isVi
+                            ? `Mỗi vòng chỉ được vay 1 lần. Bạn đã vay ở Vòng ${club.currentRoundIndex.toString()}${club.currentRoundIndex < club.totalRounds ? ", có thể vay lại ở vòng tiếp theo." : "."}`
+                            : `Only one borrow per round. You already borrowed in Round ${club.currentRoundIndex.toString()}${club.currentRoundIndex < club.totalRounds ? "; you can borrow again next round." : "."}`}
+                        </p>
+                      ) : (
+                        club.state === BONDED_STATE.ACTIVE && (
+                          <p className="text-xs text-slate-400">
+                            {isVi ? "Mỗi vòng chỉ được vay 1 lần — hãy nhập đủ số cần vay." : "One borrow per round — enter the full amount you need."}
+                          </p>
+                        )
+                      )}
                       {staleBlocksPriceAction && (
                         <p className="text-xs text-red-300">
                           {isVi
@@ -1906,7 +1945,7 @@ export function BondedClubWorkspace({
                       <div className="flex gap-2">
                         <div className="relative flex-1">
                           <input
-                            value={repayInput}
+                            value={club.totalDebt === 0n ? "" : repayInput}
                             disabled={club.totalDebt === 0n}
                             onChange={(e) => setRepayInput(e.target.value)}
                             placeholder="0.00"
