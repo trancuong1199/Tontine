@@ -216,7 +216,7 @@ export function BondedClubWorkspace({
   const riskRequired = requiresRiskAcknowledgement(club);
   const riskAcknowledged = acknowledgedContext === riskContext;
   const financialsReady = club.financialsAvailable && !club.isLoading && !club.error;
-  const riskBlocked = riskRequired && !riskAcknowledged;
+  const riskBlocked = false;
   const memberActionRef = useRef<{ context: string; join: boolean; contribute: boolean } | null>(null);
   // Context comparison blocks the first changed render; clearing also prevents an
   // old acknowledgement resurrecting after A → B → A or a quote reverting.
@@ -1590,17 +1590,6 @@ export function BondedClubWorkspace({
 
 
 
-            {riskRequired && hasFundingAction && (
-              <div role="alert" className="rounded-2xl border-2 border-red-500 bg-red-950/60 p-4 space-y-3 text-red-100" data-testid="contribution-risk-warning">
-                <p className="font-bold">{isVi ? "Cảnh báo: có thể mất vốn gốc" : "Warning: you may lose principal"}</p>
-                <p className="text-sm">{isVi ? "Cọc chưa đủ 100% quỹ tối đa cả chu kỳ, hoặc giá trị cọc chưa được xác nhận bằng giá còn hạn. Bạn có thể không thu hồi đủ tiền đã góp." : "Collateral covers less than 100% of the maximum cycle pool, or its value cannot be verified with a fresh price. You may recover less than you contribute."}</p>
-                <label className="flex items-start gap-2 text-sm font-semibold">
-                  <input type="checkbox" checked={riskAcknowledged} onChange={event => setAcknowledgedContext(event.target.checked ? riskContext : null)} className="mt-1 accent-red-500" />
-                  <span>{isVi ? "Tôi hiểu nguy cơ mất vốn và vẫn muốn tham gia hoặc góp tiền với thông tin hiện tại." : "I understand the risk of principal loss and still want to join or contribute with the current information."}</span>
-                </label>
-                <p className="text-xs text-red-200">{isVi ? "Đây là xác nhận thông tin rủi ro, không thay đổi hạn mức vay hoặc quy tắc hợp đồng." : "This acknowledges disclosed risk; it does not change borrowing limits or contract rules."}</p>
-              </div>
-            )}
 
             {club.state === BONDED_STATE.OPEN && !club.isLoading && club.maxMembers > 0n && !hasCapacity && <p role="status" className="text-amber-200">{isVi ? "Nhóm đã đủ thành viên; không nhận đăng ký mới." : "This club is full; new registrations are closed."}</p>}
             {/* Actions */}

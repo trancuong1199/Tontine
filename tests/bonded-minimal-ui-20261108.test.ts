@@ -29,8 +29,8 @@ test('MIN-03 secondary sections are collapsible and keeper actions open when act
   assert.ok(workspace.includes('open={(canFinalize || canDeclareDefault || canLiquidate) || undefined}'));
 });
 
-test('MIN-04 risk acknowledgement still gates join and contribute', () => {
-  assert.ok(workspace.includes('data-testid="contribution-risk-warning"'));
+test('MIN-04 risk acknowledgement warning removed by user request', () => {
+  assert.ok(!workspace.includes('data-testid="contribution-risk-warning"'));
   assert.ok(workspace.includes('canJoinWithAcknowledgement'));
   assert.ok(workspace.includes('canContributeWithAcknowledgement'));
 });

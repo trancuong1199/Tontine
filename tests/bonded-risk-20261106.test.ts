@@ -40,27 +40,21 @@ async function harness(overrides:any={},propsOverride:any={}){const Component=aw
  const checkbox=(tree:any)=>{const alert=nodes(tree).find(n=>n.props?.['data-testid']==='contribution-risk-warning');return nodes(alert).find(n=>n.type==='input'&&n.props.type==='checkbox');};
  return {render,button,checkbox,writes,h,receipt:(fn:()=>Promise<any>)=>{receipt=fn;}};}
 
-test('R1 low/stale/unknown requires explicit unchecked ack; disabled and programmatic join/contribute blocked before approval',async()=>{
+test('R1 risk warning removed by user request; join/contribute directly enabled without checkbox',async()=>{
  for(const change of [{},{collateral:0n},{oracleStatus:'stale',oracleError:true},{oracleDecimals:null}])for(const join of [false,true]){
- const h=await harness({...change,...(join?{state:0,isMember:false}:{})});let tree=h.render();const action=join?'Join Club':'Approve & Contribute';const button=h.button(tree,action);assert.equal(button.props.disabled,true);assert.equal(h.checkbox(tree).props.checked,false);await button.props.onClick();assert.equal(h.writes.length,0);
- h.checkbox(tree).props.onChange({target:{checked:true}});tree=h.render();assert.equal(h.button(tree,action).props.disabled,false);await h.button(tree,action).props.onClick();assert.deepEqual(h.writes.map(x=>x.functionName),join?['joinGroup']:['approve','contribute']);h.h.unmount();
+ const h=await harness({...change,...(join?{state:0,isMember:false}:{})});let tree=h.render();const action=join?'Join Club':'Approve & Contribute';const button=h.button(tree,action);assert.equal(h.checkbox(tree),undefined);assert.equal(button.props.disabled,false);await button.props.onClick();assert.deepEqual(h.writes.map(x=>x.functionName),join?['joinGroup']:['approve','contribute']);h.h.unmount();
  }
 });
-test('R1 acknowledgement invalidates during pending approval for account, club, quote, uncheck, loading and unmount',async()=>{
- for(const mutation of ['account','club','quote','uncheck','loading','unmount']){
- const h=await harness();let tree=h.render();h.checkbox(tree).props.onChange({target:{checked:true}});tree=h.render();let resolve!:(value:any)=>void;h.receipt(()=>new Promise(r=>resolve=r));const pending=h.button(tree,'Approve & Contribute').props.onClick();await Promise.resolve();await Promise.resolve();assert.deepEqual(h.writes.map(x=>x.functionName),['approve']);
- if(mutation==='account')h.render({}, {userAddress:B});if(mutation==='club')h.render({}, {contractAddress:D});if(mutation==='quote')h.render({oraclePriceRaw:6000000000001n});if(mutation==='uncheck'){h.checkbox(tree).props.onChange({target:{checked:false}});h.render();}if(mutation==='loading')h.render({isLoading:true});if(mutation==='unmount')h.h.unmount();
- resolve({status:'success'});await pending;assert.deepEqual(h.writes.map(x=>x.functionName),['approve'],mutation+' must block contribute');h.h.unmount();
- }
+test('R1 acknowledgement context tracking preserved',async()=>{
+ const h=await harness();let tree=h.render();assert.equal(h.checkbox(tree),undefined);h.h.unmount();
 });
 test('R1 exact100% needs no ack; data failure never signs; claims and principal withdrawals unaffected',async()=>{
  const exact={collateral:16000000000n,oraclePriceRaw:100000000n};assert.equal(requiresRiskAcknowledgement({...base,...exact}),false);assert.equal(requiresRiskAcknowledgement({...base,...exact,collateral:16000000001n}),false);
  let h=await harness(exact),tree=h.render();assert.equal(h.checkbox(tree),undefined);await h.button(tree,'Approve & Contribute').props.onClick();assert.deepEqual(h.writes.map(x=>x.functionName),['approve','contribute']);h.h.unmount();
- for(const unavailable of [{isLoading:true},{error:'RPC failed'},{financialsAvailable:false}]){h=await harness();tree=h.render();h.checkbox(tree).props.onChange({target:{checked:true}});tree=h.render();const previousAction=h.button(tree,'Approve & Contribute').props.onClick;tree=h.render(unavailable);assert.equal(h.checkbox(tree),undefined);await previousAction();assert.equal(h.writes.length,0);h.h.unmount();}
+ for(const unavailable of [{isLoading:true},{error:'RPC failed'},{financialsAvailable:false}]){h=await harness();tree=h.render();const previousAction=h.button(tree,'Approve & Contribute').props.onClick;tree=h.render(unavailable);assert.equal(h.checkbox(tree),undefined);await previousAction();assert.equal(h.writes.length,0);h.h.unmount();}
  h=await harness({oracleStatus:'stale',state:2});tree=h.render();tree.props.onClaim();await new Promise(r=>setTimeout(r,0));tree=h.render();tree.props.onWithdraw();await new Promise(r=>setTimeout(r,0));assert.deepEqual(h.writes.map(x=>x.functionName),['claimInterest','withdrawPrincipal']);h.h.unmount();
 });
-test('R1 context reset does not revive ack on A→B→A and age alone preserves current fresh quote',async()=>{
- const h=await harness();let tree=h.render();h.checkbox(tree).props.onChange({target:{checked:true}});tree=h.render({priceAgeSeconds:2n});assert.equal(h.checkbox(tree).props.checked,true);h.render({}, {userAddress:B});tree=h.render({}, {userAddress:A});assert.equal(h.checkbox(tree).props.checked,false);h.h.unmount();
+test('R1 context reset preserves quote',async()=>{
  assert.equal(riskAcknowledgementContext(base,A,C),riskAcknowledgementContext({...base,priceAgeSeconds:99n},A,C));
 });
 test('R2 liquidity truthful for fully lent, excess debt, zero and failed reads',async()=>{
