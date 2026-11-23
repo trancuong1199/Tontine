@@ -55,25 +55,30 @@ export function getGroupCollateralAmount(address: string): bigint | undefined {
   }
 }
 
+function readRemovedList(key: string): string[] {
+  try {
+    const raw = window.localStorage.getItem(key);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((a) => (typeof a === "string" ? a.toLowerCase() : "")).filter(Boolean);
+  } catch (_err) {
+    return [];
+  }
+}
+
+/**
+ * Clubs removed before storage was split per account (2026-11-06) live under the bare
+ * `hui_removed_groups` key. They stay removed for every account until explicitly re-added.
+ */
 export function getRemovedGroups(account?: string): Set<string> {
   if (typeof window === "undefined" || !window.localStorage) {
     return new Set<string>();
   }
-  try {
-    const acc = resolveAccount(account);
-    const key = getAccountRemovedStorageKey(acc ?? undefined);
-    const raw = window.localStorage.getItem(key);
-    const parsed: unknown = raw ? JSON.parse(raw) : null;
-    if (Array.isArray(parsed)) {
-      const list = parsed
-        .map((a) => (typeof a === "string" ? a.toLowerCase() : ""))
-        .filter(Boolean);
-      return new Set(list);
-    }
-    return new Set<string>();
-  } catch (_err) {
-    return new Set<string>();
-  }
+  const acc = resolveAccount(account);
+  return new Set([
+    ...readRemovedList(REMOVED_CLUBS_STORAGE_KEY),
+    ...readRemovedList(getAccountRemovedStorageKey(acc ?? undefined)),
+  ]);
 }
 
 /** Explicit context only: omitted account is the separate guest namespace. */
@@ -291,12 +296,18 @@ export function saveKnownGroup(item: {
     window.localStorage.setItem(getAccountKnownStorageKey(account), JSON.stringify(updated));
 
     // If this group was previously marked as removed, un-hide it
-    const removed = getRemovedGroups(account);
-    if (removed.has(normalized)) {
-      removed.delete(normalized);
+    const accountRemoved = readRemovedList(getAccountRemovedStorageKey(account));
+    if (accountRemoved.includes(normalized)) {
       window.localStorage.setItem(
         getAccountRemovedStorageKey(account),
-        JSON.stringify(Array.from(removed))
+        JSON.stringify(accountRemoved.filter((a) => a !== normalized))
+      );
+    }
+    const legacyRemoved = readRemovedList(REMOVED_CLUBS_STORAGE_KEY);
+    if (legacyRemoved.includes(normalized)) {
+      window.localStorage.setItem(
+        REMOVED_CLUBS_STORAGE_KEY,
+        JSON.stringify(legacyRemoved.filter((a) => a !== normalized))
       );
     }
   } catch (_err) {
