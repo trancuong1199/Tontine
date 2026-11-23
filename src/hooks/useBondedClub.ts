@@ -88,6 +88,9 @@ export interface BondedClubSnapshot {
   borrowLimit: bigint | null;
   exposure: bigint | null;
   healthBps: bigint | null;
+  // Partial liquidation (task-063). Null on legacy clubs deployed before liquidate() existed.
+  liquidationThresholdBps: bigint | null;
+  maxLiquidatableDebt: bigint | null;
   // Oracle feed metadata (T6.8)
   oracleDescription: string;
   oracleDecimals: number | null;
@@ -346,6 +349,8 @@ export function useBondedClub(
     borrowLimit: null,
     exposure: null,
     healthBps: null,
+    liquidationThresholdBps: null,
+    maxLiquidatableDebt: null,
     oracleDescription: "",
     oracleDecimals: null,
     oracleStatus: "unavailable",
@@ -568,6 +573,11 @@ export function useBondedClub(
           return null;
         }),
       ]);
+      // Legacy clubs revert on these selectors; null hides the liquidation UI for them.
+      const [liquidationThresholdBps, maxLiquidatableDebt] = await Promise.all([
+        readClub<bigint>("liquidationThresholdBps").catch(() => null),
+        readClub<bigint>("maxLiquidatableDebt").catch(() => null),
+      ]);
 
       // Factory verification (T6.7)
       // A club is verified if any trusted factory (current or previous) created it.
@@ -747,6 +757,8 @@ export function useBondedClub(
         borrowLimit,
         exposure,
         healthBps,
+        liquidationThresholdBps,
+        maxLiquidatableDebt,
         oracleDescription,
         oracleDecimals,
         oracleStatus,

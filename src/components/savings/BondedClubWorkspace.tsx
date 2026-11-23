@@ -312,6 +312,7 @@ export function BondedClubWorkspace({
   }, [club.interestOwed]);
   const [removeMemberInput, setRemoveMemberInput] = useState("");
   const [mockBtcPriceInput, setMockBtcPriceInput] = useState("60000");
+  const [liquidateInput, setLiquidateInput] = useState("");
 
   const isVi = language === "vi";
   const isOwner =
@@ -694,6 +695,35 @@ export function BondedClubWorkspace({
       })
     );
 
+  // Partial liquidation (task-063): anyone repays part of the owner's USDC debt and receives CirBTC + 5% bonus.
+  // The contract caps the repay at maxLiquidatableDebt(), so approving the capped amount is always enough.
+  const handleLiquidate = () => {
+    const maxRepay = club.maxLiquidatableDebt ?? 0n;
+    let amt = maxRepay;
+    try {
+      const trimmed = liquidateInput.trim();
+      if (trimmed) amt = parseUsdc(trimmed);
+      if (amt <= 0n) throw new Error();
+    } catch {
+      toast.error(
+        isVi
+          ? "Vui lòng nhập số USDC trả thay hợp lệ (> 0)"
+          : "Please enter a valid USDC repay amount (> 0)"
+      );
+      return;
+    }
+    if (amt > maxRepay) amt = maxRepay;
+    return runAction(isVi ? "Thanh lý một phần cọc CirBTC" : "Partially liquidate CirBTC bond", async () => {
+      await ensureExactUsdcApproval(amt);
+      return writeContractAsync({
+        address: contractAddress,
+        abi: BONDED_TONTINE_ABI,
+        functionName: "liquidate",
+        args: [amt],
+      });
+    });
+  };
+
   // Mock oracle price update for testnet simulation
   const handleSetMockPrice = (usdPrice: string) =>
     runAction(
@@ -800,6 +830,53 @@ export function BondedClubWorkspace({
           : isVi
             ? "Còn nợ lãi chưa trả"
             : "Interest unpaid";
+
+  const liquidationSupported = club.liquidationThresholdBps !== null && club.maxLiquidatableDebt !== null;
+  const canLiquidate =
+    liquidationSupported &&
+    Boolean(userAddress) &&
+    !isPasskeyUser &&
+    club.state === BONDED_STATE.ACTIVE &&
+    !club.oracleError &&
+    (club.maxLiquidatableDebt ?? 0n) > 0n;
+  const liquidateRequested = (() => {
+    const max = club.maxLiquidatableDebt ?? 0n;
+    try {
+      const v = liquidateInput.trim() ? parseUsdc(liquidateInput.trim()) : max;
+      return v > max ? max : v;
+    } catch {
+      return 0n;
+    }
+  })();
+  // Estimate only; the contract rounds down and caps at the remaining collateral.
+  const liquidateEstimatedCirBtc =
+    club.collateralValueUsdc && club.collateralValueUsdc > 0n && liquidateRequested > 0n
+      ? (() => {
+          const est = (liquidateRequested * 10_500n * club.collateral) / (10_000n * club.collateralValueUsdc);
+          return est > club.collateral ? club.collateral : est;
+        })()
+      : 0n;
+  const liquidateDisabledReason = canLiquidate
+    ? null
+    : !liquidationSupported
+      ? isVi
+        ? "Nhóm này được tạo trước khi có tính năng thanh lý một phần"
+        : "This club predates partial liquidation"
+      : club.state !== BONDED_STATE.ACTIVE
+        ? isVi
+          ? "Nhóm chưa ở trạng thái đang chạy"
+          : "Club not in active state"
+        : club.oracleError
+          ? isVi
+            ? "Giá oracle cũ hoặc lỗi, chưa thể thanh lý"
+            : "Oracle price stale or invalid"
+          : !userAddress || isPasskeyUser
+            ? isVi
+              ? "Cần kết nối ví (không hỗ trợ passkey) để thanh lý"
+              : "Connect a wallet (passkey not supported) to liquidate"
+            : isVi
+              ? "Vị thế còn an toàn trên ngưỡng thanh lý"
+              : "Position is healthy above the liquidation threshold";
 
   const declareDefaultDisabledReason = canDeclareDefault
     ? null
@@ -2088,7 +2165,7 @@ export function BondedClubWorkspace({
           )}
 
           {/* 3. Permissionless Keeper Actions (T6.5, U3.2 & U3.3) */}
-          <details data-testid="bonded-keeper-actions" open={(canFinalize || canDeclareDefault) || undefined} className="group rounded-2xl border border-slate-800 bg-[#0c0d14] text-slate-100 shadow-xl">
+          <details data-testid="bonded-keeper-actions" open={(canFinalize || canDeclareDefault || canLiquidate) || undefined} className="group rounded-2xl border border-slate-800 bg-[#0c0d14] text-slate-100 shadow-xl">
             <summary className="flex cursor-pointer select-none list-none items-center justify-between gap-2 p-5"><h3 className="flex items-center gap-2 text-sm font-bold text-white">
               <Flame className="h-4 w-4 text-orange-400" />
               {isVi
@@ -2124,6 +2201,50 @@ export function BondedClubWorkspace({
                   <p className="text-xs text-slate-400">{declareDefaultDisabledReason}</p>
                 )}
               </div>
+
+              {club.state === BONDED_STATE.ACTIVE && (
+                <div data-testid="bonded-partial-liquidation" className="space-y-1.5 rounded-xl border border-orange-500/20 bg-orange-950/10 p-3">
+                  {liquidationSupported && (
+                  <p className="text-xs text-slate-300">
+                    {isVi
+                      ? `Khi sức khỏe cọc dưới ${formatAdaptivePercent((club.liquidationThresholdBps ?? 0n) * 10_000n)}%, bất kỳ ai cũng có thể trả thay một phần nợ USDC của chủ nhóm và nhận cirBTC (thưởng 5%). USDC quay về quỹ để bảo toàn tiền góp; chỉ thanh lý vừa đủ đưa cọc về lại tỷ lệ an toàn.`
+                      : `When health is below ${formatAdaptivePercent((club.liquidationThresholdBps ?? 0n) * 10_000n)}%, anyone can repay part of the owner's USDC debt and receive cirBTC (5% bonus). The USDC returns to the pool to protect contributions; only enough is liquidated to restore the safety ratio.`}
+                  </p>
+                  )}
+                  {canLiquidate && (
+                    <>
+                      <p className="text-xs text-slate-400">
+                        {isVi ? "Tối đa có thể trả thay:" : "Max repayable:"}{" "}
+                        <strong className="text-orange-300">{displayUsdc(club.maxLiquidatableDebt ?? 0n)} USDC</strong>
+                        {" · "}
+                        {isVi ? "Ước tính nhận:" : "Est. receive:"}{" "}
+                        <strong className="text-orange-300">~{formatUnitsExact(liquidateEstimatedCirBtc, 8)} cirBTC</strong>
+                      </p>
+                      <input
+                        value={liquidateInput}
+                        onChange={(e) => setLiquidateInput(e.target.value)}
+                        inputMode="decimal"
+                        placeholder={formatUsdcExact(club.maxLiquidatableDebt ?? 0n)}
+                        aria-label={isVi ? "Số USDC trả thay" : "USDC to repay"}
+                        className="w-full rounded-lg border border-slate-700 bg-black/40 px-3 py-2 text-xs text-white"
+                      />
+                    </>
+                  )}
+                  {liquidationSupported && (
+                  <button
+                    type="button"
+                    disabled={isPending || !canLiquidate}
+                    onClick={handleLiquidate}
+                    className="w-full py-2.5 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 disabled:opacity-40 text-orange-300 font-semibold text-xs transition-all cursor-pointer"
+                  >
+                    {isVi ? "Thanh lý một phần cọc" : "Partial liquidation"}
+                  </button>
+                  )}
+                  {liquidateDisabledReason && (
+                    <p className="text-xs text-slate-400">{liquidateDisabledReason}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* U3.2: Testnet Mock Oracle Simulation Bar — ONLY visible to oracleAdmin on Testnet */}

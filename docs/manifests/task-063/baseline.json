@@ -1,0 +1,36 @@
+{
+  "taskId": "task-063",
+  "createdAt": "2026-11-23T07:24:07.855Z",
+  "files": {
+    "contracts/BondedTontine.sol": {
+      "exists": true,
+      "sha256": "4d134495b776563a6992777f500d3cb63217000968198782ce7daa0c15ae3009",
+      "snapshot": "docs/manifests/task-063/baseline/contracts_BondedTontine.sol"
+    },
+    "src/hooks/useBondedClub.ts": {
+      "exists": true,
+      "sha256": "361b85f40d3879e044e853228a2e383f1d3b3b507e184900ca2a12d619f8666e",
+      "snapshot": "docs/manifests/task-063/baseline/src_hooks_useBondedClub.ts"
+    },
+    "src/components/savings/BondedClubWorkspace.tsx": {
+      "exists": true,
+      "sha256": "45a5a58f20ca3f5bcf6e032b9e1c128486282f0bd8f7ead2778f4e8186971dad",
+      "snapshot": "docs/manifests/task-063/baseline/src_components_savings_BondedClubWorkspace.tsx"
+    },
+    "src/config/bonded-tontine.ts": {
+      "exists": true,
+      "sha256": "372a906ef97795df10e4d5da6d2e60c782a31eca00d4d3b9bbd515dc1537ebef",
+      "snapshot": "docs/manifests/task-063/baseline/src_config_bonded-tontine.ts"
+    },
+    "src/lib/i18n.ts": {
+      "exists": true,
+      "sha256": "92223fb03002d4ecb897758c91c063813d239d5e75eab4a09e1191415405b6ab",
+      "snapshot": "docs/manifests/task-063/baseline/src_lib_i18n.ts"
+    },
+    ".github/workflows/oracle-heartbeat.yml": {
+      "exists": true,
+      "sha256": "37aa413c0b1634b10bfa717632470676bba756a1f330793eb9842a27eea07db8",
+      "snapshot": "docs/manifests/task-063/baseline/.github_workflows_oracle-heartbeat.yml"
+    }
+  }
+}

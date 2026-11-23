@@ -1,0 +1,42 @@
+{
+  "taskId": "task-063",
+  "frozenAt": "2026-11-23T08:14:55.701Z",
+  "status": "FROZEN",
+  "files": {
+    "contracts/BondedTontine.sol": {
+      "sha256": "b2f62c86f4ccd3fed602404d4e43c3b306e4026f8e29e1b75852af46091f798d",
+      "baselineSha256": "4d134495b776563a6992777f500d3cb63217000968198782ce7daa0c15ae3009",
+      "isNew": false
+    },
+    "src/hooks/useBondedClub.ts": {
+      "sha256": "4712d7ec6c354b389b21ebae591340fb3f5ae2b0aa94525debaf4106b311df36",
+      "baselineSha256": "361b85f40d3879e044e853228a2e383f1d3b3b507e184900ca2a12d619f8666e",
+      "isNew": false
+    },
+    "src/components/savings/BondedClubWorkspace.tsx": {
+      "sha256": "e049a3d417b20682cb45b36da4538664d3c4f60f8ddcdeb40733c9fb99358861",
+      "baselineSha256": "45a5a58f20ca3f5bcf6e032b9e1c128486282f0bd8f7ead2778f4e8186971dad",
+      "isNew": false
+    },
+    "src/config/bonded-tontine.ts": {
+      "sha256": "65e38e08f13eb4ddccf412800ad9c54795d4889663183c8e5670f764bfb4dedf",
+      "baselineSha256": "372a906ef97795df10e4d5da6d2e60c782a31eca00d4d3b9bbd515dc1537ebef",
+      "isNew": false
+    },
+    "src/lib/i18n.ts": {
+      "sha256": "e0b131b969ba9c7e6b647dbc1f927df6329734c1188eee7f2c1264e25a002633",
+      "baselineSha256": "92223fb03002d4ecb897758c91c063813d239d5e75eab4a09e1191415405b6ab",
+      "isNew": false
+    },
+    ".github/workflows/oracle-heartbeat.yml": {
+      "sha256": "37aa413c0b1634b10bfa717632470676bba756a1f330793eb9842a27eea07db8",
+      "baselineSha256": "37aa413c0b1634b10bfa717632470676bba756a1f330793eb9842a27eea07db8",
+      "isNew": false
+    },
+    "contracts/out/BondedTontine.sol/BondedTontine.json": {
+      "sha256": "82a929287de6f1504a7d1b6e40a59ab0fc446b716610da963c1ef88833c0af86",
+      "baselineSha256": null,
+      "isNew": false
+    }
+  }
+}

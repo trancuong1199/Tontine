@@ -85,6 +85,16 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
     event GroupDefaulted(DefaultReason reason, uint256 totalDebt, uint256 collateralSeized);
     event GroupCancelled();
     event PrincipalWithdrawn(address indexed member, uint256 usdcOut, uint256 cirBtcOut);
+    event PartiallyLiquidated(
+        address indexed liquidator,
+        uint256 repaidUsdc,
+        uint256 seizedCirBtc,
+        uint256 totalDebt,
+        uint256 collateralLeft
+    );
+
+    /// @notice Bonus paid to a liquidator on top of the USDC debt they repay, in bps (5%).
+    uint256 public constant LIQUIDATION_BONUS_BPS = 500;
 
     // Immutable Parameters (Section 10.1)
     IERC20 public immutable usdc;
@@ -431,6 +441,35 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         _settle(true, reason);
     }
 
+    /// @notice Partial liquidation (task-063). When the CirBTC price drops so that health falls below
+    /// `liquidationThresholdBps()`, anyone may repay part of the owner's principal debt in USDC and receive
+    /// CirBTC worth the repaid amount plus `LIQUIDATION_BONUS_BPS`. The USDC goes back into the members' pool.
+    /// The repay is capped at `maxLiquidatableDebt()`: the minimum that brings health back to `safetyBps`,
+    /// so the owner keeps every unit of collateral not needed to restore safety. The club stays ACTIVE.
+    /// @param repayAmount USDC the caller is willing to repay; amounts above the cap are reduced to the cap.
+    function liquidate(uint256 repayAmount)
+        external
+        nonReentrant
+        inState(State.ACTIVE)
+        returns (uint256 repaid, uint256 seized)
+    {
+        _rollRounds();
+        if (repayAmount == 0) revert InvalidAmount();
+        _price(); // surface BadPrice / StalePrice instead of a generic NotLiquidatable
+
+        (repaid, seized) = _liquidationQuote(repayAmount);
+        if (repaid == 0) revert NotLiquidatable();
+
+        totalDebt -= repaid;
+        collateral -= seized;
+
+        usdc.safeTransferFrom(msg.sender, address(this), repaid);
+        if (seized > 0) {
+            cirBtc.safeTransfer(msg.sender, seized);
+        }
+        emit PartiallyLiquidated(msg.sender, repaid, seized, totalDebt, collateral);
+    }
+
     function withdrawPrincipal() external nonReentrant {
         if (state != State.COMPLETED && state != State.DEFAULTED) revert WrongState();
         uint256 dep = deposit[msg.sender];
@@ -492,6 +531,30 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         uint256 debtAndInterest = totalDebt + interestOwed();
         if (debtAndInterest == 0) return type(uint256).max;
         return Math.mulDiv(collateralValueUsdc(), 10000, debtAndInterest);
+    }
+
+    /// @notice Health (collateral value / (debt + interest owed)) below which partial liquidation opens:
+    /// the midpoint between 100% and the borrowing safety ratio (e.g. 120% safety gives a 110% threshold).
+    function liquidationThresholdBps() public view returns (uint256) {
+        return (10000 + safetyBps) / 2;
+    }
+
+    /// @notice Whether `liquidate` would currently succeed (fresh price, debt outstanding, health below threshold).
+    function isLiquidatable() external view returns (bool) {
+        (uint256 repaid, ) = _liquidationQuote(type(uint256).max);
+        return repaid > 0;
+    }
+
+    /// @notice Maximum USDC a liquidator may repay right now (0 when not liquidatable).
+    function maxLiquidatableDebt() external view returns (uint256) {
+        (uint256 repaid, ) = _liquidationQuote(type(uint256).max);
+        return repaid;
+    }
+
+    /// @notice Exact (repaid, seized) outcome of `liquidate(repayAmount)` at the current price.
+    function previewLiquidation(uint256 repayAmount) external view returns (uint256 repaid, uint256 seized) {
+        if (repayAmount == 0) return (0, 0);
+        return _liquidationQuote(repayAmount);
     }
 
     function pendingInterest(address addr) external view returns (uint256) {
@@ -605,7 +668,7 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
         return false;
     }
 
-    function _tryCollateralValueUsdc() internal view returns (bool ok, uint256 val) {
+    function _tryPrice() internal view returns (bool ok, uint256 price) {
         try priceFeed.latestRoundData() returns (
             uint80 roundId,
             int256 answer,
@@ -622,10 +685,41 @@ contract BondedTontine is Ownable2Step, ReentrancyGuard {
             ) {
                 return (false, 0);
             }
-            val = Math.mulDiv(collateral, uint256(answer), 10 ** (uint256(feedDecimals) + 2));
-            return (true, val);
+            return (true, uint256(answer));
         } catch {
             return (false, 0);
+        }
+    }
+
+    /// @dev Shared by `liquidate` and its views. Returns (0, 0) when liquidation is not possible.
+    function _liquidationQuote(uint256 requested) internal view returns (uint256 repaid, uint256 seized) {
+        if (state != State.ACTIVE || totalDebt == 0 || collateral == 0) return (0, 0);
+        (bool ok, uint256 price) = _tryPrice();
+        if (!ok) return (0, 0);
+        uint256 scale = 10 ** (uint256(feedDecimals) + 2);
+        uint256 value = Math.mulDiv(collateral, price, scale);
+
+        uint256 debtAndInterest = totalDebt + interestOwed();
+        uint256 threshold = liquidationThresholdBps();
+        if (value * 10000 >= threshold * debtAndInterest) return (0, 0);
+
+        // Minimum repay r so that (V - r*b) / (D - r) >= s, i.e. r >= (s*D - 1e4*V) / (s - b).
+        uint256 bonusFactor = 10000 + LIQUIDATION_BONUS_BPS;
+        uint256 maxRepay = totalDebt;
+        if (safetyBps > bonusFactor) {
+            uint256 needed = Math.ceilDiv(safetyBps * debtAndInterest - value * 10000, safetyBps - bonusFactor);
+            if (needed < maxRepay) maxRepay = needed;
+        }
+        repaid = requested < maxRepay ? requested : maxRepay;
+
+        uint256 seizeValue = Math.mulDiv(repaid, bonusFactor, 10000);
+        if (seizeValue >= value) {
+            // Bad debt: hand over all collateral and only take the USDC it is worth net of the bonus.
+            seized = collateral;
+            repaid = Math.mulDiv(value, 10000, bonusFactor);
+            if (repaid > totalDebt) repaid = totalDebt;
+        } else {
+            seized = Math.mulDiv(seizeValue, scale, price); // rounds down: never over-pays the liquidator
         }
     }
 
