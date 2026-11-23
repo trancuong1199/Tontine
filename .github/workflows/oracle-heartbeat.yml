@@ -26,6 +26,10 @@ jobs:
 
       - name: Refresh Oracle Price
         env:
-          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY || '0xf1a66206d0d40e01681c0d911168f560897885ca88a6f88385db6816c5d5d6f8' }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
         run: |
+          if [ -z "$DEPLOYER_PRIVATE_KEY" ]; then
+            echo "::error::DEPLOYER_PRIVATE_KEY secret is not configured"
+            exit 1
+          fi
           node scripts/refresh-mock-oracle.mjs --live
