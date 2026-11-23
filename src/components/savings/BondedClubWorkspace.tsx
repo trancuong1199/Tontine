@@ -1779,14 +1779,6 @@ export function BondedClubWorkspace({
                 <strong className="text-amber-300 font-bold text-sm">{displayUsdc(club.interestOwed)} USDC</strong>
               </div>
 
-              {staleBlocksPriceAction && (
-                <div className="rounded-xl border border-red-500/30 bg-red-950/40 px-3.5 py-2.5 text-xs text-red-300">
-                  {isVi
-                    ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật trước khi vay hoặc rút cọc khi đang có nợ."
-                    : "Oracle price is stale; refresh price before borrowing or withdrawing collateral while indebted."}
-                </div>
-              )}
-
               {/* Owner Input Controls */}
               <div className="space-y-3">
                 {/* Deposit Collateral */}
@@ -1937,13 +1929,6 @@ export function BondedClubWorkspace({
                           </p>
                         )
                       )}
-                      {staleBlocksPriceAction && (
-                        <p className="text-xs text-red-300">
-                          {isVi
-                            ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật"
-                            : "Oracle price is invalid, unavailable or stale; refresh first"}
-                        </p>
-                      )}
                     </div>
 
                     {/* Repay Principal (Fixed to totalDebt) */}
@@ -2058,13 +2043,6 @@ export function BondedClubWorkspace({
                       {isVi ? "Rút cọc" : "Withdraw"}
                     </button>
                   </div>
-                  {staleBlocksPriceAction && club.totalDebt + club.interestOwed > 0n && (
-                    <p className="text-xs text-red-300">
-                      {isVi
-                        ? "Giá oracle không hợp lệ hoặc quá hạn, cần cập nhật"
-                        : "Oracle price is invalid, unavailable or stale; refresh first"}
-                    </p>
-                  )}
                 </div>
 
                 {/* Remove Member (OPEN only) */}
