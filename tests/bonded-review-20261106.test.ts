@@ -126,7 +126,7 @@ test('BRQ07 canonical URL helpers and operational source inventory',()=>{
 });
 
 test('BRQ04 read-only operator paths never access signer or send writes',async()=>{
- const publicClient={readContract:async({functionName}:any)=>({maxPriceAge:3600n,priceFeed:'0x9c0866b4D6dB662038f805563b8f4CdECA626525',decimals:8,latestRoundData:[9n,6000000000000n,100n,100n,9n]}[functionName])};
+ const publicClient={readContract:async({functionName}:any)=>({maxPriceAge:3600n,priceFeed:'0x8C9d32C924F2253dbc028CbdcF650b18CfB6bb81',decimals:8,latestRoundData:[9n,6000000000000n,100n,100n,9n]}[functionName])};
  (globalThis as any).__brqPublic=publicClient;
  const {main}=await loadUI('scripts/refresh-mock-oracle.mjs',{
  viem:'export const createPublicClient=()=>globalThis.__brqPublic;export const createWalletClient=()=>{throw Error("SIGNER MUST NOT RUN")};export const http=()=>({});export const formatUnits=(x,d)=>String(Number(x)/10**d);',

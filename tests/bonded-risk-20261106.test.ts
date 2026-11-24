@@ -72,7 +72,7 @@ test('R8 service template parses and non-admin script cannot construct a signing
  const source=fs.readFileSync('deploy/tontine-oracle.service','utf8');assert.match(source,/--price 60000 --interval 1800/);assert.match(source,/Restart=always/);assert.match(source,/EnvironmentFile=/);
  const previous=process.env.DEPLOYER_PRIVATE_KEY;process.env.DEPLOYER_PRIVATE_KEY='test-placeholder-never-signed';
  const {main}=await load('scripts/refresh-mock-oracle.mjs',{
- viem:`export const createPublicClient=()=>({readContract:async({functionName})=>({maxPriceAge:3600n,priceFeed:'0x9c0866b4D6dB662038f805563b8f4CdECA626525',decimals:8,latestRoundData:[9n,6000000000000n,100n,100n,9n],admin:'${B}'}[functionName])});export const createWalletClient=()=>{throw Error('SIGNER MUST NOT BE CREATED')};export const http=()=>({});export const formatUnits=()=> '60000';`,
+ viem:`export const createPublicClient=()=>({readContract:async({functionName})=>({maxPriceAge:3600n,priceFeed:'0x8C9d32C924F2253dbc028CbdcF650b18CfB6bb81',decimals:8,latestRoundData:[9n,6000000000000n,100n,100n,9n],admin:'${B}'}[functionName])});export const createWalletClient=()=>{throw Error('SIGNER MUST NOT BE CREATED')};export const http=()=>({});export const formatUnits=()=> '60000';`,
  'viem/accounts':`export const privateKeyToAccount=()=>({address:'${A}'});`,
  });
  try{await main(['--status']);await assert.rejects(main(['--interval','1800']),/not the live oracle admin/);}finally{if(previous===undefined)delete process.env.DEPLOYER_PRIVATE_KEY;else process.env.DEPLOYER_PRIVATE_KEY=previous;}

@@ -11,13 +11,14 @@ export const ARC_MAINNET_CHAIN_ID = 5042;
 export { USDC_ADDRESS as BONDED_USDC_ADDRESS, CIRBTC_ADDRESS as BONDED_CIRBTC_ADDRESS };
 
 export const ARC_TESTNET_MOCK_FEED =
-  "0x9c0866b4D6dB662038f805563b8f4CdECA626525" as const;
+  "0x8C9d32C924F2253dbc028CbdcF650b18CfB6bb81" as const; // admin = rotated deployer 0xF3AF…8feC (old feed 0x9c08… admin key leaked)
 export const ARC_TESTNET_BONDED_FACTORY =
-  "0xF35490acc81DE12b752C6F02e6d11d203F01A80E" as const; // 9-param createClub (totalRounds), unique names, one borrow per round
+  "0x139CDfd3837b1f12854F1BF143C2FcEd4a4ACD29" as const; // task-063: partial CirBTC liquidation; 9-param createClub, unique names, one borrow per round
 export const ARC_TESTNET_DEFAULT_BONDED_CLUB =
-  "0xB34d273bC38457Cd6DF88591A982E6581E798959" as const;
+  "0x86fC1F988b37B464949aFEA0a689642597A3952E" as const;
 
 export const KNOWN_BONDED_TONTINE_CLUBS: readonly `0x${string}`[] = [
+  "0x86fC1F988b37B464949aFEA0a689642597A3952E",
   "0xB34d273bC38457Cd6DF88591A982E6581E798959",
   "0x1995557D5BcA94B92d59194afEF106c5ac86527F",
   "0x6B4edE6eF8bC097E33D8BDC0cC8C619a577d9fB7",
@@ -102,6 +103,7 @@ export const CANONICAL_FACTORY: Record<number, `0x${string}` | undefined> = {
  * created on CANONICAL_FACTORY; clubs from these factories stay "Verified by Factory" and in the directory.
  */
 export const ARC_TESTNET_PREVIOUS_BONDED_FACTORIES: readonly `0x${string}`[] = [
+  "0xF35490acc81DE12b752C6F02e6d11d203F01A80E", // 9-param createClub (totalRounds), unique names, one borrow per round; no liquidate()
   "0x83b04a0835B8A41a3835F9bA2D20Ba5464Ce9253", // 9-param createClub (totalRounds) + unique names; re-borrow allowed
   "0x8fD54f5aeaEF658A346a351adF5BF1B7876D4E30", // task-062: 8-param createClub, totalRounds = maxMembers
 ] as const;
